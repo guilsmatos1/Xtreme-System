@@ -1,24 +1,39 @@
 [project]
-name = "ad-intelligence"
+name = "xtreme-system"
 version = "0.1.0"
-description = "Ad intelligence tooling and experiments."
+description = "Extreme system tooling and experiments."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.18.5",
+    "fastapi>=0.139.0",
+    "psycopg[binary]>=3.3.4",
+    "pydantic>=2",
+    "pydantic-settings>=2.14.2",
+    "sqlalchemy>=2.0",
+    "uvicorn[standard]>=0.50.2",
+]
 
 [dependency-groups]
 dev = [
     "mypy>=1.17.0",
+    "polylith-cli>=1.48.3",
     "pre-commit>=4.2.0",
     "pytest>=8.4.0",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=3.16.0",
+    "pytest-watch>=4.2.0",
     "ruff>=0.12.0",
     "vulture>=2.14",
     "xenon>=0.9.3",
 ]
 
 [build-system]
-requires = ["uv_build>=0.8.0,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+dev-mode-dirs = ["components", "bases", "development", "src"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -30,7 +45,8 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "tests", "bases", "components", "development", "projects"]
+exclude = [".opencode/plugins/ponytail", "alembic"]
 
 [tool.ruff.lint]
 select = [
@@ -62,14 +78,17 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.12"
-packages = ["ad_intelligence"]
+files = ["bases", "components"]
+mypy_path = "bases:components"
+namespace_packages = true
+explicit_package_bases = true
 strict = true
 warn_unreachable = true
 warn_unused_configs = true
 
 [tool.vulture]
-paths = ["src", "tests"]
-min_confidence = 80
+paths = ["src", "tests", "bases", "components", "development", "projects"]
+min_confidence = 60
 sort_by_size = true
 
 [tool.xenon]

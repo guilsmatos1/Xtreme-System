@@ -8,5 +8,9 @@ dist/
 build/
 *.egg-info/
 .coverage
-htmlcov/
 .codex/.hook-state/
+.claude/.hook-state/
+graphify-out/
+
+# Local env
+.env

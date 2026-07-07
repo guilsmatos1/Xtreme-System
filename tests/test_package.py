@@ -1,5 +1,5 @@
-from ad_intelligence import __version__
+from xtreme_system.api.core import app
 
 
-def test_package_exports_version() -> None:
-    assert __version__ == "0.1.0"
+def test_api_app_importa() -> None:
+    assert app.title == "Xtreme Estoque"
