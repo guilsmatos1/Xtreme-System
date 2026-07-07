@@ -11,6 +11,11 @@ uv sync              # install dependencies
 make hooks            # install git hooks (uv run pre-commit install)
 ```
 
+`.env` precisa de `DATABASE_URL` e `AUTH_SECRET_KEY` (JWT). Gere a chave com
+`python -c "import secrets; print(secrets.token_hex(32))"`. Crie o primeiro
+admin com `uv run python development/create_admin.py <usuario> <senha>`.
+Autentique em `POST /login` e mande `Authorization: Bearer <token>`.
+
 ## Common tasks
 
 Run `make help` for the full list. Shortcuts:

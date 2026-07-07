@@ -18,6 +18,9 @@ dependencies = [
     "pydantic>=2",
     "pydantic-settings",
     "psycopg[binary]",
+    "pyjwt",
+    "pwdlib[argon2]",
+    "python-multipart",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -26,6 +29,8 @@ packages = ["xtreme_system"]
 [tool.hatch.build.hooks.polylith-bricks]
 
 [tool.polylith.bricks]
+"../../components/xtreme_system/auth" = "xtreme_system/auth"
+"../../components/xtreme_system/usuario" = "xtreme_system/usuario"
 "../../components/xtreme_system/database" = "xtreme_system/database"
 "../../components/xtreme_system/investidor" = "xtreme_system/investidor"
 "../../components/xtreme_system/meio_captacao" = "xtreme_system/meio_captacao"

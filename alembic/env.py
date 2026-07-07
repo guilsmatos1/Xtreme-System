@@ -18,6 +18,7 @@ if config.config_file_name is not None:
 from xtreme_system.database.core import Base, get_settings
 from xtreme_system.investidor import core as _investidor  # noqa: F401
 from xtreme_system.meio_captacao import core as _meio_captacao  # noqa: F401
+from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
 
 target_metadata = Base.metadata

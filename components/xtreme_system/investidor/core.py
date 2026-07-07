@@ -44,9 +44,7 @@ def create(session: Session, data: InvestidorCreate) -> Investidor:
     return obj
 
 
-def update(
-    session: Session, obj: Investidor, data: InvestidorUpdate
-) -> Investidor:
+def update(session: Session, obj: Investidor, data: InvestidorUpdate) -> Investidor:
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(obj, field, value)
     session.commit()

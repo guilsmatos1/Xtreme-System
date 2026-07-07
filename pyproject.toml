@@ -8,14 +8,18 @@ dependencies = [
     "alembic>=1.18.5",
     "fastapi>=0.139.0",
     "psycopg[binary]>=3.3.4",
+    "pwdlib[argon2]>=0.3.0",
     "pydantic>=2",
     "pydantic-settings>=2.14.2",
+    "pyjwt>=2.13.0",
+    "python-multipart>=0.0.32",
     "sqlalchemy>=2.0",
     "uvicorn[standard]>=0.50.2",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "mypy>=1.17.0",
     "polylith-cli>=1.48.3",
     "pre-commit>=4.2.0",
@@ -88,8 +92,23 @@ warn_unused_configs = true
 
 [tool.vulture]
 paths = ["src", "tests", "bases", "components", "development", "projects"]
-min_confidence = 60
+min_confidence = 61
 sort_by_size = true
+ignore_names = [
+    "model_config",
+    "access_token",
+    "token_type",
+    "moto",
+    "tipo",
+    "modelo",
+    "cor",
+    "ano",
+    "placa",
+    "km",
+    "preco",
+    "procuracao",
+]
+ignore_decorators = ["app.*"]
 
 [tool.xenon]
 max-absolute = "B"
