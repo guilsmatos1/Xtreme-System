@@ -1,7 +1,9 @@
 """API FastAPI: CRUD de investidores, meios de captação e veículos."""
 
 import logging
+import uuid
 from collections.abc import Callable
+from contextvars import ContextVar
 from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
@@ -26,6 +28,17 @@ from xtreme_system.veiculo import core as veiculo
 
 logger = logging.getLogger(__name__)
 
+request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
+
+
+class _RequestIDFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = request_id_ctx.get()
+        return True
+
+
+logger.addFilter(_RequestIDFilter())
+
 app = FastAPI(title="Xtreme Estoque")
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +46,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _request_id(
+    request: Request,
+    call_next: Callable[[Request], Any],
+) -> Any:
+    rid = request.headers.get("X-Request-ID", uuid.uuid4().hex[:12])
+    token = request_id_ctx.set(rid)
+    response = await call_next(request)
+    request_id_ctx.reset(token)
+    response.headers["X-Request-ID"] = rid
+    return response
 
 
 @app.middleware("http")
