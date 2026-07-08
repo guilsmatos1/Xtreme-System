@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center">
+  <h2>{{ titulo }}</h2>
+  {% if user.papel == 'admin' %}
+  <button hx-get="{{ prefixo }}/novo" hx-target="#modal" hx-swap="innerHTML">Novo</button>
+  {% endif %}
+</header>
+<figure>
+<table>
+  <thead><tr><th>Nome</th>{% if user.papel == 'admin' %}<th></th>{% endif %}</tr></thead>
+  {% include "_linhas_simples.html" %}
+</table>
+</figure>
+{% endblock %}

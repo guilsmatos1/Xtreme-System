@@ -12,14 +12,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    auth_secret_key: str = "change-me"
+    auth_secret_key: str
     auth_algorithm: str = "HS256"
     auth_token_expire_minutes: int = 60
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 _hasher = PasswordHash.recommended()
@@ -57,4 +57,7 @@ def decode_token(token: str) -> TokenData:
     payload = jwt.decode(
         token, settings.auth_secret_key, algorithms=[settings.auth_algorithm]
     )
-    return TokenData(username=payload["sub"], papel=payload["papel"])
+    try:
+        return TokenData(username=payload["sub"], papel=payload["papel"])
+    except KeyError as exc:
+        raise jwt.InvalidTokenError("token sem claims obrigatórias") from exc

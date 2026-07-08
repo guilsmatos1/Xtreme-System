@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block content %}
+<h2>Usuários</h2>
+{% if erro %}<p style="color:var(--pico-del-color)">{{ erro }}</p>{% endif %}
+<form method="post" action="/ui/usuarios" class="grid">
+  <input name="username" placeholder="Usuário" required>
+  <input name="senha" type="password" placeholder="Senha" required>
+  <select name="papel"><option value="leitor">leitor</option><option value="admin">admin</option></select>
+  <button type="submit">Criar</button>
+</form>
+<figure>
+<table>
+  <thead><tr><th>ID</th><th>Usuário</th><th>Papel</th><th>Ativo</th></tr></thead>
+  <tbody>
+  {% for u in usuarios %}<tr><td>{{ u.id }}</td><td>{{ u.username }}</td><td>{{ u.papel.value }}</td><td>{{ 'sim' if u.ativo else 'não' }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</figure>
+{% endblock %}

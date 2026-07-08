@@ -1,5 +1,6 @@
 """Auth: hash de senha e roundtrip de JWT."""
 
+import jwt
 import pytest
 
 from xtreme_system.auth import core as auth
@@ -22,3 +23,12 @@ def test_token_roundtrip() -> None:
 def test_token_invalido() -> None:
     with pytest.raises(Exception):  # noqa: B017, PT011
         auth.decode_token("nao-e-um-token")
+
+
+def test_token_sem_claims_obrigatorias() -> None:
+    settings = auth.get_settings()
+    token = jwt.encode(
+        {"foo": "bar"}, settings.auth_secret_key, algorithm=settings.auth_algorithm
+    )
+    with pytest.raises(jwt.InvalidTokenError):
+        auth.decode_token(token)

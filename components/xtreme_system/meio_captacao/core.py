@@ -3,6 +3,7 @@
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 
 
@@ -29,31 +30,22 @@ class MeioCaptacaoRead(BaseModel):
 
 
 def list_all(session: Session) -> list[MeioCaptacao]:
-    return list(session.query(MeioCaptacao).all())
+    return crud.list_all(session, MeioCaptacao)
 
 
 def get(session: Session, meio_id: int) -> MeioCaptacao | None:
-    return session.get(MeioCaptacao, meio_id)
+    return crud.get(session, MeioCaptacao, meio_id)
 
 
 def create(session: Session, data: MeioCaptacaoCreate) -> MeioCaptacao:
-    obj = MeioCaptacao(**data.model_dump())
-    session.add(obj)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.create(session, MeioCaptacao, data)
 
 
 def update(
     session: Session, obj: MeioCaptacao, data: MeioCaptacaoUpdate
 ) -> MeioCaptacao:
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(obj, field, value)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.update(session, obj, data)
 
 
 def delete(session: Session, obj: MeioCaptacao) -> None:
-    session.delete(obj)
-    session.commit()
+    crud.delete(session, obj)

@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
+from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.investidor.core import Investidor, InvestidorRead
 from xtreme_system.meio_captacao.core import MeioCaptacao, MeioCaptacaoRead
@@ -35,8 +36,10 @@ class Veiculo(Base):
     preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))  # noqa: SQLAlchemy mapped
     procuracao: Mapped[str | None]  # noqa: SQLAlchemy mapped
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
-    investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"))
-    meio_captacao_id: Mapped[int] = mapped_column(ForeignKey("meio_captacao.id"))
+    investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
+    meio_captacao_id: Mapped[int] = mapped_column(
+        ForeignKey("meio_captacao.id"), index=True
+    )
 
     investidor: Mapped[Investidor] = relationship(lazy="joined")
     meio_captacao: Mapped[MeioCaptacao] = relationship(lazy="joined")
@@ -88,29 +91,20 @@ class VeiculoRead(BaseModel):
 
 
 def list_all(session: Session) -> list[Veiculo]:
-    return list(session.query(Veiculo).all())
+    return crud.list_all(session, Veiculo)
 
 
 def get(session: Session, veiculo_id: int) -> Veiculo | None:
-    return session.get(Veiculo, veiculo_id)
+    return crud.get(session, Veiculo, veiculo_id)
 
 
 def create(session: Session, data: VeiculoCreate) -> Veiculo:
-    obj = Veiculo(**data.model_dump())
-    session.add(obj)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.create(session, Veiculo, data)
 
 
 def update(session: Session, obj: Veiculo, data: VeiculoUpdate) -> Veiculo:
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(obj, field, value)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.update(session, obj, data)
 
 
 def delete(session: Session, obj: Veiculo) -> None:
-    session.delete(obj)
-    session.commit()
+    crud.delete(session, obj)

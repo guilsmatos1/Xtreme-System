@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Veículos{% endblock %}
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center">
+  <h2>Veículos</h2>
+  {% if user.papel == 'admin' %}
+  <button hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">Novo veículo</button>
+  {% endif %}
+</header>
+<figure>
+<table>
+  <thead><tr>
+    <th>Modelo</th><th>Placa</th><th>Tipo</th><th>Ano</th><th>KM</th>
+    <th>Preço</th><th>Status</th><th>Investidor</th><th>Captação</th>
+    {% if user.papel == 'admin' %}<th></th>{% endif %}
+  </tr></thead>
+  {% include "_linhas_veiculos.html" %}
+</table>
+</figure>
+{% endblock %}

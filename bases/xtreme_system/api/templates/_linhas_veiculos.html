@@ -1,0 +1,4 @@
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+{% for v in veiculos %}{% include "_row_veiculo.html" %}{% endfor %}
+</tbody>
+{% if msg %}<div id="msg" role="alert" hx-swap-oob="true"><small>{{ msg }}</small></div>{% endif %}

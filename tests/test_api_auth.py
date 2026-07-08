@@ -4,7 +4,7 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -19,6 +19,9 @@ def client() -> Iterator[TestClient]:
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
+    )
+    event.listen(
+        engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
     )
     Base.metadata.create_all(engine)
     with Session(engine) as session:
@@ -73,3 +76,33 @@ def test_admin_escreve(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     resp = client.post("/investidores", json={"nome": "Ana"}, headers=headers)
     assert resp.status_code == 201
+
+
+def test_remover_investidor_com_veiculo_vinculado_retorna_409(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
+        "id"
+    ]
+    meio_id = client.post(
+        "/meios-captacao", json={"nome": "Instagram"}, headers=headers
+    ).json()["id"]
+    client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Gol",
+            "cor": "Branco",
+            "ano": 2018,
+            "placa": "AAA1B22",
+            "km": 70000,
+            "preco": "32000.00",
+            "investidor_id": inv_id,
+            "meio_captacao_id": meio_id,
+        },
+        headers=headers,
+    )
+
+    resp = client.delete(f"/investidores/{inv_id}", headers=headers)
+    assert resp.status_code == 409

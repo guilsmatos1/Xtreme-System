@@ -3,6 +3,7 @@
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 
 
@@ -29,29 +30,20 @@ class InvestidorRead(BaseModel):
 
 
 def list_all(session: Session) -> list[Investidor]:
-    return list(session.query(Investidor).all())
+    return crud.list_all(session, Investidor)
 
 
 def get(session: Session, investidor_id: int) -> Investidor | None:
-    return session.get(Investidor, investidor_id)
+    return crud.get(session, Investidor, investidor_id)
 
 
 def create(session: Session, data: InvestidorCreate) -> Investidor:
-    obj = Investidor(**data.model_dump())
-    session.add(obj)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.create(session, Investidor, data)
 
 
 def update(session: Session, obj: Investidor, data: InvestidorUpdate) -> Investidor:
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(obj, field, value)
-    session.commit()
-    session.refresh(obj)
-    return obj
+    return crud.update(session, obj, data)
 
 
 def delete(session: Session, obj: Investidor) -> None:
-    session.delete(obj)
-    session.commit()
+    crud.delete(session, obj)

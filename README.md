@@ -7,6 +7,10 @@ structured as a [Polylith](https://polylith.gitbook.io/polylith) workspace
 ## Setup
 
 ```bash
+brew services start postgresql@14  # ou a versão instalada via brew
+createuser -s postgres             # role usada em DATABASE_URL
+createdb -O postgres xtreme        # database usada em DATABASE_URL
+
 uv sync              # install dependencies
 make hooks            # install git hooks (uv run pre-commit install)
 cp .env.example .env  # then fill in AUTH_SECRET_KEY
@@ -17,6 +21,10 @@ make migrate           # apply database migrations
 Gere a chave com `python -c "import secrets; print(secrets.token_hex(32))"`.
 Crie o primeiro admin com `uv run python development/create_admin.py <usuario> <senha>`.
 Autentique em `POST /login` e mande `Authorization: Bearer <token>`.
+
+```bash
+make run  # uvicorn xtreme_system.api.core:app --reload
+```
 
 ## Common tasks
 

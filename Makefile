@@ -1,4 +1,4 @@
-.PHONY: help hooks format lint mypy-strict test watch coverage ci pre-commit migrate revision
+.PHONY: help hooks format lint mypy-strict test watch coverage ci pre-commit migrate revision run
 
 PYTHON := uv run python
 
@@ -15,7 +15,8 @@ help:
 		'  make ci          Run lint and coverage' \
 		'  make pre-commit  Run all pre-commit hooks' \
 		'  make migrate     Apply alembic migrations (upgrade head)' \
-		'  make revision m="msg"  Autogenerate an alembic migration'
+		'  make revision m="msg"  Autogenerate an alembic migration' \
+		'  make run         Run the API with uvicorn --reload'
 
 hooks:
 	uv run pre-commit install
@@ -52,3 +53,6 @@ migrate:
 
 revision:
 	uv run alembic revision --autogenerate -m "$(m)"
+
+run:
+	uv run uvicorn xtreme_system.api.core:app --reload

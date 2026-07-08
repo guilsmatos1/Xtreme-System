@@ -1,0 +1,17 @@
+<tr id="veiculo-{{ v.id }}">
+  <td>{{ v.modelo }}</td>
+  <td>{{ v.placa }}</td>
+  <td>{{ v.tipo.value }}</td>
+  <td>{{ v.ano }}</td>
+  <td>{{ v.km }}</td>
+  <td>{{ "%.2f"|format(v.preco) }}</td>
+  <td>{{ v.status.value }}</td>
+  <td>{{ v.investidor.nome }}</td>
+  <td>{{ v.meio_captacao.nome }}</td>
+  {% if user.papel == 'admin' %}
+  <td>
+    <button class="outline" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML">Editar</button>
+    <button class="outline secondary" hx-post="/ui/veiculos/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ v.modelo }}?">Excluir</button>
+  </td>
+  {% endif %}
+</tr>

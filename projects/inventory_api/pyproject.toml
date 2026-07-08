@@ -21,6 +21,7 @@ dependencies = [
     "pyjwt",
     "pwdlib[argon2]",
     "python-multipart",
+    "jinja2",
 ]
 
 [tool.hatch.build.targets.wheel]
