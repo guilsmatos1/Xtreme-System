@@ -1,4 +1,4 @@
-.PHONY: help hooks format lint mypy-strict test watch coverage ci pre-commit
+.PHONY: help hooks format lint mypy-strict test watch coverage ci pre-commit migrate revision
 
 PYTHON := uv run python
 
@@ -13,7 +13,9 @@ help:
 		'  make watch       Rerun pytest when Python files change' \
 		'  make coverage    Run pytest with coverage and fail under 75%' \
 		'  make ci          Run lint and coverage' \
-		'  make pre-commit  Run all pre-commit hooks'
+		'  make pre-commit  Run all pre-commit hooks' \
+		'  make migrate     Apply alembic migrations (upgrade head)' \
+		'  make revision m="msg"  Autogenerate an alembic migration'
 
 hooks:
 	uv run pre-commit install
@@ -44,3 +46,9 @@ ci: lint coverage
 
 pre-commit:
 	uv run pre-commit run --all-files
+
+migrate:
+	uv run alembic upgrade head
+
+revision:
+	uv run alembic revision --autogenerate -m "$(m)"

@@ -9,11 +9,13 @@ structured as a [Polylith](https://polylith.gitbook.io/polylith) workspace
 ```bash
 uv sync              # install dependencies
 make hooks            # install git hooks (uv run pre-commit install)
+cp .env.example .env  # then fill in AUTH_SECRET_KEY
+make migrate           # apply database migrations
 ```
 
-`.env` precisa de `DATABASE_URL` e `AUTH_SECRET_KEY` (JWT). Gere a chave com
-`python -c "import secrets; print(secrets.token_hex(32))"`. Crie o primeiro
-admin com `uv run python development/create_admin.py <usuario> <senha>`.
+`.env` precisa de `DATABASE_URL` e `AUTH_SECRET_KEY` (JWT), veja `.env.example`.
+Gere a chave com `python -c "import secrets; print(secrets.token_hex(32))"`.
+Crie o primeiro admin com `uv run python development/create_admin.py <usuario> <senha>`.
 Autentique em `POST /login` e mande `Authorization: Bearer <token>`.
 
 ## Common tasks
@@ -28,6 +30,8 @@ make watch       # rerun pytest on file change
 make coverage    # pytest with coverage, fail under 75%
 make ci          # lint + coverage
 make pre-commit  # run all pre-commit hooks
+make migrate     # alembic upgrade head
+make revision m="msg"  # alembic revision --autogenerate
 ```
 
 Equivalent raw commands, in order (`ruff format` first — it can fix issues
