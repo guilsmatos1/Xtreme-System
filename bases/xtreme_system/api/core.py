@@ -147,6 +147,14 @@ def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
         raise HTTPException(status_code=400, detail="meio_captacao_id inexistente")
 
 
+def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -> Any:
+    try:
+        return op()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail=conflict_msg) from None
+
+
 def register_crud_routes(
     app: FastAPI,
     module: Any,
@@ -172,7 +180,11 @@ def register_crud_routes(
     def _create(data: create_schema, session: SessionDep, _: AdminUser) -> Any:  # type: ignore[valid-type]
         if before_create:
             before_create(session, data)
-        return module.create(session, data)
+        return _safe_write(
+            session,
+            lambda: module.create(session, data),
+            conflict_msg=f"{label} já existe",
+        )
 
     @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
     def _update(
@@ -184,7 +196,11 @@ def register_crud_routes(
         obj = _found(module.get(session, item_id), label)
         if before_update:
             before_update(session, obj, data)
-        return module.update(session, obj, data)
+        return _safe_write(
+            session,
+            lambda: module.update(session, obj, data),
+            conflict_msg=f"{label} já existe",
+        )
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, _: AdminUser) -> None:
@@ -543,7 +559,16 @@ def register_ui_simples(
                 _form_ctx(None, "Nome obrigatório"),
                 status_code=400,
             )
-        module.create(session, create_schema(nome=nome))
+        try:
+            module.create(session, create_schema(nome=nome))
+        except IntegrityError:
+            session.rollback()
+            return templates.TemplateResponse(
+                request,
+                "_form_simples.html",
+                _form_ctx(None, f"{titulo} já existe"),
+                status_code=409,
+            )
         return templates.TemplateResponse(
             request, "_simples_ok.html", _ctx(user, session)
         )
@@ -561,7 +586,16 @@ def register_ui_simples(
                 _form_ctx(obj, "Nome obrigatório"),
                 status_code=400,
             )
-        module.update(session, obj, update_schema(nome=nome))
+        try:
+            module.update(session, obj, update_schema(nome=nome))
+        except IntegrityError:
+            session.rollback()
+            return templates.TemplateResponse(
+                request,
+                "_form_simples.html",
+                _form_ctx(obj, f"{titulo} já existe"),
+                status_code=409,
+            )
         return templates.TemplateResponse(
             request, "_simples_ok.html", _ctx(user, session)
         )
