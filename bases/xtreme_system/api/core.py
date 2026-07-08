@@ -1,5 +1,6 @@
 """API FastAPI: CRUD de investidores, meios de captação e veículos."""
 
+import logging
 from collections.abc import Callable
 from functools import partial
 from pathlib import Path
@@ -23,6 +24,8 @@ from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="Xtreme Estoque")
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +33,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _log_errors(
+    request: Request,
+    call_next: Callable[[Request], Any],
+) -> Any:
+    try:
+        return await call_next(request)
+    except Exception:
+        logger.exception("unhandled error request=%s", request.url)
+        raise
+
 
 _ui_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=_ui_dir / "static"), name="static")
@@ -363,9 +379,16 @@ def _erro_veiculo(
 
 
 @app.get("/ui/veiculos")
-def ui_veiculos(request: Request, session: SessionDep, user: UIUser) -> HTMLResponse:
+def ui_veiculos(
+    request: Request, session: SessionDep, user: UIUser, q: str = ""
+) -> HTMLResponse:
+    lista = veiculo.search(session, q) if q else veiculo.list_all(session)
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request, "_linhas_veiculos.html", {"user": user, "veiculos": lista}
+        )
     return templates.TemplateResponse(
-        request, "veiculos.html", {"user": user, "veiculos": veiculo.list_all(session)}
+        request, "veiculos.html", {"user": user, "veiculos": lista, "q": q}
     )
 
 

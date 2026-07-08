@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey, Numeric
+from sqlalchemy import ForeignKey, Numeric, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -108,3 +108,18 @@ def update(session: Session, obj: Veiculo, data: VeiculoUpdate) -> Veiculo:
 
 def delete(session: Session, obj: Veiculo) -> None:
     crud.delete(session, obj)
+
+
+def search(session: Session, term: str) -> list[Veiculo]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Veiculo)
+        .where(
+            or_(
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Veiculo.cor.ilike(pattern),
+            )
+        )
+        .all()
+    )

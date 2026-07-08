@@ -7,6 +7,14 @@
   <button hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">Novo veículo</button>
   {% endif %}
 </header>
+<input type="search" name="q"
+       hx-get="/ui/veiculos"
+       hx-trigger="keyup changed delay:300ms"
+       hx-target="#linhas"
+       hx-swap="outerHTML"
+       placeholder="Buscar por modelo, placa ou cor..."
+       value="{{ q or '' }}"
+       aria-label="Buscar veículos">
 <figure>
 <table>
   <thead><tr>
