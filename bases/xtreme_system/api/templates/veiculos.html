@@ -1,28 +1,65 @@
 {% extends "base.html" %}
+{% import "_macros.html" as ui %}
 {% block titulo %}Veículos{% endblock %}
 {% block content %}
-<header style="display:flex;justify-content:space-between;align-items:center">
-  <h2>Veículos</h2>
-  {% if user.papel == 'admin' %}
-  <button hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">Novo veículo</button>
+{% set disponiveis = veiculos | selectattr("status.value", "equalto", "disponivel") | list %}
+{% set vendidos = veiculos | selectattr("status.value", "equalto", "vendido") | list %}
+{% set valor_estoque = disponiveis | sum(attribute="preco") %}
+
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Veículos</h1>
+    <p class="page-head__subtitle">Gerencie o estoque de veículos da operação</p>
+  </div>
+  {% if user.papel.value == 'admin' %}
+  <button class="btn btn--primary" hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
+    {{ ui.icon("plus") }} Novo veículo
+  </button>
   {% endif %}
-</header>
-<input type="search" name="q"
-       hx-get="/ui/veiculos"
-       hx-trigger="keyup changed delay:300ms"
-       hx-target="#linhas"
-       hx-swap="outerHTML"
-       placeholder="Buscar por modelo, placa ou cor..."
-       value="{{ q or '' }}"
-       aria-label="Buscar veículos">
-<figure>
-<table>
-  <thead><tr>
-    <th>Modelo</th><th>Placa</th><th>Tipo</th><th>Ano</th><th>KM</th>
-    <th>Preço</th><th>Status</th><th>Investidor</th><th>Captação</th>
-    {% if user.papel == 'admin' %}<th></th>{% endif %}
-  </tr></thead>
-  {% include "_linhas_veiculos.html" %}
-</table>
-</figure>
+</div>
+
+<section class="stats" aria-label="Resumo do estoque">
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("vehicles") }} Total no estoque</div>
+    <div class="stat__value cell-num">{{ veiculos | length }}</div>
+    <div class="stat__hint">veículos cadastrados</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("check") }} Disponíveis</div>
+    <div class="stat__value cell-num">{{ disponiveis | length }}</div>
+    <div class="stat__hint">prontos para venda</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("tag") }} Vendidos</div>
+    <div class="stat__value cell-num">{{ vendidos | length }}</div>
+    <div class="stat__hint">baixados do estoque</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("wallet") }} Valor disponível</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(valor_estoque or 0) | replace(",", ".") }}</div>
+    <div class="stat__hint">soma dos disponíveis</div>
+  </article>
+</section>
+
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/veiculos" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por modelo, placa ou cor…"
+           value="{{ q or '' }}" aria-label="Buscar veículos">
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead><tr>
+      <th>Modelo</th><th>Placa</th><th>Tipo</th><th>Ano</th><th>KM</th>
+      <th>Preço</th><th>Status</th><th>Investidor</th><th>Captação</th>
+      {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+    </tr></thead>
+    {% include "_linhas_veiculos.html" %}
+  </table>
+</div>
 {% endblock %}

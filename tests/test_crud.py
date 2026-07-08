@@ -48,7 +48,9 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
     veiculo.update(
         session, criado, veiculo.VeiculoUpdate(status=veiculo.StatusVeiculo.vendido)
     )
-    assert veiculo.get(session, criado.id).status is veiculo.StatusVeiculo.vendido
+    atualizado = veiculo.get(session, criado.id)
+    assert atualizado is not None
+    assert atualizado.status is veiculo.StatusVeiculo.vendido
     assert len(veiculo.list_all(session)) == 1
 
     veiculo.delete(session, criado)

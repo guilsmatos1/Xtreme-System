@@ -8,8 +8,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from xtreme_system.api.core import app, get_session
-from xtreme_system.database.core import Base
+from xtreme_system.api.core import app
+from xtreme_system.database.core import Base, get_session
 from xtreme_system.usuario import core as usuario
 
 

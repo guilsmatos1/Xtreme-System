@@ -1,20 +1,66 @@
 {% extends "base.html" %}
+{% import "_macros.html" as ui %}
 {% block titulo %}Usuários{% endblock %}
 {% block content %}
-<h2>Usuários</h2>
-{% if erro %}<p style="color:var(--pico-del-color)">{{ erro }}</p>{% endif %}
-<form method="post" action="/ui/usuarios" class="grid">
-  <input name="username" placeholder="Usuário" required>
-  <input name="senha" type="password" placeholder="Senha" required>
-  <select name="papel"><option value="leitor">leitor</option><option value="admin">admin</option></select>
-  <button type="submit">Criar</button>
-</form>
-<figure>
-<table>
-  <thead><tr><th>ID</th><th>Usuário</th><th>Papel</th><th>Ativo</th></tr></thead>
-  <tbody>
-  {% for u in usuarios %}<tr><td>{{ u.id }}</td><td>{{ u.username }}</td><td>{{ u.papel.value }}</td><td>{{ 'sim' if u.ativo else 'não' }}</td></tr>{% endfor %}
-  </tbody>
-</table>
-</figure>
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Usuários</h1>
+    <p class="page-head__subtitle">Controle de acesso e papéis da equipe</p>
+  </div>
+</div>
+
+<div class="stack">
+  <section class="card card--pad">
+    <h3 style="margin-bottom:var(--s-4)">Novo usuário</h3>
+    {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+    <form method="post" action="/ui/usuarios">
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">Usuário</span>
+          <input class="input" name="username" placeholder="nome.sobrenome" required autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field__label">Senha</span>
+          <input class="input" name="senha" type="password" placeholder="••••••••" required autocomplete="new-password">
+        </label>
+        <label class="field">
+          <span class="field__label">Papel</span>
+          <select class="select" name="papel">
+            <option value="leitor">Leitor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <div class="field" style="justify-content:flex-end">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }} Criar usuário</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:1%">ID</th><th>Usuário</th><th>Papel</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td class="cell-mono">{{ u.id }}</td>
+          <td class="cell-strong">
+            <span style="display:inline-flex;align-items:center;gap:var(--s-2)">
+              <span class="avatar" style="width:24px;height:24px;font-size:.7rem">{{ u.username[0] | upper }}</span>
+              {{ u.username }}
+            </span>
+          </td>
+          <td>{{ ui.papel_badge(u.papel) }}</td>
+          <td>
+            {% if u.ativo %}<span class="badge badge--success">Ativo</span>
+            {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

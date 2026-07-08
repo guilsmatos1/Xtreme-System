@@ -83,7 +83,7 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.12"
-files = ["bases", "components"]
+files = ["bases", "components", "development", "tests"]
 mypy_path = "bases:components"
 namespace_packages = true
 explicit_package_bases = true

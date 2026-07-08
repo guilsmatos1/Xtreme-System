@@ -4,6 +4,8 @@ import csv
 import re
 from decimal import Decimal, InvalidOperation
 
+from sqlalchemy.orm import Session
+
 from xtreme_system.database.core import SessionLocal
 from xtreme_system.investidor.core import Investidor
 from xtreme_system.meio_captacao.core import MeioCaptacao
@@ -62,9 +64,9 @@ def normalize_meio(raw: str) -> str:
     return raw if raw else "XTREME"
 
 
-def get_or_create_investidor(session, nome: str) -> Investidor:
+def get_or_create_investidor(session: Session, nome: str) -> Investidor:
     existing = session.query(Investidor).filter_by(nome=nome).first()
-    if existing:
+    if existing is not None:
         return existing
     obj = Investidor(nome=nome)
     session.add(obj)
@@ -72,9 +74,9 @@ def get_or_create_investidor(session, nome: str) -> Investidor:
     return obj
 
 
-def get_or_create_meio(session, nome: str) -> MeioCaptacao:
+def get_or_create_meio(session: Session, nome: str) -> MeioCaptacao:
     existing = session.query(MeioCaptacao).filter_by(nome=nome).first()
-    if existing:
+    if existing is not None:
         return existing
     obj = MeioCaptacao(nome=nome)
     session.add(obj)

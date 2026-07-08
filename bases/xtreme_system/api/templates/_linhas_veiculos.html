@@ -1,4 +1,9 @@
+{% import "_macros.html" as ui %}
 <tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
-{% for v in veiculos %}{% include "_row_veiculo.html" %}{% endfor %}
+{% for v in veiculos %}{% include "_row_veiculo.html" %}{% else %}
+<tr class="empty-row"><td colspan="10">
+  {% call ui.empty("inbox", "Nenhum veículo encontrado", "Ajuste a busca ou cadastre um novo veículo para começar.") %}{% endcall %}
+</td></tr>
+{% endfor %}
 </tbody>
-{% if msg %}<div id="msg" role="alert" hx-swap-oob="true"><small>{{ msg }}</small></div>{% endif %}
+{% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}

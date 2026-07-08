@@ -1,27 +1,107 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titulo %}Xtreme Estoque{% endblock %}</title>
-  <link rel="stylesheet" href="/static/pico.min.css">
-  <script src="/static/htmx.min.js"></script>
+  <meta name="color-scheme" content="light dark">
+  <title>{% block titulo %}Xtreme Estoque{% endblock %} · Xtreme</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+  <script>
+    // Theme: restore before paint to avoid flash.
+    (function () {
+      var t = localStorage.getItem("theme");
+      if (t) document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
 </head>
+{% import "_macros.html" as ui %}
+{% set path = request.url.path if request else "" %}
 <body>
-  <nav class="container">
-    <ul><li><strong>Xtreme Estoque</strong></li></ul>
-    <ul>
-      <li><a href="/ui/veiculos">Veículos</a></li>
-      <li><a href="/ui/investidores">Investidores</a></li>
-      <li><a href="/ui/meios-captacao">Meios</a></li>
-      {% if user.papel == 'admin' %}<li><a href="/ui/usuarios">Usuários</a></li>{% endif %}
-      <li><form method="post" action="/ui/logout"><button class="secondary outline">Sair</button></form></li>
-    </ul>
-  </nav>
-  <main class="container">
-    <div id="msg" role="alert"></div>
-    {% block content %}{% endblock %}
-  </main>
+  <div class="app">
+    <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
+
+    <aside class="sidebar" aria-label="Navegação principal">
+      <div class="sidebar__brand">
+        <span class="sidebar__logo">{{ ui.icon("vehicles") }}</span>
+        <span>Xtreme Estoque</span>
+      </div>
+
+      <div class="sidebar__section">Gestão</div>
+      <nav class="nav">
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/veiculos') }}" href="/ui/veiculos">
+          {{ ui.icon("vehicles") }} Veículos
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
+          {{ ui.icon("wallet") }} Investidores
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/meios-captacao') }}" href="/ui/meios-captacao">
+          {{ ui.icon("megaphone") }} Meios de captação
+        </a>
+        {% if user and user.papel.value == 'admin' %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/usuarios') }}" href="/ui/usuarios">
+          {{ ui.icon("users") }} Usuários
+        </a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar__footer">
+        <button class="btn btn--ghost btn--sm" type="button" onclick="toggleTheme()" aria-label="Alternar tema">
+          {{ ui.icon("sun") }} <span>Tema</span>
+        </button>
+        <div class="sidebar__user">
+          <span class="avatar">{{ (user.username[0] | upper) if user else '?' }}</span>
+          <div class="sidebar__user-meta">
+            <b>{{ user.username if user else '' }}</b>
+            <span>{{ user.papel.value if user else '' }}</span>
+          </div>
+          <form method="post" action="/ui/logout" style="margin-left:auto">
+            <button class="icon-btn" type="submit" aria-label="Sair" title="Sair">{{ ui.icon("logout") }}</button>
+          </form>
+        </div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <div class="topbar__brand">
+          <span class="sidebar__logo" style="width:26px;height:26px">{{ ui.icon("vehicles") }}</span>
+          Xtreme Estoque
+        </div>
+        <button class="icon-btn" type="button" aria-label="Abrir menu"
+                onclick="document.body.classList.toggle('nav-open')">{{ ui.icon("menu") }}</button>
+      </header>
+
+      <main class="content__inner">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <div id="msg" role="status" aria-live="polite"></div>
   <div id="modal"></div>
+
+  <script>
+    function toggleTheme() {
+      var el = document.documentElement;
+      var cur = el.getAttribute("data-theme")
+        || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      var next = cur === "dark" ? "light" : "dark";
+      el.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+    }
+    // Close mobile drawer after navigating.
+    document.addEventListener("click", function (e) {
+      if (e.target.closest(".nav__link")) document.body.classList.remove("nav-open");
+    });
+    // Auto-dismiss the toast (#msg) a few seconds after it receives content.
+    (function () {
+      var msg = document.getElementById("msg"), t;
+      new MutationObserver(function () {
+        clearTimeout(t);
+        if (msg.children.length) t = setTimeout(function () { msg.innerHTML = ""; }, 3500);
+      }).observe(msg, { childList: true });
+    })();
+  </script>
 </body>
 </html>

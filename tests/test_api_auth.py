@@ -8,8 +8,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from xtreme_system.api.core import app, get_session
-from xtreme_system.database.core import Base
+from xtreme_system.api.core import app
+from xtreme_system.database.core import Base, get_session
 from xtreme_system.usuario import core as usuario
 
 
@@ -49,7 +49,7 @@ def client() -> Iterator[TestClient]:
 def _token(client: TestClient, username: str) -> str:
     resp = client.post("/login", data={"username": username, "password": "senha"})
     assert resp.status_code == 200
-    return resp.json()["access_token"]
+    return str(resp.json()["access_token"])
 
 
 def test_login_senha_errada(client: TestClient) -> None:

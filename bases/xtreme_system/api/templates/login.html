@@ -1,22 +1,40 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entrar — Xtreme Estoque</title>
-  <link rel="stylesheet" href="/static/pico.min.css">
+  <meta name="color-scheme" content="light dark">
+  <title>Entrar · Xtreme Estoque</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script>(function(){var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t);})();</script>
 </head>
+{% import "_macros.html" as ui %}
 <body>
-<main class="container">
-  <article style="max-width:24rem;margin:4rem auto">
-    <header><strong>Xtreme Estoque</strong></header>
-    {% if erro %}<p style="color:var(--pico-del-color)">{{ erro }}</p>{% endif %}
-    <form method="post" action="/ui/login">
-      <input name="username" placeholder="Usuário" required autofocus>
-      <input name="password" type="password" placeholder="Senha" required>
-      <button type="submit">Entrar</button>
-    </form>
-  </article>
-</main>
+  <main class="auth">
+    <article class="card card--pad auth__card">
+      <div class="auth__brand">
+        <span class="sidebar__logo">{{ ui.icon("vehicles") }}</span>
+        <b>Xtreme Estoque</b>
+      </div>
+      <div class="auth__title">
+        <h1>Bem-vindo de volta</h1>
+        <p>Entre com suas credenciais para continuar</p>
+      </div>
+
+      {% if erro %}{{ ui.alert(erro) }}{% endif %}
+
+      <form method="post" action="/ui/login">
+        <label class="field">
+          <span class="field__label">Usuário</span>
+          <input class="input" name="username" placeholder="seu.usuario" required autofocus autocomplete="username">
+        </label>
+        <label class="field">
+          <span class="field__label">Senha</span>
+          <input class="input" name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
+        </label>
+        <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+      </form>
+    </article>
+  </main>
 </body>
 </html>
