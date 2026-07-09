@@ -1,0 +1,9 @@
+# Changes here will be overwritten by Copier
+_commit: e9ad7f8
+_src_path: /Users/guilsmatos/orca/projects/python-template
+db_name: xtreme
+first_project: inventory_api
+project_description: Extreme system tooling and experiments.
+project_name: Xtreme System
+project_slug: xtreme-system
+python_namespace: xtreme_system

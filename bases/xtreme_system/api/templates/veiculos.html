@@ -11,11 +11,16 @@
     <h1>Veículos</h1>
     <p class="page-head__subtitle">Gerencie o estoque de veículos da operação</p>
   </div>
-  {% if user.papel.value == 'admin' %}
-  <button class="btn btn--primary" hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
-    {{ ui.icon("plus") }} Novo veículo
-  </button>
-  {% endif %}
+  <div style="display:flex;gap:var(--s-3);flex-wrap:wrap">
+    <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}">
+      {{ ui.icon("inbox") }} Exportar dados
+    </a>
+    {% if user.papel.value == 'admin' %}
+    <button class="btn btn--primary" hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo veículo
+    </button>
+    {% endif %}
+  </div>
 </div>
 
 <section class="stats" aria-label="Resumo do estoque">

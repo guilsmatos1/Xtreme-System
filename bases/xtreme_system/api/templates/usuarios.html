@@ -7,6 +7,9 @@
     <h1>Usuários</h1>
     <p class="page-head__subtitle">Controle de acesso e papéis da equipe</p>
   </div>
+  <a class="btn btn--ghost" href="/ui/usuarios/exportar">
+    {{ ui.icon("inbox") }} Exportar dados
+  </a>
 </div>
 
 <div class="stack">
@@ -40,7 +43,7 @@
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th style="width:1%">ID</th><th>Usuário</th><th>Papel</th><th>Status</th>
+        <th style="width:1%">ID</th><th>Usuário</th><th>Papel</th><th>Status</th><th style="width:1%"></th>
       </tr></thead>
       <tbody>
         {% for u in usuarios %}
@@ -56,6 +59,24 @@
           <td>
             {% if u.ativo %}<span class="badge badge--success">Ativo</span>
             {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:var(--s-2)">
+              <button class="btn btn--ghost" style="padding:var(--s-2)"
+                      hx-get="/ui/usuarios/{{ u.id }}/senha"
+                      hx-target="#senha-form-{{ u.id }}"
+                      title="Alterar senha">
+                {{ ui.icon("edit") }}
+              </button>
+              <button class="btn btn--ghost" style="padding:var(--s-2);color:var(--red-6)"
+                      hx-post="/ui/usuarios/{{ u.id }}/excluir"
+                      hx-confirm="Excluir {{ u.username }}?"
+                      hx-target="body"
+                      title="Excluir usuário">
+                {{ ui.icon("trash") }}
+              </button>
+            </div>
+            <div id="senha-form-{{ u.id }}"></div>
           </td>
         </tr>
         {% endfor %}

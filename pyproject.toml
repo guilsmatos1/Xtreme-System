@@ -68,6 +68,7 @@ select = [
     "RET",
     "RUF",
     "SIM",
+    "T10",
     "UP",
     "W",
 ]
@@ -90,6 +91,7 @@ explicit_package_bases = true
 strict = true
 warn_unreachable = true
 warn_unused_configs = true
+plugins = ["pydantic.mypy"]
 
 [tool.vulture]
 paths = ["src", "tests", "bases", "components", "development", "projects"]

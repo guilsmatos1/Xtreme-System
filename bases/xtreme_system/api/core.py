@@ -1,5 +1,7 @@
 """API FastAPI: CRUD de investidores, meios de captação e veículos."""
 
+import csv
+import io
 import logging
 import uuid
 from collections.abc import Callable
@@ -20,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.auth import core as auth
+from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.meio_captacao import core as meio_captacao
@@ -155,6 +158,27 @@ def listar_usuarios(session: SessionDep, _: AdminUser) -> list[usuario.Usuario]:
     return usuario.list_all(session)
 
 
+@app.delete("/usuarios/{user_id}", status_code=204)
+def deletar_usuario(
+    user_id: int, session: SessionDep, current: CurrentUser, _: AdminUser
+) -> None:
+    if user_id == current.id:
+        raise HTTPException(status_code=400, detail="não pode excluir a si mesmo")
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    usuario.delete(session, obj)
+
+
+@app.post("/usuarios/{user_id}/senha", status_code=204)
+def trocar_senha_usuario(
+    user_id: int,
+    session: SessionDep,
+    _: AdminUser,
+    nova_senha: Annotated[str, Form()],
+) -> None:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    usuario.change_password(session, obj, nova_senha)
+
+
 # ---- CRUD genérico ----
 
 
@@ -171,6 +195,12 @@ def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
         raise HTTPException(status_code=400, detail="investidor_id inexistente")
     if meio_valid:
         raise HTTPException(status_code=400, detail="meio_captacao_id inexistente")
+    if (
+        not update
+        and hasattr(data, "placa")
+        and veiculo.get_by_placa(session, data.placa)
+    ):
+        raise HTTPException(status_code=400, detail="placa já cadastrada")
 
 
 def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -> Any:
@@ -179,6 +209,18 @@ def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail=conflict_msg) from None
+
+
+def _csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def register_crud_routes(
@@ -192,6 +234,9 @@ def register_crud_routes(
     update_schema: type,
     before_create: Callable[[Session, Any], None] | None = None,
     before_update: Callable[[Session, Any, Any], None] | None = None,
+    before_delete: Callable[[Session, Any], None] | None = None,
+    after_create: Callable[[Session, Any], Any] | None = None,
+    after_update: Callable[[Session, Any], Any] | None = None,
     handle_delete_error: bool = True,
 ) -> None:
     @app.get(prefix, response_model=list[read_schema])  # type: ignore[valid-type]
@@ -206,11 +251,14 @@ def register_crud_routes(
     def _create(data: create_schema, session: SessionDep, _: AdminUser) -> Any:  # type: ignore[valid-type]
         if before_create:
             before_create(session, data)
-        return _safe_write(
+        obj = _safe_write(
             session,
             lambda: module.create(session, data),
             conflict_msg=f"{label} já existe",
         )
+        if after_create:
+            after_create(session, obj)
+        return obj
 
     @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
     def _update(
@@ -222,15 +270,20 @@ def register_crud_routes(
         obj = _found(module.get(session, item_id), label)
         if before_update:
             before_update(session, obj, data)
-        return _safe_write(
+        obj = _safe_write(
             session,
             lambda: module.update(session, obj, data),
             conflict_msg=f"{label} já existe",
         )
+        if after_update:
+            after_update(session, obj)
+        return obj
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, _: AdminUser) -> None:
         obj = _found(module.get(session, item_id), label)
+        if before_delete:
+            before_delete(session, obj)
         if handle_delete_error:
             try:
                 module.delete(session, obj)
@@ -278,8 +331,39 @@ register_crud_routes(
     create_schema=veiculo.VeiculoCreate,
     update_schema=veiculo.VeiculoUpdate,
     before_create=partial(_validate_fks),
-    before_update=partial(_validate_fks, update=True),
+    before_update=lambda session, _obj, data: _validate_fks(session, data, update=True),
+    after_create=caixa.criar_lancamento_veiculo,
+    after_update=caixa.sincronizar_lancamento_veiculo,
     handle_delete_error=False,
+)
+
+# ---- Caixa dos investidores ----
+
+
+def _validate_investidor_lancamento(session: Session, data: Any) -> None:
+    if investidor.get(session, data.investidor_id) is None:
+        raise HTTPException(status_code=400, detail="investidor_id inexistente")
+
+
+def _guard_lancamento_veiculo(_session: Session, obj: Any, _data: Any = None) -> None:
+    if obj.origem == caixa.OrigemLancamento.veiculo:
+        raise HTTPException(
+            status_code=400,
+            detail="Lançamento de veículo só pode ser alterado na tela de Veículos",
+        )
+
+
+register_crud_routes(
+    app,
+    caixa,
+    "/lancamentos-caixa",
+    "Lançamento de caixa",
+    read_schema=caixa.LancamentoCaixaRead,
+    create_schema=caixa.LancamentoCaixaCreate,
+    update_schema=caixa.LancamentoCaixaUpdate,
+    before_create=_validate_investidor_lancamento,
+    before_update=_guard_lancamento_veiculo,
+    before_delete=_guard_lancamento_veiculo,
 )
 
 
@@ -442,6 +526,41 @@ def ui_veiculos(
     )
 
 
+@app.get("/ui/veiculos/exportar")
+def ui_veiculos_exportar(session: SessionDep, _: UIUser, q: str = "") -> Response:
+    lista = veiculo.search(session, q) if q else veiculo.list_all(session)
+    return _csv_response(
+        "veiculos.csv",
+        [
+            "ID",
+            "Modelo",
+            "Placa",
+            "Tipo",
+            "Ano",
+            "KM",
+            "Preco",
+            "Status",
+            "Investidor",
+            "Captacao",
+        ],
+        [
+            [
+                v.id,
+                v.modelo,
+                v.placa,
+                v.tipo.value,
+                v.ano,
+                v.km,
+                f"{v.preco:.2f}",
+                v.status.value,
+                v.investidor.nome,
+                v.meio_captacao.nome,
+            ]
+            for v in lista
+        ],
+    )
+
+
 @app.get("/ui/veiculos/novo")
 def ui_veiculo_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -469,7 +588,8 @@ async def ui_veiculo_criar(
         _validate_fks(session, data)
     except (ValidationError, HTTPException) as exc:
         return _erro_veiculo(request, session, exc, None)
-    veiculo.create(session, data)
+    novo = veiculo.create(session, data)
+    caixa.criar_lancamento_veiculo(session, novo)
     return _ok_veiculos(request, session, user)
 
 
@@ -484,7 +604,8 @@ async def ui_veiculo_atualizar(
         _validate_fks(session, data, update=True)
     except (ValidationError, HTTPException) as exc:
         return _erro_veiculo(request, session, exc, obj)
-    veiculo.update(session, obj, data)
+    atualizado = veiculo.update(session, obj, data)
+    caixa.sincronizar_lancamento_veiculo(session, atualizado)
     return _ok_veiculos(request, session, user)
 
 
@@ -501,6 +622,178 @@ def ui_veiculo_excluir(
     )
 
 
+# ---- Caixa dos investidores (UI) ----
+
+
+def _ctx_lancamentos(session: Session, investidor_id: int) -> dict[str, Any]:
+    return {
+        "investidor": _found(investidor.get(session, investidor_id), "Investidor"),
+        "lancamentos": caixa.list_by_investidor(session, investidor_id),
+        "saldo": caixa.saldo(session, investidor_id),
+    }
+
+
+def _ok_lancamentos(
+    request: Request, session: Session, user: usuario.Usuario, investidor_id: int
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "_lancamentos_ok.html",
+        {"user": user, **_ctx_lancamentos(session, investidor_id)},
+    )
+
+
+def _erro_lancamento(
+    request: Request,
+    investidor_id: int,
+    exc: ValidationError | HTTPException,
+    obj: caixa.LancamentoCaixa | None,
+) -> HTMLResponse:
+    erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+    return templates.TemplateResponse(
+        request,
+        "_form_lancamento.html",
+        {
+            "investidor_id": investidor_id,
+            "lancamento": obj,
+            "tipos": list(caixa.TipoLancamento),
+            "erro": erro,
+        },
+        status_code=400,
+    )
+
+
+@app.get("/ui/caixa")
+def ui_caixa(request: Request, session: SessionDep, user: UIUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "caixa.html",
+        {
+            "user": user,
+            "investidores": investidor.list_all(session),
+            "saldos": caixa.saldos(session),
+        },
+    )
+
+
+@app.get("/ui/caixa/{investidor_id}")
+def ui_caixa_investidor(
+    investidor_id: int, request: Request, session: SessionDep, user: UIUser
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "caixa_investidor.html",
+        {
+            "user": user,
+            "investidor_id": investidor_id,
+            **_ctx_lancamentos(session, investidor_id),
+        },
+    )
+
+
+@app.get("/ui/caixa/{investidor_id}/novo")
+def ui_lancamento_novo(
+    investidor_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    _found(investidor.get(session, investidor_id), "Investidor")
+    return templates.TemplateResponse(
+        request,
+        "_form_lancamento.html",
+        {
+            "investidor_id": investidor_id,
+            "lancamento": None,
+            "tipos": list(caixa.TipoLancamento),
+        },
+    )
+
+
+@app.get("/ui/caixa/{investidor_id}/{lancamento_id}/editar")
+def ui_lancamento_editar(
+    investidor_id: int,
+    lancamento_id: int,
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+) -> HTMLResponse:
+    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    if obj.origem == caixa.OrigemLancamento.veiculo:
+        raise HTTPException(
+            status_code=403, detail="Editável apenas na tela de Veículos"
+        )
+    return templates.TemplateResponse(
+        request,
+        "_form_lancamento.html",
+        {
+            "investidor_id": investidor_id,
+            "lancamento": obj,
+            "tipos": list(caixa.TipoLancamento),
+        },
+    )
+
+
+@app.post("/ui/caixa/{investidor_id}")
+async def ui_lancamento_criar(
+    investidor_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    _found(investidor.get(session, investidor_id), "Investidor")
+    form = await request.form()
+    try:
+        data = caixa.LancamentoCaixaCreate.model_validate(
+            {**dict(form), "investidor_id": investidor_id}
+        )
+    except ValidationError as exc:
+        return _erro_lancamento(request, investidor_id, exc, None)
+    caixa.create(session, data)
+    return _ok_lancamentos(request, session, user, investidor_id)
+
+
+@app.post("/ui/caixa/{investidor_id}/{lancamento_id}")
+async def ui_lancamento_atualizar(
+    investidor_id: int,
+    lancamento_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+) -> HTMLResponse:
+    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    if obj.origem == caixa.OrigemLancamento.veiculo:
+        raise HTTPException(
+            status_code=403, detail="Editável apenas na tela de Veículos"
+        )
+    form = await request.form()
+    try:
+        data = caixa.LancamentoCaixaUpdate.model_validate(dict(form))
+    except ValidationError as exc:
+        return _erro_lancamento(request, investidor_id, exc, obj)
+    caixa.update(session, obj, data)
+    return _ok_lancamentos(request, session, user, investidor_id)
+
+
+@app.post("/ui/caixa/{investidor_id}/{lancamento_id}/excluir")
+def ui_lancamento_excluir(
+    investidor_id: int,
+    lancamento_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+) -> HTMLResponse:
+    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    if obj.origem == caixa.OrigemLancamento.veiculo:
+        raise HTTPException(
+            status_code=403, detail="Exclusão apenas na tela de Veículos"
+        )
+    caixa.delete(session, obj)
+    return templates.TemplateResponse(
+        request,
+        "_linhas_lancamentos.html",
+        {
+            "user": user,
+            "investidor_id": investidor_id,
+            **_ctx_lancamentos(session, investidor_id),
+        },
+    )
+
+
 # ---- Usuários (UI, admin) ----
 
 
@@ -508,6 +801,19 @@ def ui_veiculo_excluir(
 def ui_usuarios(request: Request, session: SessionDep, user: UIAdmin) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "usuarios.html", {"user": user, "usuarios": usuario.list_all(session)}
+    )
+
+
+@app.get("/ui/usuarios/exportar")
+def ui_usuarios_exportar(session: SessionDep, _: UIAdmin) -> Response:
+    usuarios = usuario.list_all(session)
+    return _csv_response(
+        "usuarios.csv",
+        ["ID", "Usuario", "Papel", "Ativo"],
+        [
+            [u.id, u.username, u.papel.value, "sim" if u.ativo else "nao"]
+            for u in usuarios
+        ],
     )
 
 
@@ -535,11 +841,65 @@ def ui_usuario_criar(
     )
 
 
+@app.post("/ui/usuarios/{user_id}/excluir")
+def ui_usuario_excluir(
+    user_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    if user_id == user.id:
+        return templates.TemplateResponse(
+            request,
+            "usuarios.html",
+            {
+                "user": user,
+                "usuarios": usuario.list_all(session),
+                "erro": "não pode excluir a si mesmo",
+            },
+            status_code=400,
+        )
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    usuario.delete(session, obj)
+    return templates.TemplateResponse(
+        request,
+        "usuarios.html",
+        {"user": user, "usuarios": usuario.list_all(session)},
+    )
+
+
+@app.get("/ui/usuarios/{user_id}/senha")
+def ui_usuario_senha_form(
+    user_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    return templates.TemplateResponse(request, "_form_senha.html", {"usuario": obj})
+
+
+@app.post("/ui/usuarios/{user_id}/senha")
+def ui_usuario_senha_alterar(
+    user_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    nova_senha: Annotated[str, Form()],
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    usuario.change_password(session, obj, nova_senha)
+    return templates.TemplateResponse(
+        request,
+        "usuarios.html",
+        {"user": user, "usuarios": usuario.list_all(session)},
+    )
+
+
 # ---- Investidores / Meios de captação (UI, mesmo padrão) ----
 
 
 def register_ui_simples(
-    ui_prefix: str, titulo: str, module: Any, create_schema: type, update_schema: type
+    ui_prefix: str,
+    titulo: str,
+    module: Any,
+    create_schema: type,
+    update_schema: type,
+    export_filename: str,
 ) -> None:
     def _ctx(user: usuario.Usuario, session: Session, **extra: Any) -> dict[str, Any]:
         return {
@@ -559,6 +919,15 @@ def register_ui_simples(
     @app.get(ui_prefix)
     def _lista(request: Request, session: SessionDep, user: UIUser) -> HTMLResponse:
         return templates.TemplateResponse(request, "simples.html", _ctx(user, session))
+
+    @app.get(f"{ui_prefix}/exportar")
+    def _exportar(session: SessionDep, _: UIUser) -> Response:
+        itens = module.list_all(session)
+        return _csv_response(
+            export_filename,
+            ["ID", "Nome"],
+            [[item.id, item.nome] for item in itens],
+        )
 
     @app.get(f"{ui_prefix}/novo")
     def _novo(request: Request, _: UIAdmin) -> HTMLResponse:
@@ -648,6 +1017,7 @@ register_ui_simples(
     investidor,
     investidor.InvestidorCreate,
     investidor.InvestidorUpdate,
+    "investidores.csv",
 )
 register_ui_simples(
     "/ui/meios-captacao",
@@ -655,4 +1025,5 @@ register_ui_simples(
     meio_captacao,
     meio_captacao.MeioCaptacaoCreate,
     meio_captacao.MeioCaptacaoUpdate,
+    "meios-captacao.csv",
 )

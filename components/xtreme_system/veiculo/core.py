@@ -110,6 +110,10 @@ def delete(session: Session, obj: Veiculo) -> None:
     crud.delete(session, obj)
 
 
+def get_by_placa(session: Session, placa: str) -> Veiculo | None:
+    return session.query(Veiculo).filter_by(placa=placa).one_or_none()
+
+
 def search(session: Session, term: str) -> list[Veiculo]:
     pattern = f"%{term}%"
     return list(

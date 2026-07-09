@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Caixa{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Caixa dos investidores</h1>
+    <p class="page-head__subtitle">Aportes, custos e saldo por investidor</p>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead><tr><th>Investidor</th><th>Saldo</th><th class="col-actions"><span class="sr-only">Ações</span></th></tr></thead>
+    <tbody>
+    {% for i in investidores %}
+    {% set saldo = saldos.get(i.id, 0) %}
+    <tr>
+      <td class="cell-strong">{{ i.nome }}</td>
+      <td class="cell-num" style="{{ 'color:var(--danger)' if saldo < 0 }}">R$ {{ "{:,.2f}".format(saldo) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+      <td class="col-actions">
+        <a class="btn btn--ghost btn--sm" href="/ui/caixa/{{ i.id }}">{{ ui.icon("cash") }} Ver lançamentos</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr class="empty-row"><td colspan="3">
+      {% call ui.empty("inbox", "Nenhum investidor cadastrado", "Cadastre um investidor para abrir o caixa dele.") %}{% endcall %}
+    </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

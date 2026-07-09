@@ -33,6 +33,7 @@ packages = ["xtreme_system"]
 "../../components/xtreme_system/auth" = "xtreme_system/auth"
 "../../components/xtreme_system/usuario" = "xtreme_system/usuario"
 "../../components/xtreme_system/database" = "xtreme_system/database"
+"../../components/xtreme_system/caixa" = "xtreme_system/caixa"
 "../../components/xtreme_system/investidor" = "xtreme_system/investidor"
 "../../components/xtreme_system/meio_captacao" = "xtreme_system/meio_captacao"
 "../../components/xtreme_system/veiculo" = "xtreme_system/veiculo"

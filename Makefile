@@ -1,4 +1,4 @@
-.PHONY: help hooks format lint mypy-strict test watch coverage ci pre-commit migrate revision run
+.PHONY: help hooks format lint test watch coverage ci pre-commit migrate revision run db-up db-down
 
 PYTHON := uv run python
 
@@ -8,7 +8,6 @@ help:
 		'  make hooks       Install pre-commit hooks' \
 		'  make format      Format Python files with ruff' \
 		'  make lint        Run ruff, xenon, vulture, and mypy' \
-		'  make mypy-strict Run strict mypy on the xtreme_system package' \
 		'  make test        Run pytest' \
 		'  make watch       Rerun pytest when Python files change' \
 		'  make coverage    Run pytest with coverage and fail under 75%' \
@@ -16,7 +15,9 @@ help:
 		'  make pre-commit  Run all pre-commit hooks' \
 		'  make migrate     Apply alembic migrations (upgrade head)' \
 		'  make revision m="msg"  Autogenerate an alembic migration' \
-		'  make run         Run the API with uvicorn --reload'
+		'  make run         Run the API with uvicorn' \
+		'  make db-up       Start the local Postgres container' \
+		'  make db-down     Stop the local Postgres container'
 
 hooks:
 	uv run pre-commit install
@@ -30,9 +31,6 @@ lint:
 	uv run xenon src bases components development projects
 	uv run vulture
 	uv run mypy
-
-mypy-strict:
-	uv run mypy --strict src/xtreme_system
 
 test:
 	$(PYTHON) -m pytest tests/ -q
@@ -55,4 +53,10 @@ revision:
 	uv run alembic revision --autogenerate -m "$(m)"
 
 run:
-	uv run uvicorn xtreme_system.api.core:app --reload
+	uv run uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000
+
+db-up:
+	docker compose up -d
+
+db-down:
+	docker compose down

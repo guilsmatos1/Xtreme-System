@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.auth.core import hash_password
+from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 
 
@@ -57,3 +58,16 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
     session.commit()
     session.refresh(obj)
     return obj
+
+
+def get(session: Session, usuario_id: int) -> Usuario | None:
+    return crud.get(session, Usuario, usuario_id)
+
+
+def delete(session: Session, obj: Usuario) -> None:
+    crud.delete(session, obj)
+
+
+def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
+    obj.senha_hash = hash_password(nova_senha)
+    session.commit()

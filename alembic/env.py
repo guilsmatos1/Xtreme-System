@@ -16,6 +16,7 @@ if config.config_file_name is not None:
 
 # Importa a Base e todos os models para popular a metadata (autogenerate).
 from xtreme_system.database.core import Base, get_settings
+from xtreme_system.caixa import core as _caixa  # noqa: F401
 from xtreme_system.investidor import core as _investidor  # noqa: F401
 from xtreme_system.meio_captacao import core as _meio_captacao  # noqa: F401
 from xtreme_system.usuario import core as _usuario  # noqa: F401
