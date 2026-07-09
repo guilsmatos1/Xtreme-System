@@ -1,0 +1,23 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+{% for item in itens %}
+<tr id="item-{{ item.id }}">
+  <td class="cell-strong">{{ item.nome }}</td>
+  <td class="cell-num">R$ {{ "{:,.2f}".format(total_aportado.get(item.id, 0)) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  {% if user.papel.value == 'admin' %}
+  <td class="col-actions">
+    <div class="row-actions">
+      <button class="btn btn--ghost btn--sm" hx-get="/ui/investidores/{{ item.id }}/historico" hx-target="#modal" hx-swap="innerHTML" aria-label="Histórico de {{ item.nome }}">{{ ui.icon("cash") }}</button>
+      <button class="btn btn--ghost btn--sm" hx-get="{{ prefixo }}/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger" hx-post="{{ prefixo }}/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
+    </div>
+  </td>
+  {% endif %}
+</tr>
+{% else %}
+<tr class="empty-row"><td colspan="3">
+  {% call ui.empty("inbox", "Nada por aqui ainda", "Cadastre o primeiro registro para começar.") %}{% endcall %}
+</td></tr>
+{% endfor %}
+</tbody>
+{% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}

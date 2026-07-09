@@ -371,9 +371,9 @@ register_crud_routes(
     caixa,
     "/lancamentos-caixa",
     "Lançamento de caixa",
-    read_schema=caixa.LancamentoCaixaRead,
-    create_schema=caixa.LancamentoCaixaCreate,
-    update_schema=caixa.LancamentoCaixaUpdate,
+    read_schema=caixa.LancamentoInvestimentoRead,
+    create_schema=caixa.LancamentoInvestimentoCreate,
+    update_schema=caixa.LancamentoInvestimentoUpdate,
     before_create=_validate_investidor_lancamento,
     before_update=_guard_lancamento_veiculo,
     before_delete=_guard_lancamento_veiculo,
@@ -1080,7 +1080,7 @@ def _erro_lancamento(
     request: Request,
     investidor_id: int,
     exc: ValidationError | HTTPException,
-    obj: caixa.LancamentoCaixa | None,
+    obj: caixa.LancamentoInvestimento | None,
 ) -> HTMLResponse:
     erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
     return templates.TemplateResponse(
@@ -1277,7 +1277,7 @@ async def ui_lancamento_criar(
     _found(investidor.get(session, investidor_id), "Investidor")
     form = await request.form()
     try:
-        data = caixa.LancamentoCaixaCreate.model_validate(
+        data = caixa.LancamentoInvestimentoCreate.model_validate(
             {**dict(form), "investidor_id": investidor_id}
         )
     except ValidationError as exc:
@@ -1301,7 +1301,7 @@ async def ui_lancamento_atualizar(
         )
     form = await request.form()
     try:
-        data = caixa.LancamentoCaixaUpdate.model_validate(dict(form))
+        data = caixa.LancamentoInvestimentoUpdate.model_validate(dict(form))
     except ValidationError as exc:
         return _erro_lancamento(request, investidor_id, exc, obj)
     caixa.update(session, obj, data)

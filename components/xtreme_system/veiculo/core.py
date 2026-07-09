@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey, Numeric, or_
@@ -11,6 +12,10 @@ from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.investidor.core import Investidor, InvestidorRead
 from xtreme_system.meio_captacao.core import MeioCaptacao, MeioCaptacaoRead
+
+if TYPE_CHECKING:
+    from xtreme_system.documento_veiculo.core import DocumentoVeiculo
+    from xtreme_system.imagem_veiculo.core import ImagemVeiculo
 
 
 class TipoVeiculo(StrEnum):
@@ -44,6 +49,10 @@ class Veiculo(Base):
 
     investidor: Mapped[Investidor] = relationship(lazy="joined")
     meio_captacao: Mapped[MeioCaptacao] = relationship(lazy="joined")
+    imagens: Mapped[list["ImagemVeiculo"]] = relationship(cascade="all, delete-orphan")
+    documentos: Mapped[list["DocumentoVeiculo"]] = relationship(
+        cascade="all, delete-orphan"
+    )
 
 
 class VeiculoCreate(BaseModel):

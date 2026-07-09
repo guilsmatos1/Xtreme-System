@@ -23,8 +23,8 @@ class OrigemLancamento(StrEnum):
     veiculo = "veiculo"
 
 
-class LancamentoCaixa(Base):
-    __tablename__ = "lancamento_caixa"
+class LancamentoInvestimento(Base):
+    __tablename__ = "lancamento_investimento"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
@@ -38,20 +38,20 @@ class LancamentoCaixa(Base):
     criado_em: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
-class LancamentoCaixaCreate(BaseModel):
+class LancamentoInvestimentoCreate(BaseModel):
     investidor_id: int
     tipo: TipoLancamento
     valor: Decimal = Field(gt=0)
     descricao: str
 
 
-class LancamentoCaixaUpdate(BaseModel):
+class LancamentoInvestimentoUpdate(BaseModel):
     tipo: TipoLancamento | None = None
     valor: Decimal | None = Field(default=None, gt=0)
     descricao: str | None = None
 
 
-class LancamentoCaixaRead(BaseModel):
+class LancamentoInvestimentoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -64,41 +64,48 @@ class LancamentoCaixaRead(BaseModel):
     criado_em: datetime
 
 
-def list_all(session: Session) -> list[LancamentoCaixa]:
-    return crud.list_all(session, LancamentoCaixa)
+def list_all(session: Session) -> list[LancamentoInvestimento]:
+    return crud.list_all(session, LancamentoInvestimento)
 
 
-def get(session: Session, lancamento_id: int) -> LancamentoCaixa | None:
-    return crud.get(session, LancamentoCaixa, lancamento_id)
+def get(session: Session, lancamento_id: int) -> LancamentoInvestimento | None:
+    return crud.get(session, LancamentoInvestimento, lancamento_id)
 
 
-def create(session: Session, data: LancamentoCaixaCreate) -> LancamentoCaixa:
-    return crud.create(session, LancamentoCaixa, data)
+def create(
+    session: Session, data: LancamentoInvestimentoCreate
+) -> LancamentoInvestimento:
+    return crud.create(session, LancamentoInvestimento, data)
 
 
 def update(
-    session: Session, obj: LancamentoCaixa, data: LancamentoCaixaUpdate
-) -> LancamentoCaixa:
+    session: Session, obj: LancamentoInvestimento, data: LancamentoInvestimentoUpdate
+) -> LancamentoInvestimento:
     return crud.update(session, obj, data)
 
 
-def delete(session: Session, obj: LancamentoCaixa) -> None:
+def delete(session: Session, obj: LancamentoInvestimento) -> None:
     crud.delete(session, obj)
 
 
-def list_by_investidor(session: Session, investidor_id: int) -> list[LancamentoCaixa]:
+def list_by_investidor(
+    session: Session, investidor_id: int
+) -> list[LancamentoInvestimento]:
     return list(
-        session.query(LancamentoCaixa)
+        session.query(LancamentoInvestimento)
         .filter_by(investidor_id=investidor_id)
-        .order_by(LancamentoCaixa.id)
+        .order_by(LancamentoInvestimento.id)
         .all()
     )
 
 
 _SALDO_EXPR = func.sum(
     case(
-        (LancamentoCaixa.tipo == TipoLancamento.aporte, LancamentoCaixa.valor),
-        else_=-LancamentoCaixa.valor,
+        (
+            LancamentoInvestimento.tipo == TipoLancamento.aporte,
+            LancamentoInvestimento.valor,
+        ),
+        else_=-LancamentoInvestimento.valor,
     )
 )
 
@@ -110,8 +117,8 @@ def saldo(session: Session, investidor_id: int) -> Decimal:
 
 def saldos(session: Session) -> dict[int, Decimal]:
     rows = (
-        session.query(LancamentoCaixa.investidor_id, _SALDO_EXPR)
-        .group_by(LancamentoCaixa.investidor_id)
+        session.query(LancamentoInvestimento.investidor_id, _SALDO_EXPR)
+        .group_by(LancamentoInvestimento.investidor_id)
         .all()
     )
     return {investidor_id: total for investidor_id, total in rows}  # noqa: C416
@@ -121,8 +128,10 @@ def _descricao_veiculo(veiculo_obj: Veiculo) -> str:
     return f"Compra do veículo {veiculo_obj.modelo} - placa {veiculo_obj.placa}"
 
 
-def criar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> LancamentoCaixa:
-    obj = LancamentoCaixa(
+def criar_lancamento_veiculo(
+    session: Session, veiculo_obj: Veiculo
+) -> LancamentoInvestimento:
+    obj = LancamentoInvestimento(
         investidor_id=veiculo_obj.investidor_id,
         veiculo_id=veiculo_obj.id,
         tipo=TipoLancamento.custo,
@@ -138,7 +147,7 @@ def criar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> Lancamen
 
 def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
     lancamento = (
-        session.query(LancamentoCaixa)
+        session.query(LancamentoInvestimento)
         .filter_by(veiculo_id=veiculo_obj.id)
         .one_or_none()
     )

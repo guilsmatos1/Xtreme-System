@@ -6,7 +6,8 @@
       <button class="icon-btn" type="button" aria-label="Fechar"
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
-    <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+    <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
+          {% if not veiculo %}hx-encoding="multipart/form-data"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
@@ -68,11 +69,28 @@
             </select>
           </label>
         </div>
+        {% if not veiculo %}
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Fotos <span class="muted">(opcional)</span></span>
+            <input class="input" type="file" name="imagens" multiple accept="image/*">
+          </label>
+          <label class="field">
+            <span class="field__label">Documentos <span class="muted">(opcional)</span></span>
+            <input class="input" type="file" name="documentos" multiple>
+          </label>
+        </div>
+        {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
+    {% if veiculo %}
+    <div class="modal__body" style="padding-top:0">
+      {% include "_midia_veiculo.html" %}
+    </div>
+    {% endif %}
   </div>
 </div>

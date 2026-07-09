@@ -15,12 +15,18 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Importa a Base e todos os models para popular a metadata (autogenerate).
-from xtreme_system.database.core import Base, get_settings
 from xtreme_system.caixa import core as _caixa  # noqa: F401
+from xtreme_system.cliente import core as _cliente  # noqa: F401
+from xtreme_system.compra import core as _compra  # noqa: F401
+from xtreme_system.database.core import Base, get_settings
+from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
+from xtreme_system.imagem_comprovante_venda import core as _imagem_comprovante_venda  # noqa: F401
+from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as _investidor  # noqa: F401
 from xtreme_system.meio_captacao import core as _meio_captacao  # noqa: F401
 from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
+from xtreme_system.venda import core as _venda  # noqa: F401
 
 target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

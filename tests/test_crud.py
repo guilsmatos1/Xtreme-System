@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import Base
+from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
+from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
 from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
@@ -174,7 +176,7 @@ def test_lancamento_manual_ciclo_completo(session: Session) -> None:
     inv, _v = _investidor_e_veiculo(session)
     aporte = caixa.create(
         session,
-        caixa.LancamentoCaixaCreate(
+        caixa.LancamentoInvestimentoCreate(
             investidor_id=inv.id,
             tipo=caixa.TipoLancamento.aporte,
             valor=Decimal("1000.00"),
@@ -183,7 +185,11 @@ def test_lancamento_manual_ciclo_completo(session: Session) -> None:
     )
     assert aporte.origem is caixa.OrigemLancamento.manual
 
-    caixa.update(session, aporte, caixa.LancamentoCaixaUpdate(valor=Decimal("1500.00")))
+    caixa.update(
+        session,
+        aporte,
+        caixa.LancamentoInvestimentoUpdate(valor=Decimal("1500.00")),
+    )
     assert caixa.get(session, aporte.id).valor == Decimal("1500.00")  # type: ignore[union-attr]
 
     caixa.delete(session, aporte)

@@ -419,3 +419,14 @@ dialog::backdrop { background: rgba(18,18,24,.45); backdrop-filter: blur(2px); }
 }
 .sort-link:hover { color: var(--text); }
 .sort-link--active { color: var(--accent); font-weight: 600; }
+
+/* ---- 19. Mídia (imagens/documentos de veículo) ---------------------------- */
+.midia-grid { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-2) 0; }
+.midia-item { position: relative; }
+.midia-item img { width: 72px; height: 72px; border-radius: var(--r); object-fit: cover; border: 1px solid var(--border); }
+.midia-item .btn { position: absolute; top: 2px; right: 2px; }
+.midia-list { list-style: none; display: flex; flex-direction: column; gap: var(--s-1); margin: var(--s-2) 0; padding: 0; }
+.midia-list__item { display: flex; align-items: center; gap: var(--s-2); font-size: .85rem; }
+.midia-list__item svg { width: 16px; height: 16px; color: var(--text-tertiary); }
+.midia-list__item a { color: var(--text); text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.midia-list__item a:hover { color: var(--accent); }

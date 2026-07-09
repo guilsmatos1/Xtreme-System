@@ -1,0 +1,37 @@
+{% import "_macros.html" as ui %}
+<div id="midia-veiculo">
+  <div class="field__label" style="margin-top:var(--s-3)">Fotos</div>
+  <div class="midia-grid">
+    {% for i in veiculo.imagens %}
+    <div class="midia-item">
+      <img src="{{ i.url }}" alt="Foto do veículo">
+      <button type="button" class="btn btn--ghost btn--sm btn--danger" title="Remover foto"
+              hx-post="/ui/veiculos/{{ veiculo.id }}/imagens/{{ i.id }}/excluir"
+              hx-target="#midia-veiculo" hx-swap="outerHTML"
+              hx-confirm="Remover esta foto?">{{ ui.icon("trash") }}</button>
+    </div>
+    {% endfor %}
+  </div>
+  <form hx-post="/ui/veiculos/{{ veiculo.id }}/imagens" hx-target="#midia-veiculo" hx-swap="outerHTML"
+        hx-encoding="multipart/form-data" hx-trigger="change from:input[name=arquivo]">
+    <input class="input" type="file" name="arquivo" multiple accept="image/*">
+  </form>
+
+  <div class="field__label" style="margin-top:var(--s-3)">Documentos</div>
+  <ul class="midia-list">
+    {% for d in veiculo.documentos %}
+    <li class="midia-list__item">
+      {{ ui.icon("file") }}
+      <a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.url.split("/") | last }}</a>
+      <button type="button" class="btn btn--ghost btn--sm btn--danger" title="Remover documento"
+              hx-post="/ui/veiculos/{{ veiculo.id }}/documentos/{{ d.id }}/excluir"
+              hx-target="#midia-veiculo" hx-swap="outerHTML"
+              hx-confirm="Remover este documento?">{{ ui.icon("trash") }}</button>
+    </li>
+    {% endfor %}
+  </ul>
+  <form hx-post="/ui/veiculos/{{ veiculo.id }}/documentos" hx-target="#midia-veiculo" hx-swap="outerHTML"
+        hx-encoding="multipart/form-data" hx-trigger="change from:input[name=arquivo]">
+    <input class="input" type="file" name="arquivo" multiple>
+  </form>
+</div>

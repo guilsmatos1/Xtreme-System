@@ -14,3 +14,6 @@ graphify-out/
 
 # Local env
 .env
+
+# Uploaded media
+bases/xtreme_system/api/media/
