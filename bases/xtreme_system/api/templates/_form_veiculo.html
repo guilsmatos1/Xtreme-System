@@ -23,6 +23,16 @@
               {% for s in status %}<option value="{{ s.value }}"{% if veiculo and veiculo.status == s %} selected{% endif %}>{{ s.value | capitalize }}</option>{% endfor %}
             </select>
           </label>
+          <label class="field">
+            <span class="field__label">Tipo de Entrada</span>
+            <select class="select" name="tipo_entrada" required>
+              {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo and veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Revisão</span>
+            <input class="input" type="checkbox" name="revisao" value="true" {% if veiculo and veiculo.revisao %}checked{% endif %}>
+          </label>
 
           <label class="field field--full">
             <span class="field__label">Modelo</span>

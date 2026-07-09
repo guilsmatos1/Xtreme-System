@@ -1,136 +1,46 @@
 """API FastAPI: CRUD de investidores, meios de captação e veículos."""
 
-import csv
-import io
-import logging
-import uuid
-from collections.abc import Callable
-from contextvars import ContextVar
 from datetime import date
 from decimal import Decimal
 from functools import partial
-from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Cookie, Depends, FastAPI, Form, HTTPException, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from jwt import InvalidTokenError
+from fastapi import Depends, Form, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.deps import (
+    AdminUser,
+    CurrentUser,
+    SessionDep,
+    UIAdmin,
+    UIUser,
+    _found,
+    templates,
+)
+from xtreme_system.api.route_factories import (
+    _csv_response,
+    _sort_key,
+    register_crud_routes,
+    register_crud_ui_routes,
+    register_ui_simples,
+)
+from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
-from xtreme_system.database.core import get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
-logger = logging.getLogger(__name__)
-
-request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
-
-
-class _RequestIDFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = request_id_ctx.get()
-        return True
-
-
-logger.addFilter(_RequestIDFilter())
-
-app = FastAPI(title="Xtreme Motors")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.middleware("http")
-async def _request_id(
-    request: Request,
-    call_next: Callable[[Request], Any],
-) -> Any:
-    rid = request.headers.get("X-Request-ID", uuid.uuid4().hex[:12])
-    token = request_id_ctx.set(rid)
-    response = await call_next(request)
-    request_id_ctx.reset(token)
-    response.headers["X-Request-ID"] = rid
-    return response
-
-
-@app.middleware("http")
-async def _log_errors(
-    request: Request,
-    call_next: Callable[[Request], Any],
-) -> Any:
-    try:
-        return await call_next(request)
-    except Exception:
-        logger.exception("unhandled error request=%s", request.url)
-        raise
-
-
-_ui_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=_ui_dir / "static"), name="static")
-templates = Jinja2Templates(directory=_ui_dir / "templates")
-
-
-@app.get("/")
-def raiz() -> RedirectResponse:
-    return RedirectResponse("/docs")
-
-
-SessionDep = Annotated[Session, Depends(get_session)]
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-
-def _found[T](obj: T | None, nome: str) -> T:
-    if obj is None:
-        raise HTTPException(status_code=404, detail=f"{nome} não encontrado")
-    return obj
+__all__ = ["app"]
 
 
 # ---- Autenticação ----
-
-
-def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep
-) -> usuario.Usuario:
-    credenciais_invalidas = HTTPException(
-        status_code=401,
-        detail="Credenciais inválidas",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        dados = auth.decode_token(token)
-    except InvalidTokenError:
-        raise credenciais_invalidas from None
-    user = usuario.get_by_username(session, dados.username)
-    if user is None or not user.ativo:
-        raise credenciais_invalidas
-    return user
-
-
-CurrentUser = Annotated[usuario.Usuario, Depends(get_current_user)]
-
-
-def require_admin(user: CurrentUser) -> usuario.Usuario:
-    if user.papel != usuario.Papel.admin:
-        raise HTTPException(status_code=403, detail="Requer papel admin")
-    return user
-
-
-AdminUser = Annotated[usuario.Usuario, Depends(require_admin)]
 
 
 @app.post("/login", response_model=auth.Token)
@@ -207,26 +117,6 @@ def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
         raise HTTPException(status_code=400, detail="placa já cadastrada")
 
 
-def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -> Any:
-    try:
-        return op()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(status_code=409, detail=conflict_msg) from None
-
-
-def _csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:
-    buffer = io.StringIO(newline="")
-    writer = csv.writer(buffer)
-    writer.writerow(headers)
-    writer.writerows(rows)
-    return Response(
-        content=buffer.getvalue(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
 def _validate_venda_fks(session: Session, data: Any) -> None:
     cli_id = getattr(data, "cliente_id", None)
     vei_id = getattr(data, "veiculo_id", None)
@@ -234,79 +124,6 @@ def _validate_venda_fks(session: Session, data: Any) -> None:
         raise HTTPException(status_code=400, detail="cliente_id inexistente")
     if vei_id is not None and veiculo.get(session, vei_id) is None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
-
-
-def register_crud_routes(
-    app: FastAPI,
-    module: Any,
-    prefix: str,
-    label: str,
-    *,
-    read_schema: type,
-    create_schema: type,
-    update_schema: type,
-    before_create: Callable[[Session, Any], None] | None = None,
-    before_update: Callable[[Session, Any, Any], None] | None = None,
-    before_delete: Callable[[Session, Any], None] | None = None,
-    after_create: Callable[[Session, Any], Any] | None = None,
-    after_update: Callable[[Session, Any], Any] | None = None,
-    handle_delete_error: bool = True,
-) -> None:
-    @app.get(prefix, response_model=list[read_schema])  # type: ignore[valid-type]
-    def _list(session: SessionDep, _: CurrentUser) -> Any:
-        return module.list_all(session)
-
-    @app.get(f"{prefix}/{{item_id}}", response_model=read_schema)
-    def _get(item_id: int, session: SessionDep, _: CurrentUser) -> Any:
-        return _found(module.get(session, item_id), label)
-
-    @app.post(prefix, response_model=read_schema, status_code=201)
-    def _create(data: create_schema, session: SessionDep, _: AdminUser) -> Any:  # type: ignore[valid-type]
-        if before_create:
-            before_create(session, data)
-        obj = _safe_write(
-            session,
-            lambda: module.create(session, data),
-            conflict_msg=f"{label} já existe",
-        )
-        if after_create:
-            after_create(session, obj)
-        return obj
-
-    @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
-    def _update(
-        item_id: int,
-        data: update_schema,  # type: ignore[valid-type]
-        session: SessionDep,
-        _: AdminUser,
-    ) -> Any:
-        obj = _found(module.get(session, item_id), label)
-        if before_update:
-            before_update(session, obj, data)
-        obj = _safe_write(
-            session,
-            lambda: module.update(session, obj, data),
-            conflict_msg=f"{label} já existe",
-        )
-        if after_update:
-            after_update(session, obj)
-        return obj
-
-    @app.delete(f"{prefix}/{{item_id}}", status_code=204)
-    def _delete(item_id: int, session: SessionDep, _: AdminUser) -> None:
-        obj = _found(module.get(session, item_id), label)
-        if before_delete:
-            before_delete(session, obj)
-        if handle_delete_error:
-            try:
-                module.delete(session, obj)
-            except IntegrityError:
-                session.rollback()
-                raise HTTPException(
-                    status_code=409, detail=f"{label} possui veículos vinculados"
-                ) from None
-        else:
-            module.delete(session, obj)
 
 
 # ---- Investidores ----
@@ -412,64 +229,6 @@ register_crud_routes(
 # UI HTMX (server-rendered). Auth por cookie httpOnly, paralela à API JSON.
 # ============================================================================
 
-
-class _NaoAutenticadoError(Exception):
-    pass
-
-
-class _NaoAdminError(Exception):
-    pass
-
-
-# ponytail: redirect vale pra navegação normal; num hx-request expirado o htmx
-# injeta o login no target. Suficiente pro MVP; tratar com HX-Redirect se incomodar.
-@app.exception_handler(_NaoAutenticadoError)
-def _handle_nao_autenticado(
-    _request: Request, _exc: _NaoAutenticadoError
-) -> RedirectResponse:
-    return RedirectResponse("/ui/login", status_code=303)
-
-
-@app.exception_handler(_NaoAdminError)
-def _handle_nao_admin(_request: Request, _exc: _NaoAdminError) -> HTMLResponse:
-    return HTMLResponse("<p>Requer papel admin</p>", status_code=403)
-
-
-@app.exception_handler(Exception)
-def _handle_erro_interno(request: Request, _exc: Exception) -> Response:
-    logger.exception("unhandled error at %s", request.url)
-    if request.url.path.startswith("/ui/"):
-        return HTMLResponse("<p>Erro interno. Contate suporte.</p>", status_code=500)
-    return JSONResponse({"detail": "Erro interno do servidor"}, status_code=500)
-
-
-def get_ui_user(
-    session: SessionDep, access_token: Annotated[str | None, Cookie()] = None
-) -> usuario.Usuario:
-    if not access_token:
-        raise _NaoAutenticadoError
-    try:
-        dados = auth.decode_token(access_token)
-    except InvalidTokenError:
-        raise _NaoAutenticadoError from None
-    user = usuario.get_by_username(session, dados.username)
-    if user is None or not user.ativo:
-        raise _NaoAutenticadoError
-    return user
-
-
-UIUser = Annotated[usuario.Usuario, Depends(get_ui_user)]
-
-
-def require_ui_admin(user: UIUser) -> usuario.Usuario:
-    if user.papel != usuario.Papel.admin:
-        raise _NaoAdminError
-    return user
-
-
-UIAdmin = Annotated[usuario.Usuario, Depends(require_ui_admin)]
-
-
 # ---- Clientes (UI) ----
 
 
@@ -477,140 +236,41 @@ def _ctx_form_cliente(_session: Session) -> dict[str, Any]:
     return {"tipos": list(cliente.TipoCliente)}
 
 
-def _ok_clientes(
-    request: Request, session: Session, user: usuario.Usuario
-) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "_clientes_ok.html",
-        {"user": user, "clientes": cliente.list_all(session)},
-    )
-
-
-def _erro_cliente(
-    request: Request,
-    session: Session,
-    exc: ValidationError | HTTPException,
-    obj: cliente.Cliente | None,
-) -> HTMLResponse:
-    erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-    return templates.TemplateResponse(
-        request,
-        "_form_cliente.html",
-        {**_ctx_form_cliente(session), "cliente": obj, "erro": erro},
-        status_code=400,
-    )
-
-
-_CLIENTE_SORT_FIELDS: dict[str, str] = {
-    "nome": "nome",
-    "documento": "documento",
-    "tipo": "tipo",
-    "cidade": "cidade",
-    "estado": "estado",
-    "ativo": "ativo",
-}
-
-
-@app.get("/ui/clientes")
-def ui_clientes(
-    request: Request,
-    session: SessionDep,
-    user: UIUser,
-    q: str = "",
-    sort: str = "",
-    order: str = "asc",
-) -> HTMLResponse:
-    lista = cliente.search(session, q) if q else cliente.list_all(session)
-    field = _CLIENTE_SORT_FIELDS.get(sort)
-    if field:
-        lista = sorted(
-            lista,
-            key=lambda c: _sort_key(getattr(c, field)),
-            reverse=order == "desc",
-        )
-    ctx = {"user": user, "clientes": lista, "q": q, "sort": sort, "order": order}
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_clientes.html", ctx)
-    return templates.TemplateResponse(request, "clientes.html", ctx)
-
-
-@app.get("/ui/clientes/novo")
-def ui_cliente_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "_form_cliente.html", {**_ctx_form_cliente(session), "cliente": None}
-    )
-
-
-@app.get("/ui/clientes/{item_id}/editar")
-def ui_cliente_editar(
-    item_id: int, request: Request, session: SessionDep, _: UIAdmin
-) -> HTMLResponse:
-    obj = _found(cliente.get(session, item_id), "Cliente")
-    return templates.TemplateResponse(
-        request, "_form_cliente.html", {**_ctx_form_cliente(session), "cliente": obj}
-    )
-
-
-@app.post("/ui/clientes")
-async def ui_cliente_criar(
-    request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    form = await request.form()
-    try:
-        data = cliente.ClienteCreate.model_validate(dict(form))
-    except ValidationError as exc:
-        return _erro_cliente(request, session, exc, None)
-    cliente.create(session, data)
-    return _ok_clientes(request, session, user)
-
-
-@app.post("/ui/clientes/{item_id}")
-async def ui_cliente_atualizar(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    obj = _found(cliente.get(session, item_id), "Cliente")
-    form = await request.form()
-    try:
-        data = cliente.ClienteUpdate.model_validate(dict(form))
-    except ValidationError as exc:
-        return _erro_cliente(request, session, exc, obj)
-    cliente.update(session, obj, data)
-    return _ok_clientes(request, session, user)
-
-
-@app.post("/ui/clientes/{item_id}/excluir")
-def ui_cliente_excluir(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    obj = _found(cliente.get(session, item_id), "Cliente")
-    cliente.delete(session, obj)
-    return templates.TemplateResponse(
-        request,
-        "_linhas_clientes.html",
-        {"user": user, "clientes": cliente.list_all(session)},
-    )
-
-
-@app.get("/ui/clientes/exportar")
-def ui_clientes_exportar(session: SessionDep, _: UIUser, q: str = "") -> Response:
-    lista = cliente.search(session, q) if q else cliente.list_all(session)
-    return _csv_response(
-        "clientes.csv",
-        ["ID", "Nome", "CPF", "Tipo", "Cidade", "Estado", "Ativo"],
-        [
-            [
-                c.id,
-                c.nome,
-                c.documento,
-                c.tipo.value,
-                c.cidade or "",
-                c.estado or "",
-                "sim" if c.ativo else "nao",
-            ]
-            for c in lista
-        ],
-    )
+register_crud_ui_routes(
+    app,
+    cliente,
+    "/ui/clientes",
+    "Cliente",
+    create_schema=cliente.ClienteCreate,
+    update_schema=cliente.ClienteUpdate,
+    list_key="clientes",
+    item_key="cliente",
+    list_template="clientes.html",
+    list_partial_template="_linhas_clientes.html",
+    ok_partial_template="_clientes_ok.html",
+    form_template="_form_cliente.html",
+    ctx_form=_ctx_form_cliente,
+    searchable=True,
+    sort_fields={
+        "nome": "nome",
+        "documento": "documento",
+        "tipo": "tipo",
+        "cidade": "cidade",
+        "estado": "estado",
+        "ativo": "ativo",
+    },
+    csv_filename="clientes.csv",
+    csv_headers=["ID", "Nome", "CPF", "Tipo", "Cidade", "Estado", "Ativo"],
+    csv_row=lambda c: [
+        c.id,
+        c.nome,
+        c.documento,
+        c.tipo.value,
+        c.cidade or "",
+        c.estado or "",
+        "sim" if c.ativo else "nao",
+    ],
+)
 
 
 # ---- Vendas (UI) ----
@@ -628,31 +288,6 @@ def _ctx_form_venda(session: Session) -> dict[str, Any]:
     }
 
 
-def _ok_vendas(
-    request: Request, session: Session, user: usuario.Usuario
-) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "_vendas_ok.html",
-        {"user": user, "vendas": venda.list_all(session)},
-    )
-
-
-def _erro_venda(
-    request: Request,
-    session: Session,
-    exc: ValidationError | HTTPException,
-    obj: venda.Venda | None,
-) -> HTMLResponse:
-    erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-    return templates.TemplateResponse(
-        request,
-        "_form_venda.html",
-        {**_ctx_form_venda(session), "venda": obj, "erro": erro},
-        status_code=400,
-    )
-
-
 def _parse_venda_form(form: Any) -> dict[str, Any]:
     data = dict(form)
     if data.get("valor_entrada") == "":
@@ -664,144 +299,59 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     return data
 
 
-_VENDA_SORT_FIELDS: dict[str, str] = {
-    "cliente": "cliente",
-    "veiculo": "veiculo",
-    "data": "data_venda",
-    "valor": "valor_venda",
-    "entrada": "valor_entrada",
-    "pagamento": "forma_pagamento",
-    "parcelas": "parcelas",
-    "status": "status",
-}
-
-
-@app.get("/ui/vendas")
-def ui_vendas(
-    request: Request,
-    session: SessionDep,
-    user: UIUser,
-    sort: str = "",
-    order: str = "asc",
-) -> HTMLResponse:
-    lista = venda.list_all(session)
-    field = _VENDA_SORT_FIELDS.get(sort)
-    if field:
-        # cliente and veiculo sort by related name
-        if field == "cliente":
-            lista = sorted(
-                lista, key=lambda v: _sort_key(v.cliente.nome), reverse=order == "desc"
-            )
-        elif field == "veiculo":
-            lista = sorted(
-                lista,
-                key=lambda v: _sort_key(v.veiculo.modelo),
-                reverse=order == "desc",
-            )
-        else:
-            lista = sorted(
-                lista,
-                key=lambda v: _sort_key(getattr(v, field)),
-                reverse=order == "desc",
-            )
-    ctx = {"user": user, "vendas": lista, "sort": sort, "order": order}
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_vendas.html", ctx)
-    return templates.TemplateResponse(request, "vendas.html", ctx)
-
-
-@app.get("/ui/vendas/exportar")
-def ui_vendas_exportar(session: SessionDep, _: UIUser) -> Response:
-    lista = venda.list_all(session)
-    return _csv_response(
-        "vendas.csv",
-        [
-            "ID",
-            "Cliente",
-            "Veiculo",
-            "Data",
-            "Valor Venda",
-            "Valor Entrada",
-            "Forma Pagamento",
-            "Parcelas",
-            "Status",
-            "Observacoes",
-        ],
-        [
-            [
-                v.id,
-                v.cliente.nome,
-                f"{v.veiculo.modelo} ({v.veiculo.placa})",
-                v.data_venda.isoformat(),
-                f"{v.valor_venda:.2f}",
-                f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
-                v.forma_pagamento,
-                v.parcelas,
-                v.status.value,
-                v.observacoes or "",
-            ]
-            for v in lista
-        ],
-    )
-
-
-@app.get("/ui/vendas/novo")
-def ui_venda_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "_form_venda.html", {**_ctx_form_venda(session), "venda": None}
-    )
-
-
-@app.get("/ui/vendas/{item_id}/editar")
-def ui_venda_editar(
-    item_id: int, request: Request, session: SessionDep, _: UIAdmin
-) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
-    return templates.TemplateResponse(
-        request, "_form_venda.html", {**_ctx_form_venda(session), "venda": obj}
-    )
-
-
-@app.post("/ui/vendas")
-async def ui_venda_criar(
-    request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    form = await request.form()
-    try:
-        data = venda.VendaCreate.model_validate(_parse_venda_form(form))
-        _validate_venda_fks(session, data)
-    except (ValidationError, HTTPException) as exc:
-        return _erro_venda(request, session, exc, None)
-    venda.create(session, data)
-    return _ok_vendas(request, session, user)
-
-
-@app.post("/ui/vendas/{item_id}")
-async def ui_venda_atualizar(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
-    form = await request.form()
-    try:
-        data = venda.VendaUpdate.model_validate(_parse_venda_form(form))
-        _validate_venda_fks(session, data)
-    except (ValidationError, HTTPException) as exc:
-        return _erro_venda(request, session, exc, obj)
-    venda.update(session, obj, data)
-    return _ok_vendas(request, session, user)
-
-
-@app.post("/ui/vendas/{item_id}/excluir")
-def ui_venda_excluir(
-    item_id: int, request: Request, session: SessionDep, user: UIUser
-) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
-    venda.delete(session, obj)
-    return templates.TemplateResponse(
-        request,
-        "_linhas_vendas.html",
-        {"user": user, "vendas": venda.list_all(session)},
-    )
+register_crud_ui_routes(
+    app,
+    venda,
+    "/ui/vendas",
+    "Venda",
+    create_schema=venda.VendaCreate,
+    update_schema=venda.VendaUpdate,
+    list_key="vendas",
+    item_key="venda",
+    list_template="vendas.html",
+    list_partial_template="_linhas_vendas.html",
+    ok_partial_template="_vendas_ok.html",
+    form_template="_form_venda.html",
+    ctx_form=_ctx_form_venda,
+    parse_form=_parse_venda_form,
+    before_create=_validate_venda_fks,
+    before_update=_validate_venda_fks,
+    sort_fields={
+        "cliente": lambda v: _sort_key(v.cliente.nome),
+        "veiculo": lambda v: _sort_key(v.veiculo.modelo),
+        "data": "data_venda",
+        "valor": "valor_venda",
+        "entrada": "valor_entrada",
+        "pagamento": "forma_pagamento",
+        "parcelas": "parcelas",
+        "status": "status",
+    },
+    csv_filename="vendas.csv",
+    csv_headers=[
+        "ID",
+        "Cliente",
+        "Veiculo",
+        "Data",
+        "Valor Venda",
+        "Valor Entrada",
+        "Forma Pagamento",
+        "Parcelas",
+        "Status",
+        "Observacoes",
+    ],
+    csv_row=lambda v: [
+        v.id,
+        v.cliente.nome,
+        f"{v.veiculo.modelo} ({v.veiculo.placa})",
+        v.data_venda.isoformat(),
+        f"{v.valor_venda:.2f}",
+        f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
+        v.forma_pagamento,
+        v.parcelas,
+        v.status.value,
+        v.observacoes or "",
+    ],
+)
 
 
 # ---- Login / logout ----
@@ -857,182 +407,77 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
     return {
         "tipos": list(veiculo.TipoVeiculo),
         "status": list(veiculo.StatusVeiculo),
+        "tipo_entradas": list(veiculo.TipoEntrada),
         "investidores": investidor.list_all(session),
         "meios": meio_captacao.list_all(session),
     }
 
 
-def _ok_veiculos(
-    request: Request, session: Session, user: usuario.Usuario
-) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "_veiculos_ok.html",
-        {"user": user, "veiculos": veiculo.list_all(session)},
-    )
-
-
-def _erro_veiculo(
-    request: Request,
-    session: Session,
-    exc: ValidationError | HTTPException,
-    obj: veiculo.Veiculo | None,
-) -> HTMLResponse:
-    erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-    return templates.TemplateResponse(
-        request,
-        "_form_veiculo.html",
-        {**_ctx_form_veiculo(session), "veiculo": obj, "erro": erro},
-        status_code=400,
-    )
-
-
-# ponytail: in-memory sort; DB-level only if row counts grow large.
-def _sort_key(val: Any) -> Any:
-    val = getattr(val, "value", val)  # enums compare by .value
-    if hasattr(val, "nome"):
-        val = val.nome
-    return val.lower() if isinstance(val, str) else val
-
-
-_SORT_FIELDS: dict[str, str] = {
-    "modelo": "modelo",
-    "placa": "placa",
-    "tipo": "tipo",
-    "ano": "ano",
-    "km": "km",
-    "preco": "preco",
-    "status": "status",
-    "investidor": "investidor",
-    "procuracao": "procuracao",
-    "captacao": "meio_captacao",
-}
-
-
-def _sort_veiculos(
-    lista: list[veiculo.Veiculo], sort: str, order: str
-) -> list[veiculo.Veiculo]:
-    field = _SORT_FIELDS.get(sort)
-    if not field:
-        return lista
-    return sorted(
-        lista, key=lambda v: _sort_key(getattr(v, field)), reverse=order == "desc"
-    )
-
-
-@app.get("/ui/veiculos")
-def ui_veiculos(
-    request: Request,
-    session: SessionDep,
-    user: UIUser,
-    q: str = "",
-    sort: str = "",
-    order: str = "asc",
-) -> HTMLResponse:
-    lista = veiculo.search(session, q) if q else veiculo.list_all(session)
-    lista = _sort_veiculos(lista, sort, order)
-    ctx = {"user": user, "veiculos": lista, "q": q, "sort": sort, "order": order}
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_veiculos.html", ctx)
-    return templates.TemplateResponse(request, "veiculos.html", ctx)
-
-
-@app.get("/ui/veiculos/exportar")
-def ui_veiculos_exportar(session: SessionDep, _: UIUser, q: str = "") -> Response:
-    lista = veiculo.search(session, q) if q else veiculo.list_all(session)
-    return _csv_response(
-        "veiculos.csv",
-        [
-            "ID",
-            "Modelo",
-            "Placa",
-            "Tipo",
-            "Ano",
-            "KM",
-            "Preco",
-            "Status",
-            "Investidor",
-            "Procurador",
-            "Captacao",
-        ],
-        [
-            [
-                v.id,
-                v.modelo,
-                v.placa,
-                v.tipo.value,
-                v.ano,
-                v.km,
-                f"{v.preco:.2f}",
-                v.status.value,
-                v.investidor.nome,
-                v.procuracao or "",
-                v.meio_captacao.nome,
-            ]
-            for v in lista
-        ],
-    )
-
-
-@app.get("/ui/veiculos/novo")
-def ui_veiculo_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "_form_veiculo.html", {**_ctx_form_veiculo(session), "veiculo": None}
-    )
-
-
-@app.get("/ui/veiculos/{item_id}/editar")
-def ui_veiculo_editar(
-    item_id: int, request: Request, session: SessionDep, _: UIAdmin
-) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
-    return templates.TemplateResponse(
-        request, "_form_veiculo.html", {**_ctx_form_veiculo(session), "veiculo": obj}
-    )
-
-
-@app.post("/ui/veiculos")
-async def ui_veiculo_criar(
-    request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    form = await request.form()
-    try:
-        data = veiculo.VeiculoCreate.model_validate(dict(form))
-        _validate_fks(session, data)
-    except (ValidationError, HTTPException) as exc:
-        return _erro_veiculo(request, session, exc, None)
-    novo = veiculo.create(session, data)
-    caixa.criar_lancamento_veiculo(session, novo)
-    return _ok_veiculos(request, session, user)
-
-
-@app.post("/ui/veiculos/{item_id}")
-async def ui_veiculo_atualizar(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
-    form = await request.form()
-    try:
-        data = veiculo.VeiculoUpdate.model_validate(dict(form))
-        _validate_fks(session, data, update=True)
-    except (ValidationError, HTTPException) as exc:
-        return _erro_veiculo(request, session, exc, obj)
-    atualizado = veiculo.update(session, obj, data)
-    caixa.sincronizar_lancamento_veiculo(session, atualizado)
-    return _ok_veiculos(request, session, user)
-
-
-@app.post("/ui/veiculos/{item_id}/excluir")
-def ui_veiculo_excluir(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
-) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
-    veiculo.delete(session, obj)
-    return templates.TemplateResponse(
-        request,
-        "_linhas_veiculos.html",
-        {"user": user, "veiculos": veiculo.list_all(session)},
-    )
+register_crud_ui_routes(
+    app,
+    veiculo,
+    "/ui/veiculos",
+    "Veículo",
+    create_schema=veiculo.VeiculoCreate,
+    update_schema=veiculo.VeiculoUpdate,
+    list_key="veiculos",
+    item_key="veiculo",
+    list_template="veiculos.html",
+    list_partial_template="_linhas_veiculos.html",
+    ok_partial_template="_veiculos_ok.html",
+    form_template="_form_veiculo.html",
+    ctx_form=_ctx_form_veiculo,
+    searchable=True,
+    before_create=_validate_fks,
+    before_update=lambda session, data: _validate_fks(session, data, update=True),
+    after_create=caixa.criar_lancamento_veiculo,
+    after_update=caixa.sincronizar_lancamento_veiculo,
+    sort_fields={
+        "modelo": "modelo",
+        "placa": "placa",
+        "tipo": "tipo",
+        "ano": "ano",
+        "km": "km",
+        "preco": "preco",
+        "status": "status",
+        "tipo_entrada": "tipo_entrada",
+        "revisao": "revisao",
+        "investidor": "investidor",
+        "procuracao": "procuracao",
+        "captacao": "meio_captacao",
+    },
+    csv_filename="veiculos.csv",
+    csv_headers=[
+        "ID",
+        "Modelo",
+        "Placa",
+        "Tipo",
+        "Ano",
+        "KM",
+        "Preco",
+        "Status",
+        "Tipo de Entrada",
+        "Revisao",
+        "Investidor",
+        "Procurador",
+        "Captacao",
+    ],
+    csv_row=lambda v: [
+        v.id,
+        v.modelo,
+        v.placa,
+        v.tipo.value,
+        v.ano,
+        v.km,
+        f"{v.preco:.2f}",
+        v.status.value,
+        v.tipo_entrada.value,
+        "Sim" if v.revisao else "Não",
+        v.investidor.nome,
+        v.procuracao or "",
+        v.meio_captacao.nome,
+    ],
+)
 
 
 # ---- Caixa dos investidores (UI) ----
@@ -1466,147 +911,8 @@ def ui_usuario_senha_alterar(
 # ---- Investidores / Meios de captação (UI, mesmo padrão) ----
 
 
-def register_ui_simples(
-    ui_prefix: str,
-    titulo: str,
-    module: Any,
-    create_schema: type,
-    update_schema: type,
-    export_filename: str,
-) -> None:
-    def _ctx(
-        user: usuario.Usuario,
-        session: Session,
-        sort: str = "",
-        order: str = "asc",
-        **extra: Any,
-    ) -> dict[str, Any]:
-        itens = module.list_all(session)
-        if sort == "nome":
-            itens = sorted(
-                itens, key=lambda i: _sort_key(i.nome), reverse=order == "desc"
-            )
-        return {
-            "user": user,
-            "titulo": titulo,
-            "prefixo": ui_prefix,
-            "itens": itens,
-            "sort": sort,
-            "order": order,
-            **extra,
-        }
-
-    def _form_ctx(item: Any, erro: str | None = None) -> dict[str, Any]:
-        return {"titulo": titulo, "prefixo": ui_prefix, "item": item, "erro": erro}
-
-    async def _nome(request: Request) -> str:
-        return str((await request.form()).get("nome") or "").strip()
-
-    @app.get(ui_prefix)
-    def _lista(
-        request: Request,
-        session: SessionDep,
-        user: UIUser,
-        sort: str = "",
-        order: str = "asc",
-    ) -> HTMLResponse:
-        ctx = _ctx(user, session, sort, order)
-        if request.headers.get("HX-Request"):
-            return templates.TemplateResponse(request, "_linhas_simples.html", ctx)
-        return templates.TemplateResponse(request, "simples.html", ctx)
-
-    @app.get(f"{ui_prefix}/exportar")
-    def _exportar(session: SessionDep, _: UIUser) -> Response:
-        itens = module.list_all(session)
-        return _csv_response(
-            export_filename,
-            ["ID", "Nome"],
-            [[item.id, item.nome] for item in itens],
-        )
-
-    @app.get(f"{ui_prefix}/novo")
-    def _novo(request: Request, _: UIAdmin) -> HTMLResponse:
-        return templates.TemplateResponse(
-            request, "_form_simples.html", _form_ctx(None)
-        )
-
-    @app.get(f"{ui_prefix}/{{item_id}}/editar")
-    def _editar(
-        item_id: int, request: Request, session: SessionDep, _: UIAdmin
-    ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
-        return templates.TemplateResponse(request, "_form_simples.html", _form_ctx(obj))
-
-    @app.post(ui_prefix)
-    async def _criar(
-        request: Request, session: SessionDep, user: UIAdmin
-    ) -> HTMLResponse:
-        nome = await _nome(request)
-        if not nome:
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(None, "Nome obrigatório"),
-                status_code=400,
-            )
-        try:
-            module.create(session, create_schema(nome=nome))
-        except IntegrityError:
-            session.rollback()
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(None, f"{titulo} já existe"),
-                status_code=409,
-            )
-        return templates.TemplateResponse(
-            request, "_simples_ok.html", _ctx(user, session)
-        )
-
-    @app.post(f"{ui_prefix}/{{item_id}}")
-    async def _atualizar(
-        item_id: int, request: Request, session: SessionDep, user: UIAdmin
-    ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
-        nome = await _nome(request)
-        if not nome:
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(obj, "Nome obrigatório"),
-                status_code=400,
-            )
-        try:
-            module.update(session, obj, update_schema(nome=nome))
-        except IntegrityError:
-            session.rollback()
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(obj, f"{titulo} já existe"),
-                status_code=409,
-            )
-        return templates.TemplateResponse(
-            request, "_simples_ok.html", _ctx(user, session)
-        )
-
-    @app.post(f"{ui_prefix}/{{item_id}}/excluir")
-    def _excluir(
-        item_id: int, request: Request, session: SessionDep, user: UIAdmin
-    ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
-        msg = None
-        try:
-            module.delete(session, obj)
-        except IntegrityError:
-            session.rollback()
-            msg = f"{titulo} possui veículos vinculados"
-        return templates.TemplateResponse(
-            request, "_linhas_simples.html", _ctx(user, session, msg=msg)
-        )
-
-
 register_ui_simples(
+    app,
     "/ui/investidores",
     "Investidores",
     investidor,
@@ -1615,6 +921,7 @@ register_ui_simples(
     "investidores.csv",
 )
 register_ui_simples(
+    app,
     "/ui/meios-captacao",
     "Meios de captação",
     meio_captacao,

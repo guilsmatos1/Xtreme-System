@@ -1,34 +1,76 @@
-# Xtreme System
+# Xtreme Motors
 
-Extreme system tooling and experiments. Python project managed with `uv`,
-structured as a [Polylith](https://polylith.gitbook.io/polylith) workspace
-(namespace: `xtreme_system`).
+Sistema de gestão de estoque e vendas de veículos para a **Xtreme Motors**.
+Desenvolvido em Python 3.12+, gerenciado com `uv` e estruturado como um
+workspace [Polylith](https://polylith.gitbook.io/polylith) (namespace: `xtreme_system`).
+
+- API REST (JSON) com documentação Swagger em `/docs`
+- Interface web com HTMX e Jinja2 para uso interno
+- Autenticação JWT + argon2 com dois modos: Bearer token (API) e cookie httpOnly (UI)
+- PostgreSQL via SQLAlchemy 2.0 + Alembic (17 migrations)
+- Deployável via Docker Compose
 
 ## Setup
 
-```bash
-brew services start postgresql@14  # ou a versão instalada via brew
-createuser -s postgres             # role usada em DATABASE_URL
-createdb -O postgres xtreme        # database usada em DATABASE_URL
-
-uv sync              # install dependencies
-make hooks            # install git hooks (uv run pre-commit install)
-cp .env.example .env  # then fill in AUTH_SECRET_KEY
-make migrate           # apply database migrations
-```
-
-`.env` precisa de `DATABASE_URL` e `AUTH_SECRET_KEY` (JWT), veja `.env.example`.
-Gere a chave com `python -c "import secrets; print(secrets.token_hex(32))"`.
-Crie o primeiro admin com `uv run python development/create_admin.py <usuario> <senha>`.
-Autentique em `POST /login` e mande `Authorization: Bearer <token>`.
+### Opção 1: PostgreSQL via Docker (recomendado)
 
 ```bash
-make run  # uvicorn xtreme_system.api.core:app --reload
+make db-up    # docker compose up -d (Postgres 16 na porta 5432)
 ```
 
-## Common tasks
+### Opção 2: PostgreSQL via brew
 
-Run `make help` for the full list. Shortcuts:
+```bash
+brew services start postgresql@16    # ou a versão instalada
+createuser -s postgres               # role usada na DATABASE_URL
+createdb -O postgres xtreme          # database usada na DATABASE_URL
+```
+
+### Ambiente e dependências
+
+```bash
+uv sync              # instala dependências
+make hooks           # instala git hooks (uv run pre-commit install)
+cp .env.example .env # DATABASE_URL + AUTH_SECRET_KEY (veja abaixo)
+make migrate         # aplica migrations do Alembic
+```
+
+### Chave de autenticação
+
+Gere a chave JWT:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Preencha `AUTH_SECRET_KEY` no `.env` com o valor gerado.
+
+### Usuário admin
+
+```bash
+uv run python development/create_admin.py <usuario> <senha>
+```
+
+Autentique em `POST /login` com `Content-Type: application/x-www-form-urlencoded`
+(campos `username` e `password`). Use `Authorization: Bearer <token>` nas chamadas
+seguintes.
+
+## Rodando
+
+```bash
+make run  # uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000
+```
+
+Acesse `http://localhost:8000/docs` para o Swagger UI.
+
+Autenticação dual:
+
+- **JSON API**: Bearer token via cabeçalho `Authorization`
+- **HTMX UI**: cookie httpOnly `access_token` (login em `/ui/login`, logout em `/ui/logout`)
+
+## Comandos comuns
+
+Use `make help` para a lista completa. Atalhos:
 
 ```bash
 make format      # ruff format .
@@ -40,44 +82,49 @@ make ci          # lint + coverage
 make pre-commit  # run all pre-commit hooks
 make migrate     # alembic upgrade head
 make revision m="msg"  # alembic revision --autogenerate
+make run         # uvicorn xtreme_system.api.core:app
+make db-up       # docker compose up -d (Postgres)
+make db-down     # docker compose down
 ```
 
-Equivalent raw commands, in order (`ruff format` first — it can fix issues
-that would otherwise fail lint):
+Comandos crus equivalentes:
 
 ```bash
-uv run ruff format . --check    # or `uv run ruff format .` to auto-fix
-uv run ruff check .             # or `uv run ruff check --fix .` to auto-fix
-uv run mypy                     # strict mode, checks the `xtreme_system` package only
-uv run xenon src bases components development projects  # complexity check, thresholds in pyproject.toml
-uv run vulture                  # dead code detection
-uv run pytest                   # -q omitted here for full output on failure
+uv run ruff format . --check    # ou `uv run ruff format .` para auto-fix
+uv run ruff check .             # ou `uv run ruff check --fix .` para auto-fix
+uv run mypy                     # strict mode, package xtreme_system
+uv run xenon src bases components development projects  # complexidade
+uv run vulture                  # detecção de código morto
+uv run pytest
 ```
 
-## Running tests
+## Estrutura do projeto
 
-```bash
-uv run pytest                          # all tests
-uv run pytest tests/test_package.py    # single file
-uv run pytest -k "test_name_pattern"   # single test
-```
+Workspace Polylith (`workspace.toml`):
 
-## Project layout
 
-Polylith workspace (see `workspace.toml`):
+| Pasta                       | Propósito                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bases/xtreme_system/api/`  | App FastAPI, templates Jinja2, arquivos estáticos                                                                                                                  |
+| `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `meio_captacao`, `compra`, `crud` e submódulos de imagens/documentos |
+| `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                      |
+| `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                              |
+| `tests/`                    | Suite de testes com SQLite in-memory                                                                                                                               |
+| `alembic/`                  | Configuração do Alembic + 17 migrations em `versions/`                                                                                                             |
+| `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                 |
 
-- `src/xtreme_system/` — package namespace root
-- `components/`, `bases/`, `development/` — Polylith bricks and dev environment (scaffolded, currently empty)
-- `tests/` — test suite
 
-## Project Conventions
+Polylith namespace: `xtreme_system`. Cada componente (`auth`, `veiculo`, etc.)
+é um brick independente importado via `from xtreme_system.<nome> import core`.
 
-- Python 3.12+, managed with **`uv`** — every command is `uv run ...`
-- Polylith namespace is `xtreme_system` (underscore, not hyphen)
-- Add dependencies with `uv add <pkg>` (or `uv add --dev <pkg>` for dev deps)
-- **Line length: 88** (ruff enforces)
-- **No comments** unless essential — the codebase uses zero comments
-- **ruff rule set**: A, ARG, B, C4, E, F, I, N, PL, PT, RET, RUF, SIM, UP, W (ignores PLR0913)
-- Tests relax ruff: magic numbers (`PLR2004`) and `assert` usage (`S101`) are allowed
-- Mypy is **strict** and targets only `xtreme_system` (not tests)
-- **No imports** in `__init__.py` beyond what's actually exported — keep it minimal
+## Convenções do projeto
+
+- Python 3.12+, gerenciado com `**uv**` — sempre `uv run ...`
+- Polylith namespace é `xtreme_system` (underscore, não hífen)
+- Adicione dependências com `uv add <pkg>` (ou `uv add --dev <pkg>` para dev deps)
+- **Line length: 88** (ruff)
+- **Sem comentários** a menos que essencial
+- **ruff rule set**: A, ARG, B, C4, E, F, I, N, PL, PT, RET, RUF, SIM, UP, W (ignora PLR0913)
+- Tests relaxam ruff: magic numbers (`PLR2004`) e `assert` (`S101`) são permitidos
+- Mypy é **strict** e verifica apenas `xtreme_system` (não tests)
+- **Sem importações** no `__init__.py` além do que é realmente exportado — mantenha mínimo

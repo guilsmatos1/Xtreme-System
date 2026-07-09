@@ -29,6 +29,11 @@ class StatusVeiculo(StrEnum):
     reservado = "reservado"
 
 
+class TipoEntrada(StrEnum):
+    compra = "compra"
+    consignacao = "consignacao"
+
+
 class Veiculo(Base):
     __tablename__ = "veiculo"
 
@@ -42,6 +47,8 @@ class Veiculo(Base):
     preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))  # noqa: SQLAlchemy mapped
     procuracao: Mapped[str | None]  # noqa: SQLAlchemy mapped
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
+    tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)  # noqa: SQLAlchemy mapped
+    revisao: Mapped[bool] = mapped_column(default=False)  # noqa: SQLAlchemy mapped
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
     meio_captacao_id: Mapped[int] = mapped_column(
         ForeignKey("meio_captacao.id"), index=True
@@ -65,6 +72,8 @@ class VeiculoCreate(BaseModel):
     preco: Decimal  # noqa: Pydantic field
     procuracao: str | None = None  # noqa: Pydantic field
     status: StatusVeiculo = StatusVeiculo.disponivel
+    tipo_entrada: TipoEntrada = TipoEntrada.compra  # noqa: Pydantic field
+    revisao: bool = False  # noqa: Pydantic field
     investidor_id: int
     meio_captacao_id: int
 
@@ -79,6 +88,8 @@ class VeiculoUpdate(BaseModel):
     preco: Decimal | None = None  # noqa: Pydantic field
     procuracao: str | None = None  # noqa: Pydantic field
     status: StatusVeiculo | None = None
+    tipo_entrada: TipoEntrada | None = None  # noqa: Pydantic field
+    revisao: bool | None = None  # noqa: Pydantic field
     investidor_id: int | None = None
     meio_captacao_id: int | None = None
 
@@ -96,6 +107,8 @@ class VeiculoRead(BaseModel):
     preco: Decimal  # noqa: Pydantic field
     procuracao: str | None  # noqa: Pydantic field
     status: StatusVeiculo  # noqa: Pydantic field
+    tipo_entrada: TipoEntrada  # noqa: Pydantic field
+    revisao: bool  # noqa: Pydantic field
     investidor: InvestidorRead  # noqa: Pydantic field
     meio_captacao: MeioCaptacaoRead  # noqa: Pydantic field
 
