@@ -7,11 +7,16 @@
     <h1>Clientes</h1>
     <p class="page-head__subtitle">Cadastre e gerencie os clientes da operação</p>
   </div>
-  {% if user.papel.value == 'admin' %}
-  <button class="btn btn--primary" hx-get="/ui/clientes/novo" hx-target="#modal" hx-swap="innerHTML">
-    {{ ui.icon("plus") }} Novo cliente
-  </button>
-  {% endif %}
+  <div style="display:flex;gap:var(--s-3);flex-wrap:wrap">
+    <a class="btn btn--ghost" href="/ui/clientes/exportar?q={{ q | urlencode }}">
+      {{ ui.icon("inbox") }} Exportar dados
+    </a>
+    {% if user.papel.value == 'admin' %}
+    <button class="btn btn--primary" hx-get="/ui/clientes/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo cliente
+    </button>
+    {% endif %}
+  </div>
 </div>
 
 <div class="toolbar">
@@ -25,16 +30,17 @@
   </div>
 </div>
 
+{% set sort_qs = "&q=" ~ (q | urlencode) %}
 <div class="table-wrap">
   <table class="table--wide">
     <thead>
       <tr>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>Tipo</th>
-        <th>Cidade</th>
-        <th>Estado</th>
-        <th>Status</th>
+        <th>{{ ui.sortable("nome", "Nome", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
+        <th>{{ ui.sortable("documento", "CPF", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
+        <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
+        <th>{{ ui.sortable("cidade", "Cidade", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
+        <th>{{ ui.sortable("estado", "Estado", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
+        <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/clientes", "#linhas", sort_qs) }}</th>
         {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

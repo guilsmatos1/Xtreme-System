@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
 from datetime import date
+from decimal import Decimal
 from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
@@ -501,15 +502,34 @@ def _erro_cliente(
     )
 
 
+_CLIENTE_SORT_FIELDS: dict[str, str] = {
+    "nome": "nome",
+    "documento": "documento",
+    "tipo": "tipo",
+    "cidade": "cidade",
+    "estado": "estado",
+    "ativo": "ativo",
+}
+
+
 @app.get("/ui/clientes")
 def ui_clientes(
     request: Request,
     session: SessionDep,
     user: UIUser,
     q: str = "",
+    sort: str = "",
+    order: str = "asc",
 ) -> HTMLResponse:
     lista = cliente.search(session, q) if q else cliente.list_all(session)
-    ctx = {"user": user, "clientes": lista, "q": q}
+    field = _CLIENTE_SORT_FIELDS.get(sort)
+    if field:
+        lista = sorted(
+            lista,
+            key=lambda c: _sort_key(getattr(c, field)),
+            reverse=order == "desc",
+        )
+    ctx = {"user": user, "clientes": lista, "q": q, "sort": sort, "order": order}
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_linhas_clientes.html", ctx)
     return templates.TemplateResponse(request, "clientes.html", ctx)
@@ -572,6 +592,27 @@ def ui_cliente_excluir(
     )
 
 
+@app.get("/ui/clientes/exportar")
+def ui_clientes_exportar(session: SessionDep, _: UIUser, q: str = "") -> Response:
+    lista = cliente.search(session, q) if q else cliente.list_all(session)
+    return _csv_response(
+        "clientes.csv",
+        ["ID", "Nome", "CPF", "Tipo", "Cidade", "Estado", "Ativo"],
+        [
+            [
+                c.id,
+                c.nome,
+                c.documento,
+                c.tipo.value,
+                c.cidade or "",
+                c.estado or "",
+                "sim" if c.ativo else "nao",
+            ]
+            for c in lista
+        ],
+    )
+
+
 # ---- Vendas (UI) ----
 
 
@@ -623,10 +664,47 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     return data
 
 
+_VENDA_SORT_FIELDS: dict[str, str] = {
+    "cliente": "cliente",
+    "veiculo": "veiculo",
+    "data": "data_venda",
+    "valor": "valor_venda",
+    "entrada": "valor_entrada",
+    "pagamento": "forma_pagamento",
+    "parcelas": "parcelas",
+    "status": "status",
+}
+
+
 @app.get("/ui/vendas")
-def ui_vendas(request: Request, session: SessionDep, user: UIUser) -> HTMLResponse:
+def ui_vendas(
+    request: Request,
+    session: SessionDep,
+    user: UIUser,
+    sort: str = "",
+    order: str = "asc",
+) -> HTMLResponse:
     lista = venda.list_all(session)
-    ctx = {"user": user, "vendas": lista}
+    field = _VENDA_SORT_FIELDS.get(sort)
+    if field:
+        # cliente and veiculo sort by related name
+        if field == "cliente":
+            lista = sorted(
+                lista, key=lambda v: _sort_key(v.cliente.nome), reverse=order == "desc"
+            )
+        elif field == "veiculo":
+            lista = sorted(
+                lista,
+                key=lambda v: _sort_key(v.veiculo.modelo),
+                reverse=order == "desc",
+            )
+        else:
+            lista = sorted(
+                lista,
+                key=lambda v: _sort_key(getattr(v, field)),
+                reverse=order == "desc",
+            )
+    ctx = {"user": user, "vendas": lista, "sort": sort, "order": order}
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_linhas_vendas.html", ctx)
     return templates.TemplateResponse(request, "vendas.html", ctx)
@@ -826,6 +904,7 @@ _SORT_FIELDS: dict[str, str] = {
     "preco": "preco",
     "status": "status",
     "investidor": "investidor",
+    "procuracao": "procuracao",
     "captacao": "meio_captacao",
 }
 
@@ -873,6 +952,7 @@ def ui_veiculos_exportar(session: SessionDep, _: UIUser, q: str = "") -> Respons
             "Preco",
             "Status",
             "Investidor",
+            "Procurador",
             "Captacao",
         ],
         [
@@ -886,6 +966,7 @@ def ui_veiculos_exportar(session: SessionDep, _: UIUser, q: str = "") -> Respons
                 f"{v.preco:.2f}",
                 v.status.value,
                 v.investidor.nome,
+                v.procuracao or "",
                 v.meio_captacao.nome,
             ]
             for v in lista
@@ -1015,6 +1096,27 @@ def _erro_lancamento(
     )
 
 
+# ponytail: in-memory aggregations for caixa table. Query-level if row counts grow.
+def _agregados_investidores(
+    session: Session,
+) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:
+    """Return (num_veiculos, valor_veiculos, total_aportado) per investidor_id."""
+    veiculos = veiculo.list_all(session)
+    num: dict[int, int] = {}
+    valor: dict[int, Decimal] = {}
+    for v in veiculos:
+        iid = v.investidor_id
+        num[iid] = num.get(iid, 0) + 1
+        valor[iid] = valor.get(iid, Decimal("0")) + v.preco
+    aportes: dict[int, Decimal] = {}
+    for lanc in caixa.list_all(session):
+        if lanc.tipo == caixa.TipoLancamento.aporte:
+            aportes[lanc.investidor_id] = (
+                aportes.get(lanc.investidor_id, Decimal("0")) + lanc.valor
+            )
+    return num, valor, aportes
+
+
 @app.get("/ui/caixa")
 def ui_caixa(
     request: Request,
@@ -1025,6 +1127,7 @@ def ui_caixa(
 ) -> HTMLResponse:
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
+    num_veiculos, valor_veiculos, total_aportado = _agregados_investidores(session)
     reverse = order == "desc"
     if sort == "investidor":
         investidores = sorted(
@@ -1034,6 +1137,22 @@ def ui_caixa(
         investidores = sorted(
             investidores, key=lambda i: saldos.get(i.id, 0), reverse=reverse
         )
+    elif sort == "num_veiculos":
+        investidores = sorted(
+            investidores, key=lambda i: num_veiculos.get(i.id, 0), reverse=reverse
+        )
+    elif sort == "valor_veiculos":
+        investidores = sorted(
+            investidores,
+            key=lambda i: valor_veiculos.get(i.id, Decimal("0")),
+            reverse=reverse,
+        )
+    elif sort == "total_investido":
+        investidores = sorted(
+            investidores,
+            key=lambda i: total_aportado.get(i.id, Decimal("0")),
+            reverse=reverse,
+        )
     return templates.TemplateResponse(
         request,
         "caixa.html",
@@ -1041,9 +1160,33 @@ def ui_caixa(
             "user": user,
             "investidores": investidores,
             "saldos": saldos,
+            "num_veiculos": num_veiculos,
+            "valor_veiculos": valor_veiculos,
+            "total_aportado": total_aportado,
             "sort": sort,
             "order": order,
         },
+    )
+
+
+@app.get("/ui/caixa/exportar")
+def ui_caixa_exportar(session: SessionDep, _: UIUser) -> Response:
+    investidores = investidor.list_all(session)
+    saldos = caixa.saldos(session)
+    num_v, val_v, tot_a = _agregados_investidores(session)
+    return _csv_response(
+        "caixa.csv",
+        ["Investidor", "Saldo", "N° Veículos", "Valor em Veículos", "Total Investido"],
+        [
+            [
+                i.nome,
+                f"{saldos.get(i.id, Decimal('0')):.2f}",
+                num_v.get(i.id, 0),
+                f"{val_v.get(i.id, Decimal('0')):.2f}",
+                f"{tot_a.get(i.id, Decimal('0')):.2f}",
+            ]
+            for i in investidores
+        ],
     )
 
 
@@ -1064,6 +1207,27 @@ def ui_caixa_investidor(
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_linhas_lancamentos.html", ctx)
     return templates.TemplateResponse(request, "caixa_investidor.html", ctx)
+
+
+@app.get("/ui/caixa/{investidor_id}/exportar")
+def ui_caixa_investidor_exportar(
+    investidor_id: int, session: SessionDep, _: UIUser
+) -> Response:
+    investidor_obj = _found(investidor.get(session, investidor_id), "Investidor")
+    lancamentos = caixa.list_by_investidor(session, investidor_id)
+    return _csv_response(
+        f"caixa-{investidor_obj.nome}.csv",
+        ["Data", "Tipo", "Descricao", "Valor"],
+        [
+            [
+                lanc.criado_em.isoformat(),
+                lanc.tipo.value,
+                lanc.descricao or "",
+                f"{lanc.valor:.2f}",
+            ]
+            for lanc in lancamentos
+        ],
+    )
 
 
 @app.get("/ui/caixa/{investidor_id}/novo")

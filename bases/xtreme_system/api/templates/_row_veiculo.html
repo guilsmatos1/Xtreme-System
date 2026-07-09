@@ -8,6 +8,7 @@
   <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(v.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td>{{ ui.status_badge(v.status) }}</td>
   <td class="muted">{{ v.investidor.nome }}</td>
+  <td class="muted">{{ v.procuracao or "-" }}</td>
   <td class="muted">{{ v.meio_captacao.nome }}</td>
   {% if user.papel.value == 'admin' %}
   <td class="col-actions">
