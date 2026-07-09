@@ -1,0 +1,10 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for c in clientes %}
+    {% include "_row_cliente.html" %}
+  {% else %}
+  <tr class="empty-row"><td colspan="7">
+    {% call ui.empty("users", "Nenhum cliente encontrado", "Cadastre um cliente para começar.") %}{% endcall %}
+  </td></tr>
+  {% endfor %}
+</tbody>

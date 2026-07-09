@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Clientes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Clientes</h1>
+    <p class="page-head__subtitle">Cadastre e gerencie os clientes da operação</p>
+  </div>
+  {% if user.papel.value == 'admin' %}
+  <button class="btn btn--primary" hx-get="/ui/clientes/novo" hx-target="#modal" hx-swap="innerHTML">
+    {{ ui.icon("plus") }} Novo cliente
+  </button>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/clientes" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por nome, documento, cidade ou estado…"
+           value="{{ q or '' }}" aria-label="Buscar clientes">
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Documento</th>
+        <th>Tipo</th>
+        <th>Cidade</th>
+        <th>Estado</th>
+        <th>Status</th>
+        {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+      </tr>
+    </thead>
+    {% include "_linhas_clientes.html" %}
+  </table>
+</div>
+{% endblock %}

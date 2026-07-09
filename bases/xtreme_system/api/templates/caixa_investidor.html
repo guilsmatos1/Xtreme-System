@@ -25,7 +25,10 @@
 <div class="table-wrap">
   <table class="table--wide">
     <thead><tr>
-      <th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th>
+      <th>{{ ui.sortable("data", "Data", sort, order, "/ui/caixa/" ~ investidor_id, "#linhas") }}</th>
+      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/caixa/" ~ investidor_id, "#linhas") }}</th>
+      <th>{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/caixa/" ~ investidor_id, "#linhas") }}</th>
+      <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/caixa/" ~ investidor_id, "#linhas") }}</th>
       {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_lancamentos.html" %}

@@ -86,6 +86,128 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Exportar dados" in pagina.text
 
 
+def test_ui_clientes_crud_basico(client: TestClient) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/clientes")
+    assert pagina.status_code == 200
+    assert 'id="linhas"' in pagina.text
+
+    criado = client.post(
+        "/ui/clientes",
+        data={
+            "nome": "Maria Lima",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+            "ativo": "true",
+        },
+    )
+    assert criado.status_code == 200
+    assert "Maria Lima" in criado.text
+
+    token = client.post(
+        "/login", data={"username": "admin", "password": "senha"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    clientes = client.get("/clientes", headers=headers).json()
+    cliente_id = next(
+        item["id"] for item in clientes if item["documento"] == "12345678901"
+    )
+
+    editado = client.post(
+        f"/ui/clientes/{cliente_id}",
+        data={
+            "nome": "Maria Lima",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+            "cidade": "São Paulo",
+            "ativo": "false",
+        },
+    )
+    assert editado.status_code == 200
+    assert "São Paulo" in editado.text
+
+    excluido = client.post(f"/ui/clientes/{cliente_id}/excluir")
+    assert excluido.status_code == 200
+    assert "Maria Lima" not in excluido.text
+
+
+def test_ui_vendas_crud_basico(client: TestClient) -> None:
+    _login_admin(client)
+
+    token = client.post(
+        "/login", data={"username": "admin", "password": "senha"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Carlos Lima",
+            "documento": "98765432100",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+    cliente_id = cliente_resp.json()["id"]
+
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    pagina = client.get("/ui/vendas")
+    assert pagina.status_code == 200
+    assert 'id="linhas"' in pagina.text
+
+    criado = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "valor_entrada": "10000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+            "observacoes": "aguardando aprovação",
+        },
+    )
+    assert criado.status_code == 200
+    assert "Carlos Lima" in criado.text
+    assert "HB20" not in criado.text
+
+    venda_id = client.get("/vendas", headers=headers).json()[0]["id"]
+
+    editado = client.post(
+        f"/ui/vendas/{venda_id}",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "valor_entrada": "15000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "aprovado",
+            "observacoes": "aprovada",
+        },
+    )
+    assert editado.status_code == 200
+    assert "Aprovado" in editado.text
+
+    excluido = client.post(f"/ui/vendas/{venda_id}/excluir")
+    assert excluido.status_code == 200
+    assert "Carlos Lima" not in excluido.text
+
+    csv_resp = client.get("/ui/vendas/exportar")
+    assert csv_resp.status_code == 200
+    assert (
+        csv_resp.headers["content-disposition"] == 'attachment; filename="vendas.csv"'
+    )
+    assert "text/csv" in csv_resp.headers["content-type"]
+    assert "Carlos Lima" not in csv_resp.text
+
+
 def test_ui_exportacao_de_dados_downloada_csv(client: TestClient) -> None:
     client.post("/ui/login", data={"username": "admin", "password": "senha"})
 

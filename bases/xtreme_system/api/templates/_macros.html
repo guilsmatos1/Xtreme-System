@@ -41,7 +41,21 @@
 {%- endmacro %}
 
 {% macro tipo_badge(tipo) -%}
-<span class="badge badge--plain badge--neutral">{{ icon(tipo.value == "carro" and "car" or "bike") }}{{ tipo.value | capitalize }}</span>
+{%- if tipo.value == "carro" -%}
+<span class="badge badge--plain badge--accent">{{ icon("car") }}Carro</span>
+{%- else -%}
+<span class="badge badge--plain badge--warning">{{ icon("bike") }}Moto</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro sortable(col, label, current_sort, current_order, url, target="", extra_qs="") -%}
+{%- set is_active = col == current_sort -%}
+{%- set next_order = "desc" if is_active and current_order == "asc" else "asc" -%}
+{%- set arrow = " ▲" if is_active and current_order == "asc" else (" ▼" if is_active and current_order == "desc" else "") -%}
+{%- set href = url ~ "?sort=" ~ col ~ "&order=" ~ next_order ~ extra_qs -%}
+<a {% if target %}hx-get="{{ href }}" hx-target="{{ target }}" hx-swap="outerHTML" hx-trigger="click"{% endif %}
+   href="{{ href }}"
+   class="sort-link{% if is_active %} sort-link--active{% endif %}">{{ label }}{{ arrow }}</a>
 {%- endmacro %}
 
 {% macro papel_badge(papel) -%}

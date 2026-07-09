@@ -59,9 +59,17 @@
 
 <div class="table-wrap">
   <table class="table--wide">
+    {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead><tr>
-      <th>Modelo</th><th>Placa</th><th>Tipo</th><th>Ano</th><th>KM</th>
-      <th>Preço</th><th>Status</th><th>Investidor</th><th>Captação</th>
+      <th>{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("preco", "Preço", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
+      <th>{{ ui.sortable("captacao", "Captação", sort, order, "/ui/veiculos", "#linhas", sort_qs) }}</th>
       {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_veiculos.html" %}

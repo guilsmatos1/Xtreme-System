@@ -22,7 +22,7 @@
 <div class="table-wrap">
   <table>
     <thead><tr>
-      <th>Nome</th>
+      <th>{{ ui.sortable("nome", "Nome", sort, order, prefixo, "#linhas") }}</th>
       {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_simples.html" %}

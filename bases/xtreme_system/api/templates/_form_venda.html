@@ -1,0 +1,73 @@
+{% import "_macros.html" as ui %}
+<div class="modal" onclick="if(event.target===this)this.remove()">
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mv-title">
+    <div class="modal__head">
+      <h3 id="mv-title">{{ 'Editar venda' if venda else 'Nova venda' }}</h3>
+      <button class="icon-btn" type="button" aria-label="Fechar"
+              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+    </div>
+    <form hx-post="/ui/vendas{% if venda %}/{{ venda.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+      <div class="modal__body">
+        {% if erro %}{{ ui.alert(erro) }}{% endif %}
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Cliente</span>
+            <select class="select" name="cliente_id" required>
+              {% for c in clientes %}
+              <option value="{{ c.id }}"{% if venda and venda.cliente_id == c.id %} selected{% endif %}>{{ c.nome }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Veículo</span>
+            <select class="select" name="veiculo_id" required>
+              {% for veic in veiculos %}
+              <option value="{{ veic.id }}"{% if venda and venda.veiculo_id == veic.id %} selected{% endif %}>{{ veic.modelo }} - {{ veic.placa }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Data da venda</span>
+            <input class="input" name="data_venda" type="date" value="{{ venda.data_venda if venda else '' }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Status</span>
+            <select class="select" name="status" required>
+              {% for s in status %}
+              <option value="{{ s.value }}"{% if venda and venda.status == s %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Valor da venda</span>
+            <input class="input" name="valor_venda" type="number" step="0.01" value="{{ venda.valor_venda if venda else '' }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Entrada</span>
+            <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda and venda.valor_entrada is not none else '' }}">
+          </label>
+
+          <label class="field">
+            <span class="field__label">Forma de pagamento</span>
+            <input class="input" name="forma_pagamento" value="{{ venda.forma_pagamento if venda else '' }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Parcelas</span>
+            <input class="input" name="parcelas" type="number" min="1" value="{{ venda.parcelas if venda else '' }}" required>
+          </label>
+
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4">{{ venda.observacoes if venda and venda.observacoes else '' }}</textarea>
+          </label>
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>

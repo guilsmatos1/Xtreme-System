@@ -12,7 +12,11 @@
 
 <div class="table-wrap">
   <table class="table--wide">
-    <thead><tr><th>Investidor</th><th>Saldo</th><th class="col-actions"><span class="sr-only">Ações</span></th></tr></thead>
+    <thead><tr>
+      <th>{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/caixa") }}</th>
+      <th>{{ ui.sortable("saldo", "Saldo", sort, order, "/ui/caixa") }}</th>
+      <th class="col-actions"><span class="sr-only">Ações</span></th>
+    </tr></thead>
     <tbody>
     {% for i in investidores %}
     {% set saldo = saldos.get(i.id, 0) %}

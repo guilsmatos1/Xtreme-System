@@ -43,7 +43,11 @@
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th style="width:1%">ID</th><th>Usuário</th><th>Papel</th><th>Status</th><th style="width:1%"></th>
+        <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
+        <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
+        <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
+        <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
+        <th style="width:1%"></th>
       </tr></thead>
       <tbody>
         {% for u in usuarios %}

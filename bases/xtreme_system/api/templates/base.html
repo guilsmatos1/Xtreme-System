@@ -41,6 +41,12 @@
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/meios-captacao') }}" href="/ui/meios-captacao">
           {{ ui.icon("megaphone") }} Meios de captação
         </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes') }}" href="/ui/clientes">
+          {{ ui.icon("users") }} Clientes
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/vendas') }}" href="/ui/vendas">
+          {{ ui.icon("cash") }} Vendas
+        </a>
         {% if user and user.papel.value == 'admin' %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/usuarios') }}" href="/ui/usuarios">
           {{ ui.icon("users") }} Usuários

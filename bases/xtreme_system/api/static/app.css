@@ -315,6 +315,7 @@ th.col-actions, td.col-actions { text-align: right; width: 1%; white-space: nowr
 .badge--danger  { background: var(--danger-soft);  color: var(--danger);  border-color: transparent; }
 .badge--neutral { background: var(--surface-2); color: var(--text-secondary); }
 .badge--accent  { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.badge--warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
 .badge--plain::before { display: none; }
 
 /* ---- 12. Modal ----------------------------------------------------------- */
@@ -409,3 +410,12 @@ dialog::backdrop { background: rgba(18,18,24,.45); backdrop-filter: blur(2px); }
   .form-grid { grid-template-columns: 1fr; }
   #msg { left: var(--s-4); right: var(--s-4); bottom: var(--s-4); max-width: none; }
 }
+
+/* ---- Sortable column links (ponytail: inline, no icon deps) ---- */
+.sort-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.sort-link:hover { color: var(--text); }
+.sort-link--active { color: var(--accent); font-weight: 600; }
