@@ -35,17 +35,16 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Revert data_venda to not nullable
+    # Note: PostgreSQL doesn't support removing enum values directly.
+    # Downgrading enum additions is not safely reversible without dropping and
+    # recreating the entire type and dependent columns. This migration is one-way.
+    # If rollback is needed, manually drop the database and restore from backup.
+
+    # Only revert data_venda to not nullable if no NULL values exist
+    # (This may fail if NULL values were inserted)
     op.alter_column(
         'venda',
         'data_venda',
         existing_type=sa.Date(),
         nullable=False
     )
-
-    # Note: PostgreSQL doesn't support removing enum values directly.
-    # To fully revert enum changes, you would need to:
-    # 1. Create new enum types without the new values
-    # 2. Cast all column values to the new type
-    # 3. Drop the old enum types
-    # This is complex and usually not needed in practice.

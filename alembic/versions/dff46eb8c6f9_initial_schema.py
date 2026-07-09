@@ -46,8 +46,8 @@ def upgrade() -> None:
     sa.Column('status', sa.Enum('disponivel', 'vendido', name='statusveiculo'), nullable=False),
     sa.Column('investidor_id', sa.Integer(), nullable=False),
     sa.Column('meio_captacao_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['investidor_id'], ['investidor.id'], ),
-    sa.ForeignKeyConstraint(['meio_captacao_id'], ['meio_captacao.id'], ),
+    sa.ForeignKeyConstraint(['investidor_id'], ['investidor.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['meio_captacao_id'], ['meio_captacao.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_veiculo_placa'), 'veiculo', ['placa'], unique=True)

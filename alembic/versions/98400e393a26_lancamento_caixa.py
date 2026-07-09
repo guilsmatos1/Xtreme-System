@@ -29,12 +29,12 @@ def upgrade() -> None:
     sa.Column('valor', sa.Numeric(precision=12, scale=2), nullable=False),
     sa.Column('descricao', sa.String(), nullable=False),
     sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['investidor_id'], ['investidor.id'], ),
+    sa.ForeignKeyConstraint(['investidor_id'], ['investidor.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['veiculo_id'], ['veiculo.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_lancamento_caixa_investidor_id'), 'lancamento_caixa', ['investidor_id'], unique=False)
-    op.create_index(op.f('ix_lancamento_caixa_veiculo_id'), 'lancamento_caixa', ['veiculo_id'], unique=True)
+    op.create_index(op.f('ix_lancamento_caixa_veiculo_id'), 'lancamento_caixa', ['veiculo_id'], unique=False)
 
 
 def downgrade() -> None:

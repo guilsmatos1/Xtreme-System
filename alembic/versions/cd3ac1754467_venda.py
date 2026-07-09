@@ -32,8 +32,8 @@ def upgrade() -> None:
         sa.Column('parcelas', sa.Integer(), nullable=False),
         sa.Column('status', sa.Enum('pendente', 'aprovado', 'cancelado', 'concluido', name='statusvenda'), nullable=False),
         sa.Column('observacoes', sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(['cliente_id'], ['cliente.id'], ),
-        sa.ForeignKeyConstraint(['veiculo_id'], ['veiculo.id'], ),
+        sa.ForeignKeyConstraint(['cliente_id'], ['cliente.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['veiculo_id'], ['veiculo.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
     )
     op.create_index(op.f('ix_venda_cliente_id'), 'venda', ['cliente_id'], unique=False)
