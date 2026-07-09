@@ -169,6 +169,26 @@ Lançamentos financeiros de aportes e custos dos investidores.
 | `descricao` | `VARCHAR` | Não | - | |
 | `criado_em` | `DATETIME` | Não | `now()` | |
 
+### `imagem_documento_cliente`
+
+Imagens de documentos associados a um cliente.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (CASCADE), indexado |
+| `url` | `VARCHAR` | Não | - | URL da imagem |
+
+### `imagem_comprovante_compra`
+
+Imagens de comprovantes de pagamento associados a uma compra.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `compra_id` | `INTEGER` | Não | - | FK → `compra.id` (CASCADE), indexado |
+| `url` | `VARCHAR` | Não | - | URL da imagem |
+
 ---
 
 ## Relacionamentos
@@ -179,9 +199,12 @@ Lançamentos financeiros de aportes e custos dos investidores.
 - Um **veículo** pode ter no máximo um **lancamento_investimento** (`veiculo_id` é único).
 - Um **cliente** pode ter várias **vendas**.
 - Um **cliente** pode ter várias **compras**.
+- Um **cliente** pode ter várias **imagens de documentos**.
 - Um **veículo** pode estar em várias **vendas** (historicamente) — controle de status via aplicação.
 - Um **veículo** pode estar em várias **compras** (historicamente).
 - Um **usuário** (vendedor) pode estar em várias **vendas**.
+- Uma **venda** pode ter vários **comprovantes**.
+- Uma **compra** pode ter vários **comprovantes de pagamento**.
 
 ---
 
@@ -207,3 +230,5 @@ Lançamentos financeiros de aportes e custos dos investidores.
 | `compra` | `ix_compra_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_veiculo_id` | `veiculo_id` | Sim |
+| `imagem_documento_cliente` | `ix_imagem_documento_cliente_cliente_id` | `cliente_id` | Não |
+| `imagem_comprovante_compra` | `ix_imagem_comprovante_compra_compra_id` | `compra_id` | Não |
