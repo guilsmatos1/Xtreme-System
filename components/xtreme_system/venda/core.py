@@ -42,7 +42,7 @@ class Venda(Base):
 class VendaCreate(BaseModel):
     cliente_id: int
     veiculo_id: int
-    data_venda: date
+    data_venda: date | None = None
     valor_venda: Decimal
     valor_entrada: Decimal | None = None
     forma_pagamento: str

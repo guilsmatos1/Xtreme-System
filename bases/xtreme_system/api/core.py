@@ -6,6 +6,7 @@ import logging
 import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
+from datetime import date
 from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
@@ -44,7 +45,7 @@ class _RequestIDFilter(logging.Filter):
 
 logger.addFilter(_RequestIDFilter())
 
-app = FastAPI(title="Xtreme Estoque")
+app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -575,9 +576,13 @@ def ui_cliente_excluir(
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
+    veiculos = veiculo.list_all(session)
+    veiculos_disponiveis = [
+        v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel
+    ]
     return {
         "clientes": cliente.list_all(session),
-        "veiculos": veiculo.list_all(session),
+        "veiculos": veiculos_disponiveis,
         "status": list(venda.StatusVenda),
     }
 
@@ -613,6 +618,8 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
         data["valor_entrada"] = None
     if data.get("observacoes") == "":
         data["observacoes"] = None
+    if not data.get("data_venda"):
+        data["data_venda"] = str(date.today())
     return data
 
 
@@ -1216,7 +1223,7 @@ def ui_usuario_criar(
     user: UIAdmin,
     username: Annotated[str, Form()],
     senha: Annotated[str, Form()],
-    papel: Annotated[usuario.Papel, Form()] = usuario.Papel.leitor,
+    papel: Annotated[usuario.Papel, Form()] = usuario.Papel.vendedor,
 ) -> HTMLResponse:
     erro = None
     if usuario.get_by_username(session, username) is not None:

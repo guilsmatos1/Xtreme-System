@@ -34,7 +34,7 @@ def client() -> Iterator[TestClient]:
         usuario.create(
             session,
             usuario.UsuarioCreate(
-                username="leitor", senha="senha", papel=usuario.Papel.leitor
+                username="leitor", senha="senha", papel=usuario.Papel.vendedor
             ),
         )
 
@@ -137,10 +137,10 @@ def test_admin_pode_excluir_outro_admin(client: TestClient) -> None:
 
 def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
-    # cria um leitor
+    # cria um vendedor
     leitor = client.post(
         "/usuarios",
-        json={"username": "leitor2", "senha": "abc", "papel": "leitor"},
+        json={"username": "leitor2", "senha": "abc", "papel": "vendedor"},
         headers=headers,
     )
     assert leitor.status_code == 201

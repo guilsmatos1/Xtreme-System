@@ -34,7 +34,7 @@ def client() -> Iterator[TestClient]:
         usuario.create(
             session,
             usuario.UsuarioCreate(
-                username="leitor", senha="senha", papel=usuario.Papel.leitor
+                username="leitor", senha="senha", papel=usuario.Papel.vendedor
             ),
         )
 

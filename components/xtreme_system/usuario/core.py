@@ -12,7 +12,7 @@ from xtreme_system.database.core import Base
 
 class Papel(StrEnum):
     admin = "admin"
-    leitor = "leitor"
+    vendedor = "vendedor"
 
 
 class Usuario(Base):
@@ -21,14 +21,14 @@ class Usuario(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True, index=True)
     senha_hash: Mapped[str]
-    papel: Mapped[Papel] = mapped_column(default=Papel.leitor)
+    papel: Mapped[Papel] = mapped_column(default=Papel.vendedor)
     ativo: Mapped[bool] = mapped_column(default=True)
 
 
 class UsuarioCreate(BaseModel):
     username: str
     senha: str
-    papel: Papel = Papel.leitor
+    papel: Papel = Papel.vendedor
 
 
 class UsuarioRead(BaseModel):

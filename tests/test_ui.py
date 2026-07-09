@@ -231,10 +231,10 @@ def _login_admin(client: TestClient) -> None:
 def test_ui_admin_exclui_outro_usuario(client: TestClient) -> None:
     """Admin pode excluir outro usuário pela UI."""
     _login_admin(client)
-    # cria um leitor pela UI
+    # cria um vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "leitor_ui", "senha": "abc", "papel": "leitor"},
+        data={"username": "leitor_ui", "senha": "abc", "papel": "vendedor"},
     )
     pagina = client.get("/ui/usuarios")
     assert "leitor_ui" in pagina.text
@@ -271,12 +271,12 @@ def test_ui_admin_nao_pode_se_autoexcluir(client: TestClient) -> None:
 def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     """Admin pode trocar a senha de outro usuário pela UI."""
     _login_admin(client)
-    # cria leitor pela UI
+    # cria vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "ui_leitor", "senha": "abc", "papel": "leitor"},
+        data={"username": "ui_leitor", "senha": "abc", "papel": "vendedor"},
     )
-    # obtém id do leitor via API JSON
+    # obtém id do vendedor via API JSON
     token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
     token = token_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}

@@ -90,11 +90,11 @@ def test_usuario_crud(session: Session) -> None:
     u = usuario.create(
         session,
         usuario.UsuarioCreate(
-            username="teste", senha="abc", papel=usuario.Papel.leitor
+            username="teste", senha="abc", papel=usuario.Papel.vendedor
         ),
     )
     assert u.id is not None
-    assert u.papel == usuario.Papel.leitor
+    assert u.papel == usuario.Papel.vendedor
 
     encontrado = usuario.get(session, u.id)
     assert encontrado is not None
