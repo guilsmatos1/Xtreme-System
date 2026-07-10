@@ -372,6 +372,15 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .modal__foot { display: flex; justify-content: flex-end; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-top: 1px solid var(--border); background: var(--surface-2); border-radius: 0 0 var(--r-lg) var(--r-lg); }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+.wizard-steps { font-size: .78rem; font-weight: 550; color: var(--text-secondary); }
+.wizard-step { display: none; border: 0; margin: 0; padding: 0; min-width: 0; }
+.wizard-step.is-active { display: grid; }
+.details-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin: 0; }
+.details-list div { min-width: 0; }
+.details-list dt { font-size: .72rem; font-weight: 650; color: var(--text-secondary); text-transform: uppercase; }
+.details-list dd { margin: 2px 0 0; color: var(--text); overflow-wrap: anywhere; }
+.modal-section { display: flex; flex-direction: column; gap: var(--s-2); }
+.modal-section h4 { font-size: .88rem; }
 
 /* ---- 13. Alert / inline messages ---------------------------------------- */
 .alert {
@@ -439,6 +448,7 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   .page-head .btn { align-self: flex-start; }
   .stats { grid-template-columns: 1fr 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .details-list { grid-template-columns: 1fr; }
   #msg { left: var(--s-3); right: var(--s-3); bottom: var(--s-3); max-width: none; }
 }
 
@@ -470,3 +480,60 @@ form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
 .midia-list__item svg { width: 16px; height: 16px; color: var(--text-tertiary); }
 .midia-list__item a { color: var(--text); text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .midia-list__item a:hover { color: var(--accent); }
+.midia-thumb {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.midia-grid--placeholder {
+  margin-bottom: var(--s-2);
+}
+
+.midia-item--placeholder {
+  width: 72px;
+  height: 72px;
+}
+
+.midia-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r);
+  border: 1px dashed var(--border);
+  background: linear-gradient(135deg, var(--surface-muted), var(--surface));
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+}
+
+.midia-placeholder svg {
+  width: 22px;
+  height: 22px;
+}
+
+.image-preview {
+  max-width: min(96vw, 1200px);
+  max-height: 96vh;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.image-preview::backdrop {
+  background: rgba(0, 0, 0, .78);
+}
+
+.image-preview img {
+  display: block;
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.image-preview__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}

@@ -1,6 +1,9 @@
 """UI HTMX: login por cookie e proteção das telas."""
 
+import contextlib
+import re
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -80,6 +83,113 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Exportar dados" in pagina.text
 
 
+def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("foto.jpg", b"conteudo-da-foto", "image/jpeg")},
+    )
+    assert resp.status_code == 200
+
+    match = re.search(r'src="([^"]+/foto[^"]*)"', resp.text)
+    if match is None:
+        match = re.search(r'src="([^"]+\.jpg)"', resp.text)
+    assert match is not None
+    url = match.group(1)
+
+    try:
+        arquivo = client.get(url)
+        assert arquivo.status_code == 200
+        assert arquivo.content == b"conteudo-da-foto"
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
+
+
+def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    upload = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("foto.jpg", b"conteudo-da-foto", "image/jpeg")},
+    )
+    match = re.search(r'src="([^"]+\.jpg)"', upload.text)
+    assert match is not None
+    url = match.group(1)
+    Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
+
+    resp = client.get(f"/ui/veiculos/{veiculo_id}/imagens")
+
+    assert resp.status_code == 200
+    assert url not in resp.text
+
+
+def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+
+    resp = client.post(
+        "/ui/veiculos",
+        data={
+            "tipo": "carro",
+            "tipo_entrada": "compra",
+            "placa": "DOC1A23",
+            "modelo": "Civic",
+            "cor": "Branco",
+            "ano": "2023",
+            "km": "5000",
+            "preco": "95000.00",
+            "debitos": "1234.56",
+            "investidor_id": "1",
+            "cli_nome": "Cliente Vendedor",
+            "cli_documento": "11122233344",
+            "cli_tipo": "pessoa_fisica",
+            "cli_telefone": "11999999999",
+            "cli_email": "vendedor@example.com",
+        },
+        files={
+            "documentos_cliente": (
+                "documento.pdf",
+                b"conteudo-do-documento",
+                "application/pdf",
+            )
+        },
+    )
+    assert resp.status_code == 200
+    assert "Civic" in resp.text
+    assert "R$ 1.234,56" in resp.text
+
+    veiculos = client.get("/veiculos", headers=headers).json()
+    veiculo_id = next(item["id"] for item in veiculos if item["placa"] == "DOC1A23")
+
+    modal = client.get(f"/ui/veiculos/{veiculo_id}/cliente-vendedor")
+    assert modal.status_code == 200
+    assert "Cliente Vendedor" in modal.text
+    assert "11122233344" in modal.text
+    assert "R$ 1.234,56" in modal.text
+    assert "Documento 1" in modal.text
+
+    match = re.search(r'href="([^"]+\.pdf)"', modal.text)
+    assert match is not None
+    url = match.group(1)
+    try:
+        arquivo = client.get(url)
+        assert arquivo.status_code == 200
+        assert arquivo.content == b"conteudo-do-documento"
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
+
+
 def test_ui_clientes_crud_basico(client: TestClient) -> None:
     _login_admin(client)
 
@@ -124,6 +234,16 @@ def test_ui_clientes_crud_basico(client: TestClient) -> None:
     excluido = client.post(f"/ui/clientes/{cliente_id}/excluir")
     assert excluido.status_code == 200
     assert "Maria Lima" not in excluido.text
+
+
+def test_ui_investidores_crud_basico(client: TestClient) -> None:
+    _login_admin(client)
+
+    criado = client.post("/ui/investidores", data={"nome": "Nova Investidora"})
+    assert criado.status_code == 200
+    assert "Nova Investidora" in criado.text
+    assert "cell-num" in criado.text
+    assert "R$ 0,00" in criado.text
 
 
 def test_ui_vendas_crud_basico(client: TestClient) -> None:
@@ -329,6 +449,28 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
     assert pagina.status_code == 200
     assert "HB20" in pagina.text
     assert "20.000,00" in pagina.text
+
+
+def test_ui_nao_exclui_investidor_com_lancamentos(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    inv = client.post("/investidores", json={"nome": "Carlos"}, headers=headers).json()
+    client.post(
+        "/lancamentos-caixa",
+        json={
+            "investidor_id": inv["id"],
+            "tipo": "aporte",
+            "valor": "1000.00",
+            "descricao": "Aporte inicial",
+        },
+        headers=headers,
+    )
+
+    resp = client.post(f"/ui/investidores/{inv['id']}/excluir")
+
+    assert resp.status_code == 409
+    assert "Não é possível excluir investidor com lançamentos." in resp.text
+    assert "Carlos" in resp.text
 
 
 def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(

@@ -7,99 +7,229 @@
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
-          {% if not veiculo %}hx-encoding="multipart/form-data"{% endif %}>
+          {% if not veiculo %}hx-encoding="multipart/form-data" enctype="multipart/form-data"{% endif %}
+          {% if not veiculo %}id="form-novo-veiculo"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
+
+        {% if veiculo %}
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo and veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+              {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Tipo de Entrada</span>
             <select class="select" name="tipo_entrada" required>
-              {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo and veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+              {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>
           <label class="field field--full">
             <span class="field__label">Modelo</span>
-            <input class="input" name="modelo" value="{{ veiculo.modelo if veiculo else '' }}" required autofocus>
+            <input class="input" name="modelo" value="{{ veiculo.modelo }}" required autofocus>
           </label>
 
           <label class="field">
             <span class="field__label">Cor</span>
-            <input class="input" name="cor" value="{{ veiculo.cor if veiculo else '' }}" required>
+            <input class="input" name="cor" value="{{ veiculo.cor }}" required>
           </label>
           <label class="field">
             <span class="field__label">Ano</span>
-            <input class="input" name="ano" type="number" value="{{ veiculo.ano if veiculo else '' }}" required>
+            <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
           </label>
 
           <label class="field">
             <span class="field__label">Placa</span>
-            <input class="input" name="placa" value="{{ veiculo.placa if veiculo else '' }}" required style="text-transform:uppercase">
+            <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
           </label>
           <label class="field">
             <span class="field__label">Quilometragem</span>
-            <input class="input" name="km" type="number" value="{{ veiculo.km if veiculo else '' }}" required>
+            <input class="input" name="km" type="number" value="{{ veiculo.km }}" required>
           </label>
 
           <label class="field">
             <span class="field__label">Preço de Compra (R$)</span>
-            <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco if veiculo else '' }}" required>
+            <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco }}" required>
           </label>
 
           <label class="field">
             <span class="field__label">Investidor</span>
             <select class="select" name="investidor_id" required>
-              {% for i in investidores %}<option value="{{ i.id }}"{% if veiculo and veiculo.investidor_id == i.id %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
+              {% for i in investidores %}<option value="{{ i.id }}"{% if veiculo.investidor_id == i.id %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
         </div>
-        {% if not veiculo %}
-        <div class="form-grid">
+        {% else %}
+        <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
+
+        <fieldset class="wizard-step form-grid is-active" data-step="1">
           <label class="field">
-            <span class="field__label">Fotos do veículo <span class="muted">(opcional)</span></span>
-            <input class="input" type="file" id="imagens" name="imagens" multiple accept="image/*">
-            <div id="preview-imagens" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;"></div>
+            <span class="field__label">Tipo</span>
+            <select class="select" name="tipo" required autofocus>
+              {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
           </label>
           <label class="field">
-            <span class="field__label">Documentos <span class="muted">(opcional)</span></span>
-            <input class="input" type="file" name="documentos" multiple>
+            <span class="field__label">Tipo de Entrada</span>
+            <select class="select" name="tipo_entrada" required>
+              {% for t in tipo_entradas %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
           </label>
-        </div>
-        <script>
-          document.getElementById('imagens').addEventListener('change', function(e) {
-            const preview = document.getElementById('preview-imagens');
-            preview.innerHTML = '';
-            Array.from(e.target.files).forEach(file => {
-              const reader = new FileReader();
-              reader.onload = function(event) {
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.style.width = '60px';
-                img.style.height = '60px';
-                img.style.objectFit = 'cover';
-                img.style.borderRadius = '4px';
-                preview.appendChild(img);
-              };
-              reader.readAsDataURL(file);
-            });
-          });
-        </script>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="2">
+          <label class="field field--full">
+            <span class="field__label">Placa</span>
+            <input class="input" name="placa" required style="text-transform:uppercase">
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Modelo</span>
+            <input class="input" name="modelo" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Cor</span>
+            <input class="input" name="cor" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Ano</span>
+            <input class="input" name="ano" type="number" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Quilometragem</span>
+            <input class="input" name="km" type="number" required>
+          </label>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="3">
+          <label class="field">
+            <span class="field__label">Preço de Compra (R$)</span>
+            <input class="input" name="preco" type="number" step="0.01" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Débitos (R$)</span>
+            <input class="input" name="debitos" type="number" step="0.01" min="0">
+          </label>
+          <label class="field">
+            <span class="field__label">Investidor</span>
+            <select class="select" name="investidor_id" required>
+              {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="4">
+          <label class="field field--full">
+            <span class="field__label">Cliente vendedor</span>
+            <select class="select" id="cliente-vendedor-select" name="cliente_vendedor_id">
+              <option value="">➕ Cadastrar novo cliente</option>
+              {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }} ({{ c.documento }})</option>{% endfor %}
+            </select>
+          </label>
+
+          <label class="field field--full">
+            <span class="field__label">Nome</span>
+            <input class="input" name="cli_nome" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">CPF</span>
+            <input class="input" name="cli_documento" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo</span>
+            <select class="select" name="cli_tipo" data-novo-cliente>
+              {% for t in tipos_cliente %}<option value="{{ t.value }}">{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Telefone</span>
+            <input class="input" name="cli_telefone" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="cli_email" type="email" data-novo-cliente>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Documentos do cliente</span>
+            <input class="input" name="documentos_cliente" type="file" accept="image/*,.pdf" multiple>
+          </label>
+        </fieldset>
         {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        {% if veiculo %}
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        {% else %}
+        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
+        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>
+        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        {% endif %}
       </div>
     </form>
-    {% if veiculo %}
-    <div class="modal__body" style="padding-top:0">
-      {% include "_midia_veiculo.html" %}
-    </div>
-    {% endif %}
   </div>
 </div>
+{% if not veiculo %}
+<script>
+(function () {
+  var form = document.getElementById('form-novo-veiculo');
+  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
+  var total = steps.length;
+  var current = 1;
+
+  var btnVoltar = document.getElementById('wizard-voltar');
+  var btnProximo = document.getElementById('wizard-proximo');
+  var btnSalvar = document.getElementById('wizard-salvar');
+  var stepAtual = document.getElementById('wizard-step-atual');
+
+  function stepEl(n) {
+    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
+  }
+
+  function show(n) {
+    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
+    stepAtual.textContent = n;
+    btnVoltar.style.display = n > 1 ? '' : 'none';
+    btnProximo.style.display = n < total ? '' : 'none';
+    btnSalvar.style.display = n === total ? '' : 'none';
+  }
+
+  function validStep(n) {
+    var controls = stepEl(n).querySelectorAll('input, select');
+    for (var i = 0; i < controls.length; i++) {
+      var el = controls[i];
+      if (el.disabled) continue;
+      if (!el.checkValidity()) { el.reportValidity(); return false; }
+    }
+    return true;
+  }
+
+  btnProximo.addEventListener('click', function () {
+    if (!validStep(current)) return;
+    current = Math.min(current + 1, total);
+    show(current);
+  });
+
+  btnVoltar.addEventListener('click', function () {
+    current = Math.max(current - 1, 1);
+    show(current);
+  });
+
+  var selectVendedor = document.getElementById('cliente-vendedor-select');
+  var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
+
+  function sincronizarVendedor() {
+    var existente = !!selectVendedor.value;
+    camposNovoCliente.forEach(function (campo) {
+      campo.disabled = existente;
+      campo.closest('.field').style.display = existente ? 'none' : '';
+    });
+  }
+  selectVendedor.addEventListener('change', sincronizarVendedor);
+  sincronizarVendedor();
+
+  show(current);
+})();
+</script>
+{% endif %}

@@ -81,6 +81,10 @@ def get(session: Session, cliente_id: int) -> Cliente | None:
     return crud.get(session, Cliente, cliente_id)
 
 
+def get_by_documento(session: Session, documento: str) -> Cliente | None:
+    return session.query(Cliente).filter_by(documento=documento).one_or_none()
+
+
 def create(session: Session, data: ClienteCreate) -> Cliente:
     return crud.create(session, Cliente, data)
 

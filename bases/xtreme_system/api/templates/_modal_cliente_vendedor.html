@@ -1,0 +1,43 @@
+{% import "_macros.html" as ui %}
+<div class="modal" onclick="if(event.target===this)this.remove()" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-vendedor-title">
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h3 id="modal-cliente-vendedor-title">Cliente vendedor — {{ veiculo.modelo }} ({{ veiculo.placa }})</h3>
+      <button class="icon-btn" type="button" aria-label="Fechar"
+              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      {% if compra %}
+      <dl class="details-list">
+        <div><dt>Nome</dt><dd>{{ compra.cliente.nome }}</dd></div>
+        <div><dt>Documento</dt><dd>{{ compra.cliente.documento }}</dd></div>
+        <div><dt>Tipo</dt><dd>{{ compra.cliente.tipo.value | replace("_", " ") | title }}</dd></div>
+        <div><dt>Telefone</dt><dd>{{ compra.cliente.telefone or "-" }}</dd></div>
+        <div><dt>Email</dt><dd>{{ compra.cliente.email or "-" }}</dd></div>
+        <div><dt>Endereço</dt><dd>{{ compra.cliente.endereco or "-" }}</dd></div>
+        <div><dt>Cidade/UF</dt><dd>{{ compra.cliente.cidade or "-" }}{% if compra.cliente.estado %}/{{ compra.cliente.estado }}{% endif %}</dd></div>
+        <div><dt>CEP</dt><dd>{{ compra.cliente.cep or "-" }}</dd></div>
+        <div><dt>Débitos</dt><dd>{% if compra.debitos is not none %}R$ {{ "{:,.2f}".format(compra.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</dd></div>
+      </dl>
+
+      <div class="modal-section">
+        <h4>Documentos</h4>
+        {% if documentos %}
+        <ul class="midia-list">
+          {% for doc in documentos %}
+          <li class="midia-list__item">
+            {{ ui.icon("file") }}
+            <a href="{{ doc.url }}" target="_blank" rel="noopener">Documento {{ loop.index }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        {{ ui.empty("file", "Nenhum documento", "Não há documentos cadastrados para este cliente.") }}
+        {% endif %}
+      </div>
+      {% else %}
+      {{ ui.empty("user", "Cliente vendedor não encontrado", "Este veículo ainda não possui uma compra vinculada.") }}
+      {% endif %}
+    </div>
+  </div>
+</div>

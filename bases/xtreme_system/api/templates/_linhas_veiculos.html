@@ -1,7 +1,7 @@
 {% import "_macros.html" as ui %}
 <tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
 {% for v in veiculos %}{% include "_row_veiculo.html" %}{% else %}
-<tr class="empty-row"><td colspan="13">
+<tr class="empty-row"><td colspan="14">
   {% call ui.empty("inbox", "Nenhum veículo encontrado", "Ajuste a busca ou cadastre um novo veículo para começar.") %}{% endcall %}
 </td></tr>
 {% endfor %}

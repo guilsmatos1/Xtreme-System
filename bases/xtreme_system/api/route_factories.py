@@ -173,6 +173,9 @@ def register_crud_ui_routes(
     form_template: str,
     sort_fields: dict[str, str | Callable[[Any], Any]],
     ctx_form: Callable[[Session], dict[str, Any]] = lambda _session: {},
+    ctx_list: Callable[[Session, list[Any]], dict[str, Any]] = (
+        lambda _session, _lista: {}
+    ),
     searchable: bool = False,
     parse_form: Callable[[Any], dict[str, Any]] = dict,
     before_create: Callable[[Session, Any], None] | None = None,
@@ -184,6 +187,7 @@ def register_crud_ui_routes(
     csv_headers: list[str],
     csv_row: Callable[[Any], list[Any]],
     delete_requires_admin: bool = True,
+    register_create: bool = True,
 ) -> None:
     def _query(session: Session, q: str) -> list[Any]:
         if searchable and q:
@@ -203,10 +207,11 @@ def register_crud_ui_routes(
         return sorted(lista, key=_sort_key_fn(spec), reverse=order == "desc")
 
     def _ok(request: Request, session: Session, user: usuario.Usuario) -> HTMLResponse:
+        lista = module.list_all(session)
         return templates.TemplateResponse(
             request,
             ok_partial_template,
-            {"user": user, list_key: module.list_all(session)},
+            {"user": user, list_key: lista, **ctx_list(session, lista)},
         )
 
     def _erro(
@@ -238,6 +243,7 @@ def register_crud_ui_routes(
             list_key: lista,
             "sort": sort,
             "order": order,
+            **ctx_list(session, lista),
         }
         if searchable:
             ctx["q"] = q
@@ -265,20 +271,22 @@ def register_crud_ui_routes(
             request, form_template, {**ctx_form(session), item_key: obj}
         )
 
-    @app.post(prefix)
-    async def _criar(
-        request: Request, session: SessionDep, user: UIAdmin
-    ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
-        form = await request.form()
-        try:
-            data = create_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
-            _run_hook(before_create, session, data)
-        except (ValidationError, HTTPException) as exc:
-            return _erro(request, session, exc, None)
-        obj = module.create(session, data)
-        _run_hook(after_create, session, obj)
-        return _ok(request, session, user)
+    if register_create:
+
+        @app.post(prefix)
+        async def _criar(
+            request: Request, session: SessionDep, user: UIAdmin
+        ) -> HTMLResponse:
+            session.info["usuario_id"] = user.id
+            form = await request.form()
+            try:
+                data = create_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
+                _run_hook(before_create, session, data)
+            except (ValidationError, HTTPException) as exc:
+                return _erro(request, session, exc, None)
+            obj = module.create(session, data)
+            _run_hook(after_create, session, obj)
+            return _ok(request, session, user)
 
     @app.post(f"{prefix}/{{item_id}}")
     async def _atualizar(
@@ -309,10 +317,15 @@ def register_crud_ui_routes(
         obj = _found(module.get(session, item_id), label)
         _run_hook(before_delete, session, obj)
         module.delete(session, obj)
+        lista = module.list_all(session)
         return templates.TemplateResponse(
             request,
             list_partial_template,
-            {"user": user, list_key: module.list_all(session)},
+            {
+                "user": user,
+                list_key: lista,
+                **ctx_list(session, lista),
+            },
         )
 
 

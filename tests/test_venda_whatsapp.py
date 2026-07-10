@@ -1,0 +1,170 @@
+"""Notificação de venda via WhatsApp: disparo best-effort no after_create."""
+
+from collections.abc import Iterator
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
+
+from xtreme_system.api.core import app
+from xtreme_system.database.core import Base, get_session
+from xtreme_system.usuario import core as usuario
+from xtreme_system.whatsapp import core as whatsapp
+
+
+@pytest.fixture
+def client() -> Iterator[TestClient]:
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    event.listen(
+        engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
+    )
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+
+        def override() -> Iterator[Session]:
+            yield session
+
+        app.dependency_overrides[get_session] = override
+        yield TestClient(app)
+        app.dependency_overrides.clear()
+
+
+def _token(client: TestClient, username: str) -> str:
+    resp = client.post("/login", data={"username": username, "password": "senha"})
+    assert resp.status_code == 200
+    return str(resp.json()["access_token"])
+
+
+def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
+    inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
+        "id"
+    ]
+    cliente_id = client.post(
+        "/clientes",
+        json={
+            "nome": "João Silva",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    ).json()["id"]
+    veiculo_id = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Gol",
+            "cor": "Branco",
+            "ano": 2018,
+            "placa": "ABC1D23",
+            "km": 50000,
+            "preco": "40000.00",
+            "investidor_id": inv_id,
+        },
+        headers=headers,
+    ).json()["id"]
+    return cliente_id, veiculo_id
+
+
+def _payload(cliente_id: int, veiculo_id: int) -> dict[str, Any]:
+    return {
+        "cliente_id": cliente_id,
+        "veiculo_id": veiculo_id,
+        "data_venda": "2026-07-01",
+        "valor_venda": "40000.00",
+        "forma_pagamento": "a_vista",
+        "parcelas": 1,
+    }
+
+
+def _configurar(client: TestClient) -> None:
+    client.post("/ui/login", data={"username": "admin", "password": "senha"})
+    client.post(
+        "/ui/configuracoes",
+        data={
+            "evolution_api_url": "http://evolution:8080",
+            "evolution_api_key": "chave",
+            "evolution_instance": "xtreme-motors",
+            "evolution_group_id": "1203630@g.us",
+        },
+    )
+
+
+def test_criar_venda_dispara_notificacao(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mensagens: list[str] = []
+    monkeypatch.setattr(
+        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
+    )
+    _configurar(client)
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+    )
+
+    assert resp.status_code == 201
+    assert len(mensagens) == 1
+    assert "João Silva" in mensagens[0]
+    assert "Gol" in mensagens[0]
+
+
+def test_falha_no_envio_nao_impede_criacao_da_venda(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def _falha(_config: whatsapp.WhatsappConfig, _texto: str) -> None:
+        raise OSError("Evolution API fora do ar")
+
+    monkeypatch.setattr(whatsapp, "_enviar", _falha)
+    _configurar(client)
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+    )
+
+    assert resp.status_code == 201
+
+
+def test_configuracoes_salva_e_recarrega(client: TestClient) -> None:
+    client.post("/ui/login", data={"username": "admin", "password": "senha"})
+
+    resp = client.post(
+        "/ui/configuracoes",
+        data={
+            "evolution_api_url": "http://evolution:8080",
+            "evolution_api_key": "chave-secreta",
+            "evolution_instance": "xtreme-motors",
+            "evolution_group_id": "1203630@g.us",
+        },
+    )
+    assert resp.status_code == 200
+    assert "http://evolution:8080" in resp.text
+    assert "1203630@g.us" in resp.text
+
+    resp = client.get("/ui/configuracoes")
+    assert resp.status_code == 200
+    assert "xtreme-motors" in resp.text
+
+
+def test_configuracoes_exige_admin(client: TestClient) -> None:
+    resp = client.get("/ui/configuracoes", follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/ui/login"

@@ -17,6 +17,7 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
+from xtreme_system.whatsapp import core as whatsapp
 
 # ---- Autenticação ----
 
@@ -183,4 +184,5 @@ register_crud_routes(
     update_schema=venda.VendaUpdate,
     before_create=_validate_venda_fks,
     before_update=lambda session, _obj, data: _validate_venda_fks(session, data),
+    after_create=whatsapp.notificar_venda,
 )

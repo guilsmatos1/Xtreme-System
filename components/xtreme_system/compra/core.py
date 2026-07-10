@@ -66,6 +66,32 @@ def list_all(session: Session) -> list[Compra]:
     return crud.list_all(session, Compra)
 
 
+def get_latest_by_veiculo(session: Session, veiculo_id: int) -> Compra | None:
+    return (
+        session.query(Compra)
+        .filter_by(veiculo_id=veiculo_id)
+        .order_by(Compra.data_compra.desc(), Compra.id.desc())
+        .first()
+    )
+
+
+def latest_by_veiculo_ids(
+    session: Session, veiculo_ids: list[int]
+) -> dict[int, Compra]:
+    if not veiculo_ids:
+        return {}
+    compras = (
+        session.query(Compra)
+        .filter(Compra.veiculo_id.in_(veiculo_ids))
+        .order_by(Compra.veiculo_id, Compra.data_compra.desc(), Compra.id.desc())
+        .all()
+    )
+    latest: dict[int, Compra] = {}
+    for item in compras:
+        latest.setdefault(item.veiculo_id, item)
+    return latest
+
+
 def get(session: Session, compra_id: int) -> Compra | None:
     return crud.get(session, Compra, compra_id)
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Configurações{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Configurações</h1>
+    <p class="page-head__subtitle">Integração com WhatsApp (Evolution API)</p>
+  </div>
+</div>
+
+<div class="stack">
+  <section class="card card--pad">
+    <h3 style="margin-bottom:var(--s-4)">Notificação de vendas</h3>
+    <p style="margin-bottom:var(--s-4);color:var(--muted)">
+      Quando uma venda é criada, uma mensagem é enviada para o grupo do WhatsApp
+      configurado abaixo, via uma instância do
+      <a href="https://github.com/EvolutionAPI/evolution-api" target="_blank" rel="noopener">Evolution API</a>.
+    </p>
+    {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
+    {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+    <form method="post" action="/ui/configuracoes">
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">URL do servidor</span>
+          <input class="input" name="evolution_api_url" placeholder="http://localhost:8080"
+                 value="{{ config.evolution_api_url }}" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field__label">API key</span>
+          <input class="input" name="evolution_api_key" type="password" placeholder="••••••••"
+                 value="{{ config.evolution_api_key }}" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field__label">Instância</span>
+          <input class="input" name="evolution_instance" placeholder="xtreme-motors"
+                 value="{{ config.evolution_instance }}" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field__label">ID do grupo</span>
+          <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
+                 value="{{ config.evolution_group_id }}" autocomplete="off">
+        </label>
+        <div class="field" style="justify-content:flex-end">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
+        </div>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,10 +1,13 @@
 """Rotas HTMX (server-rendered). Auth por cookie httpOnly, paralela à API JSON."""
 
+import contextlib
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Any
+from pathlib import Path
+from typing import Annotated, Any, cast
+from uuid import uuid4
 
-from fastapi import Form, HTTPException, Request, Response
+from fastapi import File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -17,14 +20,18 @@ from xtreme_system.api.route_factories import (
     register_crud_ui_routes,
 )
 from xtreme_system.api.routes.json import _validate_fks, _validate_venda_fks
-from xtreme_system.api.setup import app
+from xtreme_system.api.setup import _ui_dir, app
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
+from xtreme_system.compra import core as compra
+from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
+from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
+from xtreme_system.whatsapp import core as whatsapp
 
 # ---- Clientes (UI) ----
 
@@ -115,6 +122,7 @@ register_crud_ui_routes(
     parse_form=_parse_venda_form,
     before_create=_validate_venda_fks,
     before_update=_validate_venda_fks,
+    after_create=whatsapp.notificar_venda,
     sort_fields={
         "cliente": lambda v: _sort_key(v.cliente.nome),
         "veiculo": lambda v: _sort_key(v.veiculo.modelo),
@@ -207,7 +215,147 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
         "tipos": list(veiculo.TipoVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
         "investidores": investidor.list_all(session),
+        "clientes": cliente.list_all(session),
+        "tipos_cliente": list(cliente.TipoCliente),
     }
+
+
+def _ctx_lista_veiculos(
+    session: Session, veiculos: list[veiculo.Veiculo]
+) -> dict[str, Any]:
+    return {
+        "compras_por_veiculo": compra.latest_by_veiculo_ids(
+            session, [item.id for item in veiculos]
+        )
+    }
+
+
+def _uploads_dir(veiculo_id: int) -> Path:
+    return _ui_dir / "static" / "uploads" / "veiculos" / str(veiculo_id)
+
+
+def _uploads_cliente_dir(cliente_id: int) -> Path:
+    return _ui_dir / "static" / "uploads" / "clientes" / str(cliente_id) / "documentos"
+
+
+def _uploaded_file_path(url: str) -> Path | None:
+    if not url.startswith("/static/uploads/"):
+        return None
+    return _ui_dir / url.lstrip("/")
+
+
+def _imagem_modal(request: Request, session: Session, veiculo_id: int) -> HTMLResponse:
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    for img in list(item.imagens):
+        path = _uploaded_file_path(img.url or "")
+        if path is not None and not path.exists():
+            imagem_veiculo.delete(session, img)
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request, "_modal_imagens_veiculo.html", {"veiculo": item}
+    )
+
+
+@app.get("/ui/veiculos/{veiculo_id}/imagens")
+def ui_veiculo_imagens(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+) -> HTMLResponse:
+    return _imagem_modal(request, session, veiculo_id)
+
+
+@app.post("/ui/veiculos/{veiculo_id}/imagens")
+def ui_veiculo_imagens_upload(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+    imagens: Annotated[list[UploadFile], File(default_factory=list)],
+) -> HTMLResponse:
+    _found(veiculo.get(session, veiculo_id), "Veículo")
+    upload_dir = _uploads_dir(veiculo_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    for imagem in imagens:
+        if not imagem.filename:
+            continue
+        suffix = Path(imagem.filename).suffix.lower()
+        filename = f"{uuid4().hex}{suffix}"
+        path = upload_dir / filename
+        with path.open("wb") as f:
+            f.write(imagem.file.read())
+        imagem_veiculo.create(
+            session,
+            imagem_veiculo.ImagemVeiculoCreate(
+                veiculo_id=veiculo_id,
+                url=f"/static/uploads/veiculos/{veiculo_id}/{filename}",
+            ),
+        )
+    return _imagem_modal(request, session, veiculo_id)
+
+
+@app.post("/ui/veiculos/{veiculo_id}/imagens/{img_id}/excluir")
+def ui_veiculo_imagens_excluir(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+    img_id: int,
+) -> HTMLResponse:
+    img = _found(imagem_veiculo.get(session, img_id), "Imagem")
+    if img.veiculo_id != veiculo_id:
+        raise HTTPException(status_code=404, detail="Imagem não encontrada")
+    url = img.url or ""
+    imagem_veiculo.delete(session, img)
+    path = _uploaded_file_path(url)
+    if path is not None:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
+    return _imagem_modal(request, session, veiculo_id)
+
+
+def _salvar_documentos_cliente(
+    session: Session, cliente_id: int, documentos: list[UploadFile]
+) -> None:
+    upload_dir = _uploads_cliente_dir(cliente_id)
+    for documento in documentos:
+        if not documento.filename:
+            continue
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        suffix = Path(documento.filename).suffix.lower()
+        filename = f"{uuid4().hex}{suffix}"
+        path = upload_dir / filename
+        with path.open("wb") as f:
+            f.write(documento.file.read())
+        imagem_documento_cliente.create(
+            session,
+            imagem_documento_cliente.ImagemDocumentoClienteCreate(
+                cliente_id=cliente_id,
+                url=f"/static/uploads/clientes/{cliente_id}/documentos/{filename}",
+            ),
+        )
+
+
+@app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
+def ui_veiculo_cliente_vendedor(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+) -> HTMLResponse:
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
+    documentos = []
+    if item_compra is not None:
+        documentos = imagem_documento_cliente.list_by_cliente(
+            session, item_compra.cliente_id
+        )
+    return templates.TemplateResponse(
+        request,
+        "_modal_cliente_vendedor.html",
+        {"veiculo": item, "compra": item_compra, "documentos": documentos},
+    )
 
 
 register_crud_ui_routes(
@@ -225,6 +373,7 @@ register_crud_ui_routes(
     ok_partial_template="_veiculos_ok.html",
     form_template="_form_veiculo.html",
     ctx_form=_ctx_form_veiculo,
+    ctx_list=_ctx_lista_veiculos,
     searchable=True,
     before_create=_validate_fks,
     before_update=lambda session, data: _validate_fks(session, data, update=True),
@@ -273,7 +422,110 @@ register_crud_ui_routes(
         v.investidor.nome,
         v.procuracao or "",
     ],
+    register_create=False,
 )
+
+
+def _erro_veiculo(request: Request, session: Session, msg: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "_form_veiculo.html",
+        {**_ctx_form_veiculo(session), "veiculo": None, "erro": msg},
+        status_code=400,
+    )
+
+
+def _resolver_vendedor(
+    session: Session, form: Any
+) -> tuple[cliente.Cliente | None, cliente.ClienteCreate | None, str | None]:
+    """Retorna (cliente_existente, dados_novo_cliente, erro)."""
+    cliente_sel = str(form.get("cliente_vendedor_id") or "").strip()
+    if cliente_sel:
+        try:
+            seller = cliente.get(session, int(cliente_sel))
+        except ValueError:
+            seller = None
+        if seller is None:
+            return None, None, "Cliente vendedor inválido ou inexistente"
+        return seller, None, None
+
+    nome = str(form.get("cli_nome") or "").strip()
+    documento = str(form.get("cli_documento") or "").strip()
+    erro: str | None = None
+    if not nome or not documento:
+        erro = "Informe os dados do cliente vendedor"
+    elif cliente.get_by_documento(session, documento):
+        erro = "CPF já cadastrado — selecione o cliente na lista"
+    if erro:
+        return None, None, erro
+    try:
+        novo_cliente_data = cliente.ClienteCreate.model_validate(
+            {
+                "nome": nome,
+                "documento": documento,
+                "tipo": form.get("cli_tipo") or "pessoa_fisica",
+                "telefone": str(form.get("cli_telefone") or "").strip() or None,
+                "email": str(form.get("cli_email") or "").strip() or None,
+            }
+        )
+    except ValidationError:
+        return None, None, "Dados do cliente vendedor inválidos"
+    return None, novo_cliente_data, None
+
+
+@app.post("/ui/veiculos")
+async def _criar_veiculo(
+    request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    form = await request.form()
+
+    try:
+        data = veiculo.VeiculoCreate.model_validate(dict(form))
+        _validate_fks(session, data)
+    except (ValidationError, HTTPException) as exc:
+        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        return _erro_veiculo(request, session, msg)
+
+    seller, novo_cliente_data, erro = _resolver_vendedor(session, form)
+    if erro:
+        return _erro_veiculo(request, session, erro)
+
+    debitos_raw = str(form.get("debitos") or "").strip()
+    debitos = None
+    if debitos_raw:
+        try:
+            debitos = Decimal(debitos_raw.replace(",", "."))
+        except Exception:
+            return _erro_veiculo(request, session, "Débitos inválidos")
+
+    obj = veiculo.create(session, data)
+    if novo_cliente_data is not None:
+        seller = cliente.create(session, novo_cliente_data)
+    assert seller is not None
+    documentos = [
+        arquivo
+        for arquivo in form.getlist("documentos_cliente")
+        if hasattr(arquivo, "filename") and hasattr(arquivo, "file")
+    ]
+    _salvar_documentos_cliente(session, seller.id, cast(list[UploadFile], documentos))
+    compra.create(
+        session,
+        compra.CompraCreate(
+            cliente_id=seller.id,
+            veiculo_id=obj.id,
+            data_compra=date.today(),
+            valor_compra=obj.preco,
+            debitos=debitos,
+        ),
+    )
+    caixa.criar_lancamento_veiculo(session, obj)
+    veiculos = veiculo.list_all(session)
+    return templates.TemplateResponse(
+        request,
+        "_veiculos_ok.html",
+        {"user": user, "veiculos": veiculos, **_ctx_lista_veiculos(session, veiculos)},
+    )
 
 
 # ---- Investidores + lançamentos de caixa (UI) ----
@@ -484,7 +736,7 @@ async def ui_investidor_criar(
     except Exception:
         pass  # ponytail: silently skip invalid amounts; investor already created
     return templates.TemplateResponse(
-        request, "_simples_ok.html", {"user": user, **_ctx_investidores(session)}
+        request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
     )
 
 
@@ -512,7 +764,7 @@ async def ui_investidor_atualizar(
             status_code=409,
         )
     return templates.TemplateResponse(
-        request, "_simples_ok.html", {"user": user, **_ctx_investidores(session)}
+        request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
     )
 
 
@@ -521,6 +773,17 @@ def ui_investidor_excluir(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     obj = _found(investidor.get(session, item_id), "Investidores")
+    if caixa.list_by_investidor(session, item_id):
+        return templates.TemplateResponse(
+            request,
+            "_linhas_investidores.html",
+            {
+                "user": user,
+                **_ctx_investidores(session),
+                "msg": "Não é possível excluir investidor com lançamentos.",
+            },
+            status_code=409,
+        )
     investidor.delete(session, obj)
     return templates.TemplateResponse(
         request,
@@ -799,6 +1062,45 @@ def ui_usuario_senha_alterar(
             "sort": "",
             "order": "asc",
         },
+    )
+
+
+# ---- Configurações (admin-only) ----
+
+
+@app.get("/ui/configuracoes")
+def ui_configuracoes(
+    request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    config = whatsapp.get_config(session)
+    return templates.TemplateResponse(
+        request, "configuracoes.html", {"user": user, "config": config}
+    )
+
+
+@app.post("/ui/configuracoes")
+def ui_configuracoes_salvar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    evolution_api_url: Annotated[str, Form()] = "",
+    evolution_api_key: Annotated[str, Form()] = "",
+    evolution_instance: Annotated[str, Form()] = "",
+    evolution_group_id: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    config = whatsapp.atualizar_config(
+        session,
+        whatsapp.WhatsappConfigUpdate(
+            evolution_api_url=evolution_api_url,
+            evolution_api_key=evolution_api_key,
+            evolution_instance=evolution_instance,
+            evolution_group_id=evolution_group_id,
+        ),
+    )
+    return templates.TemplateResponse(
+        request,
+        "configuracoes.html",
+        {"user": user, "config": config, "sucesso": "Configurações salvas."},
     )
 
 
