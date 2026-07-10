@@ -7,6 +7,7 @@ from typing import Annotated, Any
 from fastapi import Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
@@ -14,7 +15,6 @@ from xtreme_system.api.route_factories import (
     _csv_response,
     _sort_key,
     register_crud_ui_routes,
-    register_ui_simples,
 )
 from xtreme_system.api.routes.json import _validate_fks, _validate_venda_fks
 from xtreme_system.api.setup import app
@@ -22,7 +22,6 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.investidor import core as investidor
-from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -206,10 +205,8 @@ def ui_logout() -> RedirectResponse:
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
     return {
         "tipos": list(veiculo.TipoVeiculo),
-        "status": list(veiculo.StatusVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
         "investidores": investidor.list_all(session),
-        "meios": meio_captacao.list_all(session),
     }
 
 
@@ -231,6 +228,7 @@ register_crud_ui_routes(
     searchable=True,
     before_create=_validate_fks,
     before_update=lambda session, data: _validate_fks(session, data, update=True),
+    before_delete=caixa.deletar_lancamento_veiculo,
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
     sort_fields={
@@ -245,7 +243,6 @@ register_crud_ui_routes(
         "revisao": "revisao",
         "investidor": "investidor",
         "procuracao": "procuracao",
-        "captacao": "meio_captacao",
     },
     csv_filename="veiculos.csv",
     csv_headers=[
@@ -261,7 +258,6 @@ register_crud_ui_routes(
         "Revisao",
         "Investidor",
         "Procurador",
-        "Captacao",
     ],
     csv_row=lambda v: [
         v.id,
@@ -276,12 +272,11 @@ register_crud_ui_routes(
         "Sim" if v.revisao else "Não",
         v.investidor.nome,
         v.procuracao or "",
-        v.meio_captacao.nome,
     ],
 )
 
 
-# ---- Caixa dos investidores (UI) ----
+# ---- Investidores + lançamentos de caixa (UI) ----
 
 
 _LANCAMENTO_SORT_FIELDS: dict[str, str] = {
@@ -342,19 +337,14 @@ def _erro_lancamento(
     )
 
 
-@app.get("/ui/caixa")
-def ui_caixa(
-    request: Request,
-    session: SessionDep,
-    user: UIUser,
-    sort: str = "",
-    order: str = "asc",
-) -> HTMLResponse:
+def _ctx_investidores(
+    session: Session, sort: str = "", order: str = "asc"
+) -> dict[str, Any]:
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
     num_veiculos, valor_veiculos, total_aportado = caixa.agregados_investidores(session)
     reverse = order == "desc"
-    if sort == "investidor":
+    if sort == "nome":
         investidores = sorted(
             investidores, key=lambda i: _sort_key(i.nome), reverse=reverse
         )
@@ -378,29 +368,51 @@ def ui_caixa(
             key=lambda i: total_aportado.get(i.id, Decimal("0")),
             reverse=reverse,
         )
-    return templates.TemplateResponse(
-        request,
-        "caixa.html",
-        {
-            "user": user,
-            "investidores": investidores,
-            "saldos": saldos,
-            "num_veiculos": num_veiculos,
-            "valor_veiculos": valor_veiculos,
-            "total_aportado": total_aportado,
-            "sort": sort,
-            "order": order,
-        },
-    )
+    return {
+        "titulo": "Investidores",
+        "prefixo": "/ui/investidores",
+        "itens": investidores,
+        "saldos": saldos,
+        "num_veiculos": num_veiculos,
+        "valor_veiculos": valor_veiculos,
+        "total_aportado": total_aportado,
+        "sort": sort,
+        "order": order,
+    }
 
 
-@app.get("/ui/caixa/exportar")
-def ui_caixa_exportar(session: SessionDep, _: UIUser) -> Response:
+def _form_ctx_investidor(
+    item: investidor.Investidor | None, erro: str | None = None
+) -> dict[str, Any]:
+    return {
+        "titulo": "Investidores",
+        "prefixo": "/ui/investidores",
+        "item": item,
+        "erro": erro,
+    }
+
+
+@app.get("/ui/investidores")
+def ui_investidores(
+    request: Request,
+    session: SessionDep,
+    user: UIUser,
+    sort: str = "",
+    order: str = "asc",
+) -> HTMLResponse:
+    ctx = {"user": user, **_ctx_investidores(session, sort, order)}
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request, "_linhas_investidores.html", ctx)
+    return templates.TemplateResponse(request, "investidores.html", ctx)
+
+
+@app.get("/ui/investidores/exportar")
+def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
     num_v, val_v, tot_a = caixa.agregados_investidores(session)
     return _csv_response(
-        "caixa.csv",
+        "investidores.csv",
         ["Investidor", "Saldo", "N° Veículos", "Valor em Veículos", "Total Investido"],
         [
             [
@@ -415,8 +427,110 @@ def ui_caixa_exportar(session: SessionDep, _: UIUser) -> Response:
     )
 
 
-@app.get("/ui/caixa/{investidor_id}")
-def ui_caixa_investidor(
+@app.get("/ui/investidores/novo")
+def ui_investidor_novo(request: Request, _: UIAdmin) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request, "_form_simples.html", _form_ctx_investidor(None)
+    )
+
+
+@app.get("/ui/investidores/{item_id}/editar")
+def ui_investidor_editar(
+    item_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(investidor.get(session, item_id), "Investidores")
+    return templates.TemplateResponse(
+        request, "_form_simples.html", _form_ctx_investidor(obj)
+    )
+
+
+@app.post("/ui/investidores")
+async def ui_investidor_criar(
+    request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    form = await request.form()
+    nome = str(form.get("nome") or "").strip()
+    if not nome:
+        return templates.TemplateResponse(
+            request,
+            "_form_simples.html",
+            _form_ctx_investidor(None, "Nome obrigatório"),
+            status_code=400,
+        )
+    try:
+        obj = investidor.create(session, investidor.InvestidorCreate(nome=nome))
+    except IntegrityError:
+        session.rollback()
+        return templates.TemplateResponse(
+            request,
+            "_form_simples.html",
+            _form_ctx_investidor(None, "Investidores já existe"),
+            status_code=409,
+        )
+    valor_str = str(form.get("valor_investido") or "").strip()
+    try:
+        if valor_str:
+            valor = Decimal(valor_str.replace(",", "."))
+            if valor > 0:
+                caixa.create(
+                    session,
+                    caixa.LancamentoInvestimentoCreate(
+                        investidor_id=obj.id,
+                        tipo=caixa.TipoLancamento.aporte,
+                        valor=valor,
+                        descricao="Aporte inicial",
+                    ),
+                )
+    except Exception:
+        pass  # ponytail: silently skip invalid amounts; investor already created
+    return templates.TemplateResponse(
+        request, "_simples_ok.html", {"user": user, **_ctx_investidores(session)}
+    )
+
+
+@app.post("/ui/investidores/{item_id}")
+async def ui_investidor_atualizar(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    obj = _found(investidor.get(session, item_id), "Investidores")
+    nome = str((await request.form()).get("nome") or "").strip()
+    if not nome:
+        return templates.TemplateResponse(
+            request,
+            "_form_simples.html",
+            _form_ctx_investidor(obj, "Nome obrigatório"),
+            status_code=400,
+        )
+    try:
+        investidor.update(session, obj, investidor.InvestidorUpdate(nome=nome))
+    except IntegrityError:
+        session.rollback()
+        return templates.TemplateResponse(
+            request,
+            "_form_simples.html",
+            _form_ctx_investidor(obj, "Investidores já existe"),
+            status_code=409,
+        )
+    return templates.TemplateResponse(
+        request, "_simples_ok.html", {"user": user, **_ctx_investidores(session)}
+    )
+
+
+@app.post("/ui/investidores/{item_id}/excluir")
+def ui_investidor_excluir(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    obj = _found(investidor.get(session, item_id), "Investidores")
+    investidor.delete(session, obj)
+    return templates.TemplateResponse(
+        request,
+        "_linhas_investidores.html",
+        {"user": user, **_ctx_investidores(session)},
+    )
+
+
+@app.get("/ui/investidores/{investidor_id}/lancamentos")
+def ui_investidor_lancamentos(
     investidor_id: int,
     request: Request,
     session: SessionDep,
@@ -431,11 +545,11 @@ def ui_caixa_investidor(
     }
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_linhas_lancamentos.html", ctx)
-    return templates.TemplateResponse(request, "caixa_investidor.html", ctx)
+    return templates.TemplateResponse(request, "investidor_lancamentos.html", ctx)
 
 
-@app.get("/ui/caixa/{investidor_id}/exportar")
-def ui_caixa_investidor_exportar(
+@app.get("/ui/investidores/{investidor_id}/lancamentos/exportar")
+def ui_investidor_lancamentos_exportar(
     investidor_id: int, session: SessionDep, _: UIUser
 ) -> Response:
     investidor_obj = _found(investidor.get(session, investidor_id), "Investidor")
@@ -455,7 +569,7 @@ def ui_caixa_investidor_exportar(
     )
 
 
-@app.get("/ui/caixa/{investidor_id}/novo")
+@app.get("/ui/investidores/{investidor_id}/lancamentos/novo")
 def ui_lancamento_novo(
     investidor_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -471,7 +585,7 @@ def ui_lancamento_novo(
     )
 
 
-@app.get("/ui/caixa/{investidor_id}/{lancamento_id}/editar")
+@app.get("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/editar")
 def ui_lancamento_editar(
     investidor_id: int,
     lancamento_id: int,
@@ -495,7 +609,7 @@ def ui_lancamento_editar(
     )
 
 
-@app.post("/ui/caixa/{investidor_id}")
+@app.post("/ui/investidores/{investidor_id}/lancamentos")
 async def ui_lancamento_criar(
     investidor_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -511,7 +625,7 @@ async def ui_lancamento_criar(
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
-@app.post("/ui/caixa/{investidor_id}/{lancamento_id}")
+@app.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}")
 async def ui_lancamento_atualizar(
     investidor_id: int,
     lancamento_id: int,
@@ -533,7 +647,7 @@ async def ui_lancamento_atualizar(
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
-@app.post("/ui/caixa/{investidor_id}/{lancamento_id}/excluir")
+@app.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/excluir")
 def ui_lancamento_excluir(
     investidor_id: int,
     lancamento_id: int,
@@ -688,26 +802,55 @@ def ui_usuario_senha_alterar(
     )
 
 
-# ---- Investidores / Meios de captação (UI, mesmo padrão) ----
+# ---- Dashboard (KPIs, admin-only) ----
 
 
-register_ui_simples(
-    app,
-    templates,
-    "/ui/investidores",
-    "Investidores",
-    investidor,
-    investidor.InvestidorCreate,
-    investidor.InvestidorUpdate,
-    "investidores.csv",
-)
-register_ui_simples(
-    app,
-    templates,
-    "/ui/meios-captacao",
-    "Meios de captação",
-    meio_captacao,
-    meio_captacao.MeioCaptacaoCreate,
-    meio_captacao.MeioCaptacaoUpdate,
-    "meios-captacao.csv",
-)
+def _ctx_dashboard(session: Session) -> dict[str, Any]:
+    veiculos = veiculo.list_all(session)
+    disponiveis = [v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel]
+    vendidos = [v for v in veiculos if v.status == veiculo.StatusVeiculo.vendido]
+    valor_estoque = sum((v.preco for v in disponiveis), Decimal("0"))
+    total_avaliado = len(disponiveis) + len(vendidos)
+    taxa_conversao = (len(vendidos) / total_avaliado * 100) if total_avaliado else 0
+
+    vendas_mes_count, vendas_mes_total = venda.resumo_mes(session)
+    receita_tipo = venda.receita_por_tipo(session)
+    funil = venda.funil_status(session)
+
+    return {
+        "titulo": "Dashboard",
+        "disponiveis": len(disponiveis),
+        "vendidos": len(vendidos),
+        "valor_estoque": valor_estoque,
+        "taxa_conversao": taxa_conversao,
+        "vendas_mes_count": vendas_mes_count,
+        "vendas_mes_total": vendas_mes_total,
+        "ticket_medio": venda.ticket_medio(session),
+        "receita_tipo": [
+            {
+                "label": "Carros",
+                "icone": "car",
+                "valor": receita_tipo.get(veiculo.TipoVeiculo.carro, Decimal("0")),
+            },
+            {
+                "label": "Motos",
+                "icone": "bike",
+                "valor": receita_tipo.get(veiculo.TipoVeiculo.moto, Decimal("0")),
+            },
+        ],
+        "funil": [
+            {
+                "status": s.value,
+                "count": funil.get(s, (0, Decimal("0")))[0],
+                "valor": funil.get(s, (0, Decimal("0")))[1],
+            }
+            for s in venda.StatusVenda
+        ],
+        "ranking_vendedores": venda.ranking_vendedores(session),
+    }
+
+
+@app.get("/ui/dashboard")
+def ui_dashboard(request: Request, session: SessionDep, user: UIAdmin) -> HTMLResponse:
+    ctx = {"user": user, **_ctx_dashboard(session)}
+    return templates.TemplateResponse(request, "dashboard.html", ctx)

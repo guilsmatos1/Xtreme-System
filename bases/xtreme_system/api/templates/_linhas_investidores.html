@@ -1,13 +1,20 @@
 {% import "_macros.html" as ui %}
 <tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
 {% for item in itens %}
+{% set nv = num_veiculos.get(item.id, 0) %}
+{% set vv = valor_veiculos.get(item.id, 0) %}
+{% set ta = total_aportado.get(item.id, 0) %}
+{% set pendente = ta - vv %}
 <tr id="item-{{ item.id }}">
   <td class="cell-strong">{{ item.nome }}</td>
-  <td class="cell-num">R$ {{ "{:,.2f}".format(total_aportado.get(item.id, 0)) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td class="cell-num">{{ nv }}</td>
+  <td class="cell-num">R$ {{ "{:,.2f}".format(ta) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td class="cell-num">R$ {{ "{:,.2f}".format(vv) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td class="cell-num" style="{{ 'color:var(--danger)' if pendente < 0 }}">R$ {{ "{:,.2f}".format(pendente) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   {% if user.papel.value == 'admin' %}
   <td class="col-actions">
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/investidores/{{ item.id }}/historico" hx-target="#modal" hx-swap="innerHTML" aria-label="Histórico de {{ item.nome }}">{{ ui.icon("cash") }}</button>
+      <a class="btn btn--ghost btn--sm" href="{{ prefixo }}/{{ item.id }}/lancamentos" aria-label="Lançamentos de {{ item.nome }}">{{ ui.icon("cash") }}</a>
       <button class="btn btn--ghost btn--sm" hx-get="{{ prefixo }}/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
       <button class="btn btn--ghost btn--sm btn--danger" hx-post="{{ prefixo }}/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
     </div>
@@ -15,8 +22,8 @@
   {% endif %}
 </tr>
 {% else %}
-<tr class="empty-row"><td colspan="3">
-  {% call ui.empty("inbox", "Nada por aqui ainda", "Cadastre o primeiro registro para começar.") %}{% endcall %}
+<tr class="empty-row"><td colspan="6">
+  {% call ui.empty("inbox", "Nenhum investidor cadastrado", "Cadastre um investidor para começar.") %}{% endcall %}
 </td></tr>
 {% endfor %}
 </tbody>

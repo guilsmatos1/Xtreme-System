@@ -6,6 +6,7 @@
 
 {% macro icon(name) -%}
 {%- set paths = {
+  "dashboard": '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
   "car": '<path d="M5 17h14M6 17l1.5-4.5A2 2 0 0 1 9.4 11h5.2a2 2 0 0 1 1.9 1.5L18 17M4 17v2m16-2v2M7 17v-4m10 4v-4"/><rect x="4" y="11" width="16" height="6" rx="2"/>',
   "bike": '<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l2 4m-8 4h4l2-8"/>',
   "vehicles": '<rect x="3" y="10" width="18" height="7" rx="2"/><path d="M6 10l1.5-4h9L18 10M7 17v2M17 17v2"/>',
@@ -36,6 +37,8 @@
   <span class="badge badge--success">Disponível</span>
 {%- elif status.value == "vendido" -%}
   <span class="badge badge--neutral">Vendido</span>
+{%- elif status.value == "reservado" -%}
+  <span class="badge badge--warning">Reservado</span>
 {%- else -%}
   <span class="badge">{{ status.value }}</span>
 {%- endif -%}

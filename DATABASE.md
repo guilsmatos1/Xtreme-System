@@ -33,15 +33,6 @@ Cadastro de investidores.
 | `id` | `INTEGER` | Não | - | PK |
 | `nome` | `VARCHAR` | Não | - | Único, indexado |
 
-### `meio_captacao`
-
-Meio de captação do veículo (ex: consignação, compra direta).
-
-| Coluna | Tipo | Nullable | Default | Observações |
-|--------|------|----------|---------|-------------|
-| `id` | `INTEGER` | Não | - | PK |
-| `nome` | `VARCHAR` | Não | - | Único, indexado |
-
 ### `veiculo`
 
 Veículos disponíveis para venda.
@@ -59,7 +50,6 @@ Veículos disponíveis para venda.
 | `procuracao` | `VARCHAR` | Sim | - | |
 | `status` | `statusveiculo` | Não | `disponivel` | `disponivel`, `vendido`, `reservado` |
 | `investidor_id` | `INTEGER` | Não | - | FK → `investidor.id` (CASCADE) |
-| `meio_captacao_id` | `INTEGER` | Não | - | FK → `meio_captacao.id` (RESTRICT) |
 
 ### `cliente`
 
@@ -194,7 +184,6 @@ Imagens de comprovantes de pagamento associados a uma compra.
 ## Relacionamentos
 
 - Um **investidor** pode ter vários **veículos**.
-- Um **meio_captacao** pode estar em vários **veículos**.
 - Um **veículo** pode ter várias **imagens** e **documentos**.
 - Um **veículo** pode ter no máximo um **lancamento_investimento** (`veiculo_id` é único).
 - Um **cliente** pode ter várias **vendas**.
@@ -213,10 +202,8 @@ Imagens de comprovantes de pagamento associados a uma compra.
 | Tabela | Índice | Coluna(s) | Único |
 |--------|--------|-----------|-------|
 | `investidor` | `ix_investidor_nome` | `nome` | Sim |
-| `meio_captacao` | `ix_meio_captacao_nome` | `nome` | Sim |
 | `veiculo` | `ix_veiculo_placa` | `placa` | Sim |
 | `veiculo` | `ix_veiculo_investidor_id` | `investidor_id` | Não |
-| `veiculo` | `ix_veiculo_meio_captacao_id` | `meio_captacao_id` | Não |
 | `cliente` | `ix_cliente_documento` | `documento` | Sim |
 | `cliente` | `ix_cliente_nome` | `nome` | Não |
 | `usuario` | `ix_usuario_username` | `username` | Sim |

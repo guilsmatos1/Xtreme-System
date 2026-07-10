@@ -13,6 +13,12 @@
           <span class="field__label">Nome</span>
           <input class="input" name="nome" value="{{ item.nome if item else '' }}" required autofocus>
         </label>
+        {% if not item and prefixo == '/ui/investidores' %}
+        <label class="field">
+          <span class="field__label">Valor Investido</span>
+          <input class="input" name="valor_investido" type="number" step="0.01" min="0" placeholder="0,00">
+        </label>
+        {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>

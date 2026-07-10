@@ -8,12 +8,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.auditoria import core as auditoria
 from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import Base
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
-from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
@@ -30,10 +30,14 @@ def session() -> Iterator[Session]:
 
 
 def test_veiculo_ciclo_completo(session: Session) -> None:
-    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
-    meio = meio_captacao.create(
-        session, meio_captacao.MeioCaptacaoCreate(nome="Instagram")
+    u = usuario.create(
+        session,
+        usuario.UsuarioCreate(
+            username="auditor", senha="123", papel=usuario.Papel.admin
+        ),
     )
+    session.info["usuario_id"] = u.id
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
 
     criado = veiculo.create(
         session,
@@ -46,7 +50,6 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
             km=70000,
             preco=Decimal("32000.00"),
             investidor_id=inv.id,
-            meio_captacao_id=meio.id,
         ),
     )
     assert criado.id is not None
@@ -64,10 +67,28 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
     veiculo.delete(session, criado)
     assert veiculo.get(session, criado.id) is None
 
+    # Audit assertions
+    rows = (
+        session.query(auditoria.Auditoria)
+        .filter_by(tabela="veiculo")
+        .order_by(auditoria.Auditoria.id)
+        .all()
+    )
+    assert len(rows) == 3  # CREATE, UPDATE, DELETE
+    assert rows[0].tipo_acao == "CREATE"
+    assert rows[0].usuario_id == u.id
+    assert rows[1].tipo_acao == "UPDATE"
+    dados_antes = rows[1].dados_antes
+    dados_depois = rows[1].dados_depois
+    assert dados_antes is not None
+    assert dados_depois is not None
+    assert dados_antes["status"] == "disponivel"
+    assert dados_depois["status"] == "vendido"
+    assert rows[2].tipo_acao == "DELETE"
+
 
 def test_placa_duplicada_rejeitada(session: Session) -> None:
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
-    meio = meio_captacao.create(session, meio_captacao.MeioCaptacaoCreate(nome="Site"))
     dados = veiculo.VeiculoCreate(
         tipo=veiculo.TipoVeiculo.carro,
         modelo="Gol",
@@ -77,7 +98,6 @@ def test_placa_duplicada_rejeitada(session: Session) -> None:
         km=70000,
         preco=Decimal("32000.00"),
         investidor_id=inv.id,
-        meio_captacao_id=meio.id,
     )
     veiculo.create(session, dados)
     assert veiculo.get_by_placa(session, "AAA1B22") is not None
@@ -115,11 +135,35 @@ def test_usuario_crud(session: Session) -> None:
     assert len(usuario.list_all(session)) == 0
 
 
-def _investidor_e_veiculo(
-    session: Session,
-) -> tuple[investidor.Investidor, veiculo.Veiculo]:
+def test_senha_hash_masked_in_audit(session: Session) -> None:
+    session.info["usuario_id"] = 1
+    _u = usuario.create(
+        session,
+        usuario.UsuarioCreate(
+            username="mask", senha="secret", papel=usuario.Papel.admin
+        ),
+    )
+    rows = (
+        session.query(auditoria.Auditoria)
+        .filter_by(tabela="usuario", tipo_acao="CREATE")
+        .all()
+    )
+    assert len(rows) == 1
+    dados = rows[0].dados_depois
+    assert dados is not None
+    assert dados["senha_hash"] == "***"
+    assert "secret" not in str(dados)
+
+
+def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
+    u = usuario.create(
+        session,
+        usuario.UsuarioCreate(
+            username="caixa_audit", senha="123", papel=usuario.Papel.admin
+        ),
+    )
+    session.info["usuario_id"] = u.id
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
-    meio = meio_captacao.create(session, meio_captacao.MeioCaptacaoCreate(nome="Site"))
     v = veiculo.create(
         session,
         veiculo.VeiculoCreate(
@@ -131,7 +175,56 @@ def _investidor_e_veiculo(
             km=70000,
             preco=Decimal("32000.00"),
             investidor_id=inv.id,
-            meio_captacao_id=meio.id,
+        ),
+    )
+    lanc = caixa.criar_lancamento_veiculo(session, v)
+    rows = (
+        session.query(auditoria.Auditoria)
+        .filter_by(
+            tabela="lancamento_investimento",
+            tipo_acao="CREATE",
+            registro_id=lanc.id,
+        )
+        .all()
+    )
+    assert len(rows) == 1
+    assert rows[0].usuario_id == u.id
+    dados_depois = rows[0].dados_depois
+    assert dados_depois is not None
+    assert dados_depois["tipo"] == "custo"
+
+    # Deletar o veículo deve auditar o DELETE do lançamento vinculado
+    # (a FK tem ondelete=CASCADE, mas isso ignoraria o ORM/auditoria).
+    caixa.deletar_lancamento_veiculo(session, v)
+    veiculo.delete(session, v)
+    delete_rows = (
+        session.query(auditoria.Auditoria)
+        .filter_by(
+            tabela="lancamento_investimento",
+            tipo_acao="DELETE",
+            registro_id=lanc.id,
+        )
+        .all()
+    )
+    assert len(delete_rows) == 1
+    assert caixa.get(session, lanc.id) is None
+
+
+def _investidor_e_veiculo(
+    session: Session,
+) -> tuple[investidor.Investidor, veiculo.Veiculo]:
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    v = veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Gol",
+            cor="Branco",
+            ano=2018,
+            placa="AAA1B22",
+            km=70000,
+            preco=Decimal("32000.00"),
+            investidor_id=inv.id,
         ),
     )
     return inv, v

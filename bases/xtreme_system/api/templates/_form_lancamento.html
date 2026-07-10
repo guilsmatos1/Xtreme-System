@@ -6,14 +6,14 @@
       <button class="icon-btn" type="button" aria-label="Fechar"
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
-    <form hx-post="/ui/caixa/{{ investidor_id }}{% if lancamento %}/{{ lancamento.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+    <form hx-post="/ui/investidores/{{ investidor_id }}/lancamentos{% if lancamento %}/{{ lancamento.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if lancamento and lancamento.tipo == t %} selected{% endif %}>{{ 'Aporte' if t.value == 'aporte' else 'Custo' }}</option>{% endfor %}
+  {% for t in tipos %}<option value="{{ t.value }}"{% if lancamento and lancamento.tipo == t %} selected{% endif %}>{{ 'Aporte' if t.value == 'aporte' else 'Saque' }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
@@ -22,7 +22,7 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Descrição</span>
-            <input class="input" name="descricao" value="{{ lancamento.descricao if lancamento else '' }}" required autofocus>
+  <input class="input" name="descricao" value="{{ lancamento.descricao if lancamento else '' }}" autofocus>
           </label>
         </div>
       </div>

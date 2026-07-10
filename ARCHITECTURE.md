@@ -71,7 +71,6 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `POST /login` | — | Form OAuth2, retorna JWT |
 | `/usuarios` | GET, POST, DELETE, POST `/{id}/senha` | Admin (exceto login) |
 | `/investidores` | GET, POST, PATCH, DELETE | List/Get: CurrentUser, Mutate: Admin |
-| `/meios-captacao` | GET, POST, PATCH, DELETE | idem |
 | `/veiculos` | GET, POST, PATCH, DELETE | idem |
 | `/lancamentos-caixa` | GET, POST, PATCH, DELETE | idem |
 | `/clientes` | GET, POST, PATCH, DELETE | idem |
@@ -108,10 +107,8 @@ para autenticação (httpOnly, mesmo segredo JWT):
 | `/ui/veiculos` | Listagem de veículos |
 | `/ui/clientes` | Listagem de clientes |
 | `/ui/vendas` | Listagem de vendas |
-| `/ui/caixa[/{investidor_id}]` | Lançamentos de caixa, filtrável por investidor |
 | `/ui/usuarios` | Gestão de usuários |
-| `/ui/investidores` | Gestão de investidores |
-| `/ui/meios-captacao` | Gestão de meios de captação |
+| `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
 
 Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 
@@ -123,8 +120,7 @@ Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 | `database/` | — (SQLAlchemy) | Engine + session factory configurados via `DATABASE_URL`, dependency `get_session` |
 | `usuario/` | `Usuario` | `id`, `username`, `senha_hash`, `papel` (admin/vendedor), `ativo` |
 | `investidor/` | `Investidor` | `id`, `nome` |
-| `meio_captacao/` | `MeioCaptacao` | `id`, `nome` |
-| `veiculo/` | `Veiculo` | `modelo`, `placa`, `tipo` (carro/moto), `ano`, `km`, `preco`, `status`, `tipo_entrada`, `revisao`, FKs para `investidor` e `meio_captacao` |
+| `veiculo/` | `Veiculo` | `modelo`, `placa`, `tipo` (carro/moto), `ano`, `km`, `preco`, `status`, `tipo_entrada`, `revisao`, FK para `investidor` |
 | `cliente/` | `Cliente` | `nome`, `documento`, `tipo` (PF/PJ), `cidade`, `estado`, `ativo` |
 | `venda/` | `Venda` | `cliente_id`, `veiculo_id`, `data_venda`, `valor_venda`, `valor_entrada`, `forma_pagamento`, `parcelas`, `status`, `observacoes` |
 | `caixa/` | `LancamentoCaixa` | `investidor_id`, `tipo` (aporte/retirada), `valor`, `descricao`, `origem` (manual/veiculo) |

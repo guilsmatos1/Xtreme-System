@@ -1,6 +1,6 @@
 <form hx-post="/ui/usuarios/{{ usuario.id }}/senha"
       hx-target="body"
-      style="display:flex;align-items:flex-end;gap:var(--s-3);margin-top:var(--s-3);padding:var(--s-3);background:var(--surface-2);border-radius:var(--radius)">
+      style="display:flex;align-items:flex-end;gap:var(--s-3);margin-top:var(--s-3);padding:var(--s-3);background:var(--surface-2);border-radius:var(--r)">
   <label class="field" style="margin:0;flex:1">
     <span class="field__label">Nova senha para {{ usuario.username }}</span>
     <input class="input" name="nova_senha" type="password" placeholder="••••••••" required autocomplete="new-password">

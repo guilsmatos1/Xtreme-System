@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import ForeignKey, Numeric, case, func
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.auditoria.core import _snapshot, auditar
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.veiculo.core import Veiculo
@@ -31,10 +32,10 @@ class LancamentoInvestimento(Base):
     veiculo_id: Mapped[int | None] = mapped_column(
         ForeignKey("veiculo.id", ondelete="CASCADE"), unique=True, index=True
     )
-    tipo: Mapped[TipoLancamento]  # noqa: SQLAlchemy mapped
+    tipo: Mapped[TipoLancamento]
     origem: Mapped[OrigemLancamento] = mapped_column(default=OrigemLancamento.manual)
     valor: Mapped[Decimal] = mapped_column(Numeric(12, 2))
-    descricao: Mapped[str]  # noqa: SQLAlchemy mapped
+    descricao: Mapped[str]
     criado_em: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -42,7 +43,7 @@ class LancamentoInvestimentoCreate(BaseModel):
     investidor_id: int
     tipo: TipoLancamento
     valor: Decimal = Field(gt=0)
-    descricao: str
+    descricao: str | None = None
 
 
 class LancamentoInvestimentoUpdate(BaseModel):
@@ -140,8 +141,16 @@ def criar_lancamento_veiculo(
         descricao=_descricao_veiculo(veiculo_obj),
     )
     session.add(obj)
-    session.commit()
+    session.flush()
     session.refresh(obj)
+    auditar(
+        session,
+        tabela="lancamento_investimento",
+        tipo_acao="CREATE",
+        registro_id=obj.id,
+        dados_depois=_snapshot(obj),
+    )
+    session.commit()
     return obj
 
 
@@ -153,10 +162,31 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
     )
     if lancamento is None:
         return
+    antes = _snapshot(lancamento)
     lancamento.valor = veiculo_obj.preco
     lancamento.investidor_id = veiculo_obj.investidor_id
     lancamento.descricao = _descricao_veiculo(veiculo_obj)
+    session.flush()
+    auditar(
+        session,
+        tabela="lancamento_investimento",
+        tipo_acao="UPDATE",
+        registro_id=lancamento.id,
+        dados_antes=antes,
+        dados_depois=_snapshot(lancamento),
+    )
     session.commit()
+
+
+def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
+    """Delete o lançamento do veículo via ORM antes do DB cascatear a FK, p/ auditar."""
+    lancamento = (
+        session.query(LancamentoInvestimento)
+        .filter_by(veiculo_id=veiculo_obj.id)
+        .one_or_none()
+    )
+    if lancamento is not None:
+        crud.delete(session, lancamento)
 
 
 # ponytail: in-memory aggregations for caixa table. Query-level if row counts grow.
@@ -173,8 +203,7 @@ def agregados_investidores(
         valor[iid] = valor.get(iid, Decimal("0")) + v.preco
     aportes: dict[int, Decimal] = {}
     for lanc in list_all(session):
-        if lanc.tipo == TipoLancamento.aporte:
-            aportes[lanc.investidor_id] = (
-                aportes.get(lanc.investidor_id, Decimal("0")) + lanc.valor
-            )
+        aportes[lanc.investidor_id] = aportes.get(lanc.investidor_id, Decimal("0")) + (
+            lanc.valor if lanc.tipo == TipoLancamento.aporte else -lanc.valor
+        )
     return num, valor, aportes

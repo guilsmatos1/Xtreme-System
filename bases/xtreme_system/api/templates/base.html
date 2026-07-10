@@ -29,17 +29,16 @@
 
       <div class="sidebar__section">Gestão</div>
       <nav class="nav">
+        {% if user and user.papel.value == 'admin' %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/dashboard') }}" href="/ui/dashboard">
+          {{ ui.icon("dashboard") }} Dashboard
+        </a>
+        {% endif %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/veiculos') }}" href="/ui/veiculos">
           {{ ui.icon("vehicles") }} Veículos
         </a>
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
           {{ ui.icon("wallet") }} Investidores
-        </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/caixa') }}" href="/ui/caixa">
-          {{ ui.icon("cash") }} Caixa
-        </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/meios-captacao') }}" href="/ui/meios-captacao">
-          {{ ui.icon("megaphone") }} Meios de captação
         </a>
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes') }}" href="/ui/clientes">
           {{ ui.icon("users") }} Clientes
@@ -111,6 +110,34 @@
         if (msg.children.length) t = setTimeout(function () { msg.innerHTML = ""; }, 3500);
       }).observe(msg, { childList: true });
     })();
+
+    // Replace the native confirm() behind hx-confirm with a styled modal.
+    document.body.addEventListener("htmx:confirm", function (e) {
+      if (!e.detail.question) return;
+      e.preventDefault();
+      var box = document.createElement("div");
+      box.className = "modal";
+      box.innerHTML =
+        '<div class="modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-q" style="max-width:400px">' +
+          '<div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-q"></p></div>' +
+          '<div class="modal__foot">' +
+            '<button type="button" class="btn btn--default" data-cancel>Cancelar</button>' +
+            '<button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent" data-ok>Confirmar</button>' +
+          '</div>' +
+        '</div>';
+      box.querySelector("#confirm-q").textContent = e.detail.question;
+      document.body.appendChild(box);
+      box.querySelector("[data-ok]").focus();
+      function close() { box.remove(); document.removeEventListener("keydown", onKey); }
+      function onKey(ev) { if (ev.key === "Escape") close(); }
+      document.addEventListener("keydown", onKey);
+      box.addEventListener("click", function (ev) { if (ev.target === box) close(); });
+      box.querySelector("[data-cancel]").addEventListener("click", close);
+      box.querySelector("[data-ok]").addEventListener("click", function () {
+        close();
+        e.detail.issueRequest(true);
+      });
+    });
   </script>
 </body>
 </html>

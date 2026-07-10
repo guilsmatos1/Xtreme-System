@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Lançamentos · {{ investidor.nome }}{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>{{ investidor.nome }}</h1>
+    <p class="page-head__subtitle">
+      Saldo: <strong style="{{ 'color:var(--danger)' if saldo < 0 }}">
+        R$ {{ "{:,.2f}".format(saldo) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}
+      </strong>
+    </p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost" href="/ui/investidores/{{ investidor_id }}/lancamentos/exportar">
+      {{ ui.icon("inbox") }} Exportar dados
+    </a>
+    <a class="btn btn--ghost" href="/ui/investidores">{{ ui.icon("wallet") }} Voltar aos investidores</a>
+    {% if user.papel.value == 'admin' %}
+    <button class="btn btn--primary" hx-get="/ui/investidores/{{ investidor_id }}/lancamentos/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo lançamento
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead><tr>
+      <th>{{ ui.sortable("data", "Data", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th>{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+    </tr></thead>
+    {% include "_linhas_lancamentos.html" %}
+  </table>
+</div>
+{% endblock %}

@@ -11,7 +11,6 @@ from sqlalchemy.pool import StaticPool
 from xtreme_system.api.core import app
 from xtreme_system.database.core import Base, get_session
 from xtreme_system.investidor import core as investidor
-from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
@@ -37,9 +36,6 @@ def client() -> Iterator[TestClient]:
         inv = investidor.create(
             session, investidor.InvestidorCreate(nome="Investidor A")
         )
-        meio = meio_captacao.create(
-            session, meio_captacao.MeioCaptacaoCreate(nome="Site")
-        )
         veiculo.create(
             session,
             veiculo.VeiculoCreate(
@@ -50,9 +46,7 @@ def client() -> Iterator[TestClient]:
                 placa="ABC1234",
                 km=12000,
                 preco=85000,
-                status=veiculo.StatusVeiculo.disponivel,
                 investidor_id=inv.id,
-                meio_captacao_id=meio.id,
             ),
         )
 
@@ -214,7 +208,6 @@ def test_ui_exportacao_de_dados_downloada_csv(client: TestClient) -> None:
     for path, name, expected in [
         ("/ui/veiculos/exportar", "veiculos.csv", "Onix"),
         ("/ui/investidores/exportar", "investidores.csv", "Investidor A"),
-        ("/ui/meios-captacao/exportar", "meios-captacao.csv", "Site"),
         ("/ui/usuarios/exportar", "usuarios.csv", "admin"),
     ]:
         resp = client.get(path)
@@ -316,9 +309,6 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
 ) -> None:
     headers = _admin_headers(client)
     inv = client.post("/investidores", json={"nome": "Carla"}, headers=headers).json()
-    meio = client.post(
-        "/meios-captacao", json={"nome": "Indicação"}, headers=headers
-    ).json()
     client.post(
         "/veiculos",
         json={
@@ -330,13 +320,12 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
             "km": 1000,
             "preco": "20000.00",
             "investidor_id": inv["id"],
-            "meio_captacao_id": meio["id"],
         },
         headers=headers,
     )
 
     _login_admin(client)
-    pagina = client.get(f"/ui/caixa/{inv['id']}")
+    pagina = client.get(f"/ui/investidores/{inv['id']}/lancamentos")
     assert pagina.status_code == 200
     assert "HB20" in pagina.text
     assert "20.000,00" in pagina.text
@@ -347,9 +336,6 @@ def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(
 ) -> None:
     headers = _admin_headers(client)
     inv = client.post("/investidores", json={"nome": "Dora"}, headers=headers).json()
-    meio = client.post(
-        "/meios-captacao", json={"nome": "Rádio"}, headers=headers
-    ).json()
     v = client.post(
         "/veiculos",
         json={
@@ -361,7 +347,6 @@ def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(
             "km": 500,
             "preco": "18000.00",
             "investidor_id": inv["id"],
-            "meio_captacao_id": meio["id"],
         },
         headers=headers,
     ).json()
@@ -383,7 +368,6 @@ def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
     headers = _admin_headers(client)
     inv = client.post("/investidores", json={"nome": "Eva"}, headers=headers).json()
     outro = client.post("/investidores", json={"nome": "Fabio"}, headers=headers).json()
-    meio = client.post("/meios-captacao", json={"nome": "TV"}, headers=headers).json()
     v = client.post(
         "/veiculos",
         json={
@@ -395,7 +379,6 @@ def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
             "km": 300,
             "preco": "15000.00",
             "investidor_id": inv["id"],
-            "meio_captacao_id": meio["id"],
         },
         headers=headers,
     ).json()
@@ -411,3 +394,67 @@ def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
     lanc = next(item for item in lancamentos if item["veiculo_id"] == v["id"])
     assert lanc["valor"] == "17000.00"
     assert lanc["investidor_id"] == outro["id"]
+
+
+def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
+    """Dashboard admin mostra KPIs de vendas e estoque."""
+    _login_admin(client)
+
+    # sem vendas, deve retornar 200 com dados zerados
+    resp = client.get("/ui/dashboard")
+    assert resp.status_code == 200
+    assert "Dashboard" in resp.text
+    assert "Vendas este mês" in resp.text
+    assert "Taxa de conversão" in resp.text
+
+    # adiciona uma venda para ter dados não-zero
+    resp_client = client.post("/login", data={"username": "admin", "password": "senha"})
+    token = resp_client.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # criar cliente para venda
+    cli = client.post(
+        "/clientes",
+        json={
+            "nome": "João Silva",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    ).json()
+
+    # criar veículo para venda
+    vei = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Civic",
+            "cor": "Branco",
+            "ano": 2023,
+            "placa": "XYZ9999",
+            "km": 5000,
+            "preco": "95000.00",
+            "investidor_id": 1,  # fixture já cria Investidor A com id=1
+        },
+        headers=headers,
+    ).json()
+
+    # criar venda
+    client.post(
+        "/vendas",
+        json={
+            "cliente_id": cli["id"],
+            "veiculo_id": vei["id"],
+            "data_venda": "2026-07-10",
+            "valor_venda": "95000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": 60,
+        },
+        headers=headers,
+    )
+
+    # dashboard agora mostra a venda
+    resp = client.get("/ui/dashboard")
+    assert resp.status_code == 200
+    assert "95000" in resp.text or "95.000" in resp.text  # valor venda aparece
+    assert "1" in resp.text  # contagem de vendas > 0

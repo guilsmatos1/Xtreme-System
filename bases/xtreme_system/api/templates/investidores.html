@@ -7,26 +7,26 @@
     <h1>{{ titulo }}</h1>
     <p class="page-head__subtitle">{{ itens | length }} registro{{ 's' if itens | length != 1 }} cadastrado{{ 's' if itens | length != 1 }}</p>
   </div>
-  <div style="display:flex;gap:var(--s-3);flex-wrap:wrap">
+  <div class="page-head__actions">
     <a class="btn btn--ghost" href="{{ prefixo }}/exportar">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
     {% if user.papel.value == 'admin' %}
-    <button class="btn btn--primary" hx-get="/ui/investidores/investimentos/novo" hx-target="#modal" hx-swap="innerHTML">
-      {{ ui.icon("plus") }} Novo Investimento
-    </button>
     <button class="btn btn--primary" hx-get="{{ prefixo }}/novo" hx-target="#modal" hx-swap="innerHTML">
-      {{ ui.icon("plus") }} Novo
+      {{ ui.icon("plus") }} Add Investidor
     </button>
     {% endif %}
   </div>
 </div>
 
 <div class="table-wrap">
-  <table>
+  <table class="table--wide">
     <thead><tr>
-      <th>{{ ui.sortable("nome", "Nome", sort, order, prefixo, "#linhas") }}</th>
-      <th>Total Investido</th>
+      <th>{{ ui.sortable("nome", "Nome", sort, order, prefixo) }}</th>
+      <th>{{ ui.sortable("num_veiculos", "Nº Veículos", sort, order, prefixo) }}</th>
+      <th>{{ ui.sortable("total_investido", "Total Investido", sort, order, prefixo) }}</th>
+      <th>{{ ui.sortable("valor_veiculos", "Valor em Veículos", sort, order, prefixo) }}</th>
+      <th>Pendente</th>
       {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_investidores.html" %}

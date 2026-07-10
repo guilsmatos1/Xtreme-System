@@ -5,14 +5,14 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric
+from sqlalchemy import Date, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.usuario.core import Usuario, UsuarioRead
-from xtreme_system.veiculo.core import Veiculo, VeiculoRead
+from xtreme_system.veiculo.core import TipoVeiculo, Veiculo, VeiculoRead
 
 
 class StatusVenda(StrEnum):
@@ -108,3 +108,79 @@ def update(session: Session, obj: Venda, data: VendaUpdate) -> Venda:
 
 def delete(session: Session, obj: Venda) -> None:
     crud.delete(session, obj)
+
+
+def _mes_atual_inicio() -> date:
+    hoje = date.today()
+    return hoje.replace(day=1)
+
+
+def resumo_mes(session: Session) -> tuple[int, Decimal]:
+    """Retorna (contagem, soma) de vendas do mês atual com status != cancelado."""
+    resultado = (
+        session.query(func.count(Venda.id), func.sum(Venda.valor_venda))
+        .filter(Venda.data_venda >= _mes_atual_inicio())
+        .filter(Venda.status != StatusVenda.cancelado)
+        .all()
+    )
+    count, total = resultado[0] if resultado else (0, None)
+    return count or 0, total or Decimal("0")
+
+
+def ticket_medio(session: Session) -> Decimal:
+    """Retorna valor médio de venda com status != cancelado."""
+    valor = (
+        session.query(func.avg(Venda.valor_venda))
+        .filter(Venda.status != StatusVenda.cancelado)
+        .scalar()
+    )
+    return valor or Decimal("0")
+
+
+def receita_por_tipo(session: Session) -> dict[TipoVeiculo, Decimal]:
+    """Retorna soma de valor_venda agrupada por tipo de veículo, sem cancelados."""
+    rows = (
+        session.query(Veiculo.tipo, func.sum(Venda.valor_venda))
+        .join(Venda, Venda.veiculo_id == Veiculo.id)
+        .filter(Venda.status != StatusVenda.cancelado)
+        .group_by(Veiculo.tipo)
+        .all()
+    )
+    return {tipo: total or Decimal("0") for tipo, total in rows}
+
+
+def funil_status(session: Session) -> dict[StatusVenda, tuple[int, Decimal]]:
+    """Retorna (contagem, soma) de vendas por status (incluindo cancelado)."""
+    rows = (
+        session.query(Venda.status, func.count(Venda.id), func.sum(Venda.valor_venda))
+        .group_by(Venda.status)
+        .all()
+    )
+    return {
+        status: (count or 0, total or Decimal("0")) for status, count, total in rows
+    }
+
+
+def ranking_vendedores(
+    session: Session, limite: int = 5
+) -> list[tuple[Usuario, int, Decimal]]:
+    """Retorna top N vendedores por valor vendido (status != cancelado).
+
+    Retorna: (usuario, count, total_valor)
+    """
+    rows = (
+        session.query(
+            Usuario,
+            func.count(Venda.id).label("count_vendas"),
+            func.sum(Venda.valor_venda).label("total_valor"),
+        )
+        .join(Venda, Venda.vendedor_id == Usuario.id)
+        .filter(Venda.status != StatusVenda.cancelado)
+        .group_by(Usuario.id)
+        .order_by(func.sum(Venda.valor_venda).desc())
+        .limit(limite)
+        .all()
+    )
+    return [
+        (usuario, count or 0, total or Decimal("0")) for usuario, count, total in rows
+    ]

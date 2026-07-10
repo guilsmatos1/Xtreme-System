@@ -5,17 +5,16 @@
   <td>{{ ui.tipo_badge(v.tipo) }}</td>
   <td class="cell-num">{{ v.ano }}</td>
   <td class="cell-num">{{ "{:,}".format(v.km) | replace(",", ".") }}</td>
-  <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(v.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td>{{ ui.status_badge(v.status) }}</td>
+  <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(v.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td>{{ v.tipo_entrada.value | capitalize }}</td>
-  <td class="cell-center">{% if v.revisao %}✓{% else %}-{% endif %}</td>
   <td class="muted">{{ v.investidor.nome }}</td>
   <td class="muted">{{ v.procuracao or "-" }}</td>
-  <td class="muted">{{ v.meio_captacao.nome }}</td>
+  <td class="cell-center">{% if v.revisao %}✓{% else %}-{% endif %}</td>
   {% if user.papel.value == 'admin' %}
   <td class="col-actions">
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--focus" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
       <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/veiculos/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o veículo {{ v.modelo }} ({{ v.placa }})?" aria-label="Excluir {{ v.modelo }}">{{ ui.icon("trash") }}</button>
     </div>
   </td>

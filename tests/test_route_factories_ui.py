@@ -1,6 +1,7 @@
 """Prova que register_ui_simples recebe Jinja2Templates como parâmetro (não mais
 o singleton global de deps.py) — permite registrar rotas com templates de stub."""
 
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -11,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from xtreme_system.api.deps import get_ui_user
-from xtreme_system.api.route_factories import register_ui_simples
+from xtreme_system.api.route_factories import _sort_key, register_ui_simples
 from xtreme_system.database.core import Base, get_session
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
@@ -59,3 +60,19 @@ def test_register_ui_simples_aceita_templates_injetado(tmp_path: Path) -> None:
 
     assert resp.status_code == 200
     assert "0 itens" in resp.text
+
+
+def test_sort_key_nulls() -> None:
+    """Nullable fields sort deterministically without crashing mixed lists."""
+    assert _sort_key(None) == ""
+
+    # None sorts before non-empty strings; original items preserved in output
+    items = ["Z", None, "a", None, "M"]
+    assert sorted(items, key=_sort_key) == [None, None, "a", "M", "Z"]
+
+    # Existing behaviors preserved
+    assert _sort_key("  ABC  ") == "  abc  "
+    assert _sort_key(42) == 42
+    assert _sort_key(True) is True
+    assert _sort_key(Decimal("1.50")) == Decimal("1.50")
+    assert _sort_key("") == ""

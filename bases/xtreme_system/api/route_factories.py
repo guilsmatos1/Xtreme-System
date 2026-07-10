@@ -88,7 +88,8 @@ def register_crud_routes(
         return _found(module.get(session, item_id), label)
 
     @app.post(prefix, response_model=read_schema, status_code=201)
-    def _create(data: create_schema, session: SessionDep, _: AdminUser) -> Any:  # type: ignore[valid-type]
+    def _create(data: create_schema, session: SessionDep, user: AdminUser) -> Any:  # type: ignore[valid-type]
+        session.info["usuario_id"] = user.id
         if before_create:
             before_create(session, data)
         obj = _safe_write(
@@ -105,8 +106,9 @@ def register_crud_routes(
         item_id: int,
         data: update_schema,  # type: ignore[valid-type]
         session: SessionDep,
-        _: AdminUser,
+        user: AdminUser,
     ) -> Any:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         if before_update:
             before_update(session, obj, data)
@@ -120,7 +122,8 @@ def register_crud_routes(
         return obj
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
-    def _delete(item_id: int, session: SessionDep, _: AdminUser) -> None:
+    def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         if before_delete:
             before_delete(session, obj)
@@ -138,10 +141,19 @@ def register_crud_routes(
 
 # ponytail: in-memory sort; DB-level only if row counts grow large.
 def _sort_key(val: Any) -> Any:
+    if val is None:
+        return ""  # ponytail: None sorts before all strings; DB constraint if needed.
     val = getattr(val, "value", val)  # enums compare by .value
     if hasattr(val, "nome"):
         val = val.nome
     return val.lower() if isinstance(val, str) else val
+
+
+def _run_hook(
+    hook: Callable[[Session, Any], None] | None, session: Session, arg: Any
+) -> None:
+    if hook:
+        hook(session, arg)
 
 
 def register_crud_ui_routes(
@@ -165,6 +177,7 @@ def register_crud_ui_routes(
     parse_form: Callable[[Any], dict[str, Any]] = dict,
     before_create: Callable[[Session, Any], None] | None = None,
     before_update: Callable[[Session, Any], None] | None = None,
+    before_delete: Callable[[Session, Any], None] | None = None,
     after_create: Callable[[Session, Any], Any] | None = None,
     after_update: Callable[[Session, Any], Any] | None = None,
     csv_filename: str,
@@ -256,33 +269,31 @@ def register_crud_ui_routes(
     async def _criar(
         request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         form = await request.form()
         try:
             data = create_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
-            if before_create:
-                before_create(session, data)
+            _run_hook(before_create, session, data)
         except (ValidationError, HTTPException) as exc:
             return _erro(request, session, exc, None)
         obj = module.create(session, data)
-        if after_create:
-            after_create(session, obj)
+        _run_hook(after_create, session, obj)
         return _ok(request, session, user)
 
     @app.post(f"{prefix}/{{item_id}}")
     async def _atualizar(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         form = await request.form()
         try:
             data = update_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
-            if before_update:
-                before_update(session, data)
+            _run_hook(before_update, session, data)
         except (ValidationError, HTTPException) as exc:
             return _erro(request, session, exc, obj)
         atualizado = module.update(session, obj, data)
-        if after_update:
-            after_update(session, atualizado)
+        _run_hook(after_update, session, atualizado)
         return _ok(request, session, user)
 
     excluir_dep = require_ui_admin if delete_requires_admin else get_ui_user
@@ -294,7 +305,9 @@ def register_crud_ui_routes(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(excluir_dep)],
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
+        _run_hook(before_delete, session, obj)
         module.delete(session, obj)
         return templates.TemplateResponse(
             request,
@@ -380,6 +393,7 @@ def register_ui_simples(
     async def _criar(
         request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         nome = await _nome(request)
         if not nome:
             return templates.TemplateResponse(
@@ -406,6 +420,7 @@ def register_ui_simples(
     async def _atualizar(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), titulo)
         nome = await _nome(request)
         if not nome:
@@ -433,6 +448,7 @@ def register_ui_simples(
     def _excluir(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
+        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), titulo)
         msg = None
         try:

@@ -85,9 +85,6 @@ def test_remover_investidor_com_veiculo_vinculado_retorna_409(
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
         "id"
     ]
-    meio_id = client.post(
-        "/meios-captacao", json={"nome": "Instagram"}, headers=headers
-    ).json()["id"]
     client.post(
         "/veiculos",
         json={
@@ -99,7 +96,6 @@ def test_remover_investidor_com_veiculo_vinculado_retorna_409(
             "km": 70000,
             "preco": "32000.00",
             "investidor_id": inv_id,
-            "meio_captacao_id": meio_id,
         },
         headers=headers,
     )
@@ -163,10 +159,6 @@ def test_placa_duplicada_retorna_400(client: TestClient) -> None:
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
         "id"
     ]
-    meio_id = client.post(
-        "/meios-captacao", json={"nome": "Site"}, headers=headers
-    ).json()["id"]
-
     veiculo_data = {
         "tipo": "carro",
         "modelo": "Fusca",
@@ -176,7 +168,6 @@ def test_placa_duplicada_retorna_400(client: TestClient) -> None:
         "km": 100000,
         "preco": "15000.00",
         "investidor_id": inv_id,
-        "meio_captacao_id": meio_id,
     }
     r1 = client.post("/veiculos", json=veiculo_data, headers=headers)
     assert r1.status_code == 201

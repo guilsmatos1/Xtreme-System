@@ -18,22 +18,11 @@
             </select>
           </label>
           <label class="field">
-            <span class="field__label">Status</span>
-            <select class="select" name="status" required>
-              {% for s in status %}<option value="{{ s.value }}"{% if veiculo and veiculo.status == s %} selected{% endif %}>{{ s.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>
-          <label class="field">
             <span class="field__label">Tipo de Entrada</span>
             <select class="select" name="tipo_entrada" required>
               {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo and veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field">
-            <span class="field__label">Revisão</span>
-            <input class="input" type="checkbox" name="revisao" value="true" {% if veiculo and veiculo.revisao %}checked{% endif %}>
-          </label>
-
           <label class="field field--full">
             <span class="field__label">Modelo</span>
             <input class="input" name="modelo" value="{{ veiculo.modelo if veiculo else '' }}" required autofocus>
@@ -58,12 +47,8 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Preço (R$)</span>
+            <span class="field__label">Preço de Compra (R$)</span>
             <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco if veiculo else '' }}" required>
-          </label>
-          <label class="field">
-            <span class="field__label">Procuração <span class="muted">(opcional)</span></span>
-            <input class="input" name="procuracao" value="{{ (veiculo.procuracao or '') if veiculo else '' }}">
           </label>
 
           <label class="field">
@@ -72,24 +57,38 @@
               {% for i in investidores %}<option value="{{ i.id }}"{% if veiculo and veiculo.investidor_id == i.id %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field">
-            <span class="field__label">Meio de captação</span>
-            <select class="select" name="meio_captacao_id" required>
-              {% for m in meios %}<option value="{{ m.id }}"{% if veiculo and veiculo.meio_captacao_id == m.id %} selected{% endif %}>{{ m.nome }}</option>{% endfor %}
-            </select>
-          </label>
         </div>
         {% if not veiculo %}
         <div class="form-grid">
           <label class="field">
-            <span class="field__label">Fotos <span class="muted">(opcional)</span></span>
-            <input class="input" type="file" name="imagens" multiple accept="image/*">
+            <span class="field__label">Fotos do veículo <span class="muted">(opcional)</span></span>
+            <input class="input" type="file" id="imagens" name="imagens" multiple accept="image/*">
+            <div id="preview-imagens" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;"></div>
           </label>
           <label class="field">
             <span class="field__label">Documentos <span class="muted">(opcional)</span></span>
             <input class="input" type="file" name="documentos" multiple>
           </label>
         </div>
+        <script>
+          document.getElementById('imagens').addEventListener('change', function(e) {
+            const preview = document.getElementById('preview-imagens');
+            preview.innerHTML = '';
+            Array.from(e.target.files).forEach(file => {
+              const reader = new FileReader();
+              reader.onload = function(event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.style.width = '60px';
+                img.style.height = '60px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '4px';
+                preview.appendChild(img);
+              };
+              reader.readAsDataURL(file);
+            });
+          });
+        </script>
         {% endif %}
       </div>
       <div class="modal__foot">

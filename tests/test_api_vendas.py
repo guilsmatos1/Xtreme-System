@@ -53,13 +53,10 @@ def _token(client: TestClient, username: str) -> str:
 
 
 def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
-    """Cria investidor, meio_captacao, cliente e veiculo."""
+    """Cria investidor, cliente e veiculo."""
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
         "id"
     ]
-    meio_id = client.post(
-        "/meios-captacao", json={"nome": "Instagram"}, headers=headers
-    ).json()["id"]
     cli = client.post(
         "/clientes",
         json={
@@ -82,7 +79,6 @@ def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
             "km": 50000,
             "preco": "40000.00",
             "investidor_id": inv_id,
-            "meio_captacao_id": meio_id,
         },
         headers=headers,
     )

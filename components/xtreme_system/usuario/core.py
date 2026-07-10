@@ -5,6 +5,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.auditoria.core import _snapshot, auditar
 from xtreme_system.auth.core import hash_password
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
@@ -55,8 +56,16 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
         papel=data.papel,
     )
     session.add(obj)
-    session.commit()
+    session.flush()
     session.refresh(obj)
+    auditar(
+        session,
+        tabela="usuario",
+        tipo_acao="CREATE",
+        registro_id=obj.id,
+        dados_depois=_snapshot(obj),
+    )
+    session.commit()
     return obj
 
 
@@ -69,5 +78,15 @@ def delete(session: Session, obj: Usuario) -> None:
 
 
 def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
+    antes = _snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
+    session.flush()
+    auditar(
+        session,
+        tabela="usuario",
+        tipo_acao="UPDATE",
+        registro_id=obj.id,
+        dados_antes=antes,
+        dados_depois=_snapshot(obj),
+    )
     session.commit()

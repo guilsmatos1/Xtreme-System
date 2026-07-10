@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>{{ titulo }}</h1>
+    <p class="page-head__subtitle">Resumo executivo de vendas e operações</p>
+  </div>
+</div>
+
+<section class="stats" aria-label="KPIs de venda">
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("cash") }} Vendas este mês</div>
+    <div class="stat__value cell-num">{{ vendas_mes_count }}</div>
+    <div class="stat__hint">R$ {{ "{:,.0f}".format(vendas_mes_total or 0) | replace(",", ".") }}</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("tag") }} Ticket médio</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(ticket_medio or 0) | replace(",", ".") }}</div>
+    <div class="stat__hint">valor médio de venda</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("check") }} Taxa de conversão</div>
+    <div class="stat__value cell-num">{{ "{:.1f}".format(taxa_conversao) }}%</div>
+    <div class="stat__hint">{{ vendidos }}/{{ disponiveis + vendidos }} avaliados</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("wallet") }} Valor em estoque</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(valor_estoque or 0) | replace(",", ".") }}</div>
+    <div class="stat__hint">{{ disponiveis }} disponíveis</div>
+  </article>
+</section>
+
+<section class="stats" aria-label="Receita por tipo de veículo">
+  {% for item in receita_tipo %}
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon(item.icone) }} {{ item.label }}</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(item.valor or 0) | replace(",", ".") }}</div>
+    <div class="stat__hint">faturamento</div>
+  </article>
+  {% endfor %}
+</section>
+
+<section>
+  <h2 style="margin-bottom:var(--s-4)">Funil de vendas</h2>
+  <div class="table-wrap">
+    <table class="table--wide">
+      <thead><tr>
+        <th>Status</th>
+        <th>Quantidade</th>
+        <th>Valor total</th>
+      </tr></thead>
+      <tbody>
+        {% for item in funil %}
+        <tr>
+          <td>{{ item.status }}</td>
+          <td class="cell-num">{{ item.count }}</td>
+          <td class="cell-num">R$ {{ "{:,.0f}".format(item.valor or 0) | replace(",", ".") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section style="margin-top:var(--s-6)">
+  <h2 style="margin-bottom:var(--s-4)">Ranking de vendedores</h2>
+  {% if ranking_vendedores %}
+  <div class="table-wrap">
+    <table class="table--wide">
+      <thead><tr>
+        <th>Vendedor</th>
+        <th>Vendas</th>
+        <th>Faturamento</th>
+      </tr></thead>
+      <tbody>
+        {% for usuario, count, total in ranking_vendedores %}
+        <tr>
+          <td>{{ usuario.username }}</td>
+          <td class="cell-num">{{ count }}</td>
+          <td class="cell-num">R$ {{ "{:,.0f}".format(total or 0) | replace(",", ".") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ ui.empty("users", "Sem vendas registradas", "Nenhuma venda foi realizada ainda") }}
+  {% endif %}
+</section>
+
+{% endblock %}

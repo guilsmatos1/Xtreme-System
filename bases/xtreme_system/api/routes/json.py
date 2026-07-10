@@ -14,7 +14,6 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.investidor import core as investidor
-from xtreme_system.meio_captacao import core as meio_captacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -77,17 +76,11 @@ def trocar_senha_usuario(
 
 def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
     inv_id = data.investidor_id
-    meio_id = data.meio_captacao_id
     inv_valid = (not update or inv_id is not None) and investidor.get(
         session, inv_id
     ) is None
-    meio_valid = (not update or meio_id is not None) and meio_captacao.get(
-        session, meio_id
-    ) is None
     if inv_valid:
         raise HTTPException(status_code=400, detail="investidor_id inexistente")
-    if meio_valid:
-        raise HTTPException(status_code=400, detail="meio_captacao_id inexistente")
     if (
         not update
         and hasattr(data, "placa")
@@ -117,18 +110,6 @@ register_crud_routes(
     update_schema=investidor.InvestidorUpdate,
 )
 
-# ---- Meios de captação ----
-
-register_crud_routes(
-    app,
-    meio_captacao,
-    "/meios-captacao",
-    "Meio de captação",
-    read_schema=meio_captacao.MeioCaptacaoRead,
-    create_schema=meio_captacao.MeioCaptacaoCreate,
-    update_schema=meio_captacao.MeioCaptacaoUpdate,
-)
-
 # ---- Veículos ----
 
 register_crud_routes(
@@ -141,6 +122,7 @@ register_crud_routes(
     update_schema=veiculo.VeiculoUpdate,
     before_create=partial(_validate_fks),
     before_update=lambda session, _obj, data: _validate_fks(session, data, update=True),
+    before_delete=caixa.deletar_lancamento_veiculo,
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
     handle_delete_error=False,

@@ -5,7 +5,7 @@
   <td class="muted">{{ l.criado_em.strftime("%d/%m/%Y") }}</td>
   <td>
     {% if l.tipo.value == 'aporte' %}<span class="badge badge--success">Aporte</span>
-    {% else %}<span class="badge badge--danger">Custo</span>{% endif %}
+    {% else %}<span class="badge badge--danger">Saque</span>{% endif %}
   </td>
   <td>{{ l.descricao }}</td>
   <td class="cell-num cell-strong">{{ '+' if l.tipo.value == 'aporte' else '-' }} R$ {{ "{:,.2f}".format(l.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
@@ -15,8 +15,8 @@
     <span class="muted">via Veículos</span>
     {% else %}
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/caixa/{{ investidor_id }}/{{ l.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar lançamento">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/caixa/{{ investidor_id }}/{{ l.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este lançamento?" aria-label="Excluir lançamento">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm" hx-get="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar lançamento">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este lançamento?" aria-label="Excluir lançamento">{{ ui.icon("trash") }}</button>
     </div>
     {% endif %}
   </td>
@@ -24,7 +24,7 @@
 </tr>
 {% else %}
 <tr class="empty-row"><td colspan="5">
-  {% call ui.empty("inbox", "Nenhum lançamento ainda", "Cadastre um aporte ou custo manual para começar.") %}{% endcall %}
+  {% call ui.empty("inbox", "Nenhum lançamento ainda", "Cadastre um aporte ou saque manual para começar.") %}{% endcall %}
 </td></tr>
 {% endfor %}
 </tbody>

@@ -21,3 +21,5 @@
 - [x] Adicionar um campo de comprovante de pagamento na tabela "compra"
 - [x] Adicionar um campo de tipo de entrada (compra ou consignação) e um campo de revisão (tipo boolean) na tabela "veiculo". adicione os campos na tabela da ui. 
 - [ ] Integrar sistema que puxa dados do veículo pela placa.
+- [ ] Quando comprar o veiculo, deve pedir o documento do cliente vendedor e do veiculo. O documento do veiculo e do cliente vendedor deve ficar disponível na tabela de veiculo. 
+- [ ] A procuração é um documento que também deve estar na tabela de veiculo.

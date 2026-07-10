@@ -110,7 +110,6 @@ The following resources are managed through a generic CRUD interface. Each resou
 ### Available Resources
 
 - **Investidores** - Investors/Fundholders
-- **Meios de Captação** - Funding sources
 - **Veículos** - Vehicles (investment vehicles)
 - **Lançamentos de Caixa** - Financial transactions
 - **Clientes** - Clients/Customers
@@ -120,7 +119,6 @@ The following resources are managed through a generic CRUD interface. Each resou
 
 For each resource, replace `{resource}` with one of:
 - `investidores`
-- `meios-captacao`
 - `veiculos`
 - `lancamentos-caixa`
 - `clientes`
@@ -205,7 +203,6 @@ Response: No content (204)
 **Validation**:
 - `placa` (license plate) must be unique
 - `investidor_id` must reference an existing investor
-- `meio_captacao_id` must reference an existing funding source
 
 **Side Effects**:
 - Creating a vehicle triggers automatic financial transaction creation
