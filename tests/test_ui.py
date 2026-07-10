@@ -265,6 +265,69 @@ def test_ui_clientes_crud_basico(client: TestClient) -> None:
     assert "Maria Lima" not in excluido.text
 
 
+def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
+    _login_admin(client)
+
+    criado = client.post(
+        "/ui/clientes",
+        data={
+            "nome": "João Documento",
+            "documento": "98765432109",
+            "tipo": "pessoa_fisica",
+            "ativo": "true",
+        },
+    )
+    assert criado.status_code == 200
+
+    token = client.post(
+        "/login", data={"username": "admin", "password": "senha"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    clientes = client.get("/clientes", headers=headers).json()
+    cliente_id = next(
+        item["id"] for item in clientes if item["documento"] == "98765432109"
+    )
+
+    modal = client.get(f"/ui/clientes/{cliente_id}/documentos")
+    assert modal.status_code == 200
+    assert f'hx-post="/ui/clientes/{cliente_id}/documentos"' in modal.text
+    assert 'type="file"' in modal.text
+    assert "Enviar documentos" in modal.text
+
+    upload = client.post(
+        f"/ui/clientes/{cliente_id}/documentos",
+        files=[("documentos", ("comprovante.pdf", b"conteudo-doc", "application/pdf"))],
+    )
+    assert upload.status_code == 200
+    assert "João Documento" in upload.text
+    assert "/documentos/" in upload.text
+
+    match = re.search(
+        r'hx-post="/ui/clientes/\d+/documentos/(?P<doc_id>\d+)/excluir"',
+        upload.text,
+    )
+    assert match is not None
+    doc_id = match.group("doc_id")
+
+    arquivo = re.search(
+        r"(?P<url>/static/uploads/clientes/\d+/documentos/[a-f0-9]+\.pdf)",
+        upload.text,
+    )
+    assert arquivo is not None
+    try:
+        caminho = arquivo.group("url")
+        salvo = client.get(caminho)
+        assert salvo.status_code == 200
+        assert salvo.content == b"conteudo-doc"
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(caminho.lstrip("/")).unlink()
+
+    excluido = client.post(f"/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
+    assert excluido.status_code == 200
+    assert "Nenhum documento" in excluido.text
+
+
 def test_ui_investidores_crud_basico(client: TestClient) -> None:
     _login_admin(client)
 

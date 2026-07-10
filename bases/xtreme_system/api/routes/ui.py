@@ -25,9 +25,11 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -340,6 +342,26 @@ def _salvar_documentos_cliente(
         )
 
 
+def _salvar_documento_veiculo(
+    session: Session, veiculo_id: int, arquivo: UploadFile | None
+) -> None:
+    if not arquivo or not arquivo.filename:
+        return
+    upload_dir = _uploads_dir(veiculo_id) / "documentos"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    suffix = Path(arquivo.filename).suffix.lower()
+    filename = f"{uuid4().hex}{suffix}"
+    with (upload_dir / filename).open("wb") as f:
+        f.write(arquivo.file.read())
+    documento_veiculo.create(
+        session,
+        documento_veiculo.DocumentoVeiculoCreate(
+            veiculo_id=veiculo_id,
+            url=f"/static/uploads/veiculos/{veiculo_id}/documentos/{filename}",
+        ),
+    )
+
+
 @app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
 def ui_veiculo_cliente_vendedor(
     request: Request,
@@ -621,6 +643,11 @@ async def _criar_veiculo(
         if hasattr(arquivo, "filename") and hasattr(arquivo, "file")
     ]
     _salvar_documentos_cliente(session, seller.id, cast(list[UploadFile], documentos))
+    _salvar_documento_veiculo(
+        session,
+        obj.id,
+        cast(UploadFile | None, form.get("documento_veiculo")),
+    )
     compra.create(
         session,
         compra.CompraCreate(
@@ -1077,7 +1104,13 @@ def ui_usuarios(
     return templates.TemplateResponse(
         request,
         "usuarios.html",
-        {"user": user, "usuarios": usuarios, "sort": sort, "order": order},
+        {
+            "user": user,
+            "usuarios": usuarios,
+            "perfis": perfil.list_all(session),
+            "sort": sort,
+            "order": order,
+        },
     )
 
 
@@ -1102,18 +1135,27 @@ def ui_usuario_criar(
     username: Annotated[str, Form()],
     senha: Annotated[str, Form()],
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.vendedor,
+    perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     erro = None
     if usuario.get_by_username(session, username) is not None:
         erro = "username já existe"
     else:
         usuario.create(
-            session, usuario.UsuarioCreate(username=username, senha=senha, papel=papel)
+            session,
+            usuario.UsuarioCreate(
+                username=username, senha=senha, papel=papel, perfil_id=perfil_id
+            ),
         )
     return templates.TemplateResponse(
         request,
         "usuarios.html",
-        {"user": user, "usuarios": usuario.list_all(session), "erro": erro},
+        {
+            "user": user,
+            "usuarios": usuario.list_all(session),
+            "perfis": perfil.list_all(session),
+            "erro": erro,
+        },
         status_code=400 if erro else 200,
     )
 
@@ -1129,6 +1171,7 @@ def ui_usuario_excluir(
             {
                 "user": user,
                 "usuarios": usuario.list_all(session),
+                "perfis": perfil.list_all(session),
                 "erro": "não pode excluir a si mesmo",
             },
             status_code=400,
@@ -1141,6 +1184,7 @@ def ui_usuario_excluir(
         {
             "user": user,
             "usuarios": usuario.list_all(session),
+            "perfis": perfil.list_all(session),
             "sort": "",
             "order": "asc",
         },
@@ -1171,9 +1215,191 @@ def ui_usuario_senha_alterar(
         {
             "user": user,
             "usuarios": usuario.list_all(session),
+            "perfis": perfil.list_all(session),
             "sort": "",
             "order": "asc",
         },
+    )
+
+
+@app.get("/ui/usuarios/{user_id}/perfil")
+def ui_usuario_perfil_form(
+    user_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    return templates.TemplateResponse(
+        request,
+        "_form_perfil_usuario.html",
+        {"usuario": obj, "perfis": perfil.list_all(session)},
+    )
+
+
+@app.post("/ui/usuarios/{user_id}/perfil")
+def ui_usuario_perfil_alterar(
+    user_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    perfil_id: Annotated[int | None, Form()] = None,
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    usuario.set_perfil(session, obj, perfil_id)
+    return templates.TemplateResponse(
+        request,
+        "usuarios.html",
+        {
+            "user": user,
+            "usuarios": usuario.list_all(session),
+            "perfis": perfil.list_all(session),
+            "sort": "",
+            "order": "asc",
+        },
+    )
+
+
+# ---- Perfis (UI, admin) ----
+
+
+def _perfis_ctx(
+    session: Session, user: usuario.Usuario, **extra: Any
+) -> dict[str, Any]:
+    return {
+        "user": user,
+        "perfis": perfil.list_all(session),
+        "sort": "",
+        "order": "asc",
+        **extra,
+    }
+
+
+@app.get("/ui/perfis")
+def ui_perfis(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    sort: str = "",
+    order: str = "asc",
+) -> HTMLResponse:
+    perfis = perfil.list_all(session)
+    if sort == "nome":
+        perfis = sorted(
+            perfis, key=lambda p: _sort_key(p.nome), reverse=order == "desc"
+        )
+    return templates.TemplateResponse(
+        request,
+        "perfis.html",
+        {"user": user, "perfis": perfis, "sort": sort, "order": order},
+    )
+
+
+@app.get("/ui/perfis/novo")
+def ui_perfil_novo(request: Request, _: UIAdmin) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "_form_perfil.html",
+        {"perfil": None, "paginas_disponiveis": perfil.PAGINAS},
+    )
+
+
+@app.get("/ui/perfis/{item_id}/editar")
+def ui_perfil_editar(
+    item_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(perfil.get(session, item_id), "Perfil")
+    return templates.TemplateResponse(
+        request,
+        "_form_perfil.html",
+        {"perfil": obj, "paginas_disponiveis": perfil.PAGINAS},
+    )
+
+
+@app.post("/ui/perfis")
+async def ui_perfil_criar(
+    request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    form = await request.form()
+    try:
+        data = perfil.PerfilCreate(
+            nome=str(form.get("nome", "")), paginas=form.getlist("paginas")
+        )
+    except ValidationError:
+        return templates.TemplateResponse(
+            request,
+            "_form_perfil.html",
+            {
+                "perfil": None,
+                "paginas_disponiveis": perfil.PAGINAS,
+                "erro": "Dados inválidos",
+            },
+            status_code=400,
+        )
+    try:
+        perfil.create(session, data)
+    except IntegrityError:
+        session.rollback()
+        return templates.TemplateResponse(
+            request,
+            "_form_perfil.html",
+            {
+                "perfil": None,
+                "paginas_disponiveis": perfil.PAGINAS,
+                "erro": "Perfil já existe",
+            },
+            status_code=409,
+        )
+    return templates.TemplateResponse(
+        request, "_perfis_ok.html", _perfis_ctx(session, user)
+    )
+
+
+@app.post("/ui/perfis/{item_id}")
+async def ui_perfil_atualizar(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(perfil.get(session, item_id), "Perfil")
+    form = await request.form()
+    data = perfil.PerfilUpdate(
+        nome=str(form.get("nome", "")), paginas=form.getlist("paginas")
+    )
+    try:
+        perfil.update(session, obj, data)
+    except IntegrityError:
+        session.rollback()
+        return templates.TemplateResponse(
+            request,
+            "_form_perfil.html",
+            {
+                "perfil": obj,
+                "paginas_disponiveis": perfil.PAGINAS,
+                "erro": "Perfil já existe",
+            },
+            status_code=409,
+        )
+    return templates.TemplateResponse(
+        request, "_perfis_ok.html", _perfis_ctx(session, user)
+    )
+
+
+@app.post("/ui/perfis/{item_id}/excluir")
+def ui_perfil_excluir(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(perfil.get(session, item_id), "Perfil")
+    try:
+        perfil.delete(session, obj)
+    except IntegrityError:
+        session.rollback()
+        return templates.TemplateResponse(
+            request,
+            "_linhas_perfis.html",
+            {**_perfis_ctx(session, user), "msg": "Perfil possui usuários vinculados"},
+            status_code=409,
+        )
+    return templates.TemplateResponse(
+        request, "_linhas_perfis.html", _perfis_ctx(session, user)
     )
 
 

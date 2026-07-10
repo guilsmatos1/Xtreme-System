@@ -24,6 +24,7 @@ from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: 
 from xtreme_system.imagem_comprovante_venda import core as _imagem_comprovante_venda  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as _investidor  # noqa: F401
+from xtreme_system.perfil import core as _perfil  # noqa: F401
 from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
 from xtreme_system.venda import core as _venda  # noqa: F401

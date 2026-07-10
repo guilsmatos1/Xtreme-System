@@ -34,21 +34,32 @@
           {{ ui.icon("dashboard") }} Dashboard
         </a>
         {% endif %}
+        {% if user and pode_acessar(user, 'veiculos') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/veiculos') }}" href="/ui/veiculos">
           {{ ui.icon("vehicles") }} Veículos
         </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'investidores') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
           {{ ui.icon("wallet") }} Investidores
         </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'clientes') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes') }}" href="/ui/clientes">
           {{ ui.icon("users") }} Clientes
         </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'vendas') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/vendas') }}" href="/ui/vendas">
           {{ ui.icon("cash") }} Vendas
         </a>
+        {% endif %}
         {% if user and user.papel.value == 'admin' %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/usuarios') }}" href="/ui/usuarios">
           {{ ui.icon("users") }} Usuários
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/perfis') }}" href="/ui/perfis">
+          {{ ui.icon("tag") }} Perfis
         </a>
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/configuracoes') }}" href="/ui/configuracoes">
           {{ ui.icon("settings") }} Configurações

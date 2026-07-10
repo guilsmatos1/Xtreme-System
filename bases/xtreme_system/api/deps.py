@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Cookie, Depends, HTTPException
+from fastapi import Cookie, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
 from jwt import InvalidTokenError
@@ -11,9 +11,12 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.auth import core as auth
 from xtreme_system.database.core import get_session
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates.env.globals["pode_acessar"] = perfil.pode_acessar
+templates.env.globals["paginas_labels"] = dict(perfil.PAGINAS)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -69,8 +72,14 @@ class _NaoAdminError(Exception):
     pass
 
 
+class _NaoAutorizadoError(Exception):
+    pass
+
+
 def get_ui_user(
-    session: SessionDep, access_token: Annotated[str | None, Cookie()] = None
+    request: Request,
+    session: SessionDep,
+    access_token: Annotated[str | None, Cookie()] = None,
 ) -> usuario.Usuario:
     if not access_token:
         raise _NaoAutenticadoError
@@ -81,6 +90,9 @@ def get_ui_user(
     user = usuario.get_by_username(session, dados.username)
     if user is None or not user.ativo:
         raise _NaoAutenticadoError
+    pagina = perfil._pagina_da_rota(request.url.path)
+    if pagina and not perfil.pode_acessar(user, pagina):
+        raise _NaoAutorizadoError
     return user
 
 

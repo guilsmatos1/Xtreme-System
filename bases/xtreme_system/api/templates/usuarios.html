@@ -33,6 +33,15 @@
             <option value="admin">Admin</option>
           </select>
         </label>
+        <label class="field">
+          <span class="field__label">Perfil</span>
+          <select class="select" name="perfil_id">
+            <option value="">Nenhum</option>
+            {% for p in perfis %}
+            <option value="{{ p.id }}">{{ p.nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
         <div class="field" style="justify-content:flex-end">
           <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }} Criar usuário</button>
         </div>
@@ -46,6 +55,7 @@
         <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
         <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
         <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
+        <th>Perfil</th>
         <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
         <th style="width:1%"></th>
       </tr></thead>
@@ -60,12 +70,19 @@
             </span>
           </td>
           <td>{{ ui.papel_badge(u.papel) }}</td>
+          <td>{{ u.perfil.nome if u.perfil else '-' }}</td>
           <td>
             {% if u.ativo %}<span class="badge badge--success">Ativo</span>
             {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
           </td>
           <td>
             <div style="display:flex;gap:var(--s-2)">
+              <button class="btn btn--ghost" style="padding:var(--s-2)"
+                      hx-get="/ui/usuarios/{{ u.id }}/perfil"
+                      hx-target="#perfil-form-{{ u.id }}"
+                      title="Alterar perfil">
+                {{ ui.icon("tag") }}
+              </button>
               <button class="btn btn--ghost" style="padding:var(--s-2)"
                       hx-get="/ui/usuarios/{{ u.id }}/senha"
                       hx-target="#senha-form-{{ u.id }}"
@@ -80,6 +97,7 @@
                 {{ ui.icon("trash") }}
               </button>
             </div>
+            <div id="perfil-form-{{ u.id }}"></div>
             <div id="senha-form-{{ u.id }}"></div>
           </td>
         </tr>

@@ -345,6 +345,7 @@ th.col-actions, td.col-actions { text-align: right; width: 1%; white-space: nowr
 .badge--danger  { background: var(--danger-soft);  color: var(--danger);  border-color: transparent; }
 .badge--neutral { background: var(--surface-2); color: var(--text-secondary); }
 .badge--accent  { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.badge--info    { background: #e0edff; color: #1a73e8; border-color: transparent; }
 .badge--warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
 .badge--plain::before { display: none; }
 

@@ -3,12 +3,14 @@
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.auditoria.core import _snapshot, auditar
 from xtreme_system.auth.core import hash_password
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.perfil.core import Perfil
 
 
 class Papel(StrEnum):
@@ -24,12 +26,15 @@ class Usuario(Base):
     senha_hash: Mapped[str]
     papel: Mapped[Papel] = mapped_column(default=Papel.vendedor)
     ativo: Mapped[bool] = mapped_column(default=True)
+    perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"))
+    perfil: Mapped[Perfil | None] = relationship()
 
 
 class UsuarioCreate(BaseModel):
     username: str
     senha: str
     papel: Papel = Papel.vendedor
+    perfil_id: int | None = None
 
 
 class UsuarioRead(BaseModel):
@@ -39,6 +44,7 @@ class UsuarioRead(BaseModel):
     username: str
     papel: Papel
     ativo: bool
+    perfil_id: int | None
 
 
 def list_all(session: Session) -> list[Usuario]:
@@ -54,6 +60,7 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
         username=data.username,
         senha_hash=hash_password(data.senha),
         papel=data.papel,
+        perfil_id=data.perfil_id,
     )
     session.add(obj)
     session.flush()
@@ -80,6 +87,21 @@ def delete(session: Session, obj: Usuario) -> None:
 def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
     antes = _snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
+    session.flush()
+    auditar(
+        session,
+        tabela="usuario",
+        tipo_acao="UPDATE",
+        registro_id=obj.id,
+        dados_antes=antes,
+        dados_depois=_snapshot(obj),
+    )
+    session.commit()
+
+
+def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
+    antes = _snapshot(obj)
+    obj.perfil_id = perfil_id
     session.flush()
     auditar(
         session,

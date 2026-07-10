@@ -17,7 +17,11 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from xtreme_system.api.deps import _NaoAdminError, _NaoAutenticadoError
+from xtreme_system.api.deps import (
+    _NaoAdminError,
+    _NaoAutenticadoError,
+    _NaoAutorizadoError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +89,15 @@ def _handle_nao_autenticado(
 @app.exception_handler(_NaoAdminError)
 def _handle_nao_admin(_request: Request, _exc: _NaoAdminError) -> HTMLResponse:
     return HTMLResponse("<p>Requer papel admin</p>", status_code=403)
+
+
+@app.exception_handler(_NaoAutorizadoError)
+def _handle_nao_autorizado(
+    _request: Request, _exc: _NaoAutorizadoError
+) -> HTMLResponse:
+    return HTMLResponse(
+        "<p>Seu perfil não tem acesso a esta página.</p>", status_code=403
+    )
 
 
 @app.exception_handler(Exception)

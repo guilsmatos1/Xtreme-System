@@ -7,7 +7,7 @@ workspace [Polylith](https://polylith.gitbook.io/polylith) (namespace: `xtreme_s
 - API REST (JSON) com documentação Swagger em `/docs`
 - Interface web com HTMX e Jinja2 para uso interno
 - Autenticação JWT + argon2 com dois modos: Bearer token (API) e cookie httpOnly (UI)
-- PostgreSQL via SQLAlchemy 2.0 + Alembic (17 migrations)
+- PostgreSQL via SQLAlchemy 2.0 + Alembic (23 migrations)
 - Deployável via Docker Compose
 
 ## Setup
@@ -106,11 +106,11 @@ Workspace Polylith (`workspace.toml`):
 | Pasta                       | Propósito                                                                                                                                                          |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `bases/xtreme_system/api/`  | App FastAPI, templates Jinja2, arquivos estáticos                                                                                                                  |
-| `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `crud` e submódulos de imagens/documentos |
+| `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `perfil`, `crud` e submódulos de imagens/documentos |
 | `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                      |
 | `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                              |
 | `tests/`                    | Suite de testes com SQLite in-memory                                                                                                                               |
-| `alembic/`                  | Configuração do Alembic + 17 migrations em `versions/`                                                                                                             |
+| `alembic/`                  | Configuração do Alembic + 23 migrations em `versions/`                                                                                                             |
 | `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                 |
 
 

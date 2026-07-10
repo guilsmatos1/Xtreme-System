@@ -1,0 +1,26 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+{% for item in perfis %}
+<tr id="item-{{ item.id }}">
+  <td class="cell-strong">{{ item.nome }}</td>
+  <td>
+    {% for chave in item.paginas %}
+    <span class="badge badge--plain">{{ paginas_labels.get(chave, chave) }}</span>
+    {% else %}
+    <span class="badge badge--neutral">Nenhuma página</span>
+    {% endfor %}
+  </td>
+  <td class="col-actions">
+    <div class="row-actions">
+      <button class="btn btn--ghost btn--sm" hx-get="/ui/perfis/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/perfis/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
+    </div>
+  </td>
+</tr>
+{% else %}
+<tr class="empty-row"><td colspan="3">
+  {% call ui.empty("tag", "Nenhum perfil cadastrado", "Cadastre um perfil para configurar o acesso às páginas.") %}{% endcall %}
+</td></tr>
+{% endfor %}
+</tbody>
+{% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}

@@ -25,31 +25,17 @@
 
 
 
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
 Refaça o modal "+ Novo veículo" seguindo um padrão de passo-a-passo. Cada passo deve exibir somente os informações daquele passo com um botão de "próximo" pro passo seguinte. Siga o fluxo do usuário abaixo pra projetar o passo-a-passo:
 
 Tela 1: O usuário deve selecionar o Tipo do veículo e o Tipo de Entrada.
 Tela 2: O usuário deve digitar a placa do veículo (deve ser o primeiro campo), Modelo, Cor, Ano e Quilometragem.
 Tela 3: O usuário deve preencher o Preço de Compra e Investidor. 
 Tela 4: O usuário deve Cadastrar os dados do Cliente que vendeu o veículo.  
-
-
-
-&nbsp;
-
-Na página /ui/veiculos:
-
-- No modal de Novo veículo, deve pedir o upload do documento do veículo e o documento do cliente. ambas como não obrigatórias.
-- Tire o campo de upload de Fotos do modal de Edição
-
-
-
-No modal "Novo veiculo" da página /ui/veiculo:
-
-1. Quilometragem não deve ser obrigatório.
-2. Deve pedir também o endereço do cliente vendedor.
-
-Na página /ui/clientes
-
-3. deve ter um modal pra CRUD dos documentos do cliente, com svg ao lado do svg de editar.
-
-trocar o badge 

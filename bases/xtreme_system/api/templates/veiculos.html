@@ -68,11 +68,11 @@
       <th>{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", sort_qs) }}</th>
       <th>{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", sort_qs) }}</th>
       <th>{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>Débitos</th>
       <th>{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", sort_qs) }}</th>
       <th>{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", sort_qs) }}</th>
       <th>{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", sort_qs) }}</th>
       <th>{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", sort_qs) }}</th>
+      <th>Débitos</th>
       {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_veiculos.html" %}

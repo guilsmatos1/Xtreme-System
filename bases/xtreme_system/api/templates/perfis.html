@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Perfis{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Perfis</h1>
+    <p class="page-head__subtitle">Controle quais páginas cada perfil de usuário pode acessar</p>
+  </div>
+  <div class="page-head__actions">
+    <button class="btn btn--primary" hx-get="/ui/perfis/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo perfil
+    </button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead><tr>
+      <th>{{ ui.sortable("nome", "Nome", sort, order, "/ui/perfis") }}</th>
+      <th>Páginas</th>
+      <th class="col-actions"><span class="sr-only">Ações</span></th>
+    </tr></thead>
+    {% include "_linhas_perfis.html" %}
+  </table>
+</div>
+{% endblock %}
