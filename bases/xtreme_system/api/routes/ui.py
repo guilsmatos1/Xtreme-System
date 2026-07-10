@@ -217,6 +217,9 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
         "investidores": investidor.list_all(session),
         "clientes": cliente.list_all(session),
         "tipos_cliente": list(cliente.TipoCliente),
+        "compras_por_veiculo": compra.latest_by_veiculo_ids(
+            session, [item.id for item in veiculo.list_all(session)]
+        ),
     }
 
 
@@ -358,6 +361,65 @@ def ui_veiculo_cliente_vendedor(
     )
 
 
+def _documentos_modal(
+    request: Request,
+    session: Session,
+    cliente_id: int,
+) -> HTMLResponse:
+    item = _found(cliente.get(session, cliente_id), "Cliente")
+    for doc in list(item.documentos):
+        path = _uploaded_file_path(doc.url or "")
+        if path is not None and not path.exists():
+            imagem_documento_cliente.delete(session, doc)
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request, "_modal_documentos_cliente.html", {"cliente": item}
+    )
+
+
+@app.get("/ui/clientes/{cliente_id}/documentos")
+def ui_cliente_documentos(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+) -> HTMLResponse:
+    return _documentos_modal(request, session, cliente_id)
+
+
+@app.post("/ui/clientes/{cliente_id}/documentos")
+def ui_cliente_documentos_upload(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+    documentos: Annotated[list[UploadFile], File(default_factory=list)],
+) -> HTMLResponse:
+    _found(cliente.get(session, cliente_id), "Cliente")
+    _salvar_documentos_cliente(session, cliente_id, documentos)
+    return _documentos_modal(request, session, cliente_id)
+
+
+@app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
+def ui_cliente_documentos_excluir(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+    doc_id: int,
+) -> HTMLResponse:
+    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
+    if doc.cliente_id != cliente_id:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+    url = doc.url or ""
+    imagem_documento_cliente.delete(session, doc)
+    path = _uploaded_file_path(url)
+    if path is not None:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
+    return _documentos_modal(request, session, cliente_id)
+
+
 register_crud_ui_routes(
     app,
     templates,
@@ -423,7 +485,17 @@ register_crud_ui_routes(
         v.procuracao or "",
     ],
     register_create=False,
+    register_update=False,
 )
+
+
+def _ok_veiculo(request: Request, session: Session, user: UIAdmin) -> HTMLResponse:
+    veiculos = veiculo.list_all(session)
+    return templates.TemplateResponse(
+        request,
+        "_veiculos_ok.html",
+        {"user": user, "veiculos": veiculos, **_ctx_lista_veiculos(session, veiculos)},
+    )
 
 
 def _erro_veiculo(request: Request, session: Session, msg: str) -> HTMLResponse:
@@ -433,6 +505,42 @@ def _erro_veiculo(request: Request, session: Session, msg: str) -> HTMLResponse:
         {**_ctx_form_veiculo(session), "veiculo": None, "erro": msg},
         status_code=400,
     )
+
+
+@app.post("/ui/veiculos/{item_id}")
+async def _atualizar_veiculo(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(veiculo.get(session, item_id), "Veículo")
+    form = await request.form()
+
+    try:
+        data = veiculo.VeiculoUpdate.model_validate(dict(form))
+        _validate_fks(session, data, update=True)
+    except (ValidationError, HTTPException) as exc:
+        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        return templates.TemplateResponse(
+            request,
+            "_form_veiculo.html",
+            {**_ctx_form_veiculo(session), "veiculo": obj, "erro": msg},
+            status_code=400,
+        )
+
+    debitos_raw = str(form.get("debitos") or "").strip()
+    debitos = None
+    if debitos_raw:
+        try:
+            debitos = Decimal(debitos_raw.replace(",", "."))
+        except Exception:
+            return _erro_veiculo(request, session, "Débitos inválidos")
+
+    atualizado = veiculo.update(session, obj, data)
+    compra_atual = compra.get_latest_by_veiculo(session, atualizado.id)
+    if compra_atual is not None:
+        compra.update(session, compra_atual, compra.CompraUpdate(debitos=debitos))
+    caixa.sincronizar_lancamento_veiculo(session, atualizado)
+    return _ok_veiculo(request, session, user)
 
 
 def _resolver_vendedor(
@@ -466,6 +574,10 @@ def _resolver_vendedor(
                 "tipo": form.get("cli_tipo") or "pessoa_fisica",
                 "telefone": str(form.get("cli_telefone") or "").strip() or None,
                 "email": str(form.get("cli_email") or "").strip() or None,
+                "endereco": str(form.get("cli_endereco") or "").strip() or None,
+                "cidade": str(form.get("cli_cidade") or "").strip() or None,
+                "estado": str(form.get("cli_estado") or "").strip() or None,
+                "cep": str(form.get("cli_cep") or "").strip() or None,
             }
         )
     except ValidationError:

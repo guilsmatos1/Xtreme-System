@@ -178,6 +178,35 @@ def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
     assert "R$ 1.234,56" in modal.text
     assert "Documento 1" in modal.text
 
+    editar = client.get(f"/ui/veiculos/{veiculo_id}/editar")
+    assert editar.status_code == 200
+    assert "Revisão" in editar.text
+    assert "Débito" in editar.text
+    assert "Procurador" in editar.text
+    assert "1234.56" in editar.text
+
+    salvo = client.post(
+        f"/ui/veiculos/{veiculo_id}",
+        data={
+            "tipo": "carro",
+            "tipo_entrada": "compra",
+            "placa": "DOC1A23",
+            "modelo": "Civic",
+            "cor": "Branco",
+            "ano": "2023",
+            "km": "5000",
+            "preco": "95000.00",
+            "revisao": "true",
+            "debitos": "2000.00",
+            "procuracao": "Fulano",
+            "investidor_id": "1",
+        },
+    )
+    assert salvo.status_code == 200
+    assert "Fulano" in salvo.text
+    assert "✓" in salvo.text
+    assert "R$ 2.000,00" in salvo.text
+
     match = re.search(r'href="([^"]+\.pdf)"', modal.text)
     assert match is not None
     url = match.group(1)
@@ -347,10 +376,10 @@ def test_ui_admin_exclui_outro_usuario(client: TestClient) -> None:
     # cria um vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "leitor_ui", "senha": "abc", "papel": "vendedor"},
+        data={"username": "vendedor_ui", "senha": "abc", "papel": "vendedor"},
     )
     pagina = client.get("/ui/usuarios")
-    assert "leitor_ui" in pagina.text
+    assert "vendedor_ui" in pagina.text
 
     # usa a API JSON para obter o ID (mesmo client, mesma sessão)
     headers = {"Authorization": "Bearer dummy"}
@@ -359,11 +388,11 @@ def test_ui_admin_exclui_outro_usuario(client: TestClient) -> None:
     token = token_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     usuarios = client.get("/usuarios", headers=headers).json()
-    leitor_id = next(u["id"] for u in usuarios if u["username"] == "leitor_ui")
+    vendedor_id = next(u["id"] for u in usuarios if u["username"] == "vendedor_ui")
 
-    resp = client.post(f"/ui/usuarios/{leitor_id}/excluir")
+    resp = client.post(f"/ui/usuarios/{vendedor_id}/excluir")
     assert resp.status_code == 200
-    assert "leitor_ui" not in resp.text
+    assert "vendedor_ui" not in resp.text
 
 
 def test_ui_admin_nao_pode_se_autoexcluir(client: TestClient) -> None:
@@ -387,23 +416,23 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     # cria vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "ui_leitor", "senha": "abc", "papel": "vendedor"},
+        data={"username": "ui_vendedor", "senha": "abc", "papel": "vendedor"},
     )
     # obtém id do vendedor via API JSON
     token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
     token = token_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     usuarios = client.get("/usuarios", headers=headers).json()
-    leitor_id = next(u["id"] for u in usuarios if u["username"] == "ui_leitor")
+    vendedor_id = next(u["id"] for u in usuarios if u["username"] == "ui_vendedor")
 
     # pega o form de senha
-    resp = client.get(f"/ui/usuarios/{leitor_id}/senha")
+    resp = client.get(f"/ui/usuarios/{vendedor_id}/senha")
     assert resp.status_code == 200
     assert "nova_senha" in resp.text
 
     # envia nova senha
     resp = client.post(
-        f"/ui/usuarios/{leitor_id}/senha",
+        f"/ui/usuarios/{vendedor_id}/senha",
         data={"nova_senha": "ui_nova"},
     )
     assert resp.status_code == 200
@@ -411,7 +440,7 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     # login com nova senha
     resp = client.post(
         "/ui/login",
-        data={"username": "ui_leitor", "password": "ui_nova"},
+        data={"username": "ui_vendedor", "password": "ui_nova"},
         follow_redirects=False,
     )
     assert resp.status_code == 303

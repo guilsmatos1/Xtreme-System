@@ -188,6 +188,7 @@ def register_crud_ui_routes(
     csv_row: Callable[[Any], list[Any]],
     delete_requires_admin: bool = True,
     register_create: bool = True,
+    register_update: bool = True,
 ) -> None:
     def _query(session: Session, q: str) -> list[Any]:
         if searchable and q:
@@ -288,21 +289,23 @@ def register_crud_ui_routes(
             _run_hook(after_create, session, obj)
             return _ok(request, session, user)
 
-    @app.post(f"{prefix}/{{item_id}}")
-    async def _atualizar(
-        item_id: int, request: Request, session: SessionDep, user: UIAdmin
-    ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
-        obj = _found(module.get(session, item_id), label)
-        form = await request.form()
-        try:
-            data = update_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
-            _run_hook(before_update, session, data)
-        except (ValidationError, HTTPException) as exc:
-            return _erro(request, session, exc, obj)
-        atualizado = module.update(session, obj, data)
-        _run_hook(after_update, session, atualizado)
-        return _ok(request, session, user)
+    if register_update:
+
+        @app.post(f"{prefix}/{{item_id}}")
+        async def _atualizar(
+            item_id: int, request: Request, session: SessionDep, user: UIAdmin
+        ) -> HTMLResponse:
+            session.info["usuario_id"] = user.id
+            obj = _found(module.get(session, item_id), label)
+            form = await request.form()
+            try:
+                data = update_schema.model_validate(parse_form(form))  # type: ignore[attr-defined]
+                _run_hook(before_update, session, data)
+            except (ValidationError, HTTPException) as exc:
+                return _erro(request, session, exc, obj)
+            atualizado = module.update(session, obj, data)
+            _run_hook(after_update, session, atualizado)
+            return _ok(request, session, user)
 
     excluir_dep = require_ui_admin if delete_requires_admin else get_ui_user
 

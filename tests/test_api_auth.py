@@ -34,7 +34,7 @@ def client() -> Iterator[TestClient]:
         usuario.create(
             session,
             usuario.UsuarioCreate(
-                username="leitor", senha="senha", papel=usuario.Papel.vendedor
+                username="vendedor", senha="senha", papel=usuario.Papel.vendedor
             ),
         )
 
@@ -61,13 +61,13 @@ def test_get_sem_token(client: TestClient) -> None:
     assert client.get("/investidores").status_code == 401
 
 
-def test_leitor_pode_ler(client: TestClient) -> None:
-    headers = {"Authorization": f"Bearer {_token(client, 'leitor')}"}
+def test_vendedor_pode_ler(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
     assert client.get("/investidores", headers=headers).status_code == 200
 
 
-def test_leitor_nao_escreve(client: TestClient) -> None:
-    headers = {"Authorization": f"Bearer {_token(client, 'leitor')}"}
+def test_vendedor_nao_escreve(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
     resp = client.post("/investidores", json={"nome": "Ana"}, headers=headers)
     assert resp.status_code == 403
 
@@ -134,23 +134,23 @@ def test_admin_pode_excluir_outro_admin(client: TestClient) -> None:
 def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     # cria um vendedor
-    leitor = client.post(
+    vendedor = client.post(
         "/usuarios",
-        json={"username": "leitor2", "senha": "abc", "papel": "vendedor"},
+        json={"username": "vendedor2", "senha": "abc", "papel": "vendedor"},
         headers=headers,
     )
-    assert leitor.status_code == 201
-    leitor_id = leitor.json()["id"]
+    assert vendedor.status_code == 201
+    vendedor_id = vendedor.json()["id"]
 
     resp = client.post(
-        f"/usuarios/{leitor_id}/senha",
+        f"/usuarios/{vendedor_id}/senha",
         data={"nova_senha": "nova123"},
         headers=headers,
     )
     assert resp.status_code == 204
 
     # login com a nova senha deve funcionar
-    resp2 = client.post("/login", data={"username": "leitor2", "password": "nova123"})
+    resp2 = client.post("/login", data={"username": "vendedor2", "password": "nova123"})
     assert resp2.status_code == 200
 
 

@@ -9,6 +9,7 @@
   {% if user.papel.value == 'admin' %}
   <td class="col-actions">
     <div class="row-actions">
+      <button class="btn btn--ghost btn--sm" hx-get="/ui/clientes/{{ c.id }}/documentos" hx-target="#modal" hx-swap="innerHTML" aria-label="Documentos de {{ c.nome }}">{{ ui.icon("file") }}</button>
       <button class="btn btn--ghost btn--sm" hx-get="/ui/clientes/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ c.nome }}">{{ ui.icon("edit") }}</button>
       <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/clientes/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o cliente {{ c.nome }}?" aria-label="Excluir {{ c.nome }}">{{ ui.icon("trash") }}</button>
     </div>

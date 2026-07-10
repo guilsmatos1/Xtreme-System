@@ -1,13 +1,17 @@
 """Cliente: enum de tipo, model, schemas e CRUD."""
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import or_
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+
+if TYPE_CHECKING:
+    from xtreme_system.imagem_documento_cliente.core import ImagemDocumentoCliente
 
 
 class TipoCliente(StrEnum):
@@ -29,6 +33,10 @@ class Cliente(Base):
     estado: Mapped[str | None]
     cep: Mapped[str | None]
     ativo: Mapped[bool] = mapped_column(default=True)
+
+    documentos: Mapped[list["ImagemDocumentoCliente"]] = relationship(
+        cascade="all, delete-orphan"
+    )
 
 
 class ClienteCreate(BaseModel):

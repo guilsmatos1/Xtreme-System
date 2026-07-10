@@ -34,7 +34,7 @@ def client() -> Iterator[TestClient]:
         usuario.create(
             session,
             usuario.UsuarioCreate(
-                username="leitor", senha="senha", papel=usuario.Papel.vendedor
+                username="vendedor", senha="senha", papel=usuario.Papel.vendedor
             ),
         )
 
@@ -135,9 +135,9 @@ def test_admin_lista_vendas(client: TestClient) -> None:
     assert len(resp.json()) == 1
 
 
-def test_leitor_nao_cria_venda(client: TestClient) -> None:
+def test_vendedor_nao_cria_venda(client: TestClient) -> None:
     admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
-    leitor_headers = {"Authorization": f"Bearer {_token(client, 'leitor')}"}
+    vendedor_headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
     cliente_id, veiculo_id = _seed(client, admin_headers)
 
     resp = client.post(
@@ -150,7 +150,7 @@ def test_leitor_nao_cria_venda(client: TestClient) -> None:
             "forma_pagamento": "a_vista",
             "parcelas": 1,
         },
-        headers=leitor_headers,
+        headers=vendedor_headers,
     )
     assert resp.status_code == 403
 

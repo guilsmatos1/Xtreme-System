@@ -39,7 +39,7 @@ class Veiculo(Base):
     cor: Mapped[str]  # noqa: SQLAlchemy mapped
     ano: Mapped[int]  # noqa: SQLAlchemy mapped
     placa: Mapped[str] = mapped_column(unique=True, index=True)  # noqa: SQLAlchemy mapped
-    km: Mapped[int]  # noqa: SQLAlchemy mapped
+    km: Mapped[int | None]  # noqa: SQLAlchemy mapped
     preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))  # noqa: SQLAlchemy mapped
     procuracao: Mapped[str | None]  # noqa: SQLAlchemy mapped
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
@@ -60,7 +60,7 @@ class VeiculoCreate(BaseModel):
     cor: str  # noqa: Pydantic field
     ano: int  # noqa: Pydantic field
     placa: str  # noqa: Pydantic field
-    km: int  # noqa: Pydantic field
+    km: int | None = None  # noqa: Pydantic field
     preco: Decimal  # noqa: Pydantic field
     procuracao: str | None = None  # noqa: Pydantic field
     status: StatusVeiculo = StatusVeiculo.disponivel
@@ -93,7 +93,7 @@ class VeiculoRead(BaseModel):
     cor: str  # noqa: Pydantic field
     ano: int  # noqa: Pydantic field
     placa: str  # noqa: Pydantic field
-    km: int  # noqa: Pydantic field
+    km: int | None = None  # noqa: Pydantic field
     preco: Decimal  # noqa: Pydantic field
     procuracao: str | None  # noqa: Pydantic field
     status: StatusVeiculo  # noqa: Pydantic field

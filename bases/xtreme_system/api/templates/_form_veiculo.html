@@ -46,12 +46,31 @@
           </label>
           <label class="field">
             <span class="field__label">Quilometragem</span>
-            <input class="input" name="km" type="number" value="{{ veiculo.km }}" required>
+            <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
           </label>
 
           <label class="field">
             <span class="field__label">Preço de Compra (R$)</span>
             <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco }}" required>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Revisão</span>
+            <select class="select" name="revisao" required>
+              <option value="true"{% if veiculo.revisao %} selected{% endif %}>Sim</option>
+              <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
+            </select>
+          </label>
+
+          {% set compra_veiculo = compras_por_veiculo.get(veiculo.id) if compras_por_veiculo else none %}
+          <label class="field">
+            <span class="field__label">Débito (R$)</span>
+            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ compra_veiculo.debitos if compra_veiculo and compra_veiculo.debitos is not none else '' }}">
+          </label>
+
+          <label class="field">
+            <span class="field__label">Procurador</span>
+            <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
           </label>
 
           <label class="field">

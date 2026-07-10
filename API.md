@@ -13,6 +13,7 @@ The Xtreme Motors API is built with FastAPI and provides JSON endpoints for mana
 **Endpoint**: `POST /login`
 
 Request:
+
 ```json
 {
   "username": "string",
@@ -21,6 +22,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "access_token": "string",
@@ -29,6 +31,7 @@ Response:
 ```
 
 **Status Codes**:
+
 - `200`: Login successful
 - `401`: Invalid username or password
 
@@ -43,11 +46,12 @@ Response:
 **Endpoint**: `POST /usuarios`
 
 Request:
+
 ```json
 {
   "username": "string",
   "senha_hash": "string",
-  "papel": "admin|vendedor|leitor",
+  "papel": "admin|vendedor",
   "ativo": boolean
 }
 ```
@@ -55,6 +59,7 @@ Request:
 Response: User object (201 Created)
 
 **Status Codes**:
+
 - `201`: User created
 - `400`: Username already exists
 - `401`: Unauthorized
@@ -67,6 +72,7 @@ Response: User object (201 Created)
 Response: Array of user objects
 
 **Status Codes**:
+
 - `200`: Success
 - `401`: Unauthorized
 - `403`: Requires admin role
@@ -78,6 +84,7 @@ Response: Array of user objects
 Response: No content (204)
 
 **Status Codes**:
+
 - `204`: User deleted
 - `400`: Cannot delete own account
 - `401`: Unauthorized
@@ -89,6 +96,7 @@ Response: No content (204)
 **Endpoint**: `POST /usuarios/{user_id}/senha`
 
 Request (form data):
+
 ```
 nova_senha=string
 ```
@@ -96,6 +104,7 @@ nova_senha=string
 Response: No content (204)
 
 **Status Codes**:
+
 - `204`: Password changed
 - `401`: Unauthorized
 - `403`: Requires admin role
@@ -118,6 +127,7 @@ The following resources are managed through a generic CRUD interface. Each resou
 ### CRUD Operations
 
 For each resource, replace `{resource}` with one of:
+
 - `investidores`
 - `veiculos`
 - `lancamentos-caixa`
@@ -141,6 +151,7 @@ Response: Single resource object
 **Permissions**: Requires authentication (any role)
 
 **Status Codes**:
+
 - `200`: Success
 - `404`: Resource not found
 
@@ -155,6 +166,7 @@ Response: Created resource object (201 Created)
 **Permissions**: Requires admin role
 
 **Status Codes**:
+
 - `201`: Created
 - `400`: Invalid data or constraint violation
 - `401`: Unauthorized
@@ -172,6 +184,7 @@ Response: Updated resource object
 **Permissions**: Requires admin role
 
 **Status Codes**:
+
 - `200`: Success
 - `400`: Invalid data
 - `401`: Unauthorized
@@ -188,6 +201,7 @@ Response: No content (204)
 **Permissions**: Requires admin role
 
 **Status Codes**:
+
 - `204`: Deleted
 - `401`: Unauthorized
 - `403`: Requires admin role
@@ -201,10 +215,12 @@ Response: No content (204)
 ### Veículos (Vehicles)
 
 **Validation**:
+
 - `placa` (license plate) must be unique
 - `investidor_id` must reference an existing investor
 
 **Side Effects**:
+
 - Creating a vehicle triggers automatic financial transaction creation
 - Updating a vehicle syncs related financial transactions
 - Cannot delete if related financial transactions exist
@@ -212,9 +228,11 @@ Response: No content (204)
 ### Lançamentos de Caixa (Financial Transactions)
 
 **Validation**:
+
 - `investidor_id` must reference an existing investor
 
 **Constraints**:
+
 - Vehicle-originated transactions can only be modified via the vehicle management interface
 
 ### Clientes (Clients)
@@ -224,6 +242,7 @@ Response: No content (204)
 ### Vendas (Sales)
 
 **Validation**:
+
 - `cliente_id` (if provided) must reference an existing client
 - `veiculo_id` (if provided) must reference an existing vehicle
 
@@ -232,11 +251,13 @@ Response: No content (204)
 ## Response Format
 
 All successful responses return either:
+
 - **Single object**: Resource representation
 - **Array**: List of resource representations
 - **No content**: 204 status with empty body
 
 Error responses:
+
 ```json
 {
   "detail": "Error message"
@@ -247,27 +268,30 @@ Error responses:
 
 ## Status Codes Reference
 
-| Code | Meaning |
-|------|---------|
-| 200  | OK - Request successful |
-| 201  | Created - Resource created |
-| 204  | No Content - Success with no response body |
-| 400  | Bad Request - Invalid input or constraint violation |
-| 401  | Unauthorized - Missing or invalid authentication |
-| 403  | Forbidden - Insufficient permissions |
-| 404  | Not Found - Resource does not exist |
+
+| Code | Meaning                                                |
+| ---- | ------------------------------------------------------ |
+| 200  | OK - Request successful                                |
+| 201  | Created - Resource created                             |
+| 204  | No Content - Success with no response body             |
+| 400  | Bad Request - Invalid input or constraint violation    |
+| 401  | Unauthorized - Missing or invalid authentication       |
+| 403  | Forbidden - Insufficient permissions                   |
+| 404  | Not Found - Resource does not exist                    |
 | 409  | Conflict - Data conflict (duplicate, dependency error) |
+
 
 ---
 
 ## Authorization
 
 **Roles**:
+
 - `admin` - Full access to all endpoints
 - `vendedor` (seller) - Read-only access to most resources, can create sales
-- `leitor` (reader) - Read-only access to all resources
 
 **Header**:
+
 ```
 Authorization: Bearer {access_token}
 ```

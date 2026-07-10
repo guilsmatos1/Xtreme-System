@@ -1,0 +1,36 @@
+{% import "_macros.html" as ui %}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-documentos-title">
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h2 id="modal-documentos-title">Documentos — {{ cliente.nome }}</h2>
+      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      {% if cliente.documentos %}
+      <div class="midia-grid">
+        {% for doc in cliente.documentos %}
+        <div class="midia-item">
+          <a class="midia-thumb" href="{{ doc.url }}" target="_blank" rel="noopener" aria-label="Abrir documento">
+            <div class="midia-placeholder">{{ ui.icon("file") }}</div>
+          </a>
+          <button class="btn btn--ghost btn--sm btn--danger" type="button" hx-post="/ui/clientes/{{ cliente.id }}/documentos/{{ doc.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este documento?">{{ ui.icon("trash") }}</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="midia-grid midia-grid--placeholder" aria-hidden="true">
+          {% for _ in range(4) %}
+          <div class="midia-item midia-item--placeholder">
+            <div class="midia-placeholder">{{ ui.icon("file") }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {{ ui.empty("file", "Nenhum documento", "Envie documentos deste cliente.") }}
+      {% endif %}
+    </div>
+    <form class="modal__foot" hx-post="/ui/clientes/{{ cliente.id }}/documentos" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+      <input class="input" type="file" name="documentos" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple required>
+      <button class="btn btn--primary" type="submit">Enviar documentos</button>
+    </form>
+  </div>
+</div>
