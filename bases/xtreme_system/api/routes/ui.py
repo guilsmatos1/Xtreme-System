@@ -36,6 +36,7 @@ def _ctx_form_cliente(_session: Session) -> dict[str, Any]:
 
 register_crud_ui_routes(
     app,
+    templates,
     cliente,
     "/ui/clientes",
     "Cliente",
@@ -99,6 +100,7 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
 
 register_crud_ui_routes(
     app,
+    templates,
     venda,
     "/ui/vendas",
     "Venda",
@@ -213,6 +215,7 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
 
 register_crud_ui_routes(
     app,
+    templates,
     veiculo,
     "/ui/veiculos",
     "Veículo",
@@ -690,6 +693,7 @@ def ui_usuario_senha_alterar(
 
 register_ui_simples(
     app,
+    templates,
     "/ui/investidores",
     "Investidores",
     investidor,
@@ -699,6 +703,7 @@ register_ui_simples(
 )
 register_ui_simples(
     app,
+    templates,
     "/ui/meios-captacao",
     "Meios de captação",
     meio_captacao,

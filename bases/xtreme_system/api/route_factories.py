@@ -3,10 +3,11 @@
 import csv
 import io
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated, Any, Protocol, cast
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -20,9 +21,26 @@ from xtreme_system.api.deps import (
     _found,
     get_ui_user,
     require_ui_admin,
-    templates,
 )
 from xtreme_system.usuario import core as usuario
+
+
+class CrudModule(Protocol):
+    """Shape um módulo de entidade precisa ter para usar as factories abaixo.
+
+    Módulos (não instâncias) casam estruturalmente com este Protocol: cada
+    entidade expõe list_all/get/create/update/delete como funções soltas.
+    """
+
+    def list_all(self, session: Session, /) -> list[Any]: ...
+    def get(self, session: Session, item_id: int, /) -> Any | None: ...
+    def create(self, session: Session, data: Any, /) -> Any: ...
+    def update(self, session: Session, obj: Any, data: Any, /) -> Any: ...
+    def delete(self, session: Session, obj: Any, /) -> None: ...
+
+
+class SearchableCrudModule(CrudModule, Protocol):
+    def search(self, session: Session, term: str, /) -> list[Any]: ...
 
 
 def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -> Any:
@@ -47,7 +65,7 @@ def _csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> R
 
 def register_crud_routes(
     app: FastAPI,
-    module: Any,
+    module: CrudModule,
     prefix: str,
     label: str,
     *,
@@ -128,7 +146,8 @@ def _sort_key(val: Any) -> Any:
 
 def register_crud_ui_routes(
     app: FastAPI,
-    module: Any,
+    templates: Jinja2Templates,
+    module: CrudModule,
     prefix: str,
     label: str,
     *,
@@ -155,7 +174,8 @@ def register_crud_ui_routes(
 ) -> None:
     def _query(session: Session, q: str) -> list[Any]:
         if searchable and q:
-            return list(module.search(session, q))
+            # searchable=True is the caller's promise that module has search.
+            return list(cast(SearchableCrudModule, module).search(session, q))
         return list(module.list_all(session))
 
     def _sort_key_fn(spec: str | Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -285,9 +305,10 @@ def register_crud_ui_routes(
 
 def register_ui_simples(
     app: FastAPI,
+    templates: Jinja2Templates,
     ui_prefix: str,
     titulo: str,
-    module: Any,
+    module: CrudModule,
     create_schema: type,
     update_schema: type,
     export_filename: str,
