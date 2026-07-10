@@ -157,3 +157,24 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
     lancamento.investidor_id = veiculo_obj.investidor_id
     lancamento.descricao = _descricao_veiculo(veiculo_obj)
     session.commit()
+
+
+# ponytail: in-memory aggregations for caixa table. Query-level if row counts grow.
+def agregados_investidores(
+    session: Session,
+) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:
+    """Return (num_veiculos, valor_veiculos, total_aportado) per investidor_id."""
+    veiculos = crud.list_all(session, Veiculo)
+    num: dict[int, int] = {}
+    valor: dict[int, Decimal] = {}
+    for v in veiculos:
+        iid = v.investidor_id
+        num[iid] = num.get(iid, 0) + 1
+        valor[iid] = valor.get(iid, Decimal("0")) + v.preco
+    aportes: dict[int, Decimal] = {}
+    for lanc in list_all(session):
+        if lanc.tipo == TipoLancamento.aporte:
+            aportes[lanc.investidor_id] = (
+                aportes.get(lanc.investidor_id, Decimal("0")) + lanc.valor
+            )
+    return num, valor, aportes
