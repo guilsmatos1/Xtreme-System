@@ -70,7 +70,7 @@ def delete(session: Session, obj: Perfil) -> None:
     crud.delete(session, obj)
 
 
-def _pagina_da_rota(path: str) -> str | None:
+def pagina_da_rota(path: str) -> str | None:
     if not path.startswith("/ui/"):
         return None
     segmento = path.removeprefix("/ui/").split("/", 1)[0]

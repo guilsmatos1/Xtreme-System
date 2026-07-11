@@ -21,6 +21,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "deptry>=0.25.1",
     "httpx>=0.28.1",
     "mypy>=1.17.0",
     "polyfactory>=3.3.0",
@@ -28,6 +29,7 @@ dev = [
     "pre-commit>=4.2.0",
     "pytest>=8.4.0",
     "pytest-cov>=7.1.0",
+    "pytest-playwright>=0.8.0",
     "pytest-randomly>=3.16.0",
     "pytest-watch>=4.2.0",
     "ruff>=0.12.0",
@@ -61,16 +63,26 @@ select = [
     "ARG",
     "B",
     "C4",
+    "DTZ",
     "E",
+    "ERA",
     "F",
+    "G",
     "I",
+    "ICN",
     "N",
+    "PIE",
+    "PERF",
     "PL",
     "PT",
     "RET",
     "RUF",
+    "S",
     "SIM",
+    "SLF",
     "T10",
+    "T20",
+    "TRY",
     "UP",
     "W",
 ]
@@ -79,9 +91,21 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
+"{test,tests}/**/*.py" = [
     "PLR2004",
     "S101",
+    "TRY003",
+]
+".claude/hooks/**/*.py" = [
+    "S607",
+    "T201",
+]
+".codex/hooks/**/*.py" = [
+    "S607",
+    "T201",
+]
+"development/**/*.py" = [
+    "T201",
 ]
 
 [tool.mypy]
@@ -114,6 +138,11 @@ ignore_names = [
     "procuracao",
 ]
 ignore_decorators = ["app.*"]
+
+[tool.deptry]
+extend_exclude = [".opencode", ".agents", "alembic"]
+known_first_party = ["xtreme_system"]
+per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"] }
 
 [tool.xenon]
 max-absolute = "B"

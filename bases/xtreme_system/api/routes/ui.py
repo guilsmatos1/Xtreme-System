@@ -1,12 +1,13 @@
 """Rotas HTMX (server-rendered). Auth por cookie httpOnly, paralela à API JSON."""
 
 import contextlib
-from datetime import date
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any, cast
 from uuid import uuid4
 
+import structlog
 from fastapi import File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
@@ -34,6 +35,8 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
+
+logger = structlog.get_logger(__name__)
 
 # ---- Clientes (UI) ----
 
@@ -102,7 +105,7 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if not data.get("data_venda"):
-        data["data_venda"] = str(date.today())
+        data["data_venda"] = str(datetime.now(UTC).date())
     return data
 
 
@@ -636,7 +639,7 @@ async def _criar_veiculo(
     obj = veiculo.create(session, data)
     if novo_cliente_data is not None:
         seller = cliente.create(session, novo_cliente_data)
-    assert seller is not None
+    assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
     documentos = [
         arquivo
         for arquivo in form.getlist("documentos_cliente")
@@ -653,7 +656,7 @@ async def _criar_veiculo(
         compra.CompraCreate(
             cliente_id=seller.id,
             veiculo_id=obj.id,
-            data_compra=date.today(),
+            data_compra=datetime.now(UTC).date(),
             valor_compra=obj.preco,
             debitos=debitos,
         ),
@@ -873,7 +876,9 @@ async def ui_investidor_criar(
                     ),
                 )
     except Exception:
-        pass  # ponytail: silently skip invalid amounts; investor already created
+        logger.warning(
+            "aporte_inicial_invalido", investidor_id=obj.id, valor_str=valor_str
+        )
     return templates.TemplateResponse(
         request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
     )

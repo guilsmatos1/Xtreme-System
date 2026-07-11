@@ -72,7 +72,7 @@ def _enviar(config: WhatsappConfig, texto: str) -> None:
     # Conferir contra a versão real da instância quando ela subir.
     url = f"{config.evolution_api_url}/message/sendText/{config.evolution_instance}"
     payload = {"number": config.evolution_group_id, "text": texto}
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310 -- url vem de config de admin, não de input de usuário
         url,
         data=json.dumps(payload).encode(),
         headers={
@@ -81,7 +81,7 @@ def _enviar(config: WhatsappConfig, texto: str) -> None:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
         resp.read()
 
 

@@ -1,6 +1,6 @@
 """Venda: enum de status, model (com FKs), schemas e CRUD."""
 
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -111,7 +111,7 @@ def delete(session: Session, obj: Venda) -> None:
 
 
 def _mes_atual_inicio() -> date:
-    hoje = date.today()
+    hoje = datetime.now(UTC).date()
     return hoje.replace(day=1)
 
 

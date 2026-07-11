@@ -55,8 +55,8 @@ def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
 
 
 def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
-    assert perfil._pagina_da_rota("/ui/veiculos") == "veiculos"
-    assert perfil._pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"
-    assert perfil._pagina_da_rota("/ui/usuarios") is None
-    assert perfil._pagina_da_rota("/ui/dashboard") is None
-    assert perfil._pagina_da_rota("/static/app.css") is None
+    assert perfil.pagina_da_rota("/ui/veiculos") == "veiculos"
+    assert perfil.pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"
+    assert perfil.pagina_da_rota("/ui/usuarios") is None
+    assert perfil.pagina_da_rota("/ui/dashboard") is None
+    assert perfil.pagina_da_rota("/static/app.css") is None

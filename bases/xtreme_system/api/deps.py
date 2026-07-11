@@ -90,7 +90,7 @@ def get_ui_user(
     user = usuario.get_by_username(session, dados.username)
     if user is None or not user.ativo:
         raise _NaoAutenticadoError
-    pagina = perfil._pagina_da_rota(request.url.path)
+    pagina = perfil.pagina_da_rota(request.url.path)
     if pagina and not perfil.pode_acessar(user, pagina):
         raise _NaoAutorizadoError
     return user

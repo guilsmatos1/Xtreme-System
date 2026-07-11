@@ -27,7 +27,7 @@ _hasher = PasswordHash.recommended()
 
 class Token(BaseModel):
     access_token: str  # noqa: Pydantic field
-    token_type: str = "bearer"  # noqa: Pydantic field
+    token_type: str = "bearer"  # noqa: S105 -- não é senha, é campo do OAuth2
 
 
 class TokenData(BaseModel):
@@ -60,4 +60,6 @@ def decode_token(token: str) -> TokenData:
     try:
         return TokenData(username=payload["sub"], papel=payload["papel"])
     except KeyError as exc:
-        raise jwt.InvalidTokenError("token sem claims obrigatórias") from exc
+        raise jwt.InvalidTokenError(  # noqa: TRY003 -- exceção de terceiros, não dá pra mover a mensagem
+            "token sem claims obrigatórias"
+        ) from exc
