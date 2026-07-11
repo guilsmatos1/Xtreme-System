@@ -26,7 +26,7 @@ class Usuario(Base):
     senha_hash: Mapped[str]
     papel: Mapped[Papel] = mapped_column(default=Papel.vendedor)
     ativo: Mapped[bool] = mapped_column(default=True)
-    perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"))
+    perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"), index=True)
     perfil: Mapped[Perfil | None] = relationship()
 
 

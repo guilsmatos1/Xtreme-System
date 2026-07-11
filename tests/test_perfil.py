@@ -41,6 +41,19 @@ def test_vendedor_acessa_apenas_paginas_do_seu_perfil(db_session: Session) -> No
     assert not perfil.pode_acessar(vendedor, "vendas")
 
 
+def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
+    leitor = perfil.Perfil(nome="Leitor", paginas=["veiculos"])
+    db_session.add(leitor)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.vendedor, leitor)
+
+    perfil.delete(db_session, leitor)
+
+    db_session.refresh(vendedor)
+    assert vendedor.perfil_id is None
+    assert perfil.list_all(db_session) == []
+
+
 def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil._pagina_da_rota("/ui/veiculos") == "veiculos"
     assert perfil._pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"

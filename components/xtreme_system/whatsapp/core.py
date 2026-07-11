@@ -1,17 +1,17 @@
 """Notificação de venda via WhatsApp (Evolution API): config, formatação e envio."""
 
 import json
-import logging
 import urllib.error
 import urllib.request
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.database.core import Base
 from xtreme_system.venda.core import Venda
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _CONFIG_ID = 1
 
@@ -98,4 +98,4 @@ def notificar_venda(session: Session, venda_obj: Venda) -> None:
     try:
         _enviar(config, _formatar_mensagem(venda_obj))
     except (urllib.error.URLError, OSError, TimeoutError) as exc:
-        logger.warning("Falha ao enviar notificação de venda via WhatsApp: %s", exc)
+        logger.warning("whatsapp_notify_failed", error=str(exc))

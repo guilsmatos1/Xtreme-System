@@ -62,6 +62,11 @@ def update(session: Session, obj: Perfil, data: PerfilUpdate) -> Perfil:
 
 
 def delete(session: Session, obj: Perfil) -> None:
+    from xtreme_system.usuario.core import Usuario  # noqa: PLC0415 (import circular)
+
+    for user in session.query(Usuario).filter_by(perfil_id=obj.id):
+        user.perfil_id = None
+    session.flush()
     crud.delete(session, obj)
 
 

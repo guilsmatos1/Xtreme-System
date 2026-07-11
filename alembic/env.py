@@ -21,13 +21,16 @@ from xtreme_system.cliente import core as _cliente  # noqa: F401
 from xtreme_system.compra import core as _compra  # noqa: F401
 from xtreme_system.database.core import Base, get_settings
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
+from xtreme_system.imagem_comprovante_compra import core as _imagem_comprovante_compra  # noqa: F401
 from xtreme_system.imagem_comprovante_venda import core as _imagem_comprovante_venda  # noqa: F401
+from xtreme_system.imagem_documento_cliente import core as _imagem_documento_cliente  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as _investidor  # noqa: F401
 from xtreme_system.perfil import core as _perfil  # noqa: F401
 from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
 from xtreme_system.venda import core as _venda  # noqa: F401
+from xtreme_system.whatsapp import core as _whatsapp  # noqa: F401
 
 target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

@@ -1,12 +1,11 @@
 """FastAPI app initialization, middlewares, and error handlers."""
 
-import logging
 import uuid
 from collections.abc import Callable
-from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
@@ -22,19 +21,10 @@ from xtreme_system.api.deps import (
     _NaoAutenticadoError,
     _NaoAutorizadoError,
 )
+from xtreme_system.logging.core import configure_logging
 
-logger = logging.getLogger(__name__)
-
-request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
-
-
-class _RequestIDFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = request_id_ctx.get()
-        return True
-
-
-logger.addFilter(_RequestIDFilter())
+configure_logging()
+logger = structlog.get_logger(__name__)
 
 app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
@@ -46,28 +36,26 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def _request_id(
+async def _request_context(
     request: Request,
     call_next: Callable[[Request], Any],
 ) -> Any:
+    """Liga request_id ao contexto de log e loga erros não tratados.
+
+    Precisa ser um único middleware: BaseHTTPMiddleware roda cada camada
+    de middleware em uma task própria, então contextvars ligadas aqui não
+    seriam visíveis a um middleware de log separado mais externo.
+    """
     rid = request.headers.get("X-Request-ID", uuid.uuid4().hex[:12])
-    token = request_id_ctx.set(rid)
-    response = await call_next(request)
-    request_id_ctx.reset(token)
+    structlog.contextvars.bind_contextvars(request_id=rid)
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("unhandled_error", url=str(request.url))
+        raise
+    structlog.contextvars.clear_contextvars()
     response.headers["X-Request-ID"] = rid
     return response
-
-
-@app.middleware("http")
-async def _log_errors(
-    request: Request,
-    call_next: Callable[[Request], Any],
-) -> Any:
-    try:
-        return await call_next(request)
-    except Exception:
-        logger.exception("unhandled error request=%s", request.url)
-        raise
 
 
 _ui_dir = Path(__file__).parent
@@ -102,7 +90,7 @@ def _handle_nao_autorizado(
 
 @app.exception_handler(Exception)
 def _handle_erro_interno(request: Request, _exc: Exception) -> Response:
-    logger.exception("unhandled error at %s", request.url)
+    logger.exception("unhandled_error", url=str(request.url))
     if request.url.path.startswith("/ui/"):
         return HTMLResponse("<p>Erro interno. Contate suporte.</p>", status_code=500)
     return JSONResponse({"detail": "Erro interno do servidor"}, status_code=500)
