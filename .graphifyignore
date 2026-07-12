@@ -1,0 +1,29 @@
+# .graphifyignore — same syntax as .gitignore, including ! negation.
+# .gitignore is respected automatically; this file only excludes MORE,
+# it never re-includes what .gitignore already excludes.
+
+# VCS
+.git/
+
+# AI assistant / IDE / tooling config — not project source
+.opencode/
+.rtk/
+.agents/
+.claude/
+.codex/
+.github/
+
+# Lockfiles & generated manifests — re-extracting adds noise, not signal
+uv.lock
+package-lock.json
+skills-lock.json
+
+# Scaffolding / environment dotfiles
+.copier-answers.yml
+.coverage
+.python-version
+.pre-commit-config.yaml
+opencode.json
+
+# graphify's own output — don't re-ingest the graph
+graphify-out/
