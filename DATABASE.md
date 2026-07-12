@@ -179,6 +179,19 @@ Imagens de comprovantes de pagamento associados a uma compra.
 | `compra_id` | `INTEGER` | Não | - | FK → `compra.id` (CASCADE), indexado |
 | `url` | `VARCHAR` | Não | - | URL da imagem |
 
+### `whatsapp_config`
+
+Configuração da notificação de vendas via WhatsApp (Evolution API). Linha única (`id` fixo em `1`), editável na tela de Configurações.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `evolution_api_url` | `VARCHAR` | Não | `''` | URL do servidor Evolution API |
+| `evolution_api_key` | `VARCHAR` | Não | `''` | API key da instância |
+| `evolution_instance` | `VARCHAR` | Não | `''` | Nome da instância |
+| `evolution_group_id` | `VARCHAR` | Não | `''` | ID do grupo do WhatsApp |
+| `mensagem_template` | `VARCHAR` | Não | template padrão | Corpo da mensagem enviada na notificação de venda, com placeholders `{cliente}`, `{veiculo}`, `{valor}`, `{forma_pagamento}`, `{parcelas}`, `{vendedor}` |
+
 ---
 
 ## Relacionamentos
