@@ -135,6 +135,70 @@ def test_admin_lista_vendas(client: TestClient) -> None:
     assert len(resp.json()) == 1
 
 
+def test_venda_concluida_marca_veiculo_vendido(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["veiculo"]["status"] == "vendido"
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.status_code == 200
+    assert veiculo.json()["status"] == "vendido"
+
+
+def test_atualizar_venda_sincroniza_status_do_veiculo(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    venda = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda.status_code == 201, venda.text
+    venda_id = venda.json()["id"]
+
+    concluida = client.patch(
+        f"/vendas/{venda_id}",
+        json={"status": "concluido"},
+        headers=headers,
+    )
+    assert concluida.status_code == 200
+    assert concluida.json()["veiculo"]["status"] == "vendido"
+
+    cancelada = client.patch(
+        f"/vendas/{venda_id}",
+        json={"status": "cancelado"},
+        headers=headers,
+    )
+    assert cancelada.status_code == 200
+    assert cancelada.json()["veiculo"]["status"] == "disponivel"
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.status_code == 200
+    assert veiculo.json()["status"] == "disponivel"
+
+
 def test_vendedor_nao_cria_venda(client: TestClient) -> None:
     admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     vendedor_headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}

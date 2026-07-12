@@ -12,7 +12,7 @@ from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.usuario.core import Usuario, UsuarioRead
-from xtreme_system.veiculo.core import TipoVeiculo, Veiculo, VeiculoRead
+from xtreme_system.veiculo.core import StatusVeiculo, TipoVeiculo, Veiculo, VeiculoRead
 
 
 class StatusVenda(StrEnum):
@@ -98,12 +98,57 @@ def get(session: Session, venda_id: int) -> Venda | None:
     return crud.get(session, Venda, venda_id)
 
 
+def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo | None:
+    if status == StatusVenda.concluido:
+        return StatusVeiculo.vendido
+    if status == StatusVenda.cancelado:
+        return StatusVeiculo.disponivel
+    return None
+
+
+def _sincronizar_status_veiculo(
+    session: Session,
+    obj: Venda,
+    *,
+    veiculo_anterior_id: int | None = None,
+    status_anterior: StatusVenda | None = None,
+) -> Venda:
+    status_veiculo = _status_veiculo_para_venda(obj.status)
+    sincronizado = False
+    if (
+        veiculo_anterior_id is not None
+        and veiculo_anterior_id != obj.veiculo_id
+        and status_anterior == StatusVenda.concluido
+    ):
+        veiculo_anterior = session.get(Veiculo, veiculo_anterior_id)
+        if veiculo_anterior is not None:
+            veiculo_anterior.status = StatusVeiculo.disponivel
+            sincronizado = True
+    if status_veiculo is not None:
+        obj.veiculo.status = status_veiculo
+        sincronizado = True
+    if not sincronizado:
+        return obj
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
 def create(session: Session, data: VendaCreate) -> Venda:
-    return crud.create(session, Venda, data)
+    obj = crud.create(session, Venda, data)
+    return _sincronizar_status_veiculo(session, obj)
 
 
 def update(session: Session, obj: Venda, data: VendaUpdate) -> Venda:
-    return crud.update(session, obj, data)
+    veiculo_anterior_id = obj.veiculo_id
+    status_anterior = obj.status
+    obj = crud.update(session, obj, data)
+    return _sincronizar_status_veiculo(
+        session,
+        obj,
+        veiculo_anterior_id=veiculo_anterior_id,
+        status_anterior=status_anterior,
+    )
 
 
 def delete(session: Session, obj: Venda) -> None:
