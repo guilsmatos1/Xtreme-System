@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey, Numeric, or_
+from sqlalchemy import ForeignKey, Numeric, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -139,3 +139,15 @@ def search(session: Session, term: str) -> list[Veiculo]:
         )
         .all()
     )
+
+
+def resumo_estoque(session: Session) -> dict[StatusVeiculo, tuple[int, Decimal]]:
+    """Retorna (contagem, soma de preco) por status de veículo."""
+    rows = (
+        session.query(Veiculo.status, func.count(Veiculo.id), func.sum(Veiculo.preco))
+        .group_by(Veiculo.status)
+        .all()
+    )
+    return {
+        status: (count or 0, total or Decimal("0")) for status, count, total in rows
+    }

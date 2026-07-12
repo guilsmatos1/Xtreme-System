@@ -74,6 +74,7 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `/veiculos` | GET, POST, PATCH, DELETE | idem |
 | `/lancamentos-caixa` | GET, POST, PATCH, DELETE | idem |
 | `/clientes` | GET, POST, PATCH, DELETE | idem |
+| `/compras` | GET, POST, PATCH, DELETE | idem |
 | `/vendas` | GET, POST, PATCH, DELETE | idem |
 
 ### Fábrica de CRUD (`register_crud_routes`)

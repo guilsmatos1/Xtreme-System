@@ -22,7 +22,7 @@ from xtreme_system.api.route_factories import (
     _sort_key,
     register_crud_ui_routes,
 )
-from xtreme_system.api.routes.json import _validate_fks, _validate_venda_fks
+from xtreme_system.api.routes.json import _validate_cliente_veiculo_fks, _validate_fks
 from xtreme_system.api.setup import _ui_dir, app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
@@ -128,8 +128,8 @@ register_crud_ui_routes(
     form_template="_form_venda.html",
     ctx_form=_ctx_form_venda,
     parse_form=_parse_venda_form,
-    before_create=_validate_venda_fks,
-    before_update=_validate_venda_fks,
+    before_create=_validate_cliente_veiculo_fks,
+    before_update=_validate_cliente_veiculo_fks,
     after_create=whatsapp.notificar_venda,
     sort_fields={
         "cliente": lambda v: _sort_key(v.cliente.nome),
@@ -1510,12 +1510,13 @@ def ui_configuracoes_salvar(
 
 
 def _ctx_dashboard(session: Session) -> dict[str, Any]:
-    veiculos = veiculo.list_all(session)
-    disponiveis = [v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel]
-    vendidos = [v for v in veiculos if v.status == veiculo.StatusVeiculo.vendido]
-    valor_estoque = sum((v.preco for v in disponiveis), Decimal("0"))
-    total_avaliado = len(disponiveis) + len(vendidos)
-    taxa_conversao = (len(vendidos) / total_avaliado * 100) if total_avaliado else 0
+    resumo = veiculo.resumo_estoque(session)
+    disponiveis, valor_estoque = resumo.get(
+        veiculo.StatusVeiculo.disponivel, (0, Decimal("0"))
+    )
+    vendidos = resumo.get(veiculo.StatusVeiculo.vendido, (0, Decimal("0")))[0]
+    total_avaliado = disponiveis + vendidos
+    taxa_conversao = (vendidos / total_avaliado * 100) if total_avaliado else 0
 
     vendas_mes_count, vendas_mes_total = venda.resumo_mes(session)
     receita_tipo = venda.receita_por_tipo(session)
@@ -1523,8 +1524,8 @@ def _ctx_dashboard(session: Session) -> dict[str, Any]:
 
     return {
         "titulo": "Dashboard",
-        "disponiveis": len(disponiveis),
-        "vendidos": len(vendidos),
+        "disponiveis": disponiveis,
+        "vendidos": vendidos,
         "valor_estoque": valor_estoque,
         "taxa_conversao": taxa_conversao,
         "vendas_mes_count": vendas_mes_count,

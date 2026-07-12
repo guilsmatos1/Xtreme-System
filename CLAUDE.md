@@ -1,4 +1,21 @@
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+## Agent-Readable Workspace Map
+
+Read these files according to the task:
+
+- `README.md` — local setup, common commands, how to run, basic authentication, and product overview.
+- `ARCHITECTURE.md` — structural changes, flow between FastAPI/HTMX/Polylith components, authentication, middleware, and layer boundaries.
+- `API.md` — new or changed endpoints, payloads, status codes, HTTP authentication, and integration-facing contracts.
+- `DATABASE.md` — database schema, Alembic migrations, SQLAlchemy models, enums, indexes, constraints, and relationships.
+- `ROADMAP.md` — product priorities, planned/completed tasks, and context for pending requirements.
+
+Shortcuts by intent:
+
+- Changing schema, migrations, models, or enums → read `DATABASE.md`.
+- Creating or changing a JSON/HTMX endpoint → read `API.md` and, if it affects internal flow, `ARCHITECTURE.md`.
+- Changing authentication, permissions, middleware, or Polylith organization → read `ARCHITECTURE.md`.
+- Running, testing, or configuring the environment → read `README.md`.
+- Prioritizing implementation or understanding product requests → read `ROADMAP.md`.
+{{&gt; AGENTS.md}}
 
 ## 1. Think Before Coding
 
@@ -64,3 +81,21 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## 5. Graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## 6. RTK
+
+RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.

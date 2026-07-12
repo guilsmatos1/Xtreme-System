@@ -23,13 +23,26 @@
 - [ ] Integrar sistema que puxa dados do veículo pela placa.
 - [x] Quando comprar o veiculo, deve pedir o documento do cliente vendedor e do veiculo. O documento do veiculo e do cliente vendedor deve ficar disponível na tabela de veiculo.
 
+## Melhorias de arquitetura e confiabilidade
+
+- [x] Expor endpoint `/compras` na JSON API com CRUD completo (atualmente o componente `compra` só é usado internamente pela UI).
+- [x] Otimizar dashboard: mover agregações (contagem por status, valor em estoque, taxa de conversão) para queries SQL com `func.count()` e `func.sum()` em vez de carregar todos os veículos e filtrar em Python.
+- [x] Integrar e expor o log de auditoria na UI/API: adicionar tela de consulta de auditoria com filtros por usuário, data e tabela. Atualmente o componente `auditoria` existe mas não é acessível.
+- [x] Validar tipo e tamanho de arquivos em todos os uploads de imagens/documentos. Aceitar apenas `.jpg`, `.jpeg`, `.png`, `.webp` e `.pdf`, com limite de 5 MB por arquivo e 20 MB por request.
+
+## Melhorias de funcionalidade e UX
+
+- [ ] Sincronizar status do veículo automaticamente ao criar/atualizar/cancelar venda: venda concluída → `veiculo.status = vendido`; venda cancelada → reverter para `disponivel`.
+- [ ] Template de mensagem do WhatsApp customizável: adicionar campo `mensagem_template` em `whatsapp_config` com placeholders (`{cliente}`, `{veiculo}`, `{valor}`, etc.) editável na tela de Configurações.
+- [ ] Dashboard com métricas de venda por período: adicionar seletor de período (30d, 90d, 12m) e dados agregados por semana/mês para visualização de tendência temporal.
+
+## Melhorias técnicas
+
+- [ ] Adicionar coluna `updated_at` na tabela `lancamento_investimento` para rastrear edições de lançamentos.
+- [ ] Implementar rate limiting na API: limitar tentativas de login (ex: 5 por minuto por IP) e requests gerais da API (ex: 100/min).
+- [ ] Adicionar endpoint `GET /health` (sem auth) para health check de Docker/k8s, verificando status da aplicação e conexão com o banco.
 
 
-&nbsp;
-
-&nbsp;
-
-&nbsp;
 
 Refaça o modal "+ Novo veículo" seguindo um padrão de passo-a-passo. Cada passo deve exibir somente os informações daquele passo com um botão de "próximo" pro passo seguinte. Siga o fluxo do usuário abaixo pra projetar o passo-a-passo:
 

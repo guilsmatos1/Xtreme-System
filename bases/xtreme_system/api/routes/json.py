@@ -15,6 +15,7 @@ from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
+from xtreme_system.compra import core as compra
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -92,7 +93,7 @@ def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
         raise HTTPException(status_code=400, detail="placa já cadastrada")
 
 
-def _validate_venda_fks(session: Session, data: Any) -> None:
+def _validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
     cli_id = getattr(data, "cliente_id", None)
     vei_id = getattr(data, "veiculo_id", None)
     if cli_id is not None and cliente.get(session, cli_id) is None:
@@ -184,9 +185,28 @@ register_crud_routes(
     read_schema=venda.VendaRead,
     create_schema=venda.VendaCreate,
     update_schema=venda.VendaUpdate,
-    before_create=_validate_venda_fks,
-    before_update=lambda session, _obj, data: _validate_venda_fks(session, data),
+    before_create=_validate_cliente_veiculo_fks,
+    before_update=lambda session, _obj, data: _validate_cliente_veiculo_fks(
+        session, data
+    ),
     after_create=whatsapp.notificar_venda,
+)
+
+
+# ---- Compras ----
+
+register_crud_routes(
+    app,
+    compra,
+    "/compras",
+    "Compra",
+    read_schema=compra.CompraRead,
+    create_schema=compra.CompraCreate,
+    update_schema=compra.CompraUpdate,
+    before_create=_validate_cliente_veiculo_fks,
+    before_update=lambda session, _obj, data: _validate_cliente_veiculo_fks(
+        session, data
+    ),
 )
 
 

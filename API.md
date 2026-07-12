@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Xtreme Motors API is built with FastAPI and provides JSON endpoints for managing investors, vehicles, clients, sales, and financial tracking. The API uses token-based authentication (JWT) and includes both a JSON API layer and a separate server-rendered UI layer (HTMX).
+The Xtreme Motors API is built with FastAPI and provides JSON endpoints for managing investors, vehicles, clients, purchases, sales, and financial tracking. The API uses token-based authentication (JWT) and includes both a JSON API layer and a separate server-rendered UI layer (HTMX).
 
 **Base URL**: `http://localhost:8000` (development)
 
@@ -122,6 +122,7 @@ The following resources are managed through a generic CRUD interface. Each resou
 - **Veículos** - Vehicles (investment vehicles)
 - **Lançamentos de Caixa** - Financial transactions
 - **Clientes** - Clients/Customers
+- **Compras** - Purchases
 - **Vendas** - Sales
 
 ### CRUD Operations
@@ -132,6 +133,7 @@ For each resource, replace `{resource}` with one of:
 - `veiculos`
 - `lancamentos-caixa`
 - `clientes`
+- `compras`
 - `vendas`
 
 #### List Resources
