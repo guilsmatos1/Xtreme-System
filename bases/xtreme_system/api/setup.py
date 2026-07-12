@@ -26,6 +26,8 @@ from xtreme_system.logging.core import configure_logging
 configure_logging()
 logger = structlog.get_logger(__name__)
 
+_MAX_REQUEST_BYTES = 20 * 1024 * 1024  # 20 MB
+
 app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
     CORSMiddleware,
@@ -56,6 +58,16 @@ async def _request_context(
     structlog.contextvars.clear_contextvars()
     response.headers["X-Request-ID"] = rid
     return response
+
+
+@app.middleware("http")
+async def _limite_request_size(
+    request: Request, call_next: Callable[[Request], Any]
+) -> Any:
+    cl = request.headers.get("content-length")
+    if cl and int(cl) > _MAX_REQUEST_BYTES:
+        return Response("Request excede 20 MB", status_code=413)
+    return await call_next(request)
 
 
 _ui_dir = Path(__file__).parent

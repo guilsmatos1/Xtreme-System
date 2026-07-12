@@ -780,3 +780,15 @@ def test_validar_uploads_lote_rejeitado_se_um_falha() -> None:
 def test_validar_uploads_sem_filename_ignorado() -> None:
     arq = _FakeUpload("", None, None)
     assert _validar_uploads([arq]) is None  # type: ignore[list-item]
+
+
+def test_post_com_content_length_maior_que_20mb_retorna_413(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    resp = client.post(
+        "/ui/veiculos/1/imagens",
+        content=b"",
+        headers={"Content-Length": str(21 * 1024 * 1024)},
+    )
+    assert resp.status_code == 413
