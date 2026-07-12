@@ -40,7 +40,7 @@
 
 - [ ] Adicionar coluna `updated_at` na tabela `lancamento_investimento` para rastrear edições de lançamentos.
 - [ ] Implementar rate limiting na API: limitar tentativas de login (ex: 5 por minuto por IP) e requests gerais da API (ex: 100/min).
-- [ ] Adicionar endpoint `GET /health` (sem auth) para health check de Docker/k8s, verificando status da aplicação e conexão com o banco.
+- [x] Adicionar endpoint `GET /health` (sem auth) para health check de Docker/k8s, verificando status da aplicação e conexão com o banco.
 
 
 
