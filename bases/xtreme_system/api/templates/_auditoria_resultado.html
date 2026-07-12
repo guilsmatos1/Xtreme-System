@@ -1,0 +1,61 @@
+{% import "_macros.html" as ui %}
+<div id="auditoria-resultado">
+{% set proximo_offset = offset + limit %}
+{% set offset_ant = offset - limit if offset - limit > 0 else 0 %}
+{% set tem_anterior = offset > 0 %}
+{% set tem_proximo = proximo_offset < total %}
+{% set sep = '&' if filtros_qs else '' %}
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th style="width:1%">ID</th>
+      <th>Data</th>
+      <th>Usuário</th>
+      <th>Tabela</th>
+      <th>Ação</th>
+      <th>Registro</th>
+      <th style="width:1%"></th>
+    </tr></thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td class="cell-mono">{{ r.id }}</td>
+        <td class="cell-mono">{{ r.criado_em.strftime('%d/%m/%Y %H:%M') if r.criado_em else '-' }}</td>
+        <td>{{ nomes_usuarios.get(r.usuario_id, '—') if r.usuario_id else '—' }}</td>
+        <td class="cell-strong">{{ r.tabela }}</td>
+        <td>{{ r.tipo_acao }}</td>
+        <td class="cell-mono">{{ r.registro_id if r.registro_id is not none else '—' }}</td>
+        <td>
+          <button class="btn btn--ghost" style="padding:var(--s-2)"
+                  hx-get="/ui/auditoria/{{ r.id }}/detalhe" hx-target="#modal" title="Ver detalhes">
+            {{ ui.icon("file") }}
+          </button>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="7">
+        {% call ui.empty("file", "Nenhum registro", "Ainda não há auditoria para os filtros selecionados.") %}{% endcall %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="toolbar" style="margin-top:var(--s-4)">
+  <span class="page-head__subtitle">
+    {% if total %}
+      Mostrando {{ offset + 1 }}–{{ [proximo_offset, total] | min }} de {{ total }}
+    {% else %}
+      Sem registros
+    {% endif %}
+  </span>
+  <div style="display:flex;gap:var(--s-2)">
+    <button class="btn btn--ghost" {{ '' if tem_anterior else 'disabled' }}
+            hx-get="/ui/auditoria?{{ filtros_qs }}{{ sep }}offset={{ offset_ant }}&limit={{ limit }}"
+            hx-target="#auditoria-resultado">Anterior</button>
+    <button class="btn btn--ghost" {{ '' if tem_proximo else 'disabled' }}
+            hx-get="/ui/auditoria?{{ filtros_qs }}{{ sep }}offset={{ proximo_offset }}&limit={{ limit }}"
+            hx-target="#auditoria-resultado">Próxima</button>
+  </div>
+</div>
+</div>

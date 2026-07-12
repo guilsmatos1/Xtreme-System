@@ -1,5 +1,6 @@
 """Rotas JSON: autenticação, usuários e CRUD dos recursos de negócio."""
 
+from datetime import date
 from functools import partial
 from typing import Annotated, Any
 
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
 from xtreme_system.api.route_factories import register_crud_routes
 from xtreme_system.api.setup import app
+from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
@@ -186,3 +188,30 @@ register_crud_routes(
     before_update=lambda session, _obj, data: _validate_venda_fks(session, data),
     after_create=whatsapp.notificar_venda,
 )
+
+
+# ---- Auditoria (somente leitura, admin) ----
+
+
+@app.get("/auditoria", response_model=list[auditoria.AuditoriaRead])
+def listar_auditoria(
+    session: SessionDep,
+    _: AdminUser,
+    usuario_id: int | None = None,
+    tabela: str | None = None,
+    tipo_acao: str | None = None,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[auditoria.Auditoria]:
+    return auditoria.query(
+        session,
+        usuario_id=usuario_id,
+        tabela=tabela,
+        tipo_acao=tipo_acao,
+        data_de=data_de,
+        data_ate=data_ate,
+        limit=limit,
+        offset=offset,
+    )

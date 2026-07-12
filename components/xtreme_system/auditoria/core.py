@@ -1,16 +1,18 @@
-"""Auditoria: model, snapshot helper e escrita de registros de auditoria."""
+"""Auditoria: model, snapshot helper e escrita/leitura de registros de auditoria."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, func
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, func, select
 from sqlalchemy.orm import Mapped, Session, class_mapper, mapped_column
 
 from xtreme_system.database.core import Base
 
 AUDIT_SKIP = {"auditoria"}
 MASK = {"senha_hash"}
+TIPO_ACOES: tuple[str, ...] = ("CREATE", "UPDATE", "DELETE")
 
 
 class Auditoria(Base):
@@ -73,3 +75,94 @@ def auditar(
         dados_depois=dados_depois,
     )
     session.add(row)
+
+
+class AuditoriaRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tabela: str
+    tipo_acao: str
+    registro_id: int | None
+    usuario_id: int | None
+    dados_antes: dict[str, Any] | None
+    dados_depois: dict[str, Any] | None
+    criado_em: datetime
+
+
+def _filtros(
+    stmt: Any,
+    *,
+    usuario_id: int | None,
+    tabela: str | None,
+    tipo_acao: str | None,
+    data_de: date | None,
+    data_ate: date | None,
+) -> Any:
+    if usuario_id is not None:
+        stmt = stmt.where(Auditoria.usuario_id == usuario_id)
+    if tabela:
+        stmt = stmt.where(Auditoria.tabela == tabela)
+    if tipo_acao:
+        stmt = stmt.where(Auditoria.tipo_acao == tipo_acao)
+    if data_de is not None:
+        stmt = stmt.where(Auditoria.criado_em >= datetime.combine(data_de, time.min))
+    if data_ate is not None:
+        # ponytail: exclusive upper bound cobre o dia inteiro e usa o índice
+        fim = datetime.combine(data_ate, time.min) + timedelta(days=1)
+        stmt = stmt.where(Auditoria.criado_em < fim)
+    return stmt
+
+
+def query(
+    session: Session,
+    *,
+    usuario_id: int | None = None,
+    tabela: str | None = None,
+    tipo_acao: str | None = None,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Auditoria]:
+    stmt = select(Auditoria).order_by(Auditoria.criado_em.desc())
+    stmt = _filtros(
+        stmt,
+        usuario_id=usuario_id,
+        tabela=tabela,
+        tipo_acao=tipo_acao,
+        data_de=data_de,
+        data_ate=data_ate,
+    )
+    stmt = stmt.limit(limit).offset(offset)
+    return list(session.scalars(stmt))
+
+
+def count(
+    session: Session,
+    *,
+    usuario_id: int | None = None,
+    tabela: str | None = None,
+    tipo_acao: str | None = None,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+) -> int:
+    stmt = select(func.count()).select_from(Auditoria)
+    stmt = _filtros(
+        stmt,
+        usuario_id=usuario_id,
+        tabela=tabela,
+        tipo_acao=tipo_acao,
+        data_de=data_de,
+        data_ate=data_ate,
+    )
+    return int(session.scalar(stmt) or 0)
+
+
+def tabelas(session: Session) -> list[str]:
+    stmt = select(Auditoria.tabela).distinct().order_by(Auditoria.tabela)
+    return list(session.scalars(stmt))
+
+
+def get(session: Session, registro_id: int) -> Auditoria | None:
+    return session.get(Auditoria, registro_id)

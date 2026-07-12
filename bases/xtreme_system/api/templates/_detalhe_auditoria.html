@@ -1,0 +1,42 @@
+{% import "_macros.html" as ui %}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="auditoria-detalhe-title">
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h2 id="auditoria-detalhe-title">Registro #{{ reg.id }}</h2>
+      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4);margin-bottom:var(--s-4)">
+        <div>
+          <b>Data</b><br>{{ reg.criado_em.strftime('%d/%m/%Y %H:%M:%S') if reg.criado_em else '-' }}
+        </div>
+        <div>
+          <b>Usuário</b><br>{{ usuario_username or '—' }}
+        </div>
+        <div>
+          <b>Tabela</b><br>{{ reg.tabela }}
+        </div>
+        <div>
+          <b>Ação</b><br>{{ reg.tipo_acao }}
+        </div>
+        <div>
+          <b>Registro</b><br>{{ reg.registro_id if reg.registro_id is not none else '—' }}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)">
+        <div>
+          <h4 style="margin-bottom:var(--s-2)">Antes</h4>
+          {% if antes_json %}
+          <pre style="max-height:320px;overflow:auto">{{ antes_json }}</pre>
+          {% else %}<span class="page-head__subtitle">—</span>{% endif %}
+        </div>
+        <div>
+          <h4 style="margin-bottom:var(--s-2)">Depois</h4>
+          {% if depois_json %}
+          <pre style="max-height:320px;overflow:auto">{{ depois_json }}</pre>
+          {% else %}<span class="page-head__subtitle">—</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

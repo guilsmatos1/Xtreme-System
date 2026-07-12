@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Auditoria{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Auditoria</h1>
+    <p class="page-head__subtitle">Registro de alterações no sistema</p>
+  </div>
+  <a class="btn btn--ghost" href="/ui/auditoria/exportar{% if filtros_qs %}?{{ filtros_qs }}{% endif %}">
+    {{ ui.icon("inbox") }} Exportar dados
+  </a>
+</div>
+
+<section class="card card--pad" style="margin-bottom:var(--s-4)">
+  <form class="form-grid"
+        hx-get="/ui/auditoria" hx-target="#auditoria-resultado" hx-swap="outerHTML"
+        hx-trigger="submit, change" hx-include="this">
+    <label class="field">
+      <span class="field__label">De</span>
+      <input class="input" type="date" name="data_de" value="{{ f_data_de or '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Até</span>
+      <input class="input" type="date" name="data_ate" value="{{ f_data_ate or '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Usuário</span>
+      <select class="select" name="usuario_id">
+        <option value="">Todos</option>
+        {% for u in usuarios %}
+        <option value="{{ u.id }}" {{ 'selected' if f_usuario_id == u.id }}>{{ u.username }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Tabela</span>
+      <select class="select" name="tabela">
+        <option value="">Todas</option>
+        {% for t in tabelas %}
+        <option value="{{ t }}" {{ 'selected' if f_tabela == t }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Ação</span>
+      <select class="select" name="tipo_acao">
+        <option value="">Todas</option>
+        {% for tp in tipos %}
+        <option value="{{ tp }}" {{ 'selected' if f_tipo_acao == tp }}>{{ tp }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="field" style="justify-content:flex-end">
+      <button class="btn btn--primary" type="submit">{{ ui.icon("search") }} Filtrar</button>
+      <a class="btn btn--ghost" href="/ui/auditoria" style="margin-left:var(--s-2)">Limpar</a>
+    </div>
+  </form>
+</section>
+
+{% include "_auditoria_resultado.html" %}
+{% endblock %}

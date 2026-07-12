@@ -864,3 +864,92 @@ def test_criar_veiculo_com_documento_invalido_nao_cria_veiculo(
     assert "Tipo não permitido" in resp.text
     veiculos = client.get("/veiculos", headers=headers).json()
     assert not any(v["placa"] == "REJ0001" for v in veiculos)
+
+
+# ---- Auditoria (UI + JSON) ----
+
+
+def test_ui_auditoria_sem_cookie_redireciona_login() -> None:
+    with TestClient(app) as client:
+        resp = client.get("/ui/auditoria", follow_redirects=False)
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/ui/login"
+
+
+def test_ui_auditoria_admin_ve_lista(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria")
+    assert resp.status_code == 200
+    assert "Auditoria" in resp.text
+    assert 'id="auditoria-resultado"' in resp.text
+    # barreira de filtros presente
+    assert "Filtrar" in resp.text
+
+
+def test_ui_auditoria_filtros_htmx_retorna_parcial(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria", headers={"HX-Request": "true"})
+    assert resp.status_code == 200
+    assert 'id="auditoria-resultado"' in resp.text
+    assert "Auditoria" not in resp.text  # parcial não traz o título da página
+
+
+def test_ui_auditoria_vendedor_recebe_403(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "vend_audit", "senha": "abc", "papel": "vendedor"},
+    )
+    client.post("/ui/login", data={"username": "vend_audit", "password": "abc"})
+    resp = client.get("/ui/auditoria")
+    assert resp.status_code == 403
+    assert "admin" in resp.text.lower()
+
+
+def test_ui_auditoria_exportar_csv(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria/exportar")
+    assert resp.status_code == 200
+    assert resp.headers["content-disposition"] == 'attachment; filename="auditoria.csv"'
+    assert "text/csv" in resp.headers["content-type"]
+
+
+def test_ui_auditoria_detalhe_modal(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    rows = client.get("/auditoria", headers=headers).json()
+    assert rows
+    reg_id = rows[0]["id"]
+    resp = client.get(f"/ui/auditoria/{reg_id}/detalhe")
+    assert resp.status_code == 200
+    assert "Antes" in resp.text
+    assert "Depois" in resp.text
+
+
+def test_api_auditoria_admin_lista_e_filtra(client: TestClient) -> None:
+    headers = _admin_headers(client)
+    resp = client.get("/auditoria", headers=headers)
+    assert resp.status_code == 200
+    rows = resp.json()
+    assert isinstance(rows, list)
+    assert rows
+    tabelas = {r["tabela"] for r in rows}
+    alguma = next(iter(tabelas))
+    filtrado = client.get(
+        "/auditoria", params={"tabela": alguma}, headers=headers
+    ).json()
+    assert filtrado
+    assert all(r["tabela"] == alguma for r in filtrado)
+
+
+def test_api_auditoria_vendedor_forbidden(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "vend_api", "senha": "abc", "papel": "vendedor"},
+    )
+    token = client.post(
+        "/login", data={"username": "vend_api", "password": "abc"}
+    ).json()["access_token"]
+    resp = client.get("/auditoria", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 403
