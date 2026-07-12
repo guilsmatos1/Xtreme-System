@@ -34,7 +34,7 @@
       {% endif %}
     </div>
     <form class="modal__foot" hx-post="/ui/veiculos/{{ veiculo.id }}/imagens" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
-      <input class="input" type="file" name="imagens" accept="image/*" multiple required>
+      <input class="input" type="file" name="imagens" accept=".jpg,.jpeg,.png,.webp" multiple required>
       <button class="btn btn--primary" type="submit">Enviar imagens</button>
     </form>
   </div>

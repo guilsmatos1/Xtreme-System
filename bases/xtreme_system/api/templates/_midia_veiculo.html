@@ -14,7 +14,7 @@
   </div>
   <form hx-post="/ui/veiculos/{{ veiculo.id }}/imagens" hx-target="#midia-veiculo" hx-swap="outerHTML"
         hx-encoding="multipart/form-data" hx-trigger="change from:input[name=arquivo]">
-    <input class="input" type="file" name="arquivo" multiple accept="image/*">
+    <input class="input" type="file" name="arquivo" multiple accept=".jpg,.jpeg,.png,.webp">
   </form>
 
   <div class="field__label" style="margin-top:var(--s-3)">Documentos</div>
@@ -32,6 +32,6 @@
   </ul>
   <form hx-post="/ui/veiculos/{{ veiculo.id }}/documentos" hx-target="#midia-veiculo" hx-swap="outerHTML"
         hx-encoding="multipart/form-data" hx-trigger="change from:input[name=arquivo]">
-    <input class="input" type="file" name="arquivo" multiple>
+    <input class="input" type="file" name="arquivo" multiple accept=".pdf,.jpg,.jpeg,.png,.webp">
   </form>
 </div>
