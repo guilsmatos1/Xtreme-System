@@ -41,6 +41,15 @@
           <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
                  value="{{ config.evolution_group_id }}" autocomplete="off">
         </label>
+        <label class="field field--full">
+          <span class="field__label">Template da mensagem</span>
+          <textarea class="input" name="mensagem_template" rows="6">{{ config.mensagem_template }}</textarea>
+          <p style="margin-top:var(--s-2);color:var(--muted)">
+            Placeholders disponíveis: <code>{cliente}</code>, <code>{veiculo}</code>,
+            <code>{valor}</code>, <code>{forma_pagamento}</code>, <code>{parcelas}</code>,
+            <code>{vendedor}</code>.
+          </p>
+        </label>
         <div class="field" style="justify-content:flex-end">
           <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
         </div>

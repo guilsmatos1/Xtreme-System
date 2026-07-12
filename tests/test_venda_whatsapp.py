@@ -89,7 +89,7 @@ def _payload(cliente_id: int, veiculo_id: int) -> dict[str, Any]:
     }
 
 
-def _configurar(client: TestClient) -> None:
+def _configurar(client: TestClient, mensagem_template: str = "") -> None:
     client.post("/ui/login", data={"username": "admin", "password": "senha"})
     client.post(
         "/ui/configuracoes",
@@ -98,6 +98,7 @@ def _configurar(client: TestClient) -> None:
             "evolution_api_key": "chave",
             "evolution_instance": "xtreme-motors",
             "evolution_group_id": "1203630@g.us",
+            "mensagem_template": mensagem_template,
         },
     )
 
@@ -168,3 +169,43 @@ def test_configuracoes_exige_admin(client: TestClient) -> None:
     resp = client.get("/ui/configuracoes", follow_redirects=False)
     assert resp.status_code == 303
     assert resp.headers["location"] == "/ui/login"
+
+
+def test_notificacao_usa_template_customizado(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mensagens: list[str] = []
+    monkeypatch.setattr(
+        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
+    )
+    _configurar(client, mensagem_template="Venda para {cliente} no valor de R$ {valor}")
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+    )
+
+    assert resp.status_code == 201
+    assert mensagens == ["Venda para João Silva no valor de R$ 40000.00"]
+
+
+def test_notificacao_ignora_placeholder_desconhecido(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mensagens: list[str] = []
+    monkeypatch.setattr(
+        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
+    )
+    _configurar(client, mensagem_template="Olá {cliente}, código {inexistente}")
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+    )
+
+    assert resp.status_code == 201
+    assert mensagens == ["Olá João Silva, código {inexistente}"]

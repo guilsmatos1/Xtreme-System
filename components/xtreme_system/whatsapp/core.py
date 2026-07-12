@@ -15,6 +15,15 @@ logger = structlog.get_logger(__name__)
 
 _CONFIG_ID = 1
 
+MENSAGEM_TEMPLATE_PADRAO = (
+    "🚗 Nova venda registrada!\n"
+    "Cliente: {cliente}\n"
+    "Veículo: {veiculo}\n"
+    "Valor: R$ {valor}\n"
+    "Forma de pagamento: {forma_pagamento} ({parcelas}x)\n"
+    "Vendedor: {vendedor}"
+)
+
 
 class WhatsappConfig(Base):
     __tablename__ = "whatsapp_config"
@@ -24,6 +33,7 @@ class WhatsappConfig(Base):
     evolution_api_key: Mapped[str] = mapped_column(default="")
     evolution_instance: Mapped[str] = mapped_column(default="")
     evolution_group_id: Mapped[str] = mapped_column(default="")
+    mensagem_template: Mapped[str] = mapped_column(default=MENSAGEM_TEMPLATE_PADRAO)
 
 
 class WhatsappConfigUpdate(BaseModel):
@@ -31,6 +41,7 @@ class WhatsappConfigUpdate(BaseModel):
     evolution_api_key: str = ""
     evolution_instance: str = ""
     evolution_group_id: str = ""
+    mensagem_template: str = MENSAGEM_TEMPLATE_PADRAO
 
 
 def get_config(session: Session) -> WhatsappConfig:
@@ -49,21 +60,31 @@ def atualizar_config(session: Session, data: WhatsappConfigUpdate) -> WhatsappCo
     config.evolution_api_key = data.evolution_api_key
     config.evolution_instance = data.evolution_instance
     config.evolution_group_id = data.evolution_group_id
+    config.mensagem_template = data.mensagem_template
     session.commit()
     session.refresh(config)
     return config
 
 
-def _formatar_mensagem(venda_obj: Venda) -> str:
+class _PlaceholderDict(dict[str, object]):
+    """Preserva `{chave}` no texto em vez de estourar KeyError."""
+
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
+
+
+def _formatar_mensagem(config: WhatsappConfig, venda_obj: Venda) -> str:
     vendedor = venda_obj.vendedor.username if venda_obj.vendedor else "-"
-    return (
-        "🚗 Nova venda registrada!\n"
-        f"Cliente: {venda_obj.cliente.nome}\n"
-        f"Veículo: {venda_obj.veiculo.modelo} - placa {venda_obj.veiculo.placa}\n"
-        f"Valor: R$ {venda_obj.valor_venda}\n"
-        f"Forma de pagamento: {venda_obj.forma_pagamento} ({venda_obj.parcelas}x)\n"
-        f"Vendedor: {vendedor}"
+    dados = _PlaceholderDict(
+        cliente=venda_obj.cliente.nome,
+        veiculo=f"{venda_obj.veiculo.modelo} - placa {venda_obj.veiculo.placa}",
+        valor=venda_obj.valor_venda,
+        forma_pagamento=venda_obj.forma_pagamento,
+        parcelas=venda_obj.parcelas,
+        vendedor=vendedor,
     )
+    template = config.mensagem_template or MENSAGEM_TEMPLATE_PADRAO
+    return template.format_map(dados)
 
 
 def _enviar(config: WhatsappConfig, texto: str) -> None:
@@ -96,6 +117,6 @@ def notificar_venda(session: Session, venda_obj: Venda) -> None:
     if not (config.evolution_api_url and config.evolution_instance):
         return
     try:
-        _enviar(config, _formatar_mensagem(venda_obj))
-    except (urllib.error.URLError, OSError, TimeoutError) as exc:
+        _enviar(config, _formatar_mensagem(config, venda_obj))
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
         logger.warning("whatsapp_notify_failed", error=str(exc))
