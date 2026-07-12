@@ -5,7 +5,10 @@ from functools import partial
 from typing import Annotated, Any
 
 from fastapi import Depends, Form, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
@@ -21,6 +24,21 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
+
+# ---- Health check (sem auth) ----
+
+
+@app.get("/health")
+def health(session: SessionDep) -> JSONResponse:
+    try:
+        session.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        return JSONResponse(
+            {"status": "degradado", "database": "indisponivel"},
+            status_code=503,
+        )
+    return JSONResponse({"status": "ok", "database": "ok"})
+
 
 # ---- Autenticação ----
 

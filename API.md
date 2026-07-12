@@ -6,6 +6,37 @@ The Xtreme Motors API is built with FastAPI and provides JSON endpoints for mana
 
 **Base URL**: `http://localhost:8000` (development)
 
+## Health Check
+
+Health check para Docker/k8s — sem autenticação.
+
+**Endpoint**: `GET /health`
+
+Response (200):
+
+```json
+{
+  "status": "ok",
+  "database": "ok"
+}
+```
+
+Response (503) — banco indisponível:
+
+```json
+{
+  "status": "degradado",
+  "database": "indisponivel"
+}
+```
+
+**Status Codes**:
+
+- `200`: Aplicação e banco disponíveis
+- `503`: Banco indisponível
+
+---
+
 ## Authentication
 
 ### Login
