@@ -688,21 +688,25 @@ async def _criar_veiculo(
         except Exception:
             return _erro_veiculo(request, session, "Débitos inválidos")
 
-    obj = veiculo.create(session, data)
-    if novo_cliente_data is not None:
-        seller = cliente.create(session, novo_cliente_data)
-    assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
     documentos = [
         arquivo
         for arquivo in form.getlist("documentos_cliente")
         if hasattr(arquivo, "filename") and hasattr(arquivo, "file")
     ]
-    _salvar_documentos_cliente(session, seller.id, cast(list[UploadFile], documentos))
-    _salvar_documento_veiculo(
-        session,
-        obj.id,
-        cast(UploadFile | None, form.get("documento_veiculo")),
+    doc_veiculo = cast(UploadFile | None, form.get("documento_veiculo"))
+    todos = cast(
+        list[UploadFile], list(documentos) + ([doc_veiculo] if doc_veiculo else [])
     )
+    erro = _validar_uploads(todos)
+    if erro:
+        return _erro_veiculo(request, session, erro)
+
+    obj = veiculo.create(session, data)
+    if novo_cliente_data is not None:
+        seller = cliente.create(session, novo_cliente_data)
+    assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
+    _salvar_documentos_cliente(session, seller.id, cast(list[UploadFile], documentos))
+    _salvar_documento_veiculo(session, obj.id, doc_veiculo)
     compra.create(
         session,
         compra.CompraCreate(

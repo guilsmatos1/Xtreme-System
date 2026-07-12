@@ -828,3 +828,39 @@ def test_upload_documento_cliente_extensao_invalida_rejeitada(
     assert resp.status_code == 400
     assert "Tipo não permitido" in resp.text
     assert ".txt" in resp.text
+
+
+def test_criar_veiculo_com_documento_invalido_nao_cria_veiculo(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+
+    form = {
+        "tipo": "carro",
+        "modelo": "Rejeitado",
+        "cor": "Preto",
+        "ano": "2020",
+        "placa": "REJ0001",
+        "km": "0",
+        "preco": "50000",
+        "tipo_entrada": "compra",
+        "revisao": "on",
+        "investidor_id": str(inv_id),
+        "cliente_vendedor_id": "",
+        "cli_nome": "Vend Rej",
+        "cli_documento": "99988877766",
+        "cli_tipo": "pessoa_fisica",
+    }
+    resp = client.post(
+        "/ui/veiculos",
+        data=form,
+        files=[
+            ("documentos_cliente", ("ruim.exe", b"x", "application/octet-stream")),
+        ],
+    )
+    assert resp.status_code == 400
+    assert "Tipo não permitido" in resp.text
+    veiculos = client.get("/veiculos", headers=headers).json()
+    assert not any(v["placa"] == "REJ0001" for v in veiculos)
