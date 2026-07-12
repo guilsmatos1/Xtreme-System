@@ -808,3 +808,23 @@ def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
     assert resp.status_code == 400
     assert "Tipo não permitido" in resp.text
     assert ".gif" in resp.text
+
+
+def test_upload_documento_cliente_extensao_invalida_rejeitada(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = client.post(
+        "/clientes",
+        json={"nome": "X", "documento": "11122233344", "tipo": "pessoa_fisica"},
+        headers=headers,
+    ).json()["id"]
+
+    resp = client.post(
+        f"/ui/clientes/{cliente_id}/documentos",
+        files=[("documentos", ("notas.txt", b"texto", "text/plain"))],
+    )
+    assert resp.status_code == 400
+    assert "Tipo não permitido" in resp.text
+    assert ".txt" in resp.text

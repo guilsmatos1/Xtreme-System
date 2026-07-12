@@ -464,7 +464,15 @@ def ui_cliente_documentos_upload(
     cliente_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(cliente.get(session, cliente_id), "Cliente")
+    item = _found(cliente.get(session, cliente_id), "Cliente")
+    erro = _validar_uploads(documentos)
+    if erro:
+        return templates.TemplateResponse(
+            request,
+            "_modal_documentos_cliente.html",
+            {"cliente": item, "erro": erro},
+            status_code=400,
+        )
     _salvar_documentos_cliente(session, cliente_id, documentos)
     return _documentos_modal(request, session, cliente_id)
 
