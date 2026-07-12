@@ -17,3 +17,4 @@ graphify-out/
 
 # Uploaded media
 bases/xtreme_system/api/media/
+bases/xtreme_system/api/static/uploads/
