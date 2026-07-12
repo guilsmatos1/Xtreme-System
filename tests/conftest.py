@@ -4,7 +4,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from xtreme_system.api.setup import reset_rate_limiters
 from xtreme_system.database.core import Base
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters() -> None:
+    # limiters são module-level; sem reset um teste consome o limite do
+    # próximo (TestClient sempre usa o mesmo IP).
+    reset_rate_limiters()
 
 
 @pytest.fixture

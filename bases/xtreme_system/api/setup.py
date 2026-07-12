@@ -1,6 +1,8 @@
 """FastAPI app initialization, middlewares, and error handlers."""
 
+import time
 import uuid
+from collections import defaultdict, deque
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -27,6 +29,12 @@ configure_logging()
 logger = structlog.get_logger(__name__)
 
 _MAX_REQUEST_BYTES = 20 * 1024 * 1024  # 20 MB
+
+_LOGIN_LIMIT = 5
+_LOGIN_WINDOW_SECONDS = 60.0
+_GERAL_LIMIT = 100
+_GERAL_WINDOW_SECONDS = 60.0
+_ROTAS_ISENTAS_RATE_LIMIT = {"/health", "/docs", "/redoc", "/openapi.json"}
 
 app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
@@ -67,6 +75,72 @@ async def _limite_request_size(
     cl = request.headers.get("content-length")
     if cl and int(cl) > _MAX_REQUEST_BYTES:
         return Response("Request excede 20 MB", status_code=413)
+    return await call_next(request)
+
+
+class _RateLimiter:
+    """Janela deslizante em memória, por chave (ex: IP do cliente)."""
+
+    def __init__(self, limit: int, window_seconds: float) -> None:
+        self._limit = limit
+        self._window = window_seconds
+        self._hits: dict[str, deque[float]] = defaultdict(deque)
+
+    def allow(self, key: str) -> bool:
+        now = time.monotonic()
+        hits = self._hits[key]
+        cutoff = now - self._window
+        while hits and hits[0] < cutoff:
+            hits.popleft()
+        if len(hits) >= self._limit:
+            return False
+        hits.append(now)
+        return True
+
+    def reset(self) -> None:
+        self._hits.clear()
+
+
+_login_limiter = _RateLimiter(_LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS)
+_geral_limiter = _RateLimiter(_GERAL_LIMIT, _GERAL_WINDOW_SECONDS)
+
+
+def reset_rate_limiters() -> None:
+    """Limpa o estado dos limiters (usado em testes, que reusam o `app`)."""
+    _login_limiter.reset()
+    _geral_limiter.reset()
+
+
+def _rate_limit_response(request: Request, mensagem: str, retry_after: float) -> Any:
+    headers = {"Retry-After": str(int(retry_after))}
+    if request.url.path.startswith("/ui/"):
+        return HTMLResponse(f"<p>{mensagem}</p>", status_code=429, headers=headers)
+    return JSONResponse({"detail": mensagem}, status_code=429, headers=headers)
+
+
+@app.middleware("http")
+async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> Any:
+    path = request.url.path
+    if path.startswith("/static/") or path in _ROTAS_ISENTAS_RATE_LIMIT:
+        return await call_next(request)
+
+    client_ip = request.client.host if request.client else "desconhecido"
+
+    if request.method == "POST" and path.endswith("/login"):
+        if not _login_limiter.allow(f"login:{client_ip}"):
+            return _rate_limit_response(
+                request,
+                "Muitas tentativas de login. Tente novamente em instantes.",
+                _LOGIN_WINDOW_SECONDS,
+            )
+        return await call_next(request)
+
+    if not _geral_limiter.allow(client_ip):
+        return _rate_limit_response(
+            request,
+            "Muitas requisições. Tente novamente em instantes.",
+            _GERAL_WINDOW_SECONDS,
+        )
     return await call_next(request)
 
 

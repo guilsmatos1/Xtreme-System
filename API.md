@@ -37,6 +37,17 @@ Response (503) — banco indisponível:
 
 ---
 
+## Rate Limiting
+
+Limites em memória por IP:
+
+- `POST /login` e `POST /ui/login`: 5 tentativas/minuto
+- Demais rotas: 100 requests/minuto (exceto `/health`, `/docs`, `/redoc`, `/openapi.json` e arquivos estáticos)
+
+Ao exceder o limite, retorna `429` com header `Retry-After` (segundos). Corpo `{"detail": "..."}` para rotas JSON, HTML para rotas `/ui/`.
+
+---
+
 ## Authentication
 
 ### Login
@@ -312,6 +323,7 @@ Error responses:
 | 403  | Forbidden - Insufficient permissions                   |
 | 404  | Not Found - Resource does not exist                    |
 | 409  | Conflict - Data conflict (duplicate, dependency error) |
+| 429  | Too Many Requests - Rate limit exceeded                |
 
 
 ---

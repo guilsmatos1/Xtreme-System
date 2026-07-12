@@ -42,7 +42,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-dev-mode-dirs = ["components", "bases", "development", "src"]
+dev-mode-dirs = ["components", "bases", "development"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -54,7 +54,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-src = ["src", "tests", "bases", "components", "development", "projects"]
+src = ["tests", "bases", "components", "development", "projects"]
 exclude = [".opencode/plugins/ponytail", ".agents/skills", "alembic"]
 
 [tool.ruff.lint]
@@ -120,7 +120,7 @@ warn_unused_configs = true
 plugins = ["pydantic.mypy"]
 
 [tool.vulture]
-paths = ["src", "tests", "bases", "components", "development", "projects"]
+paths = ["tests", "bases", "components", "development", "projects"]
 min_confidence = 61
 sort_by_size = true
 ignore_names = [
