@@ -318,7 +318,15 @@ def ui_veiculo_imagens_upload(
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    erro = _validar_uploads(imagens)
+    if erro:
+        return templates.TemplateResponse(
+            request,
+            "_modal_imagens_veiculo.html",
+            {"veiculo": item, "erro": erro},
+            status_code=400,
+        )
     upload_dir = _uploads_dir(veiculo_id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     for imagem in imagens:

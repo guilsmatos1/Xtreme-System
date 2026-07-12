@@ -792,3 +792,19 @@ def test_post_com_content_length_maior_que_20mb_retorna_413(
         headers={"Content-Length": str(21 * 1024 * 1024)},
     )
     assert resp.status_code == 413
+
+
+def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("malicioso.gif", b"dados", "image/gif")},
+    )
+    assert resp.status_code == 400
+    assert "Tipo não permitido" in resp.text
+    assert ".gif" in resp.text

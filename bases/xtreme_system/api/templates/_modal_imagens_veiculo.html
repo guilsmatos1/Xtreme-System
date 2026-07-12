@@ -6,6 +6,7 @@
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
+      {% if erro %}{{ ui.alert(erro) }}{% endif %}
       {% if veiculo.imagens %}
       <div class="midia-grid">
         {% for img in veiculo.imagens %}
