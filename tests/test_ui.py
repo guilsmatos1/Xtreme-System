@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from xtreme_system.api.core import app
+from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.database.core import Base, get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -692,3 +693,90 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "95000" in resp.text or "95.000" in resp.text  # valor venda aparece
     assert "1" in resp.text  # contagem de vendas > 0
+
+
+# ---- Validação de uploads ----
+
+
+class _FakeFile:
+    """Minimal file-like stub with seek/tell for size fallback in tests."""
+
+    def __init__(self, size: int):
+        self._size = size
+        self._pos = 0
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        self._pos = self._size + offset if whence == 2 else offset
+        return self._pos
+
+    def tell(self) -> int:
+        return self._pos
+
+    def read(self, _n: int = -1) -> bytes:
+        return b""
+
+
+class _FakeUpload:
+    """Minimal UploadFile-like stub for unit tests (no network, no spooled file)."""
+
+    def __init__(self, filename: str, content_type: str | None, size: int | None):
+        self.filename = filename
+        self.content_type = content_type
+        self._size = size
+        self.file = _FakeFile(size or 0)
+
+    @property
+    def size(self) -> int | None:
+        return self._size
+
+
+def test_validar_uploads_extensao_invalida() -> None:
+    arq = _FakeUpload("malicioso.gif", "image/gif", 100)
+    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    assert msg is not None
+    assert "Tipo não permitido" in msg
+    assert ".gif" in msg
+
+
+def test_validar_uploads_extensao_valida_passa() -> None:
+    for nome, ct in [
+        ("foto.jpg", "image/jpeg"),
+        ("foto.JPEG", "image/jpeg"),
+        ("diagrama.png", "image/png"),
+        ("arte.webp", "image/webp"),
+        ("contrato.pdf", "application/pdf"),
+    ]:
+        arq = _FakeUpload(nome, ct, 1000)
+        assert _validar_uploads([arq]) is None, f"{nome} deveria passar"  # type: ignore[list-item]
+
+
+def test_validar_uploads_content_type_divergente() -> None:
+    arq = _FakeUpload("foto.jpg", "application/pdf", 1000)
+    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    assert msg is not None
+    assert "Conteúdo não corresponde" in msg
+
+
+def test_validar_uploads_content_type_ausente_passa() -> None:
+    arq = _FakeUpload("foto.jpg", None, 1000)
+    assert _validar_uploads([arq]) is None  # type: ignore[list-item]
+
+
+def test_validar_uploads_arquivo_maior_que_5mb() -> None:
+    arq = _FakeUpload("grande.jpg", "image/jpeg", 5 * 1024 * 1024 + 1)
+    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    assert msg is not None
+    assert "excede 5 MB" in msg
+
+
+def test_validar_uploads_lote_rejeitado_se_um_falha() -> None:
+    bons = _FakeUpload("ok.jpg", "image/jpeg", 1000)
+    mau = _FakeUpload("mau.exe", "application/octet-stream", 1000)
+    msg = _validar_uploads([bons, mau])  # type: ignore[list-item]
+    assert msg is not None
+    assert "Tipo não permitido" in msg
+
+
+def test_validar_uploads_sem_filename_ignorado() -> None:
+    arq = _FakeUpload("", None, None)
+    assert _validar_uploads([arq]) is None  # type: ignore[list-item]
