@@ -12,6 +12,9 @@ build/
 .claude/.hook-state/
 graphify-out/
 
+# Git worktrees
+.worktrees/
+
 # Local env
 .env
 
