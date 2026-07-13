@@ -4,6 +4,7 @@ import contextlib
 import re
 from collections.abc import Iterator
 from pathlib import Path
+from typing import cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from xtreme_system.api.core import app
+from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.database.core import Base, get_session
 from xtreme_system.investidor import core as investidor
@@ -795,11 +797,12 @@ def test_post_com_content_length_maior_que_20mb_retorna_413(
 
 
 def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
-    client: TestClient,
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
 
     resp = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
@@ -808,6 +811,73 @@ def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
     assert resp.status_code == 400
     assert "Tipo não permitido" in resp.text
     assert ".gif" in resp.text
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    def falha_create(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("db indisponivel")
+
+    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui.imagem_veiculo.create", falha_create
+    )
+
+    with pytest.raises(RuntimeError, match="db indisponivel"):
+        client.post(
+            f"/ui/veiculos/{veiculo_id}/imagens",
+            files={"imagens": ("foto.jpg", b"dados", "image/jpeg")},
+        )
+
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+def test_salvar_documentos_cliente_remove_arquivo_se_create_falha(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def falha_create(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("db indisponivel")
+
+    monkeypatch.setattr(ui_routes, "_uploads_cliente_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui.imagem_documento_cliente.create", falha_create
+    )
+
+    with pytest.raises(RuntimeError, match="db indisponivel"):
+        ui_routes._salvar_documentos_cliente(  # noqa: SLF001
+            cast(Session, object()),
+            1,
+            [_FakeUpload("doc.pdf", "application/pdf", 10)],  # type: ignore[list-item]
+        )
+
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+def test_salvar_documento_veiculo_remove_arquivo_se_create_falha(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def falha_create(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("db indisponivel")
+
+    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui.documento_veiculo.create", falha_create
+    )
+
+    with pytest.raises(RuntimeError, match="db indisponivel"):
+        ui_routes._salvar_documento_veiculo(  # noqa: SLF001
+            cast(Session, object()),
+            1,
+            _FakeUpload("doc.pdf", "application/pdf", 10),  # type: ignore[arg-type]
+        )
+
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
 
 def test_upload_documento_cliente_extensao_invalida_rejeitada(

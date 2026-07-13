@@ -291,6 +291,11 @@ def _uploaded_file_path(url: str) -> Path | None:
     return _ui_dir / url.lstrip("/")
 
 
+def _remover_upload(path: Path) -> None:
+    with contextlib.suppress(FileNotFoundError):
+        path.unlink()
+
+
 def _imagem_modal(request: Request, session: Session, veiculo_id: int) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     for img in list(item.imagens):
@@ -340,13 +345,17 @@ def ui_veiculo_imagens_upload(
         path = upload_dir / filename
         with path.open("wb") as f:
             f.write(imagem.file.read())
-        imagem_veiculo.create(
-            session,
-            imagem_veiculo.ImagemVeiculoCreate(
-                veiculo_id=veiculo_id,
-                url=f"/static/uploads/veiculos/{veiculo_id}/{filename}",
-            ),
-        )
+        try:
+            imagem_veiculo.create(
+                session,
+                imagem_veiculo.ImagemVeiculoCreate(
+                    veiculo_id=veiculo_id,
+                    url=f"/static/uploads/veiculos/{veiculo_id}/{filename}",
+                ),
+            )
+        except Exception:
+            _remover_upload(path)
+            raise
     return _imagem_modal(request, session, veiculo_id)
 
 
@@ -383,13 +392,17 @@ def _salvar_documentos_cliente(
         path = upload_dir / filename
         with path.open("wb") as f:
             f.write(documento.file.read())
-        imagem_documento_cliente.create(
-            session,
-            imagem_documento_cliente.ImagemDocumentoClienteCreate(
-                cliente_id=cliente_id,
-                url=f"/static/uploads/clientes/{cliente_id}/documentos/{filename}",
-            ),
-        )
+        try:
+            imagem_documento_cliente.create(
+                session,
+                imagem_documento_cliente.ImagemDocumentoClienteCreate(
+                    cliente_id=cliente_id,
+                    url=f"/static/uploads/clientes/{cliente_id}/documentos/{filename}",
+                ),
+            )
+        except Exception:
+            _remover_upload(path)
+            raise
 
 
 def _salvar_documento_veiculo(
@@ -401,15 +414,20 @@ def _salvar_documento_veiculo(
     upload_dir.mkdir(parents=True, exist_ok=True)
     suffix = Path(arquivo.filename).suffix.lower()
     filename = f"{uuid4().hex}{suffix}"
-    with (upload_dir / filename).open("wb") as f:
+    path = upload_dir / filename
+    with path.open("wb") as f:
         f.write(arquivo.file.read())
-    documento_veiculo.create(
-        session,
-        documento_veiculo.DocumentoVeiculoCreate(
-            veiculo_id=veiculo_id,
-            url=f"/static/uploads/veiculos/{veiculo_id}/documentos/{filename}",
-        ),
-    )
+    try:
+        documento_veiculo.create(
+            session,
+            documento_veiculo.DocumentoVeiculoCreate(
+                veiculo_id=veiculo_id,
+                url=f"/static/uploads/veiculos/{veiculo_id}/documentos/{filename}",
+            ),
+        )
+    except Exception:
+        _remover_upload(path)
+        raise
 
 
 @app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
