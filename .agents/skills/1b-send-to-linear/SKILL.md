@@ -12,13 +12,12 @@ Use `orca linear create` to create the issue.
 - Assignee: `6b75d88f-389e-4bbb-bf7e-53528a774f93`
 - State: `Backlog`
 - Team: `GUI`
-- Project: `Xtreme System`
-
 ## What to fill
 
-- Set the title from the request.
-- Set the body from the request context.
+- Set the title from the request, keeping it as close to the original source as possible.
+- Set the body from the request context, preserving the original information verbatim whenever feasible.
 - Não é necessário adicionar o caminho da fonte.
+- If the prompt specifies a project, pass `--project "<project-name>"`. If not specified, omit the flag.
 - Always set `priority` and `label` on every issue.
 - Set `priority` from the request if it is already explicit; otherwise infer it only from the task text and context. Use the lowest priority that still matches the request.
 - Pass `priority` only as one of `none`, `low`, `medium`, `high`, or `urgent`.
@@ -32,5 +31,5 @@ Use `orca linear create` to create the issue.
 ## Example
 
 ```bash
-orca linear create --team GUI --project "Xtreme System" --title "..." --body "..." --assignee me --state Backlog --priority medium --label Improvement --json
+orca linear create --team GUI --title "..." --body "..." --assignee me --state Backlog --priority medium --label Improvement --json
 ```

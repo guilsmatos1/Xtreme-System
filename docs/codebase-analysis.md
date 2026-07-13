@@ -1,144 +1,226 @@
-1. Move transaction control out of CRUD helpers
-     Location: components/xtreme_system/crud/core.py:18, bases/xtreme_system/api/route_factories.py:90, components/xtreme_system/venda/core.py:137, bases/xtreme_system/
-     api/routes/ui.py:668, components/xtreme_system/caixa/core.py:132
-     Description: crud.create/update/delete() commit internally, and callers then run more side effects afterward. That breaks atomicity. The worst case is vehicle
-     creation: the vehicle can be committed before the seller, uploaded docs, purchase row, and investor cash entry are all finished. If step 4 fails, steps 1-3 stay
-     persisted. This hurts correctness, architecture, maintainability, and makes error handling brittle.
-     Impact: High · Category: Architecture and design
-     Concrete fix suggestion:
+## Opportunity 1: Shared writes are not atomic
 
-  def create(...):
-      obj = model_cls(**data.model_dump())
-      session.add(obj)
-      session.flush()
-      auditar(...)
-      return obj
+Location: `components/xtreme_system/crud/core.py:18-64`, `bases/xtreme_system/api/route_factories.py:90-139`
+Impact: High
+Category: Reliability
+Estimated effort: High
 
-  with session.begin():
-      obj = veiculo.create(session, data)
-      seller = cliente.create(session, novo_cliente_data)
-      compra.create(session, ...)
-      caixa.criar_lancamento_veiculo(session, obj)
+Description:
+`crud.create/update/delete()` commit immediately, and the route factories run follow-up hooks after that commit. That splits one request into multiple independent transactions.
 
-  Also add tests that force compra.create() or caixa.criar_lancamento_veiculo() to fail and assert that no partial rows remain.
-  Estimated effort: High
+Why it matters:
+If a later hook fails, the primary row is already persisted. A vehicle create can succeed while the linked cash row, uploads, or notification step fails.
 
-  2. Sale lifecycle does not preserve vehicle-state invariants
-     Location: components/xtreme_system/venda/core.py:109, components/xtreme_system/venda/core.py:154, bases/xtreme_system/api/routes/json.py:114, tests/
-     test_api_vendas.py:138, tests/test_ui.py:405
-     Description: The backend only validates FK existence for sales. It does not prevent creating multiple concluded sales for the same vehicle, and venda.delete()
-     never restores the vehicle status. I verified locally that two concluded sales can be created for one vehicle, and deleting a concluded sale leaves the vehicle as
-     vendido. This is a correctness bug first, with missing tests around delete and duplicate-sale cases.
-     Impact: High · Category: Architecture and design
-     Concrete fix suggestion:
+Concrete fix suggestion:
+Keep the unit of work open until all hooks succeed, then commit once.
 
-  def _assert_venda_permitida(session: Session, data: VendaCreate | VendaUpdate, obj: Venda | None = None) -> None:
-      veic = session.get(Veiculo, data.veiculo_id)
-      if veic is None:
-          raise HTTPException(400, "veiculo_id inexistente")
-      if veic.status == StatusVeiculo.vendido and (obj is None or obj.veiculo_id != veic.id):
-          raise HTTPException(409, "Veículo já vendido")
+Example:
+```py
+with session.begin():
+    obj = module.create(session, data)
+    after_create(session, obj)
+```
 
-  And on delete, recompute the vehicle status from remaining sales before commit.
-  Estimated effort: Medium
+## Opportunity 2: Sale status sync leaves stale vehicle state
 
-  3. Generic HTMX CRUD routes turn recoverable DB errors into 500s
-     Location: bases/xtreme_system/api/route_factories.py:277, bases/xtreme_system/api/route_factories.py:294, bases/xtreme_system/api/setup.py:48, tests/
-     test_route_factories_ui.py:23
-     Description: JSON CRUD routes use _safe_write(), but HTMX CRUD routes call module.create/update/delete() directly. A duplicate client document or plate becomes an
-     uncaught IntegrityError, a 500, and duplicated error logs. I confirmed this locally with /ui/clientes. The current tests for UI route factories only cover template
-     wiring and _sort_key, not failure paths.
-     Impact: High · Category: Error handling and logging
-     Concrete fix suggestion:
+Location: `components/xtreme_system/venda/core.py:101-151`
+Impact: High
+Category: Correctness
+Estimated effort: Medium
 
-  try:
-      obj = module.create(session, data)
-  except IntegrityError:
-      session.rollback()
-      return templates.TemplateResponse(
-          request, form_template,
-          {**ctx_form(session), item_key: None, "erro": f"{label} já existe"},
-          status_code=409,
-      )
+Description:
+`_sincronizar_status_veiculo()` only updates the vehicle for `concluido` and `cancelado`. If a concluded sale is edited back to `pendente`, the vehicle stays marked as sold.
 
-  Add regression tests for duplicate create/update and delete FK conflicts through the generic UI routes.
-  Estimated effort: Medium
+Why it matters:
+The vehicle status can drift away from the sale status, which breaks inventory accuracy and downstream reporting.
 
-  4. Tests bypass Alembic/Postgres and are already hiding schema drift
-     Location: tests/conftest.py:18, components/xtreme_system/venda/core.py:34, alembic/versions/d9babf49fd9b_add_vendedor_and_reservado.py:28
-     Description: Tests build the schema with Base.metadata.create_all() on SQLite instead of running migrations on Postgres. That already diverged: the migration makes
-     venda.data_venda nullable, but the ORM model still declares it non-nullable. This weakens correctness, testing confidence, and maintainability because the tested
-     schema is not the deployed schema.
-     Impact: High · Category: Testing
-     Concrete fix suggestion:
+Concrete fix suggestion:
+Make the vehicle status derive from the current sale status on every update, including the transition away from `concluido`.
 
-  # test bootstrap
-  engine = create_engine(TEST_DATABASE_URL)
-  alembic.command.upgrade(cfg, "head")
+Example:
+```py
+if status_anterior == StatusVenda.concluido and obj.status != StatusVenda.concluido:
+    old_vehicle.status = StatusVeiculo.disponivel
+```
 
-  At minimum, add one CI job that runs API tests against migrated Postgres. Then remove model/migration drift like Venda.data_venda.
-  Estimated effort: High
+## Opportunity 3: File uploads can orphan files on failure
 
-  5. ui.py is a god module with route-to-route coupling
-     Location: bases/xtreme_system/api/routes/ui.py:22, bases/xtreme_system/api/routes/ui.py:626, bases/xtreme_system/api/routes/ui.py:668
-     Description: The HTMX route file is 1.7k lines and mixes login, vehicles, uploads, investors, users, profiles, config, dashboard, and audit. It also imports
-     validation helpers from the JSON route module, so one presentation layer depends on another. Xenon flags _resolver_vendedor() as rank D and _criar_veiculo() as
-     rank C. This is mostly an architecture and maintainability problem, but it also makes tests harder to target.
-     Impact: Medium · Category: Architecture and design
-     Concrete fix suggestion: Split by area, for example routes/ui/veiculos.py, routes/ui/investidores.py, routes/ui/admin.py, and move shared validation/workflow code
-     into a service module rather than importing from routes/json.py.
-     Estimated effort: Medium
+Location: `bases/xtreme_system/api/routes/ui.py:263-412, 668-723`
+Impact: High
+Category: Reliability
+Estimated effort: Medium
 
-  6. List/search/export paths load whole tables and sort in Python
-     Location: bases/xtreme_system/api/route_factories.py:193, bases/xtreme_system/api/route_factories.py:204, bases/xtreme_system/api/route_factories.py:255, bases/
-     xtreme_system/api/routes/ui.py:92, bases/xtreme_system/api/routes/ui.py:221, bases/xtreme_system/api/routes/ui.py:793
-     Description: Generic UI CRUD does list_all(), then sorts and filters in memory, and exports all rows with no pagination. The vehicle and sales forms also load full
-     client/vehicle lists up front. This is readable today, but performance will degrade linearly with data size and the route layer owns too much query behavior.
-     Impact: Medium · Category: Performance
-     Concrete fix suggestion: Push sorting, filtering, and pagination into query functions in each component. Have the factory accept list_query(session, q, sort,
-     order, limit, offset) instead of always calling list_all().
-     Estimated effort: Medium
+Description:
+The upload helpers write files to disk before the database work is guaranteed to finish. If a later create or commit fails, the files stay behind.
 
-  7. Investor aggregates and “latest purchase” lookups do extra scans in Python
-     Location: components/xtreme_system/caixa/core.py:193, components/xtreme_system/compra/core.py:78, bases/xtreme_system/api/routes/ui.py:228, bases/xtreme_system/
-     api/routes/ui.py:798
-     Description: agregados_investidores() pulls all vehicles and all cash entries, then loops in Python. latest_by_veiculo_ids() loads all matching purchases and
-     deduplicates with setdefault(). These aren’t catastrophic yet, but they are preventable hotspots and they make the UI do more work than necessary on every render/
-     export.
-     Impact: Medium · Category: Performance
-     Concrete fix suggestion: Replace Python aggregation with grouped SQL, and replace latest_by_veiculo_ids() with a window function or subquery that selects only the
-     newest purchase per vehicle.
-     Estimated effort: Medium
+Why it matters:
+Storage slowly fills with orphan files and the UI/database state diverges.
 
-  8. File upload persistence is not atomic and cleanup is opportunistic
-     Location: bases/xtreme_system/api/routes/ui.py:373, bases/xtreme_system/api/routes/ui.py:395, bases/xtreme_system/api/routes/ui.py:442, bases/xtreme_system/api/
-     routes/ui.py:707
-     Description: Files are written first, then DB rows are created, and each DB create commits independently. If a later insert fails, orphan files remain. The reverse
-     case is also handled lazily: missing files are only cleaned up when someone opens the modal. This affects correctness, maintainability, and recovery behavior, and
-     there are no failure-path tests around it.
-     Impact: Medium · Category: Maintainability
-     Concrete fix suggestion: Write to a temp path, stage DB rows in one transaction, then rename files after commit. On exception, delete temp files immediately.
-     Estimated effort: Medium
+Concrete fix suggestion:
+Track every written path and delete them on exception, or stage them in a temp directory and move them only after the DB work succeeds.
 
-  9. Sale creation blocks on a synchronous external WhatsApp call
-     Location: bases/xtreme_system/api/routes/json.py:198, bases/xtreme_system/api/routes/ui.py:115, components/xtreme_system/whatsapp/core.py:90
-     Description: Both JSON and UI sale creation call whatsapp.notificar_venda() inline after create, and _enviar() can block for up to 10 seconds. That couples user-
-     facing latency to an external service. Existing tests mock _enviar(), so the suite never exercises timeout or slow-path behavior.
-     Impact: Medium · Category: Performance
-     Concrete fix suggestion:
+Example:
+```py
+saved = []
+try:
+    saved.append(path)
+    ...
+except Exception:
+    for p in saved:
+        p.unlink(missing_ok=True)
+    raise
+```
 
-  # minimal
-  background_tasks.add_task(whatsapp.notificar_venda, session, venda_obj)
+## Opportunity 4: User actions are missing audit attribution
 
-  Better: persist an outbox row and deliver notifications asynchronously.
-  Estimated effort: Medium
+Location: `bases/xtreme_system/api/routes/json.py:61-93`, `bases/xtreme_system/api/routes/ui.py:1194-1310`, `components/xtreme_system/usuario/core.py:58-114`
+Impact: High
+Category: Error handling and logging
+Estimated effort: Low
 
-  10. Operational failures are handled inconsistently: some are double-logged, others are silently swallowed
-     Location: bases/xtreme_system/api/setup.py:61, bases/xtreme_system/api/setup.py:177, bases/xtreme_system/api/routes/ui.py:923
-     Description: Unhandled exceptions are logged once in _request_context() and again in the global exception handler, which creates noisy duplicate logs. On the other
-     side, ui_investidor_criar() catches broad Exception around the initial aporte and returns success even when that part fails. That’s the worst of both worlds for
-     ops: too much noise on one path, too little signal on another.
-     Impact: Medium · Category: Error handling and logging
-     Concrete fix suggestion: Log unhandled exceptions in one place only, and narrow the investor aporte handler to parsing/validation exceptions. For persistence
-     failures, either fail the request or make the whole flow transactional.
-     Estimated effort: Low
+Description:
+Most write paths set `session.info["usuario_id"]`, but the manual user-management routes do not. Their audit rows end up with `usuario_id=None`.
+
+Why it matters:
+You lose the ability to answer who created, edited, or deleted users and passwords.
+
+Concrete fix suggestion:
+Set the actor in every direct user-management handler before calling the model layer.
+
+Example:
+```py
+session.info["usuario_id"] = user.id
+usuario.change_password(session, obj, nova_senha)
+```
+
+## Opportunity 5: Profile delete bypasses audit on linked users
+
+Location: `components/xtreme_system/perfil/core.py:64-70`
+Impact: Medium
+Category: Maintainability
+Estimated effort: Low
+
+Description:
+`perfil.delete()` nulls every linked user's `perfil_id` directly, then deletes the profile. Those user updates are never audited.
+
+Why it matters:
+Deleting one profile mutates multiple users, but only the profile delete itself is visible in the audit trail.
+
+Concrete fix suggestion:
+Use the audited user setter for each affected user, or record explicit audit rows for the unlink step.
+
+Example:
+```py
+for user in session.query(Usuario).filter_by(perfil_id=obj.id):
+    usuario.set_perfil(session, user, None)
+```
+
+## Opportunity 6: Sale routes accept invalid seller IDs
+
+Location: `bases/xtreme_system/api/routes/json.py:99-120`, `bases/xtreme_system/api/routes/ui.py:115-133`
+Impact: Medium
+Category: Correctness
+Estimated effort: Low
+
+Description:
+`VendaCreate` has `vendedor_id`, but `_validate_cliente_veiculo_fks()` only checks `cliente_id` and `veiculo_id`. A bad seller ID falls through to a database error.
+
+Why it matters:
+A valid-looking sale request can become a 500 instead of a clear 400.
+
+Concrete fix suggestion:
+Validate `vendedor_id` in the shared helper before calling `venda.create()`.
+
+Example:
+```py
+if getattr(data, "vendedor_id", None) is not None and usuario.get(session, data.vendedor_id) is None:
+    raise HTTPException(status_code=400, detail="vendedor_id inexistente")
+```
+
+## Opportunity 7: Rate limiting is process-local
+
+Location: `bases/xtreme_system/api/setup.py:81-145`
+Impact: Medium
+Category: Reliability
+Estimated effort: Medium
+
+Description:
+The limiter keeps counters in memory. Each worker has its own counters, so the effective limit changes with process count and resets on restart.
+
+Why it matters:
+Production behavior becomes inconsistent as soon as the app runs with more than one process or restarts often.
+
+Concrete fix suggestion:
+Move the counters to a shared store like Redis, or document that the limiter is dev-only.
+
+Example:
+```py
+# store hit timestamps in Redis instead of a local deque
+```
+
+## Opportunity 8: Investor creation hides a failed initial aporte
+
+Location: `bases/xtreme_system/api/routes/ui.py:900-943`
+Impact: Medium
+Category: Error handling and logging
+Estimated effort: Low
+
+Description:
+`ui_investidor_criar()` catches `Exception` around the optional initial aporte and still returns success.
+
+Why it matters:
+Users can create an investor and think the initial capital entry worked when it was silently skipped.
+
+Concrete fix suggestion:
+Only catch amount parsing errors; let DB write failures roll back the request.
+
+Example:
+```py
+try:
+    valor = Decimal(valor_str.replace(",", "."))
+except InvalidOperation:
+    ...
+```
+
+## Opportunity 9: Investor dashboards do full-table work in Python
+
+Location: `bases/xtreme_system/api/routes/ui.py:793-834`, `components/xtreme_system/caixa/core.py:192-209`
+Impact: Medium
+Category: Performance
+Estimated effort: Medium
+
+Description:
+The investor page computes balances and aggregates by loading all vehicles and cash rows into Python, then sorting again in memory.
+
+Why it matters:
+Every dashboard render gets more expensive as rows grow, and the same scans happen again for export.
+
+Concrete fix suggestion:
+Push the sums and counts into grouped SQL and sort on the database side where possible.
+
+Example:
+```py
+session.query(LancamentoInvestimento.investidor_id, func.sum(...)).group_by(...)
+```
+
+## Opportunity 10: GET requests mutate state while cleaning uploads
+
+Location: `bases/xtreme_system/api/routes/ui.py:294-300, 436-446`
+Impact: Low
+Category: Correctness
+Estimated effort: Low
+
+Description:
+Opening the image/document modal deletes DB rows if the underlying file is missing. That cleanup happens inside a read handler.
+
+Why it matters:
+A transient storage problem or temporary mount issue can become a data-loss event just by rendering the page.
+
+Concrete fix suggestion:
+Move orphan cleanup to an explicit maintenance path or to the delete/upload handlers, not the GET route.
+
+Example:
+```py
+if path is not None and not path.exists():
+    return templates.TemplateResponse(...)
+```
