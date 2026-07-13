@@ -1223,6 +1223,7 @@ def ui_usuario_criar(
     if usuario.get_by_username(session, username) is not None:
         erro = "username já existe"
     else:
+        session.info["usuario_id"] = user.id
         usuario.create(
             session,
             usuario.UsuarioCreate(
@@ -1259,6 +1260,7 @@ def ui_usuario_excluir(
             status_code=400,
         )
     obj = _found(usuario.get(session, user_id), "Usuário")
+    session.info["usuario_id"] = user.id
     usuario.delete(session, obj)
     return templates.TemplateResponse(
         request,
@@ -1290,6 +1292,7 @@ def ui_usuario_senha_alterar(
     nova_senha: Annotated[str, Form()],
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
+    session.info["usuario_id"] = user.id
     usuario.change_password(session, obj, nova_senha)
     return templates.TemplateResponse(
         request,
@@ -1325,6 +1328,7 @@ def ui_usuario_perfil_alterar(
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
+    session.info["usuario_id"] = user.id
     usuario.set_perfil(session, obj, perfil_id)
     return templates.TemplateResponse(
         request,

@@ -4,7 +4,7 @@ import contextlib
 import re
 from collections.abc import Iterator
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -1023,3 +1023,58 @@ def test_api_auditoria_vendedor_forbidden(client: TestClient) -> None:
     ).json()["access_token"]
     resp = client.get("/auditoria", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 403
+
+
+def test_ui_usuario_management_atribui_admin_na_auditoria(
+    client: TestClient,
+) -> None:
+    """Create/trocar-senha/perfil/delete de usuário pela UI devem atribuir o admin
+    como autor nas linhas de auditoria (não None)."""
+    _login_admin(client)
+    headers = _admin_headers(client)
+    admin_id = next(
+        u["id"]
+        for u in client.get("/usuarios", headers=headers).json()
+        if u["username"] == "admin"
+    )
+
+    # CREATE via UI
+    resp = client.post(
+        "/ui/usuarios",
+        data={"username": "alvo_ui", "senha": "abc", "papel": "vendedor"},
+    )
+    assert resp.status_code == 200
+    alvo_id = next(
+        u["id"]
+        for u in client.get("/usuarios", headers=headers).json()
+        if u["username"] == "alvo_ui"
+    )
+
+    # UPDATE senha via UI
+    assert (
+        client.post(
+            f"/ui/usuarios/{alvo_id}/senha", data={"nova_senha": "nova"}
+        ).status_code
+        == 200
+    )
+
+    # UPDATE perfil via UI (perfil_id=None)
+    assert client.post(f"/ui/usuarios/{alvo_id}/perfil", data={}).status_code == 200
+
+    # DELETE via UI
+    assert client.post(f"/ui/usuarios/{alvo_id}/excluir").status_code == 200
+
+    rows = client.get(
+        "/auditoria", params={"tabela": "usuario"}, headers=headers
+    ).json()
+    por_acao: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        if r["registro_id"] == alvo_id:
+            por_acao.setdefault(r["tipo_acao"], []).append(r)
+
+    assert por_acao["CREATE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["CREATE"])
+    assert por_acao["UPDATE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["UPDATE"])
+    assert por_acao["DELETE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["DELETE"])
