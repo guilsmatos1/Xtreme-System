@@ -5,26 +5,17 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 
+from tests.database import create_test_engine
 from xtreme_system.api.core import app
-from xtreme_system.database.core import Base, get_session
+from xtreme_system.database.core import get_session
 from xtreme_system.usuario import core as usuario
 
 
 @pytest.fixture
 def client() -> Iterator[TestClient]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    event.listen(
-        engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     with Session(engine) as session:
         usuario.create(
             session,

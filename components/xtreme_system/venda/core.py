@@ -31,7 +31,7 @@ class Venda(Base):
     vendedor_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuario.id"), index=True
     )
-    data_venda: Mapped[date] = mapped_column(Date)
+    data_venda: Mapped[date | None] = mapped_column(Date)
     valor_venda: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     valor_entrada: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
@@ -80,7 +80,7 @@ class VendaRead(BaseModel):
     cliente: ClienteRead
     veiculo: VeiculoRead
     vendedor: UsuarioRead | None
-    data_venda: date
+    data_venda: date | None
     valor_venda: Decimal
     valor_entrada: Decimal | None
     debitos: Decimal | None

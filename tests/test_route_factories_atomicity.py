@@ -3,26 +3,19 @@ from collections.abc import Iterator
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 
+from tests.database import create_test_engine
 from xtreme_system.api.deps import get_current_user, require_admin
 from xtreme_system.api.route_factories import register_crud_routes
-from xtreme_system.database.core import Base, get_session
+from xtreme_system.database.core import get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 
 
 @pytest.fixture
 def atomic_client() -> Iterator[tuple[TestClient, FastAPI, Session]]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-        future=True,
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     app = FastAPI()
     with Session(engine) as session:
         admin = usuario.create(

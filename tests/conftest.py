@@ -2,11 +2,10 @@ import os
 from collections.abc import Iterator
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from tests.database import create_test_engine
 from xtreme_system.api.setup import reset_rate_limiters
-from xtreme_system.database.core import Base
 
 
 def pytest_configure() -> None:
@@ -24,9 +23,8 @@ def _reset_rate_limiters() -> None:
 
 @pytest.fixture
 def db_session() -> Iterator[Session]:
-    """Sessão isolada em SQLite in-memory com o schema do Base criado."""
-    engine = create_engine("sqlite://", future=True)
-    Base.metadata.create_all(engine)
+    """Sessão isolada com schema migrado em Postgres ou SQLite local."""
+    engine = create_test_engine()
     maker = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     with maker() as session:
         yield session

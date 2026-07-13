@@ -4,13 +4,12 @@ from collections.abc import Iterator
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from tests.database import create_test_engine
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.caixa import core as caixa
-from xtreme_system.database.core import Base
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
@@ -20,11 +19,7 @@ from xtreme_system.veiculo import core as veiculo
 
 @pytest.fixture
 def session() -> Iterator[Session]:
-    engine = create_engine("sqlite://")
-    event.listen(
-        engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     with Session(engine) as s:
         yield s
 
