@@ -99,3 +99,7 @@ Rules:
 ## 6. RTK
 
 RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.
+
+
+
+&nbsp;

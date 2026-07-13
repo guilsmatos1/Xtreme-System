@@ -1,5 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [".agents/skills"]
+  },
   "plugin": [
     "./.opencode/plugins/ponytail/.opencode/plugins/ponytail.mjs",
     "./.opencode/plugins/graphify.js",
