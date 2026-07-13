@@ -7,13 +7,12 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
+from tests.database import create_test_engine
 from xtreme_system.api.deps import get_ui_user
 from xtreme_system.api.route_factories import _sort_key, register_ui_simples
-from xtreme_system.database.core import Base, get_session
+from xtreme_system.database.core import get_session
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
@@ -30,10 +29,7 @@ def test_register_ui_simples_aceita_templates_injetado(tmp_path: Path) -> None:
         (tmp_path / nome).write_text(conteudo)
     stub_templates = Jinja2Templates(directory=tmp_path)
 
-    engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     session = sessionmaker(bind=engine)()
     admin = usuario.create(
         session,

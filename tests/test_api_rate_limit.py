@@ -4,23 +4,17 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 
+from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.setup import _GERAL_LIMIT, _LOGIN_LIMIT
-from xtreme_system.database.core import Base, get_session
+from xtreme_system.database.core import get_session
 
 
 @pytest.fixture
 def client() -> Iterator[TestClient]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     with Session(engine) as session:
 
         def override() -> Iterator[Session]:

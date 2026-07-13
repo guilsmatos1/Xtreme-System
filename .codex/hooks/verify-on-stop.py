@@ -38,7 +38,7 @@ def main() -> int:
         return 0
 
     result = subprocess.run(
-        ["uv", "run", "pre-commit", "run", "--all-files"],
+        ["scripts/agent-finish.sh"],
         cwd=root,
         capture_output=True,
         text=True,
@@ -53,8 +53,8 @@ def main() -> int:
             {
                 "decision": "block",
                 "reason": (
-                    "Post-edit checks failed "
-                    "(uv run pre-commit run --all-files):\n\n"
+                    "Agent finish hook failed "
+                    "(scripts/agent-finish.sh):\n\n"
                     f"{output}\n\nFix the failures, then stop again."
                 ),
             }

@@ -5,12 +5,11 @@ from contextlib import closing
 
 import pytest
 import uvicorn
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from tests.database import create_test_engine
 
 from xtreme_system.api.core import app
-from xtreme_system.database.core import Base, get_session
+from xtreme_system.database.core import get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -27,15 +26,7 @@ def browser_context_args(browser_context_args: dict[str, object]) -> dict[str, o
 
 @pytest.fixture
 def live_server_url() -> Iterator[str]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    event.listen(
-        engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
-    )
-    Base.metadata.create_all(engine)
+    engine = create_test_engine()
     maker = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
     with maker() as session:
