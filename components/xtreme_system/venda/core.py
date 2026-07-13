@@ -98,12 +98,10 @@ def get(session: Session, venda_id: int) -> Venda | None:
     return crud.get(session, Venda, venda_id)
 
 
-def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo | None:
+def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
     if status == StatusVenda.concluido:
         return StatusVeiculo.vendido
-    if status == StatusVenda.cancelado:
-        return StatusVeiculo.disponivel
-    return None
+    return StatusVeiculo.disponivel
 
 
 def _sincronizar_status_veiculo(
@@ -124,9 +122,8 @@ def _sincronizar_status_veiculo(
         if veiculo_anterior is not None:
             veiculo_anterior.status = StatusVeiculo.disponivel
             sincronizado = True
-    if status_veiculo is not None:
-        obj.veiculo.status = status_veiculo
-        sincronizado = True
+    obj.veiculo.status = status_veiculo
+    sincronizado = True
     if not sincronizado:
         return obj
     session.commit()
