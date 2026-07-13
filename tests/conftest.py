@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 
 import pytest
@@ -6,6 +7,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from xtreme_system.api.setup import reset_rate_limiters
 from xtreme_system.database.core import Base
+
+
+def pytest_configure() -> None:
+    # Garante segredo JWT em ambientes sem .env (ex.: pre-commit, CI) antes
+    # do lru_cache de get_settings() ser populado por qualquer rota de login.
+    os.environ.setdefault("AUTH_SECRET_KEY", "test-secret-key")
 
 
 @pytest.fixture(autouse=True)

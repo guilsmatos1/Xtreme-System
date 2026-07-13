@@ -60,10 +60,11 @@ def login(
 
 @app.post("/usuarios", response_model=usuario.UsuarioRead, status_code=201)
 def criar_usuario(
-    data: usuario.UsuarioCreate, session: SessionDep, _: AdminUser
+    data: usuario.UsuarioCreate, session: SessionDep, admin: AdminUser
 ) -> usuario.Usuario:
     if usuario.get_by_username(session, data.username) is not None:
         raise HTTPException(status_code=400, detail="username já existe")
+    session.info["usuario_id"] = admin.id
     return usuario.create(session, data)
 
 
@@ -79,6 +80,7 @@ def deletar_usuario(
     if user_id == current.id:
         raise HTTPException(status_code=400, detail="não pode excluir a si mesmo")
     obj = _found(usuario.get(session, user_id), "Usuário")
+    session.info["usuario_id"] = current.id
     usuario.delete(session, obj)
 
 
@@ -86,10 +88,11 @@ def deletar_usuario(
 def trocar_senha_usuario(
     user_id: int,
     session: SessionDep,
-    _: AdminUser,
+    admin: AdminUser,
     nova_senha: Annotated[str, Form()],
 ) -> None:
     obj = _found(usuario.get(session, user_id), "Usuário")
+    session.info["usuario_id"] = admin.id
     usuario.change_password(session, obj, nova_senha)
 
 

@@ -1,6 +1,7 @@
 """API auth: login, proteção por autenticação e por papel."""
 
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -152,6 +153,53 @@ def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     # login com a nova senha deve funcionar
     resp2 = client.post("/login", data={"username": "vendedor2", "password": "nova123"})
     assert resp2.status_code == 200
+
+
+def test_api_usuario_management_atribui_admin_na_auditoria(
+    client: TestClient,
+) -> None:
+    """Create/trocar-senha/delete de usuário pela API JSON devem atribuir o admin
+    como autor nas linhas de auditoria (não None)."""
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    usuarios = client.get("/usuarios", headers=headers).json()
+    admin_id = next(u["id"] for u in usuarios if u["username"] == "admin")
+
+    # CREATE
+    novo = client.post(
+        "/usuarios",
+        json={"username": "alvo", "senha": "s", "papel": "vendedor"},
+        headers=headers,
+    )
+    assert novo.status_code == 201
+    alvo_id = novo.json()["id"]
+
+    # UPDATE (trocar senha)
+    assert (
+        client.post(
+            f"/usuarios/{alvo_id}/senha",
+            data={"nova_senha": "nova"},
+            headers=headers,
+        ).status_code
+        == 204
+    )
+
+    # DELETE
+    assert client.delete(f"/usuarios/{alvo_id}", headers=headers).status_code == 204
+
+    rows = client.get(
+        "/auditoria", params={"tabela": "usuario"}, headers=headers
+    ).json()
+    por_acao: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        if r["registro_id"] == alvo_id:
+            por_acao.setdefault(r["tipo_acao"], []).append(r)
+
+    assert por_acao["CREATE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["CREATE"])
+    assert por_acao["UPDATE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["UPDATE"])
+    assert por_acao["DELETE"]
+    assert all(r["usuario_id"] == admin_id for r in por_acao["DELETE"])
 
 
 def test_placa_duplicada_retorna_400(client: TestClient) -> None:
