@@ -9,8 +9,6 @@ if [[ -z "${current_branch}" ]]; then
   exit 1
 fi
 
-scripts/agent-check.sh
-
 if [[ -f graphify-out/graph.json ]]; then
   graphify update .
 fi

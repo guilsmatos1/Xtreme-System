@@ -8,9 +8,6 @@ dist/
 build/
 *.egg-info/
 .coverage
-.codex/.hook-state/
-.claude/.hook-state/
-graphify-out/
 
 # Git worktrees
 .worktrees/
