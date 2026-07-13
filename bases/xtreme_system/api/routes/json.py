@@ -1,7 +1,6 @@
 """Rotas JSON: autenticação, usuários e CRUD dos recursos de negócio."""
 
 from datetime import date
-from functools import partial
 from typing import Annotated, Any
 
 from fastapi import Depends, Form, HTTPException
@@ -13,6 +12,10 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
 from xtreme_system.api.route_factories import register_crud_routes
+from xtreme_system.api.routes.workflows import (
+    validate_cliente_veiculo_fks,
+    validate_veiculo_fks,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
@@ -96,33 +99,6 @@ def trocar_senha_usuario(
     usuario.change_password(session, obj, nova_senha)
 
 
-# ---- CRUD genérico ----
-
-
-def _validate_fks(session: Session, data: Any, *, update: bool = False) -> None:
-    inv_id = data.investidor_id
-    inv_valid = (not update or inv_id is not None) and investidor.get(
-        session, inv_id
-    ) is None
-    if inv_valid:
-        raise HTTPException(status_code=400, detail="investidor_id inexistente")
-    if (
-        not update
-        and hasattr(data, "placa")
-        and veiculo.get_by_placa(session, data.placa)
-    ):
-        raise HTTPException(status_code=400, detail="placa já cadastrada")
-
-
-def _validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
-    cli_id = getattr(data, "cliente_id", None)
-    vei_id = getattr(data, "veiculo_id", None)
-    if cli_id is not None and cliente.get(session, cli_id) is None:
-        raise HTTPException(status_code=400, detail="cliente_id inexistente")
-    if vei_id is not None and veiculo.get(session, vei_id) is None:
-        raise HTTPException(status_code=400, detail="veiculo_id inexistente")
-
-
 # ---- Investidores ----
 
 register_crud_routes(
@@ -145,8 +121,10 @@ register_crud_routes(
     read_schema=veiculo.VeiculoRead,
     create_schema=veiculo.VeiculoCreate,
     update_schema=veiculo.VeiculoUpdate,
-    before_create=partial(_validate_fks),
-    before_update=lambda session, _obj, data: _validate_fks(session, data, update=True),
+    before_create=validate_veiculo_fks,
+    before_update=lambda session, _obj, data: validate_veiculo_fks(
+        session, data, update=True
+    ),
     before_delete=caixa.deletar_lancamento_veiculo,
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
@@ -206,8 +184,8 @@ register_crud_routes(
     read_schema=venda.VendaRead,
     create_schema=venda.VendaCreate,
     update_schema=venda.VendaUpdate,
-    before_create=_validate_cliente_veiculo_fks,
-    before_update=lambda session, _obj, data: _validate_cliente_veiculo_fks(
+    before_create=validate_cliente_veiculo_fks,
+    before_update=lambda session, _obj, data: validate_cliente_veiculo_fks(
         session, data
     ),
     after_create=whatsapp.notificar_venda,
@@ -224,8 +202,8 @@ register_crud_routes(
     read_schema=compra.CompraRead,
     create_schema=compra.CompraCreate,
     update_schema=compra.CompraUpdate,
-    before_create=_validate_cliente_veiculo_fks,
-    before_update=lambda session, _obj, data: _validate_cliente_veiculo_fks(
+    before_create=validate_cliente_veiculo_fks,
+    before_update=lambda session, _obj, data: validate_cliente_veiculo_fks(
         session, data
     ),
 )
