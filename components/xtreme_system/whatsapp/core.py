@@ -8,6 +8,7 @@ import structlog
 from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.venda.core import Venda
 
@@ -49,7 +50,7 @@ def get_config(session: Session) -> WhatsappConfig:
     if config is None:
         config = WhatsappConfig(id=_CONFIG_ID)
         session.add(config)
-        session.commit()
+        crud.commit(session)
         session.refresh(config)
     return config
 
@@ -61,7 +62,7 @@ def atualizar_config(session: Session, data: WhatsappConfigUpdate) -> WhatsappCo
     config.evolution_instance = data.evolution_instance
     config.evolution_group_id = data.evolution_group_id
     config.mensagem_template = data.mensagem_template
-    session.commit()
+    crud.commit(session)
     session.refresh(config)
     return config
 

@@ -6,6 +6,19 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.auditoria.core import _snapshot, auditar
 
+DEFER_COMMIT_KEY = "crud_defer_commit"
+
+
+def defer_commit(session: Session) -> bool:
+    return bool(session.info.get(DEFER_COMMIT_KEY))
+
+
+def commit(session: Session) -> None:
+    if defer_commit(session):
+        session.flush()
+    else:
+        session.commit()
+
 
 def list_all[M](session: Session, model_cls: type[M]) -> list[M]:
     return list(session.query(model_cls).all())
@@ -27,7 +40,7 @@ def create[M](session: Session, model_cls: type[M], data: Any) -> M:
         registro_id=obj.id,  # type: ignore[attr-defined]
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    commit(session)
     return obj
 
 
@@ -45,7 +58,7 @@ def update[M](session: Session, obj: M, data: Any) -> M:
         dados_antes=antes,
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    commit(session)
     return obj
 
 
@@ -61,4 +74,4 @@ def delete(session: Session, obj: Any) -> None:
         registro_id=obj_id,
         dados_antes=antes,
     )
-    session.commit()
+    commit(session)
