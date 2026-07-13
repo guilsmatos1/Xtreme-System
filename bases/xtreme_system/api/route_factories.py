@@ -223,7 +223,29 @@ def _run_hook(
         hook(session, arg)
 
 
-def register_crud_ui_routes(
+def _conflict_form_response(
+    templates: Jinja2Templates,
+    request: Request,
+    form_template: str,
+    ctx: dict[str, Any],
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        form_template,
+        ctx,
+        status_code=409,
+    )
+
+
+def _write_conflict_detail(label: str) -> str:
+    return f"{label} já existe"
+
+
+def _delete_conflict_detail(label: str) -> str:
+    return f"{label} possui registros vinculados"
+
+
+def register_crud_ui_routes(  # noqa: PLR0915
     app: FastAPI,
     templates: Jinja2Templates,
     module: CrudModule,
@@ -287,13 +309,14 @@ def register_crud_ui_routes(
         session: Session,
         exc: ValidationError | HTTPException,
         obj: Any | None,
+        status_code: int = 400,
     ) -> HTMLResponse:
         erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return templates.TemplateResponse(
             request,
             form_template,
             {**ctx_form(session), item_key: obj, "erro": erro},
-            status_code=400,
+            status_code=status_code,
         )
 
     @app.get(prefix)
@@ -352,10 +375,22 @@ def register_crud_ui_routes(
                 _run_hook(before_create, session, data)
             except (ValidationError, HTTPException) as exc:
                 return _erro(request, session, exc, None)
-            _atomic_write(
-                session,
-                lambda: _create_with_hook(module, session, data, after_create),
-            )
+            try:
+                _atomic_write(
+                    session,
+                    lambda: _create_with_hook(module, session, data, after_create),
+                )
+            except IntegrityError:
+                return _conflict_form_response(
+                    templates,
+                    request,
+                    form_template,
+                    {
+                        **ctx_form(session),
+                        item_key: None,
+                        "erro": _write_conflict_detail(label),
+                    },
+                )
             return _ok(request, session, user)
 
     if register_update:
@@ -372,10 +407,22 @@ def register_crud_ui_routes(
                 _run_hook(before_update, session, data)
             except (ValidationError, HTTPException) as exc:
                 return _erro(request, session, exc, obj)
-            _atomic_write(
-                session,
-                lambda: _update_with_hook(module, session, obj, data, after_update),
-            )
+            try:
+                _atomic_write(
+                    session,
+                    lambda: _update_with_hook(module, session, obj, data, after_update),
+                )
+            except IntegrityError:
+                return _conflict_form_response(
+                    templates,
+                    request,
+                    form_template,
+                    {
+                        **ctx_form(session),
+                        item_key: obj,
+                        "erro": _write_conflict_detail(label),
+                    },
+                )
             return _ok(request, session, user)
 
     excluir_dep = require_ui_admin if delete_requires_admin else get_ui_user
@@ -389,10 +436,16 @@ def register_crud_ui_routes(
     ) -> HTMLResponse:
         session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
-        _atomic_write(
-            session,
-            lambda: _delete_with_hook(module, session, obj, before_delete),
-        )
+        erro = None
+        status_code = 200
+        try:
+            _atomic_write(
+                session,
+                lambda: _delete_with_hook(module, session, obj, before_delete),
+            )
+        except IntegrityError:
+            erro = _delete_conflict_detail(label)
+            status_code = 409
         lista = module.list_all(session)
         return templates.TemplateResponse(
             request,
@@ -400,8 +453,10 @@ def register_crud_ui_routes(
             {
                 "user": user,
                 list_key: lista,
+                "erro": erro,
                 **ctx_list(session, lista),
             },
+            status_code=status_code,
         )
 
 
