@@ -150,7 +150,7 @@ def criar_lancamento_veiculo(
         registro_id=obj.id,
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    crud.commit(session)
     return obj
 
 
@@ -175,7 +175,7 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
         dados_antes=antes,
         dados_depois=_snapshot(lancamento),
     )
-    session.commit()
+    crud.commit(session)
 
 
 def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:

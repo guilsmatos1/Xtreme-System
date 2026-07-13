@@ -126,7 +126,7 @@ def _sincronizar_status_veiculo(
     sincronizado = True
     if not sincronizado:
         return obj
-    session.commit()
+    crud.commit(session)
     session.refresh(obj)
     return obj
 

@@ -22,6 +22,7 @@ from xtreme_system.api.deps import (
     get_ui_user,
     require_ui_admin,
 )
+from xtreme_system.crud import core as crud
 from xtreme_system.usuario import core as usuario
 
 
@@ -49,6 +50,57 @@ def _safe_write(session: Session, op: Callable[[], Any], *, conflict_msg: str) -
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail=conflict_msg) from None
+
+
+def _atomic_write(session: Session, op: Callable[[], Any]) -> Any:
+    previous = session.info.get(crud.DEFER_COMMIT_KEY)
+    session.info[crud.DEFER_COMMIT_KEY] = True
+    try:
+        result = op()
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    else:
+        return result
+    finally:
+        if previous is None:
+            session.info.pop(crud.DEFER_COMMIT_KEY, None)
+        else:
+            session.info[crud.DEFER_COMMIT_KEY] = previous
+
+
+def _create_with_hook(
+    module: CrudModule,
+    session: Session,
+    data: Any,
+    after_create: Callable[[Session, Any], Any] | None,
+) -> Any:
+    obj = module.create(session, data)
+    _run_hook(after_create, session, obj)
+    return obj
+
+
+def _update_with_hook(
+    module: CrudModule,
+    session: Session,
+    obj: Any,
+    data: Any,
+    after_update: Callable[[Session, Any], Any] | None,
+) -> Any:
+    atualizado = module.update(session, obj, data)
+    _run_hook(after_update, session, atualizado)
+    return atualizado
+
+
+def _delete_with_hook(
+    module: CrudModule,
+    session: Session,
+    obj: Any,
+    before_delete: Callable[[Session, Any], None] | None,
+) -> None:
+    _run_hook(before_delete, session, obj)
+    module.delete(session, obj)
 
 
 def _csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:
@@ -90,6 +142,12 @@ def register_crud_routes(
     @app.post(prefix, response_model=read_schema, status_code=201)
     def _create(data: create_schema, session: SessionDep, user: AdminUser) -> Any:  # type: ignore[valid-type]
         session.info["usuario_id"] = user.id
+        return _atomic_write(
+            session,
+            lambda: _create_atomic(data, session),
+        )
+
+    def _create_atomic(data: Any, session: Session) -> Any:
         if before_create:
             before_create(session, data)
         obj = _safe_write(
@@ -109,6 +167,12 @@ def register_crud_routes(
         user: AdminUser,
     ) -> Any:
         session.info["usuario_id"] = user.id
+        return _atomic_write(
+            session,
+            lambda: _update_atomic(item_id, data, session),
+        )
+
+    def _update_atomic(item_id: int, data: Any, session: Session) -> Any:
         obj = _found(module.get(session, item_id), label)
         if before_update:
             before_update(session, obj, data)
@@ -124,6 +188,9 @@ def register_crud_routes(
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
         session.info["usuario_id"] = user.id
+        _atomic_write(session, lambda: _delete_atomic(item_id, session))
+
+    def _delete_atomic(item_id: int, session: Session) -> None:
         obj = _found(module.get(session, item_id), label)
         if before_delete:
             before_delete(session, obj)
@@ -285,8 +352,10 @@ def register_crud_ui_routes(
                 _run_hook(before_create, session, data)
             except (ValidationError, HTTPException) as exc:
                 return _erro(request, session, exc, None)
-            obj = module.create(session, data)
-            _run_hook(after_create, session, obj)
+            _atomic_write(
+                session,
+                lambda: _create_with_hook(module, session, data, after_create),
+            )
             return _ok(request, session, user)
 
     if register_update:
@@ -303,8 +372,10 @@ def register_crud_ui_routes(
                 _run_hook(before_update, session, data)
             except (ValidationError, HTTPException) as exc:
                 return _erro(request, session, exc, obj)
-            atualizado = module.update(session, obj, data)
-            _run_hook(after_update, session, atualizado)
+            _atomic_write(
+                session,
+                lambda: _update_with_hook(module, session, obj, data, after_update),
+            )
             return _ok(request, session, user)
 
     excluir_dep = require_ui_admin if delete_requires_admin else get_ui_user
@@ -318,8 +389,10 @@ def register_crud_ui_routes(
     ) -> HTMLResponse:
         session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
-        _run_hook(before_delete, session, obj)
-        module.delete(session, obj)
+        _atomic_write(
+            session,
+            lambda: _delete_with_hook(module, session, obj, before_delete),
+        )
         lista = module.list_all(session)
         return templates.TemplateResponse(
             request,
