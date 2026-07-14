@@ -1,16 +1,16 @@
-# Graph Report - xtreme-system  (2026-07-14)
+# Graph Report - octopus  (2026-07-14)
 
 ## Corpus Check
-- 161 files · ~59,025 words
+- 162 files · ~59,447 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1473 nodes · 3217 edges · 133 communities (118 shown, 15 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.73)
+- 1559 nodes · 3286 edges · 151 communities (132 shown, 19 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 208 edges (avg confidence: 0.74)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0397f370`
+- Built from commit: `17e93543`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -43,14 +43,14 @@
 - factories.py
 - core.py
 - core.py
-- Validação de Uploads Implementation Plan
+- query_list
 - Setup
 - test_auditoria.py
-- ui_dashboard
+- test_api_auth.py
 - core.py
 - ui_configuracoes_salvar
 - test_venda_whatsapp.py
-- core.py
+- test_documento_contrato_venda.py
 - vendas.py
 - test_auth.py
 - env.py
@@ -87,37 +87,55 @@
 - xtreme-system
 - UpdateSchemaT
 - HTMLResponse
-- Request
+- core.py
 - TestClient
+- salvar_arquivos
+- test_api_vendas.py
+- core.py
+- core.py
+- core.py
+- BaseModel
+- test_api_compras.py
+- custos_veiculos.py
+- test_api_rate_limit.py
+- Base
+- Any
+- HTMLResponse
+- RedirectResponse
+- Request
+- SessionDep
+- UIAdmin
+- UIUser
+- Decimal
 
 ## God Nodes (most connected - your core abstractions)
-1. `_found()` - 50 edges
-2. `_login_admin()` - 34 edges
-3. `create_test_engine()` - 30 edges
+1. `_found()` - 46 edges
+2. `create_test_engine()` - 34 edges
+3. `_login_admin()` - 34 edges
 4. `ne()` - 28 edges
 5. `se()` - 27 edges
 6. `ue()` - 27 edges
 7. `He()` - 26 edges
 8. `register_crud_ui_routes()` - 25 edges
 9. `e()` - 25 edges
-10. `Venda` - 23 edges
+10. `_admin_headers()` - 22 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `_reset_rate_limiters()` --calls--> `reset_rate_limiters()`  [INFERRED]
-  tests/conftest.py → bases/xtreme_system/api/setup.py
-- `test_sorted_list_aceita_sort_multicampo()` --calls--> `sorted_list()`  [INFERRED]
-  tests/test_route_factories_ui.py → bases/xtreme_system/api/crud_ui/query.py
-- `test_sorted_list_aplica_desc()` --calls--> `sorted_list()`  [INFERRED]
-  tests/test_route_factories_ui.py → bases/xtreme_system/api/crud_ui/query.py
-- `test_sorted_list_sem_spec_retorna_lista_original()` --calls--> `sorted_list()`  [INFERRED]
-  tests/test_route_factories_ui.py → bases/xtreme_system/api/crud_ui/query.py
-- `test_json_create_rolls_back_when_after_create_fails()` --calls--> `register_crud_routes()`  [INFERRED]
-  tests/test_route_factories_atomicity.py → bases/xtreme_system/api/route_factories.py
+- `test_salvar_documento_veiculo_remove_arquivo_se_create_falha()` --calls--> `salvar_arquivos()`  [INFERRED]
+  tests/test_ui.py → bases/xtreme_system/api/routes/ui_routes/uploads.py
+- `test_salvar_documentos_cliente_remove_arquivo_se_create_falha()` --calls--> `salvar_arquivos()`  [INFERRED]
+  tests/test_ui.py → bases/xtreme_system/api/routes/ui_routes/uploads.py
+- `test_salvar_arquivos_falha_create_remove_arquivo()` --calls--> `salvar_arquivos()`  [INFERRED]
+  tests/test_uploads.py → bases/xtreme_system/api/routes/ui_routes/uploads.py
+- `test_salvar_arquivos_happy_path()` --calls--> `salvar_arquivos()`  [INFERRED]
+  tests/test_uploads.py → bases/xtreme_system/api/routes/ui_routes/uploads.py
+- `test_salvar_arquivos_ignora_arquivo_sem_filename()` --calls--> `salvar_arquivos()`  [INFERRED]
+  tests/test_uploads.py → bases/xtreme_system/api/routes/ui_routes/uploads.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (133 total, 15 thin omitted)
+## Communities (151 total, 19 thin omitted)
 
 ### Community 0 - "htmx.min.js"
 Cohesion: 0.08
@@ -140,40 +158,40 @@ Cohesion: 0.16
 Nodes (20): create(), delete(), get(), list_all(), Perfil, PerfilCreate, PerfilRead, PerfilUpdate (+12 more)
 
 ### Community 5 - "core.py"
-Cohesion: 0.10
-Nodes (44): AdminUser, confirmar_fechamento_venda(), criar_usuario(), deletar_usuario(), _guard_lancamento_veiculo(), health(), listar_auditoria(), listar_fechamentos_vendas() (+36 more)
+Cohesion: 0.07
+Nodes (60): agregados_investidores(), create(), criar_lancamento_fechamento(), criar_lancamento_veiculo(), deletar_lancamento_veiculo(), delete(), _descricao_veiculo(), get() (+52 more)
 
 ### Community 6 - "core.py"
-Cohesion: 0.10
-Nodes (41): create(), delete(), funil_status(), get(), list_all(), list_by_cliente(), _mes_atual_inicio(), date (+33 more)
+Cohesion: 0.09
+Nodes (51): _calcular(), confirmar(), FechamentoVenda, FechamentoVendaCreate, FechamentoVendaError, FechamentoVendaPreview, FechamentoVendaRead, get() (+43 more)
 
 ### Community 7 - "setup.py"
-Cohesion: 0.11
-Nodes (26): _NaoAdminError, _NaoAutenticadoError, _NaoAutorizadoError, _handle_erro_interno(), _handle_nao_admin(), _handle_nao_autenticado(), _handle_nao_autorizado(), _limite_request_size() (+18 more)
+Cohesion: 0.07
+Nodes (38): get_current_user(), get_ui_user(), _NaoAdminError, _NaoAutenticadoError, _NaoAutorizadoError, CurrentUser, Depends, Request (+30 more)
 
 ### Community 8 - "Usuario"
-Cohesion: 0.06
-Nodes (61): Engine, db_session(), Session, Sessão isolada com schema migrado em Postgres ou SQLite local., _reset_rate_limiters(), create_test_engine(), Helpers for test database bootstrap., _reset_postgres_schema() (+53 more)
+Cohesion: 0.14
+Nodes (16): Engine, db_session(), Session, Sessão isolada com schema migrado em Postgres ou SQLite local., _reset_rate_limiters(), create_test_engine(), Helpers for test database bootstrap., _reset_postgres_schema() (+8 more)
 
 ### Community 9 - "veiculos.py"
-Cohesion: 0.09
-Nodes (76): _found(), Path, Shared helpers for HTMX route modules., _remover_upload(), _uploaded_file_path(), _uploads_cliente_dir(), _uploads_compra_dir(), _uploads_contrato_venda_dir() (+68 more)
+Cohesion: 0.20
+Nodes (20): _atualizar_veiculo(), _criar_veiculo(), _ctx_form_veiculo(), _ctx_lista_veiculos(), _erro_veiculo(), _ok_veiculo(), Any, HTMLResponse (+12 more)
 
 ### Community 10 - "Base"
 Cohesion: 0.06
 Nodes (32): API - Xtreme Motors, Authentication, Authorization, Available Resources, Change Password, Clientes (Clients), Confirmar fechamento, Consulta (+24 more)
 
 ### Community 11 - "API - Xtreme Motors"
-Cohesion: 0.26
-Nodes (18): Cliente, ClienteCreate, ClienteUpdate, create(), delete(), get(), get_by_documento(), list_all() (+10 more)
+Cohesion: 0.13
+Nodes (33): Cliente, ClienteCreate, ClienteRead, ClienteUpdate, create(), delete(), get(), get_by_documento() (+25 more)
 
 ### Community 12 - "core.py"
 Cohesion: 0.12
 Nodes (29): AfterWriteHook, BeforeCreateHook, BeforeDeleteHook, BeforeUpdateHook, CreateSchemaT, CsvRow, CtxForm, CtxList (+21 more)
 
 ### Community 13 - "usuarios.py"
-Cohesion: 0.18
-Nodes (18): _ctx_form_custo(), _ctx_list_custos(), _parse_custo_form(), Any, Session, HTMX routes for custos de veículos., _validar_veiculo_fk(), create() (+10 more)
+Cohesion: 0.38
+Nodes (10): create(), CustoVeiculo, CustoVeiculoCreate, CustoVeiculoUpdate, delete(), get(), list_all(), Session (+2 more)
 
 ### Community 14 - "Tabelas"
 Cohesion: 0.08
@@ -188,32 +206,32 @@ Cohesion: 0.10
 Nodes (48): ArgT, CrudModule, EntityT, Session, SearchableCrudModule, AfterWriteHook, BeforeCreateHook, BeforeDeleteHook (+40 more)
 
 ### Community 17 - "Design"
-Cohesion: 0.08
-Nodes (36): Any, CreateSchemaT, EntityT, ListFunc, SearchFunc, Session, SortSpec, UpdateSchemaT (+28 more)
+Cohesion: 0.20
+Nodes (15): _ConflictModule, Any, Path, TestClient, Prova que register_ui_simples recebe Jinja2Templates como parâmetro (não mais o, Nullable fields sort deterministically without crashing mixed lists., _stub_crud_client(), _StubItem (+7 more)
 
 ### Community 18 - "test_api_auth.py"
-Cohesion: 0.21
-Nodes (23): _baixar_contrato_venda(), _confirmar_fechamento_venda(), _criar_venda(), _ctx_form_venda(), _ctx_lista_vendas(), _detalhe_fechamento_venda(), _erro_venda(), _form_fechamento_venda() (+15 more)
+Cohesion: 0.18
+Nodes (25): Any, _baixar_contrato_venda(), _confirmar_fechamento_venda(), _criar_venda(), _ctx_form_venda(), _ctx_lista_vendas(), _detalhe_fechamento_venda(), _erro_venda() (+17 more)
 
 ### Community 19 - "auditoria.py"
 Cohesion: 0.12
 Nodes (16): Bug pre-existente — fora de escopo, Constantes, Contexto, Design, Design — Validação de uploads de imagens e documentos, Endpoints afetados, Error handling, Fluxo (+8 more)
 
 ### Community 20 - "test_venda_whatsapp.py"
-Cohesion: 0.23
-Nodes (29): _ctx_investidores(), _ctx_lancamentos(), _erro_lancamento(), _form_ctx_investidor(), _ok_lancamentos(), Any, HTMLResponse, Request (+21 more)
+Cohesion: 0.10
+Nodes (56): AdminUser, _found(), confirmar_fechamento_venda(), criar_usuario(), deletar_usuario(), _guard_lancamento_veiculo(), health(), listar_auditoria() (+48 more)
 
 ### Community 21 - "perfis.py"
-Cohesion: 0.10
-Nodes (45): agregados_investidores(), create(), criar_lancamento_fechamento(), criar_lancamento_veiculo(), deletar_lancamento_veiculo(), delete(), _descricao_veiculo(), get() (+37 more)
+Cohesion: 0.17
+Nodes (12): _FakeDoc, _FakeFile, _FakeSchema, _FakeUpload, MonkeyPatch, Path, Unit tests for uploads helpers (salvar_arquivos, remover_orfaos)., test_remover_orfaos_deleta_db_se_arquivo_inexistente() (+4 more)
 
 ### Community 22 - "core.py"
 Cohesion: 0.36
 Nodes (15): client(), _configurar(), _payload(), Any, MonkeyPatch, TestClient, Notificação de venda via WhatsApp: disparo best-effort no after_create., _seed() (+7 more)
 
 ### Community 23 - "core.py"
-Cohesion: 0.08
-Nodes (49): get_current_user(), get_ui_user(), CurrentUser, Depends, Request, SessionDep, UIUser, Dependências compartilhadas: sessão, autenticação (Bearer/cookie) e templates. (+41 more)
+Cohesion: 0.11
+Nodes (38): auditar(), Auditoria, AuditoriaRead, count(), _filtros(), get(), Any, date (+30 more)
 
 ### Community 24 - "core.py"
 Cohesion: 0.34
@@ -224,40 +242,40 @@ Cohesion: 0.40
 Nodes (4): Run migrations in 'offline' mode.      This configures the context with just a U, Run migrations in 'online' mode.      In this scenario we need to create an Engi, run_migrations_offline(), run_migrations_online()
 
 ### Community 26 - "core.py"
-Cohesion: 0.17
-Nodes (12): BaseModel, LancamentoInvestimentoRead, ClienteRead, CompraRead, FechamentoVendaRead, ParticipacaoFechamentoVendaRead, ImagemComprovanteVendaRead, ImagemDocumentoClienteRead (+4 more)
+Cohesion: 0.22
+Nodes (13): create(), delete(), get(), Investidor, InvestidorCreate, InvestidorRead, InvestidorUpdate, list_all() (+5 more)
 
 ### Community 27 - "core.py"
 Cohesion: 0.23
 Nodes (11): ClienteCreateFactory, _documento(), InvestidorCreateFactory, _next_id(), PerfilCreateFactory, _placa(), Factories de schemas Pydantic para testes., UsuarioCreateFactory (+3 more)
 
-### Community 28 - "Validação de Uploads Implementation Plan"
-Cohesion: 0.36
-Nodes (11): create(), delete(), get(), ImagemDocumentoCliente, ImagemDocumentoClienteCreate, ImagemDocumentoClienteUpdate, list_all(), list_by_cliente() (+3 more)
+### Community 28 - "query_list"
+Cohesion: 0.16
+Nodes (16): Any, CreateSchemaT, EntityT, ListFunc, SearchFunc, Session, SortSpec, UpdateSchemaT (+8 more)
 
 ### Community 29 - "Setup"
 Cohesion: 0.35
 Nodes (12): conflict_form_response(), csv_response(), error_response(), form_response(), list_response(), ok_response(), Any, EntityT (+4 more)
 
 ### Community 30 - "test_auditoria.py"
-Cohesion: 0.32
-Nodes (12): create(), delete(), DocumentoVeiculo, DocumentoVeiculoCreate, DocumentoVeiculoRead, DocumentoVeiculoUpdate, get(), list_all() (+4 more)
-
-### Community 32 - "ui_dashboard"
 Cohesion: 0.36
-Nodes (11): create(), delete(), get(), ImagemVeiculo, ImagemVeiculoCreate, ImagemVeiculoUpdate, list_all(), list_by_veiculo() (+3 more)
+Nodes (11): create(), delete(), DocumentoVeiculo, DocumentoVeiculoCreate, DocumentoVeiculoUpdate, get(), list_all(), list_by_veiculo() (+3 more)
+
+### Community 32 - "test_api_auth.py"
+Cohesion: 0.27
+Nodes (16): client(), TestClient, API auth: login, proteção por autenticação e por papel., Create/trocar-senha/delete de usuário pela API JSON devem atribuir o admin     c, test_admin_escreve(), test_admin_nao_pode_se_autoexcluir(), test_admin_pode_excluir_outro_admin(), test_admin_pode_trocar_senha_de_outro() (+8 more)
 
 ### Community 33 - "core.py"
-Cohesion: 0.15
-Nodes (24): create(), delete(), get(), Investidor, InvestidorCreate, InvestidorRead, InvestidorUpdate, list_all() (+16 more)
+Cohesion: 0.23
+Nodes (16): _comprovantes_modal(), _ctx_form_compra(), _parse_compra_form(), Any, default_factory, File, HTMLResponse, Request (+8 more)
 
 ### Community 35 - "test_venda_whatsapp.py"
 Cohesion: 0.40
 Nodes (4): downgrade(), Add trade and pending payment fields to venda table., Remove trade and pending payment fields from venda table., upgrade()
 
-### Community 36 - "core.py"
-Cohesion: 0.32
-Nodes (11): Base, create(), delete(), get(), ImagemComprovanteVenda, ImagemComprovanteVendaCreate, list_all(), list_by_venda() (+3 more)
+### Community 36 - "test_documento_contrato_venda.py"
+Cohesion: 0.25
+Nodes (14): Decimal, _build_cliente(), _build_veiculo(), _build_venda(), _extract_pdf_text(), Cliente, Venda, Geração de PDF do contrato de venda — isolada, sem HTTP/FastAPI. (+6 more)
 
 ### Community 37 - "vendas.py"
 Cohesion: 0.17
@@ -296,24 +314,24 @@ Cohesion: 0.40
 Nodes (3): Rotas HTMX (server-rendered). Auth por cookie httpOnly, paralela à API JSON., _UiCompatModule, ModuleType
 
 ### Community 46 - "_ctx_form_cliente"
-Cohesion: 0.36
-Nodes (10): create(), delete(), DocumentoProcuracao, DocumentoProcuracaoCreate, DocumentoProcuracaoRead, get(), list_all(), list_by_veiculo() (+2 more)
+Cohesion: 0.42
+Nodes (9): create(), delete(), DocumentoProcuracao, DocumentoProcuracaoCreate, get(), list_all(), list_by_veiculo(), Session (+1 more)
 
 ### Community 47 - "Page"
 Cohesion: 0.70
 Nodes (4): Page, _login(), test_login_admin_abre_veiculos(), test_wizard_htmx_cria_veiculo()
 
 ### Community 48 - "core.py"
-Cohesion: 0.36
-Nodes (10): create(), delete(), get(), ImagemComprovanteCompra, ImagemComprovanteCompraCreate, ImagemComprovanteCompraRead, list_all(), list_by_compra() (+2 more)
+Cohesion: 0.42
+Nodes (9): create(), delete(), get(), ImagemComprovanteCompra, ImagemComprovanteCompraCreate, list_all(), list_by_compra(), Session (+1 more)
 
 ### Community 49 - "CreateSchemaT"
-Cohesion: 0.33
-Nodes (13): Compra, CompraCreate, CompraUpdate, create(), delete(), get(), get_latest_by_veiculo(), latest_by_veiculo_ids() (+5 more)
+Cohesion: 0.35
+Nodes (14): client(), Decimal, TestClient, Fechamento financeiro de vendas., _seed_api(), _seed_venda(), session(), test_bloqueia_fechamento_duplicado_e_rateio_incompleto() (+6 more)
 
 ### Community 51 - "5c6914b729c6_index_fks_veiculo.py"
-Cohesion: 0.21
-Nodes (17): _ctx_form_cliente(), _ctx_lista_cliente(), Any, HTMLResponse, RedirectResponse, Request, Session, SessionDep (+9 more)
+Cohesion: 0.19
+Nodes (24): _ctx_form_cliente(), _ctx_lista_cliente(), _documentos_modal(), Any, default_factory, File, HTMLResponse, RedirectResponse (+16 more)
 
 ### Community 52 - "5dc6beff16d0_add_vendedor_id_to_venda.py"
 Cohesion: 0.40
@@ -335,13 +353,17 @@ Nodes (4): downgrade(), Create imagem_comprovante_compra table., Drop imagem_com
 Cohesion: 0.40
 Nodes (4): downgrade(), Rewrite legacy /media/veiculos URLs to /static/uploads/veiculos., Restore legacy /media/veiculos URLs., upgrade()
 
+### Community 71 - "codebase-analysis.md"
+Cohesion: 0.29
+Nodes (13): _cliente_vendedor_modal(), default_factory, File, HTMLResponse, Request, Session, SessionDep, UIAdmin (+5 more)
+
 ### Community 85 - "auditoria.py"
-Cohesion: 0.40
-Nodes (13): client(), TestClient, API vendas: CRUD via TestClient., Cria investidor, cliente e veiculo., _seed(), test_admin_cria_venda(), test_admin_lista_vendas(), test_atualizar_venda_concluida_para_pendente_libera_veiculo() (+5 more)
+Cohesion: 0.29
+Nodes (13): _comprovantes_modal(), default_factory, File, HTMLResponse, Request, Session, SessionDep, UIAdmin (+5 more)
 
 ### Community 86 - "Response"
-Cohesion: 0.36
-Nodes (10): create(), delete(), DocumentoContratoVenda, DocumentoContratoVendaCreate, DocumentoContratoVendaRead, get(), list_all(), list_by_venda() (+2 more)
+Cohesion: 0.28
+Nodes (11): Base, create(), delete(), DocumentoContratoVenda, DocumentoContratoVendaCreate, DocumentoContratoVendaRead, get(), list_all() (+3 more)
 
 ### Community 87 - "RedirectResponse"
 Cohesion: 0.22
@@ -355,25 +377,77 @@ Nodes (5): Session, Custos de veículos: CRUD e validações do componente., tes
 Cohesion: 0.40
 Nodes (4): downgrade(), Add km column to venda table., Remove km column from venda table., upgrade()
 
+### Community 128 - "UpdateSchemaT"
+Cohesion: 0.29
+Nodes (13): _imagem_modal(), default_factory, File, HTMLResponse, Request, Session, SessionDep, UIAdmin (+5 more)
+
+### Community 129 - "HTMLResponse"
+Cohesion: 0.29
+Nodes (13): _procuracao_modal(), default_factory, File, HTMLResponse, Request, Session, SessionDep, UIAdmin (+5 more)
+
+### Community 130 - "core.py"
+Cohesion: 0.27
+Nodes (12): atualizar_config(), _enviar(), _formatar_mensagem(), get_config(), notificar_venda(), _PlaceholderDict, Session, Notificação de venda via WhatsApp (Evolution API): config, formatação e envio. (+4 more)
+
+### Community 131 - "TestClient"
+Cohesion: 0.33
+Nodes (10): Path, Shared helpers for HTMX route modules., _remover_upload(), _uploaded_file_path(), _uploads_cliente_dir(), _uploads_compra_dir(), _uploads_contrato_venda_dir(), _uploads_dir() (+2 more)
+
+### Community 132 - "salvar_arquivos"
+Cohesion: 0.22
+Nodes (10): Any, BaseModel, Path, Session, UploadFile, Helpers de upload: salvar arquivos em disco + DB e remover registros órfãos., Persiste cada arquivo em disco e cria o registro no DB.      Se ``create_fn`` la, Remove do DB registros cujo arquivo em disco não existe mais. (+2 more)
+
+### Community 133 - "test_api_vendas.py"
+Cohesion: 0.40
+Nodes (13): client(), TestClient, API vendas: CRUD via TestClient., Cria investidor, cliente e veiculo., _seed(), test_admin_cria_venda(), test_admin_lista_vendas(), test_atualizar_venda_concluida_para_pendente_libera_veiculo() (+5 more)
+
+### Community 134 - "core.py"
+Cohesion: 0.36
+Nodes (11): create(), delete(), get(), ImagemDocumentoCliente, ImagemDocumentoClienteCreate, ImagemDocumentoClienteUpdate, list_all(), list_by_cliente() (+3 more)
+
+### Community 136 - "core.py"
+Cohesion: 0.36
+Nodes (11): create(), delete(), get(), ImagemVeiculo, ImagemVeiculoCreate, ImagemVeiculoUpdate, list_all(), list_by_veiculo() (+3 more)
+
+### Community 137 - "core.py"
+Cohesion: 0.42
+Nodes (9): create(), delete(), get(), ImagemComprovanteVenda, ImagemComprovanteVendaCreate, list_all(), list_by_venda(), Session (+1 more)
+
+### Community 138 - "BaseModel"
+Cohesion: 0.22
+Nodes (9): BaseModel, CustoVeiculoRead, DocumentoProcuracaoRead, DocumentoVeiculoRead, ImagemComprovanteCompraRead, ImagemComprovanteVendaRead, ImagemDocumentoClienteRead, ImagemVeiculoRead (+1 more)
+
+### Community 139 - "test_api_compras.py"
+Cohesion: 0.53
+Nodes (8): client(), TestClient, API compras: CRUD via TestClient., _seed(), test_admin_crud_compras(), test_compra_cliente_inexistente_retorna_400(), test_vendedor_nao_cria_compra(), _token()
+
+### Community 140 - "custos_veiculos.py"
+Cohesion: 0.43
+Nodes (7): _ctx_form_custo(), _ctx_list_custos(), _parse_custo_form(), Any, Session, HTMX routes for custos de veículos., _validar_veiculo_fk()
+
+### Community 141 - "test_api_rate_limit.py"
+Cohesion: 0.39
+Nodes (7): client(), TestClient, Rate limiting: tentativas de login e requests gerais da API., test_health_isento_de_rate_limit(), test_login_bloqueia_apos_limite(), test_requests_gerais_bloqueiam_apos_limite(), test_ui_login_bloqueia_apos_limite_e_retorna_html()
+
 ## Knowledge Gaps
 - **117 isolated node(s):** `inventory_api`, `xtreme-system`, `agent-finish.sh script`, `InvestidorCreateFactory`, `VendaCreateFactory` (+112 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **19 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `create_test_engine()` connect `Usuario` to `core.py`, `test_ui.py`, `core.py`, `auditoria.py`, `core.py`?**
-  _High betweenness centrality (0.091) - this node is a cross-community bridge._
-- **Why does `Base` connect `core.py` to `ui_dashboard`, `core.py`, `route_factories.py`, `core.py`, `core.py`, `a1b2c3d4e004_add_debitos_to_venda.py`, `API - Xtreme Motors`, `usuarios.py`, `_ctx_form_cliente`, `core.py`, `CreateSchemaT`, `perfis.py`, `Response`, `core.py`, `Validação de Uploads Implementation Plan`, `test_auditoria.py`?**
-  _High betweenness centrality (0.090) - this node is a cross-community bridge._
-- **Why does `_found()` connect `veiculos.py` to `create_test_engine`, `_found`, `core.py`, `test_api_auth.py`, `5c6914b729c6_index_fks_veiculo.py`, `test_venda_whatsapp.py`, `core.py`, `core.py`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Are the 48 inferred relationships involving `_found()` (e.g. with `HTTPException` and `confirmar_fechamento_venda()`) actually correct?**
-  _`_found()` has 48 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Helpers da UI CRUD HTMX.`, `Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade`, `Prova que register_ui_simples recebe Jinja2Templates como parâmetro (não mais o` to the rest of the system?**
-  _229 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `create_test_engine()` connect `Usuario` to `test_api_auth.py`, `test_ui.py`, `core.py`, `test_api_vendas.py`, `test_api_compras.py`, `core.py`, `test_api_rate_limit.py`, `CreateSchemaT`, `Design`, `core.py`?**
+  _High betweenness centrality (0.081) - this node is a cross-community bridge._
+- **Why does `Base` connect `Base` to `core.py`, `route_factories.py`, `core.py`, `core.py`, `core.py`, `core.py`, `a1b2c3d4e004_add_debitos_to_venda.py`, `core.py`, `API - Xtreme Motors`, `usuarios.py`, `_ctx_form_cliente`, `core.py`, `core.py`, `core.py`, `test_auditoria.py`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Why does `_found()` connect `test_venda_whatsapp.py` to `UpdateSchemaT`, `create_test_engine`, `core.py`, `_found`, `HTMLResponse`, `setup.py`, `codebase-analysis.md`, `veiculos.py`, `5c6914b729c6_index_fks_veiculo.py`, `auditoria.py`, `core.py`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+- **Are the 44 inferred relationships involving `_found()` (e.g. with `HTTPException` and `confirmar_fechamento_venda()`) actually correct?**
+  _`_found()` has 44 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `HTMX routes for vendas.`, `Retorna (cliente_existente, dados_novo_cliente, erro).`, `Documento de contrato de venda: model (FK venda), schemas e CRUD.` to the rest of the system?**
+  _239 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `htmx.min.js` be split into smaller, more focused modules?**
   _Cohesion score 0.0793040293040293 - nodes in this community are weakly interconnected._
 - **Should `test_ui.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.07157894736842105 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07087719298245614 - nodes in this community are weakly interconnected._
