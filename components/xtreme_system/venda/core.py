@@ -1,6 +1,6 @@
 """Venda: enum de status, model (com FKs), schemas e CRUD."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 
@@ -226,3 +226,45 @@ def ranking_vendedores(
     return [
         (usuario, count or 0, total or Decimal("0")) for usuario, count, total in rows
     ]
+
+
+def tendencia_por_periodo(
+    session: Session, periodo: str
+) -> list[tuple[str, int, Decimal]]:
+    """Retorna vendas agregadas por semana (30d/90d) ou mês (12m)."""
+    hoje = datetime.now(UTC).date()
+    if periodo == "12m":
+        mes_inicial = hoje.month - 11
+        ano_inicial = hoje.year
+        if mes_inicial <= 0:
+            mes_inicial += 12
+            ano_inicial -= 1
+        inicio = date(ano_inicial, mes_inicial, 1)
+        granularidade = "mes"
+    elif periodo == "90d":
+        inicio = hoje - timedelta(days=89)
+        granularidade = "semana"
+    else:
+        inicio = hoje - timedelta(days=29)
+        granularidade = "semana"
+
+    rows = (
+        session.query(Venda.data_venda, Venda.valor_venda)
+        .filter(Venda.data_venda >= inicio)
+        .filter(Venda.data_venda.isnot(None))
+        .filter(Venda.status != StatusVenda.cancelado)
+        .order_by(Venda.data_venda)
+        .all()
+    )
+
+    grupos: dict[str, tuple[int, Decimal]] = {}
+    for data_venda, valor in rows:
+        if granularidade == "mes":
+            chave = f"{data_venda.year:04d}-{data_venda.month:02d}"
+        else:
+            ano, semana, _ = data_venda.isocalendar()
+            chave = f"{ano:04d}-S{semana:02d}"
+        count, total = grupos.get(chave, (0, Decimal("0")))
+        grupos[chave] = count + 1, total + (valor or Decimal("0"))
+
+    return [(chave, count, total) for chave, (count, total) in grupos.items()]

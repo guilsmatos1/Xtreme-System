@@ -8,6 +8,11 @@
     <h1>{{ titulo }}</h1>
     <p class="page-head__subtitle">Resumo executivo de vendas e operações</p>
   </div>
+  <div class="page-head__actions">
+    {% for value, label in periodos.items() %}
+    <a class="btn btn--{{ 'primary' if periodo == value else 'ghost' }}" href="/ui/dashboard?periodo={{ value }}">{{ label }}</a>
+    {% endfor %}
+  </div>
 </div>
 
 <section class="stats" aria-label="KPIs de venda">
@@ -43,7 +48,33 @@
   {% endfor %}
 </section>
 
-<section>
+<section style="margin-top:var(--s-6)">
+  <h2 style="margin-bottom:var(--s-4)">Tendência de vendas por {{ tendencia_granularidade }}</h2>
+  {% if tendencia_vendas %}
+  <div class="table-wrap">
+    <table class="table--wide">
+      <thead><tr>
+        <th>Período</th>
+        <th>Vendas</th>
+        <th>Faturamento</th>
+      </tr></thead>
+      <tbody>
+        {% for label, count, total in tendencia_vendas %}
+        <tr>
+          <td>{{ label }}</td>
+          <td class="cell-num">{{ count }}</td>
+          <td class="cell-num">R$ {{ "{:,.0f}".format(total or 0) | replace(",", ".") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ ui.empty("cash", "Sem vendas no período", "Nenhuma venda foi registrada neste intervalo") }}
+  {% endif %}
+</section>
+
+<section style="margin-top:var(--s-6)">
   <h2 style="margin-bottom:var(--s-4)">Funil de vendas</h2>
   <div class="table-wrap">
     <table class="table--wide">

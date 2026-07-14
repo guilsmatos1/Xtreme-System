@@ -18,7 +18,17 @@ logger = structlog.get_logger(__name__)
 # ---- Dashboard (KPIs, admin-only) ----
 
 
-def _ctx_dashboard(session: Session) -> dict[str, Any]:
+PERIODOS_DASHBOARD = {
+    "30d": "30 dias",
+    "90d": "90 dias",
+    "12m": "12 meses",
+}
+
+
+def _ctx_dashboard(session: Session, periodo: str = "30d") -> dict[str, Any]:
+    if periodo not in PERIODOS_DASHBOARD:
+        periodo = "30d"
+
     resumo = veiculo.resumo_estoque(session)
     disponiveis, valor_estoque = resumo.get(
         veiculo.StatusVeiculo.disponivel, (0, Decimal("0"))
@@ -33,6 +43,8 @@ def _ctx_dashboard(session: Session) -> dict[str, Any]:
 
     return {
         "titulo": "Dashboard",
+        "periodo": periodo,
+        "periodos": PERIODOS_DASHBOARD,
         "disponiveis": disponiveis,
         "vendidos": vendidos,
         "valor_estoque": valor_estoque,
@@ -61,10 +73,14 @@ def _ctx_dashboard(session: Session) -> dict[str, Any]:
             for s in venda.StatusVenda
         ],
         "ranking_vendedores": venda.ranking_vendedores(session),
+        "tendencia_vendas": venda.tendencia_por_periodo(session, periodo),
+        "tendencia_granularidade": "mês" if periodo == "12m" else "semana",
     }
 
 
 @app.get("/ui/dashboard")
-def ui_dashboard(request: Request, session: SessionDep, user: UIAdmin) -> HTMLResponse:
-    ctx = {"user": user, **_ctx_dashboard(session)}
+def ui_dashboard(
+    request: Request, session: SessionDep, user: UIAdmin, periodo: str = "30d"
+) -> HTMLResponse:
+    ctx = {"user": user, **_ctx_dashboard(session, periodo)}
     return templates.TemplateResponse(request, "dashboard.html", ctx)
