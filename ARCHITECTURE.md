@@ -110,6 +110,7 @@ para autenticação (httpOnly, mesmo segredo JWT):
 | `/ui/clientes` | Redireciona para `/ui/clientes/compradores` |
 | `/ui/clientes/compradores` | Listagem de clientes com vendas registradas |
 | `/ui/clientes/vendedores` | Listagem de clientes com compras registradas |
+| `/ui/custos-veiculos` | Custos operacionais de veículos |
 | `/ui/vendas` | Listagem de vendas |
 | `/ui/usuarios` | Gestão de usuários |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
@@ -129,6 +130,7 @@ Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 | `venda/` | `Venda` | `cliente_id`, `veiculo_id`, `data_venda`, `valor_venda`, `valor_entrada`, `forma_pagamento`, `parcelas`, `status`, `observacoes` |
 | `caixa/` | `LancamentoCaixa` | `investidor_id`, `tipo` (aporte/retirada), `valor`, `descricao`, `origem` (manual/veiculo) |
 | `compra/` | — | Componente de compras (não montado nas rotas atuais) |
+| `custo_veiculo/` | `CustoVeiculo` | Custos operacionais por veículo, sem impacto em saldo de investidor |
 | `crud/` | — | Helpers CRUD compartilhados |
 | `documento_veiculo/` | — | Documentos de veículos (arquivos/imagens) |
 | `imagem_veiculo/` | — | Imagens de veículos |

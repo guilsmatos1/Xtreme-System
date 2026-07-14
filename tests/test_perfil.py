@@ -25,6 +25,7 @@ def test_admin_acessa_qualquer_pagina_mesmo_sem_perfil(db_session: Session) -> N
     assert perfil.pode_acessar(admin, "veiculos")
     assert perfil.pode_acessar(admin, "clientes")
     assert perfil.pode_acessar(admin, "compras")
+    assert perfil.pode_acessar(admin, "custos-veiculos")
 
 
 def test_vendedor_sem_perfil_nao_acessa_nada(db_session: Session) -> None:
@@ -33,13 +34,16 @@ def test_vendedor_sem_perfil_nao_acessa_nada(db_session: Session) -> None:
 
 
 def test_vendedor_acessa_apenas_paginas_do_seu_perfil(db_session: Session) -> None:
-    leitor = perfil.Perfil(nome="Leitor", paginas=["veiculos", "clientes", "compras"])
+    leitor = perfil.Perfil(
+        nome="Leitor", paginas=["veiculos", "clientes", "compras", "custos-veiculos"]
+    )
     db_session.add(leitor)
     db_session.flush()
     vendedor = _usuario(db_session, usuario.Papel.funcionario, leitor)
     assert perfil.pode_acessar(vendedor, "veiculos")
     assert perfil.pode_acessar(vendedor, "clientes")
     assert perfil.pode_acessar(vendedor, "compras")
+    assert perfil.pode_acessar(vendedor, "custos-veiculos")
     assert not perfil.pode_acessar(vendedor, "vendas")
 
 
@@ -60,6 +64,7 @@ def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil.pagina_da_rota("/ui/veiculos") == "veiculos"
     assert perfil.pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"
     assert perfil.pagina_da_rota("/ui/compras/1/comprovantes") == "compras"
+    assert perfil.pagina_da_rota("/ui/custos-veiculos") == "custos-veiculos"
     assert perfil.pagina_da_rota("/ui/usuarios") is None
     assert perfil.pagina_da_rota("/ui/dashboard") is None
     assert perfil.pagina_da_rota("/static/app.css") is None

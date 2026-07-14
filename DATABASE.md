@@ -144,6 +144,20 @@ Registro de compras de veículos.
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
 | `observacoes` | `VARCHAR` | Sim | - | |
 
+### `custo_veiculo`
+
+Custos operacionais associados a veículos. Esses registros não alteram saldo de investidor.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
+| `categoria` | `VARCHAR` | Não | - | Texto livre |
+| `descricao` | `VARCHAR` | Sim | - | |
+| `valor` | `NUMERIC(12,2)` | Não | - | Validado pela aplicação como `> 0` |
+| `data_custo` | `DATE` | Não | - | |
+| `criado_em` | `DATETIME` | Não | `now()` | |
+
 ### `documento_veiculo`
 
 Documentos associados a um veículo.
@@ -214,6 +228,7 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 - Um **cliente** pode ter várias **imagens de documentos**.
 - Um **veículo** pode estar em várias **vendas** (historicamente) — controle de status via aplicação.
 - Um **veículo** pode estar em várias **compras** (historicamente).
+- Um **veículo** pode ter vários **custos operacionais**.
 - Um **usuário** (vendedor) pode estar em várias **vendas**.
 - Uma **venda** pode ter vários **comprovantes**.
 - Uma **venda** pode ter vários **contratos** (PDF gerado ao concluir a venda).
@@ -240,6 +255,7 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `documento_contrato_venda` | `ix_documento_contrato_venda_venda_id` | `venda_id` | Não |
 | `compra` | `ix_compra_cliente_id` | `cliente_id` | Não |
 | `compra` | `ix_compra_veiculo_id` | `veiculo_id` | Não |
+| `custo_veiculo` | `ix_custo_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_veiculo_id` | `veiculo_id` | Sim |
 | `imagem_documento_cliente` | `ix_imagem_documento_cliente_cliente_id` | `cliente_id` | Não |

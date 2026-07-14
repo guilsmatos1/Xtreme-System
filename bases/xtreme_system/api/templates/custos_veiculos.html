@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Custos de Veículos{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Custos de Veículos</h1>
+    <p class="page-head__subtitle">Registre manutenção, peças e outros custos operacionais</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost" href="/ui/custos-veiculos/exportar">
+      {{ ui.icon("cash") }} Exportar dados
+    </a>
+    {% if user.papel.value == 'admin' %}
+    <button class="btn btn--primary" hx-get="/ui/custos-veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo custo
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<section class="stats" aria-label="Resumo de custos">
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("cash") }} Total de custos</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_custos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+    <div class="stat__hint">custos visíveis</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("tag") }} Lançamentos</div>
+    <div class="stat__value cell-num">{{ quantidade_custos }}</div>
+    <div class="stat__hint">registros visíveis</div>
+  </article>
+</section>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead>
+      <tr>
+        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>Placa</th>
+        <th>{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>Descrição</th>
+        {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+      </tr>
+    </thead>
+    {% include "_linhas_custos_veiculos.html" %}
+  </table>
+</div>
+{% endblock %}

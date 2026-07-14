@@ -21,6 +21,7 @@ for _module_name in (
     "auth",
     "clientes",
     "compras",
+    "custos_veiculos",
     "configuracoes",
     "dashboard",
     "investidores",

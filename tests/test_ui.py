@@ -738,6 +738,92 @@ def test_ui_exportacao_de_dados_downloada_csv(client: TestClient) -> None:
         assert expected in resp.text
 
 
+def test_ui_admin_crud_custos_veiculos_e_csv(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    pagina = client.get("/ui/custos-veiculos")
+    assert pagina.status_code == 200
+    assert "Total de custos" in pagina.text
+    assert "Novo custo" in pagina.text
+
+    criado = client.post(
+        "/ui/custos-veiculos",
+        data={
+            "veiculo_id": str(veiculo_id),
+            "categoria": "Manutenção",
+            "data_custo": "2026-07-14",
+            "valor": "250.00",
+            "descricao": "Troca de óleo",
+        },
+    )
+    assert criado.status_code == 200
+    assert "Manutenção" in criado.text
+    assert "R$ 250,00" in criado.text
+
+    pagina = client.get("/ui/custos-veiculos")
+    assert "R$ 250,00" in pagina.text
+    assert "1" in pagina.text
+
+    exportado = client.get("/ui/custos-veiculos/exportar")
+    assert exportado.status_code == 200
+    assert (
+        exportado.headers["content-disposition"]
+        == 'attachment; filename="custos_veiculos.csv"'
+    )
+    assert "Manutenção" in exportado.text
+
+    match = re.search(r"/ui/custos-veiculos/(\d+)/editar", pagina.text)
+    assert match is not None
+    custo_id = match.group(1)
+
+    editado = client.post(
+        f"/ui/custos-veiculos/{custo_id}",
+        data={
+            "veiculo_id": str(veiculo_id),
+            "categoria": "Peças",
+            "data_custo": "2026-07-15",
+            "valor": "300.00",
+            "descricao": "",
+        },
+    )
+    assert editado.status_code == 200
+    assert "Peças" in editado.text
+    assert "R$ 300,00" in editado.text
+
+    excluido = client.post(f"/ui/custos-veiculos/{custo_id}/excluir")
+    assert excluido.status_code == 200
+    assert "Nenhum custo encontrado" in excluido.text
+
+
+def test_ui_custos_veiculos_respeita_permissao_de_perfil(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={"nome": "Custos", "paginas": "custos-veiculos"},
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "custos_user",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "custos_user", "password": "abc"})
+
+    permitido = client.get("/ui/custos-veiculos")
+    assert permitido.status_code == 200
+    assert "Custos de Veículos" in permitido.text
+
+    bloqueado = client.get("/ui/veiculos")
+    assert bloqueado.status_code == 403
+
+
 def _login_admin(client: TestClient) -> None:
     client.post("/ui/login", data={"username": "admin", "password": "senha"})
 
