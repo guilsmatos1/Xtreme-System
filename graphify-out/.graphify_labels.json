@@ -47,8 +47,8 @@
   "45": "_UiCompatModule",
   "46": "_ctx_form_cliente",
   "47": "Page",
-  "48": "a1b2c3d4e001_rename_lancamento_caixa_to_lancamento_.py",
-  "49": "default_factory",
+  "48": "core.py",
+  "49": "CreateSchemaT",
   "50": "3e65ccbaa06a_add_imagem_veiculo_and_documento_.py",
   "51": "5c6914b729c6_index_fks_veiculo.py",
   "52": "5dc6beff16d0_add_vendedor_id_to_venda.py",
@@ -127,8 +127,8 @@
   "125": "Request",
   "126": "Session",
   "127": "SessionDep",
-  "128": "File",
-  "129": "UploadFile",
-  "130": "TestClient",
+  "128": "UpdateSchemaT",
+  "129": "HTMLResponse",
+  "130": "Request",
   "135": "__init__.py"
 }
