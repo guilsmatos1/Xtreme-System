@@ -109,5 +109,17 @@
   "107": "core.py",
   "108": "test_api_vendas.py",
   "109": "core.py",
-  "110": "Base"
+  "110": "Base",
+  "111": "HTMLResponse",
+  "112": "Request",
+  "113": "a9c8d7e6f5b4_remove_ativo_from_cliente.py",
+  "114": "_RateLimiter",
+  "115": "_guard_lancamento_veiculo",
+  "116": "Form",
+  "117": "Response",
+  "118": "UploadFile",
+  "119": "date",
+  "120": "Decimal",
+  "121": "MonkeyPatch",
+  "122": "Path"
 }

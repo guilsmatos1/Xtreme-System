@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/clientes.py": {
-    "mtime": 1783975375.6414032,
-    "ast_hash": "786dfe1a6694cdfa15d3fee2e2eaecb6",
+    "mtime": 1784043665.3847284,
+    "ast_hash": "c1922ac386c691035c7b92bc3cca1b8c",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/common.py": {
@@ -215,13 +215,13 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/usuarios.py": {
-    "mtime": 1783975375.6423953,
-    "ast_hash": "55ffe55aa285b38a12a936090947e4fc",
+    "mtime": 1784042172.2938128,
+    "ast_hash": "23b0906e5488c23ea079b46a57d05197",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/veiculos.py": {
-    "mtime": 1783975375.6426406,
-    "ast_hash": "5d2527c7347bfe99556f41765ad58602",
+    "mtime": 1784042172.294041,
+    "ast_hash": "d5a9e81becb461d8dab2157044d424a1",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/vendas.py": {
@@ -280,8 +280,8 @@
     "semantic_hash": ""
   },
   "components/xtreme_system/cliente/core.py": {
-    "mtime": 1783712835.1660714,
-    "ast_hash": "7d2034b7993e328ac69d22431ffcee42",
+    "mtime": 1784043665.3842967,
+    "ast_hash": "ff34888be5298513f9cc8536af3db1b1",
     "semantic_hash": ""
   },
   "components/xtreme_system/compra/__init__.py": {
@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "components/xtreme_system/usuario/core.py": {
-    "mtime": 1783720684.0162187,
-    "ast_hash": "87fb317b8fc23ce98c255136ba7ffb0f",
+    "mtime": 1784042172.2950094,
+    "ast_hash": "fa4ade5163089488601fa50a61a68f7e",
     "semantic_hash": ""
   },
   "components/xtreme_system/veiculo/__init__.py": {
@@ -410,8 +410,8 @@
     "semantic_hash": ""
   },
   "components/xtreme_system/venda/core.py": {
-    "mtime": 1783994570.555669,
-    "ast_hash": "bc13b9779c3daaffd2b0da9b1a76ac3e",
+    "mtime": 1784043178.2857487,
+    "ast_hash": "e3eac86499c6cede64ea0c5cbf5dfdc3",
     "semantic_hash": ""
   },
   "components/xtreme_system/whatsapp/__init__.py": {
@@ -440,8 +440,8 @@
     "semantic_hash": ""
   },
   "scripts/agent-finish.sh": {
-    "mtime": 1783973694.111695,
-    "ast_hash": "05c728c7d24eefc3da605563d3b3a165",
+    "mtime": 1784039697.207409,
+    "ast_hash": "7a48bb7fa4685a25393194aa0b5b04b0",
     "semantic_hash": ""
   },
   "test/bases/xtreme_system/api/__init__.py": {
@@ -525,18 +525,18 @@
     "semantic_hash": ""
   },
   "tests/factories.py": {
-    "mtime": 1783798393.070863,
-    "ast_hash": "de1c92dff986a564ae884ed22d179a0a",
+    "mtime": 1784043665.3862555,
+    "ast_hash": "5bb3976f686a03336e8b8ba5f2ddba35",
     "semantic_hash": ""
   },
   "tests/test_api_auth.py": {
-    "mtime": 1783971511.6522408,
-    "ast_hash": "9c35f1d26d6dcd2daab41c4daa8b6ace",
+    "mtime": 1784042172.2953699,
+    "ast_hash": "e36dcf3187c224a34b7749acd02778fa",
     "semantic_hash": ""
   },
   "tests/test_api_compras.py": {
-    "mtime": 1783971511.6527994,
-    "ast_hash": "c309afafb6bb80fde56a9ca1f424c3b9",
+    "mtime": 1784042172.295569,
+    "ast_hash": "0584f997333a1fa6924e4f2319e19517",
     "semantic_hash": ""
   },
   "tests/test_api_health.py": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "tests/test_api_vendas.py": {
-    "mtime": 1783971511.6542795,
-    "ast_hash": "ab4cd0200bb80e8eeced73504ecbef31",
+    "mtime": 1784042172.2957401,
+    "ast_hash": "55d3112f886fb48e712831abf6c7f981",
     "semantic_hash": ""
   },
   "tests/test_auditoria.py": {
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "tests/test_crud.py": {
-    "mtime": 1783971511.6553795,
-    "ast_hash": "90a783bde2e7bc7acd8c53f2299ea5d8",
+    "mtime": 1784042172.2959106,
+    "ast_hash": "db03a41eb026481946282c84194a2d25",
     "semantic_hash": ""
   },
   "tests/test_factories.py": {
@@ -580,8 +580,8 @@
     "semantic_hash": ""
   },
   "tests/test_perfil.py": {
-    "mtime": 1783800907.6258445,
-    "ast_hash": "81d443a1965cddaffc3213077dfb406a",
+    "mtime": 1784042172.2960668,
+    "ast_hash": "c41f8d3648630ae925548bd9402ff988",
     "semantic_hash": ""
   },
   "tests/test_route_factories_atomicity.py": {
@@ -595,8 +595,8 @@
     "semantic_hash": ""
   },
   "tests/test_ui.py": {
-    "mtime": 1784000010.1892364,
-    "ast_hash": "1a5dadbe43e2ff0cd437a6e0c7f8d157",
+    "mtime": 1784043665.3868477,
+    "ast_hash": "b8dcf21dccebc130587c5d1b7f038c44",
     "semantic_hash": ""
   },
   "tests/test_venda_whatsapp.py": {
@@ -605,28 +605,28 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1783997983.4016566,
-    "ast_hash": "8f53a4811e1307c7b6c78e3f52c87bca",
+    "mtime": 1784039697.2070897,
+    "ast_hash": "5461b72cc3bd21750cd58974b3217aef",
     "semantic_hash": ""
   },
   "API.md": {
-    "mtime": 1783879168.5734932,
-    "ast_hash": "9b1f29a5db64fab1116d908a4c2ee738",
+    "mtime": 1784042172.292919,
+    "ast_hash": "de45b63b74891597e07957b49d56070f",
     "semantic_hash": ""
   },
   "ARCHITECTURE.md": {
-    "mtime": 1783879168.574223,
-    "ast_hash": "bfa1466dd4fb23f4975ee982179760f7",
+    "mtime": 1784043686.9320884,
+    "ast_hash": "dcb0cd04e48902e74a22c31c7730ace6",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1783997983.4016566,
-    "ast_hash": "8f53a4811e1307c7b6c78e3f52c87bca",
+    "mtime": 1784039697.2070897,
+    "ast_hash": "5461b72cc3bd21750cd58974b3217aef",
     "semantic_hash": ""
   },
   "DATABASE.md": {
-    "mtime": 1783869870.631439,
-    "ast_hash": "107664ab669166f51230c6796264f053",
+    "mtime": 1784043686.9313188,
+    "ast_hash": "a1ed024aa2e4d17a1821b07dcd34635d",
     "semantic_hash": ""
   },
   "README.md": {
@@ -650,8 +650,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_cliente.html": {
-    "mtime": 1783626117.355849,
-    "ast_hash": "4e7001938508be8f572be262a134b1be",
+    "mtime": 1784043665.3852007,
+    "ast_hash": "784d15b181ec3dc04d234490eaa0c102",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_lancamento.html": {
@@ -680,8 +680,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_veiculo.html": {
-    "mtime": 1783977269.403022,
-    "ast_hash": "c82a3387504e50bbd38f9842cee65fa5",
+    "mtime": 1784042172.2943134,
+    "ast_hash": "f301f3dda635ed22e8738a7a2b8224cf",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_venda.html": {
@@ -700,7 +700,7 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_linhas_clientes.html": {
-    "mtime": 1783621391.9540572,
+    "mtime": 1784043665.3859103,
     "ast_hash": "d574c461ee170f6553e0ee4c7e369b18",
     "semantic_hash": ""
   },
@@ -735,8 +735,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_macros.html": {
-    "mtime": 1783716064.9506834,
-    "ast_hash": "5262e29408fd33b0e46ff19ebc19b418",
+    "mtime": 1784042172.2945051,
+    "ast_hash": "57bc3d3507ce35c639da034eec24e773",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_midia_veiculo.html": {
@@ -745,13 +745,13 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_modal_cliente_vendedor.html": {
-    "mtime": 1783710482.2066066,
-    "ast_hash": "b8f1b08be2617c3b995c898bdb49c664",
+    "mtime": 1784042172.2946649,
+    "ast_hash": "a606e5045d5ac3768c5a7ec507f2fa1e",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_modal_documentos_cliente.html": {
-    "mtime": 1783824601.2404523,
-    "ast_hash": "6c043c96ff38e434f1e2a76d0cd03b5d",
+    "mtime": 1784043206.6499758,
+    "ast_hash": "24cda2ec690c19ff9e8b6dc500d65010",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_modal_imagens_veiculo.html": {
@@ -765,8 +765,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_row_cliente.html": {
-    "mtime": 1783712678.2212944,
-    "ast_hash": "71c716dfb0c4caa6a7340692d7a2a6fc",
+    "mtime": 1784043665.3856797,
+    "ast_hash": "77798b4c9311fe1b6b12e058f808e928",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_row_veiculo.html": {
@@ -805,8 +805,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/clientes.html": {
-    "mtime": 1783699142.2115004,
-    "ast_hash": "2814aad4bba8cb6f126a0af422da7678",
+    "mtime": 1784043665.38547,
+    "ast_hash": "2d883c6a8f6c94a7559ee06b58e0316a",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/configuracoes.html": {
@@ -840,8 +840,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/usuarios.html": {
-    "mtime": 1783716064.950952,
-    "ast_hash": "1a15c66aa8ac45950e47b0d7e5a69ec0",
+    "mtime": 1784042172.2948456,
+    "ast_hash": "94b51d58e7780925e45f82ea668cca78",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/veiculos.html": {
@@ -872,6 +872,21 @@
   "docs/superpowers/specs/2026-07-11-validacao-uploads-design.md": {
     "mtime": 1783823813.2062533,
     "ast_hash": "db9bb7bc6cd5949b86524e60b4d70def",
+    "semantic_hash": ""
+  },
+  "alembic/versions/f8a9b0c1d2e3_rename_papel_vendedor_to_funcionario.py": {
+    "mtime": 1784042054.1845727,
+    "ast_hash": "f4c07dacda1507fc8b58c9c103c35d04",
+    "semantic_hash": ""
+  },
+  "alembic/versions/a9c8d7e6f5b4_remove_ativo_from_cliente.py": {
+    "mtime": 1784043665.387062,
+    "ast_hash": "98233baaa9f12593ccb72e484fe4e047",
+    "semantic_hash": ""
+  },
+  "bases/xtreme_system/api/templates/_modal_veiculos_cliente.html": {
+    "mtime": 1784043193.5744772,
+    "ast_hash": "8632ea13e6c2be4e4420533ff2e4acc4",
     "semantic_hash": ""
   }
 }
