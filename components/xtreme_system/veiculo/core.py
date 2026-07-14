@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.documento_procuracao.core import DocumentoProcuracao
 from xtreme_system.documento_veiculo.core import DocumentoVeiculo
 from xtreme_system.imagem_veiculo.core import ImagemVeiculo
 from xtreme_system.investidor.core import Investidor, InvestidorRead
@@ -50,6 +51,9 @@ class Veiculo(Base):
     investidor: Mapped[Investidor] = relationship(lazy="joined")
     imagens: Mapped[list["ImagemVeiculo"]] = relationship(cascade="all, delete-orphan")
     documentos: Mapped[list["DocumentoVeiculo"]] = relationship(
+        cascade="all, delete-orphan"
+    )
+    documentos_procuracao: Mapped[list["DocumentoProcuracao"]] = relationship(
         cascade="all, delete-orphan"
     )
 
