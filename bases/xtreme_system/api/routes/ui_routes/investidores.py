@@ -1,6 +1,6 @@
 """HTMX routes for investidores."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import structlog
@@ -211,23 +211,26 @@ async def ui_investidor_criar(
             status_code=409,
         )
     valor_str = str(form.get("valor_investido") or "").strip()
-    try:
-        if valor_str:
+    if valor_str:
+        try:
             valor = Decimal(valor_str.replace(",", "."))
-            if valor > 0:
-                caixa.create(
-                    session,
-                    caixa.LancamentoInvestimentoCreate(
-                        investidor_id=obj.id,
-                        tipo=caixa.TipoLancamento.aporte,
-                        valor=valor,
-                        descricao="Aporte inicial",
-                    ),
+            aporte = (
+                caixa.LancamentoInvestimentoCreate(
+                    investidor_id=obj.id,
+                    tipo=caixa.TipoLancamento.aporte,
+                    valor=valor,
+                    descricao="Aporte inicial",
                 )
-    except Exception:
-        logger.warning(
-            "aporte_inicial_invalido", investidor_id=obj.id, valor_str=valor_str
-        )
+                if valor > 0
+                else None
+            )
+        except (InvalidOperation, ValidationError):
+            logger.warning(
+                "aporte_inicial_invalido", investidor_id=obj.id, valor_str=valor_str
+            )
+        else:
+            if aporte is not None:
+                caixa.create(session, aporte)
     return templates.TemplateResponse(
         request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
     )

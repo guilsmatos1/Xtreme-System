@@ -15,6 +15,7 @@ from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
+from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import get_session
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -331,6 +332,49 @@ def test_ui_investidores_crud_basico(client: TestClient) -> None:
     assert "Nova Investidora" in criado.text
     assert "cell-num" in criado.text
     assert "R$ 0,00" in criado.text
+
+
+def test_ui_investidor_criar_falha_se_aporte_inicial_falhar(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
+        def fail_create(
+            _session: Session, _data: caixa.LancamentoInvestimentoCreate
+        ) -> caixa.LancamentoInvestimento:
+            msg = "falha ao salvar aporte"
+            raise RuntimeError(msg)
+
+        app.dependency_overrides[get_session] = override
+        monkeypatch.setattr(caixa, "create", fail_create)
+        try:
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                _login_admin(test_client)
+                resp = test_client.post(
+                    "/ui/investidores",
+                    data={"nome": "Investidor Com Aporte", "valor_investido": "10.00"},
+                )
+        finally:
+            app.dependency_overrides.clear()
+
+        assert resp.status_code == 500
+        assert investidor.list_all(session) == []
+    engine.dispose()
 
 
 def test_ui_vendas_crud_basico(client: TestClient) -> None:
