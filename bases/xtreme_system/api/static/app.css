@@ -513,6 +513,20 @@ form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
   height: 22px;
 }
 
+.midia-placeholder--pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.midia-placeholder--pdf span {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
 .image-preview {
   max-width: min(96vw, 1200px);
   max-height: 96vh;

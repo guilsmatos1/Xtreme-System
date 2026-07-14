@@ -195,6 +195,34 @@ def _salvar_documento_veiculo(
         raise
 
 
+def _cliente_vendedor_modal(
+    request: Request, session: Session, veiculo_id: int, erro: str | None = None
+) -> HTMLResponse:
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
+    documentos = []
+    if item_compra is not None:
+        for doc in list(item_compra.cliente.documentos):
+            path = _uploaded_file_path(doc.url or "")
+            if path is not None and not path.exists():
+                imagem_documento_cliente.delete(session, doc)
+        session.refresh(item_compra.cliente)
+        documentos = imagem_documento_cliente.list_by_cliente(
+            session, item_compra.cliente_id
+        )
+    return templates.TemplateResponse(
+        request,
+        "_modal_cliente_vendedor.html",
+        {
+            "veiculo": item,
+            "compra": item_compra,
+            "documentos": documentos,
+            "erro": erro,
+        },
+        status_code=400 if erro else 200,
+    )
+
+
 @app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
 def ui_veiculo_cliente_vendedor(
     request: Request,
@@ -202,18 +230,52 @@ def ui_veiculo_cliente_vendedor(
     _: UIAdmin,
     veiculo_id: int,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    return _cliente_vendedor_modal(request, session, veiculo_id)
+
+
+@app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos")
+def ui_veiculo_cliente_vendedor_documentos_upload(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+    documentos: Annotated[list[UploadFile], File(default_factory=list)],
+) -> HTMLResponse:
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    documentos = []
-    if item_compra is not None:
-        documentos = imagem_documento_cliente.list_by_cliente(
-            session, item_compra.cliente_id
+    if item_compra is None:
+        return _cliente_vendedor_modal(
+            request, session, veiculo_id, "Cliente vendedor não encontrado"
         )
-    return templates.TemplateResponse(
-        request,
-        "_modal_cliente_vendedor.html",
-        {"veiculo": item, "compra": item_compra, "documentos": documentos},
-    )
+    erro = _validar_uploads(documentos)
+    if erro:
+        return _cliente_vendedor_modal(request, session, veiculo_id, erro)
+    _salvar_documentos_cliente(session, item_compra.cliente_id, documentos)
+    return _cliente_vendedor_modal(request, session, veiculo_id)
+
+
+@app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos/{doc_id}/excluir")
+def ui_veiculo_cliente_vendedor_documentos_excluir(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    veiculo_id: int,
+    doc_id: int,
+) -> HTMLResponse:
+    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
+    if item_compra is None:
+        return _cliente_vendedor_modal(
+            request, session, veiculo_id, "Cliente vendedor não encontrado"
+        )
+    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
+    if doc.cliente_id != item_compra.cliente_id:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+    url = doc.url or ""
+    imagem_documento_cliente.delete(session, doc)
+    path = _uploaded_file_path(url)
+    if path is not None:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
+    return _cliente_vendedor_modal(request, session, veiculo_id)
 
 
 def _documentos_modal(

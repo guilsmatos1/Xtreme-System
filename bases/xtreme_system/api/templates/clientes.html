@@ -37,10 +37,10 @@
       <tr>
         <th>{{ ui.sortable("nome", "Nome", sort, order, "/ui/clientes", sort_qs) }}</th>
         <th>{{ ui.sortable("documento", "CPF", sort, order, "/ui/clientes", sort_qs) }}</th>
+        <th>{{ ui.sortable("telefone", "Telefone", sort, order, "/ui/clientes", sort_qs) }}</th>
         <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/clientes", sort_qs) }}</th>
         <th>{{ ui.sortable("cidade", "Cidade", sort, order, "/ui/clientes", sort_qs) }}</th>
         <th>{{ ui.sortable("estado", "Estado", sort, order, "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/clientes", sort_qs) }}</th>
         {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

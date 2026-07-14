@@ -15,7 +15,7 @@ from xtreme_system.perfil.core import Perfil
 
 class Papel(StrEnum):
     admin = "admin"
-    vendedor = "vendedor"
+    funcionario = "funcionario"
 
 
 class Usuario(Base):
@@ -24,7 +24,7 @@ class Usuario(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True, index=True)
     senha_hash: Mapped[str]
-    papel: Mapped[Papel] = mapped_column(default=Papel.vendedor)
+    papel: Mapped[Papel] = mapped_column(default=Papel.funcionario)
     ativo: Mapped[bool] = mapped_column(default=True)
     perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"), index=True)
     perfil: Mapped[Perfil | None] = relationship()
@@ -33,7 +33,7 @@ class Usuario(Base):
 class UsuarioCreate(BaseModel):
     username: str
     senha: str
-    papel: Papel = Papel.vendedor
+    papel: Papel = Papel.funcionario
     perfil_id: int | None = None
 
 

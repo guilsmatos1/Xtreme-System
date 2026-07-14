@@ -98,6 +98,10 @@ def get(session: Session, venda_id: int) -> Venda | None:
     return crud.get(session, Venda, venda_id)
 
 
+def list_by_cliente(session: Session, cliente_id: int) -> list[Venda]:
+    return list(session.query(Venda).filter_by(cliente_id=cliente_id).all())
+
+
 def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
     if status == StatusVenda.concluido:
         return StatusVeiculo.vendido

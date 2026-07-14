@@ -26,7 +26,7 @@ def client() -> Iterator[TestClient]:
         usuario.create(
             session,
             usuario.UsuarioCreate(
-                username="vendedor", senha="senha", papel=usuario.Papel.vendedor
+                username="vendedor", senha="senha", papel=usuario.Papel.funcionario
             ),
         )
 
@@ -128,7 +128,7 @@ def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     # cria um vendedor
     vendedor = client.post(
         "/usuarios",
-        json={"username": "vendedor2", "senha": "abc", "papel": "vendedor"},
+        json={"username": "vendedor2", "senha": "abc", "papel": "funcionario"},
         headers=headers,
     )
     assert vendedor.status_code == 201
@@ -158,7 +158,7 @@ def test_api_usuario_management_atribui_admin_na_auditoria(
     # CREATE
     novo = client.post(
         "/usuarios",
-        json={"username": "alvo", "senha": "s", "papel": "vendedor"},
+        json={"username": "alvo", "senha": "s", "papel": "funcionario"},
         headers=headers,
     )
     assert novo.status_code == 201

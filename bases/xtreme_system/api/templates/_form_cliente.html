@@ -55,13 +55,6 @@
             <span class="field__label">CEP</span>
             <input class="input" name="cep" value="{{ cliente.cep if cliente and cliente.cep else '' }}">
           </label>
-          <label class="field">
-            <span class="field__label">Ativo</span>
-            <select class="select" name="ativo" required>
-              <option value="true"{% if not cliente or cliente.ativo %} selected{% endif %}>Sim</option>
-              <option value="false"{% if cliente and not cliente.ativo %} selected{% endif %}>Não</option>
-            </select>
-          </label>
         </div>
       </div>
       <div class="modal__foot">

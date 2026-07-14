@@ -27,7 +27,7 @@ def test_admin_acessa_qualquer_pagina_mesmo_sem_perfil(db_session: Session) -> N
 
 
 def test_vendedor_sem_perfil_nao_acessa_nada(db_session: Session) -> None:
-    vendedor = _usuario(db_session, usuario.Papel.vendedor, None)
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, None)
     assert not perfil.pode_acessar(vendedor, "veiculos")
 
 
@@ -35,7 +35,7 @@ def test_vendedor_acessa_apenas_paginas_do_seu_perfil(db_session: Session) -> No
     leitor = perfil.Perfil(nome="Leitor", paginas=["veiculos", "clientes"])
     db_session.add(leitor)
     db_session.flush()
-    vendedor = _usuario(db_session, usuario.Papel.vendedor, leitor)
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, leitor)
     assert perfil.pode_acessar(vendedor, "veiculos")
     assert perfil.pode_acessar(vendedor, "clientes")
     assert not perfil.pode_acessar(vendedor, "vendas")
@@ -45,7 +45,7 @@ def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
     leitor = perfil.Perfil(nome="Leitor", paginas=["veiculos"])
     db_session.add(leitor)
     db_session.flush()
-    vendedor = _usuario(db_session, usuario.Papel.vendedor, leitor)
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, leitor)
 
     perfil.delete(db_session, leitor)
 

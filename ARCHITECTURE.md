@@ -120,10 +120,10 @@ Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 |------------|-------------|-----------|
 | `auth/` | — (JWT, argon2) | `create_access_token`, `decode_token`, `verify_password`, `hash_password`, `Settings` (`AUTH_SECRET_KEY`) |
 | `database/` | — (SQLAlchemy) | Engine + session factory configurados via `DATABASE_URL`, dependency `get_session` |
-| `usuario/` | `Usuario` | `id`, `username`, `senha_hash`, `papel` (admin/vendedor), `ativo` |
+| `usuario/` | `Usuario` | `id`, `username`, `senha_hash`, `papel` (admin/funcionario), `ativo` |
 | `investidor/` | `Investidor` | `id`, `nome` |
 | `veiculo/` | `Veiculo` | `modelo`, `placa`, `tipo` (carro/moto), `ano`, `km`, `preco`, `status`, `tipo_entrada`, `revisao`, FK para `investidor` |
-| `cliente/` | `Cliente` | `nome`, `documento`, `tipo` (PF/PJ), `cidade`, `estado`, `ativo` |
+| `cliente/` | `Cliente` | `nome`, `documento`, `tipo` (PF/PJ), `cidade`, `estado` |
 | `venda/` | `Venda` | `cliente_id`, `veiculo_id`, `data_venda`, `valor_venda`, `valor_entrada`, `forma_pagamento`, `parcelas`, `status`, `observacoes` |
 | `caixa/` | `LancamentoCaixa` | `investidor_id`, `tipo` (aporte/retirada), `valor`, `descricao`, `origem` (manual/veiculo) |
 | `compra/` | — | Componente de compras (não montado nas rotas atuais) |

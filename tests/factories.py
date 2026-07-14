@@ -47,7 +47,6 @@ class ClienteCreateFactory(ModelFactory[cliente.ClienteCreate]):
     cidade = None
     estado = None
     cep = None
-    ativo = True
 
 
 class VeiculoCreateFactory(ModelFactory[veiculo.VeiculoCreate]):
@@ -88,7 +87,7 @@ class UsuarioCreateFactory(ModelFactory[usuario.UsuarioCreate]):
 
     username = Use(lambda: f"user_{_next_id()}")
     senha = "senha"
-    papel = usuario.Papel.vendedor
+    papel = usuario.Papel.funcionario
     perfil_id = None
 
 

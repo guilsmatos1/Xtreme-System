@@ -93,7 +93,7 @@ Request:
 {
   "username": "string",
   "senha_hash": "string",
-  "papel": "admin|vendedor",
+  "papel": "admin|funcionario",
   "ativo": boolean
 }
 ```
@@ -333,7 +333,7 @@ Error responses:
 **Roles**:
 
 - `admin` - Full access to all endpoints
-- `vendedor` (seller) - Read-only access to most resources, can create sales
+- `funcionario` (employee) - Read-only access to most resources, can create sales
 
 **Header**:
 

@@ -74,7 +74,7 @@ def ui_usuario_criar(
     user: UIAdmin,
     username: Annotated[str, Form()],
     senha: Annotated[str, Form()],
-    papel: Annotated[usuario.Papel, Form()] = usuario.Papel.vendedor,
+    papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     erro = None

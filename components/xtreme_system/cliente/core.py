@@ -32,7 +32,6 @@ class Cliente(Base):
     cidade: Mapped[str | None]
     estado: Mapped[str | None]
     cep: Mapped[str | None]
-    ativo: Mapped[bool] = mapped_column(default=True)
 
     documentos: Mapped[list["ImagemDocumentoCliente"]] = relationship(
         cascade="all, delete-orphan"
@@ -49,7 +48,6 @@ class ClienteCreate(BaseModel):
     cidade: str | None = None
     estado: str | None = None
     cep: str | None = None
-    ativo: bool = True
 
 
 class ClienteUpdate(BaseModel):
@@ -62,7 +60,6 @@ class ClienteUpdate(BaseModel):
     cidade: str | None = None
     estado: str | None = None
     cep: str | None = None
-    ativo: bool | None = None
 
 
 class ClienteRead(BaseModel):
@@ -78,7 +75,6 @@ class ClienteRead(BaseModel):
     cidade: str | None
     estado: str | None
     cep: str | None
-    ativo: bool
 
 
 def list_all(session: Session) -> list[Cliente]:

@@ -221,6 +221,11 @@ def test_ui_clientes_crud_basico(client: TestClient) -> None:
     pagina = client.get("/ui/clientes")
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
+    assert "Status" not in pagina.text
+
+    modal_novo = client.get("/ui/clientes/novo")
+    assert modal_novo.status_code == 200
+    assert 'name="ativo"' not in modal_novo.text
 
     criado = client.post(
         "/ui/clientes",
@@ -228,7 +233,6 @@ def test_ui_clientes_crud_basico(client: TestClient) -> None:
             "nome": "Maria Lima",
             "documento": "12345678901",
             "tipo": "pessoa_fisica",
-            "ativo": "true",
         },
     )
     assert criado.status_code == 200
@@ -250,11 +254,15 @@ def test_ui_clientes_crud_basico(client: TestClient) -> None:
             "documento": "12345678901",
             "tipo": "pessoa_fisica",
             "cidade": "São Paulo",
-            "ativo": "false",
         },
     )
     assert editado.status_code == 200
     assert "São Paulo" in editado.text
+    assert "Status" not in editado.text
+
+    modal_edicao = client.get(f"/ui/clientes/{cliente_id}/editar")
+    assert modal_edicao.status_code == 200
+    assert 'name="ativo"' not in modal_edicao.text
 
     excluido = client.post(f"/ui/clientes/{cliente_id}/excluir")
     assert excluido.status_code == 200
@@ -270,7 +278,6 @@ def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
             "nome": "João Documento",
             "documento": "98765432109",
             "tipo": "pessoa_fisica",
-            "ativo": "true",
         },
     )
     assert criado.status_code == 200
@@ -522,7 +529,7 @@ def test_ui_admin_exclui_outro_usuario(client: TestClient) -> None:
     # cria um vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "vendedor_ui", "senha": "abc", "papel": "vendedor"},
+        data={"username": "vendedor_ui", "senha": "abc", "papel": "funcionario"},
     )
     pagina = client.get("/ui/usuarios")
     assert "vendedor_ui" in pagina.text
@@ -562,7 +569,7 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     # cria vendedor pela UI
     client.post(
         "/ui/usuarios",
-        data={"username": "ui_vendedor", "senha": "abc", "papel": "vendedor"},
+        data={"username": "ui_vendedor", "senha": "abc", "papel": "funcionario"},
     )
     # obtém id do vendedor via API JSON
     token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
@@ -1048,7 +1055,7 @@ def test_ui_auditoria_vendedor_recebe_403(client: TestClient) -> None:
     _login_admin(client)
     client.post(
         "/ui/usuarios",
-        data={"username": "vend_audit", "senha": "abc", "papel": "vendedor"},
+        data={"username": "vend_audit", "senha": "abc", "papel": "funcionario"},
     )
     client.post("/ui/login", data={"username": "vend_audit", "password": "abc"})
     resp = client.get("/ui/auditoria")
@@ -1096,7 +1103,7 @@ def test_api_auditoria_vendedor_forbidden(client: TestClient) -> None:
     _login_admin(client)
     client.post(
         "/ui/usuarios",
-        data={"username": "vend_api", "senha": "abc", "papel": "vendedor"},
+        data={"username": "vend_api", "senha": "abc", "papel": "funcionario"},
     )
     token = client.post(
         "/login", data={"username": "vend_api", "password": "abc"}
@@ -1121,7 +1128,7 @@ def test_ui_usuario_management_atribui_admin_na_auditoria(
     # CREATE via UI
     resp = client.post(
         "/ui/usuarios",
-        data={"username": "alvo_ui", "senha": "abc", "papel": "vendedor"},
+        data={"username": "alvo_ui", "senha": "abc", "papel": "funcionario"},
     )
     assert resp.status_code == 200
     alvo_id = next(

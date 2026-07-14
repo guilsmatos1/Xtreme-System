@@ -16,7 +16,7 @@ O banco utiliza SQLAlchemy + Alembic (migrations em `alembic/versions/`). Abaixo
 | `statusveiculo` | `disponivel`, `vendido`, `reservado` | `veiculo.status` |
 | `tipocliente` | `pessoa_fisica`, `pessoa_juridica` | `cliente.tipo` |
 | `statusvenda` | `pendente`, `aprovado`, `cancelado`, `concluido` | `venda.status` |
-| `papel` | `admin`, `vendedor` | `usuario.papel` |
+| `papel` | `admin`, `funcionario` | `usuario.papel` |
 | `tipolancamento` | `aporte`, `custo` | `lancamento_investimento.tipo` |
 | `origemlancamento` | `manual`, `veiculo` | `lancamento_investimento.origem` |
 
@@ -67,7 +67,6 @@ Clientes do sistema.
 | `cidade` | `VARCHAR` | Sim | - | |
 | `estado` | `VARCHAR` | Sim | - | |
 | `cep` | `VARCHAR` | Sim | - | |
-| `ativo` | `BOOLEAN` | Não | `true` | |
 
 ### `usuario`
 
@@ -78,7 +77,7 @@ Usuários do sistema para autenticação e controle de acesso.
 | `id` | `INTEGER` | Não | - | PK |
 | `username` | `VARCHAR` | Não | - | Único, indexado |
 | `senha_hash` | `VARCHAR` | Não | - | Hash da senha |
-| `papel` | `papel` | Não | `vendedor` | `admin` ou `vendedor` |
+| `papel` | `papel` | Não | `funcionario` | `admin` ou `funcionario` |
 | `ativo` | `BOOLEAN` | Não | `true` | |
 
 ### `venda`
