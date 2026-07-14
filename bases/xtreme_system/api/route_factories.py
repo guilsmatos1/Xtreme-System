@@ -547,7 +547,9 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            module.create(session, create_schema(nome=nome))
+            _atomic_write(
+                session, lambda: module.create(session, create_schema(nome=nome))
+            )
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -575,7 +577,9 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            module.update(session, obj, update_schema(nome=nome))
+            _atomic_write(
+                session, lambda: module.update(session, obj, update_schema(nome=nome))
+            )
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -596,7 +600,7 @@ def register_ui_simples(
         obj = _found(module.get(session, item_id), titulo)
         msg = None
         try:
-            module.delete(session, obj)
+            _atomic_write(session, lambda: module.delete(session, obj))
         except IntegrityError:
             session.rollback()
             msg = f"{titulo} possui veículos vinculados"

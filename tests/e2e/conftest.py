@@ -52,10 +52,16 @@ def live_server_url() -> Iterator[str]:
                 investidor_id=inv.id,
             ),
         )
+        session.commit()
 
     def override() -> Iterator[Session]:
         with maker() as session:
-            yield session
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
 
     port = _free_port()
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")

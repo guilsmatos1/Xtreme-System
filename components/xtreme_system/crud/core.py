@@ -9,15 +9,8 @@ from xtreme_system.auditoria.core import _snapshot, auditar
 DEFER_COMMIT_KEY = "crud_defer_commit"
 
 
-def defer_commit(session: Session) -> bool:
-    return bool(session.info.get(DEFER_COMMIT_KEY))
-
-
 def commit(session: Session) -> None:
-    if defer_commit(session):
-        session.flush()
-    else:
-        session.commit()
+    session.flush()
 
 
 def list_all[M](session: Session, model_cls: type[M]) -> list[M]:
