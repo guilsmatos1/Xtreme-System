@@ -8,6 +8,7 @@ dist/
 build/
 *.egg-info/
 .coverage
+.DS_Store
 
 # Git worktrees
 .worktrees/
