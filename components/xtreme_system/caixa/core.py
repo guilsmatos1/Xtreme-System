@@ -17,11 +17,14 @@ from xtreme_system.veiculo.core import Veiculo
 class TipoLancamento(StrEnum):
     aporte = "aporte"
     custo = "custo"
+    receita_venda = "receita_venda"
+    distribuicao_lucro = "distribuicao_lucro"
 
 
 class OrigemLancamento(StrEnum):
     manual = "manual"
     veiculo = "veiculo"
+    fechamento_venda = "fechamento_venda"
 
 
 class LancamentoInvestimento(Base):
@@ -31,6 +34,9 @@ class LancamentoInvestimento(Base):
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
     veiculo_id: Mapped[int | None] = mapped_column(
         ForeignKey("veiculo.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    fechamento_venda_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fechamento_venda.id", ondelete="CASCADE"), index=True
     )
     tipo: Mapped[TipoLancamento]
     origem: Mapped[OrigemLancamento] = mapped_column(default=OrigemLancamento.manual)
@@ -58,6 +64,7 @@ class LancamentoInvestimentoRead(BaseModel):
     id: int
     investidor_id: int
     veiculo_id: int | None
+    fechamento_venda_id: int | None
     tipo: TipoLancamento
     origem: OrigemLancamento
     valor: Decimal
@@ -106,6 +113,10 @@ _SALDO_EXPR = func.sum(
             LancamentoInvestimento.tipo == TipoLancamento.aporte,
             LancamentoInvestimento.valor,
         ),
+        (
+            LancamentoInvestimento.tipo == TipoLancamento.receita_venda,
+            LancamentoInvestimento.valor,
+        ),
         else_=-LancamentoInvestimento.valor,
     )
 )
@@ -135,6 +146,7 @@ def criar_lancamento_veiculo(
     obj = LancamentoInvestimento(
         investidor_id=veiculo_obj.investidor_id,
         veiculo_id=veiculo_obj.id,
+        fechamento_venda_id=None,
         tipo=TipoLancamento.custo,
         origem=OrigemLancamento.veiculo,
         valor=veiculo_obj.preco,
@@ -204,6 +216,40 @@ def agregados_investidores(
     aportes: dict[int, Decimal] = {}
     for lanc in list_all(session):
         aportes[lanc.investidor_id] = aportes.get(lanc.investidor_id, Decimal("0")) + (
-            lanc.valor if lanc.tipo == TipoLancamento.aporte else -lanc.valor
+            lanc.valor
+            if lanc.tipo in {TipoLancamento.aporte, TipoLancamento.receita_venda}
+            else -lanc.valor
         )
     return num, valor, aportes
+
+
+def criar_lancamento_fechamento(
+    session: Session,
+    *,
+    investidor_id: int,
+    fechamento_venda_id: int,
+    tipo: TipoLancamento,
+    valor: Decimal,
+    descricao: str,
+) -> LancamentoInvestimento:
+    obj = LancamentoInvestimento(
+        investidor_id=investidor_id,
+        veiculo_id=None,
+        fechamento_venda_id=fechamento_venda_id,
+        tipo=tipo,
+        origem=OrigemLancamento.fechamento_venda,
+        valor=valor,
+        descricao=descricao,
+    )
+    session.add(obj)
+    session.flush()
+    session.refresh(obj)
+    auditar(
+        session,
+        tabela="lancamento_investimento",
+        tipo_acao="CREATE",
+        registro_id=obj.id,
+        dados_depois=_snapshot(obj),
+    )
+    crud.commit(session)
+    return obj

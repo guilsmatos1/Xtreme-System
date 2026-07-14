@@ -1,0 +1,69 @@
+{% import "_macros.html" as ui %}
+{% macro money(valor) -%}
+R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}
+{%- endmacro %}
+<div class="modal" role="dialog" aria-modal="true">
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h3>Fechamento da venda #{{ venda.id }}</h3>
+      <button class="icon-btn" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+    </div>
+    {% if erro %}<div class="modal__body">{{ ui.alert(erro) }}</div>{% endif %}
+    {% if fechamento %}
+    <div class="modal__body">
+      <dl class="details-list">
+        <div><dt>Receita</dt><dd>{{ money(fechamento.receita) }}</dd></div>
+        <div><dt>Custo do veículo</dt><dd>{{ money(fechamento.custo_veiculo) }}</dd></div>
+        <div><dt>Custos operacionais</dt><dd>{{ money(fechamento.custos_operacionais) }}</dd></div>
+        <div><dt>Débitos</dt><dd>{{ money(fechamento.debitos) }}</dd></div>
+        <div><dt>Lucro líquido</dt><dd>{{ money(fechamento.lucro_liquido) }}</dd></div>
+        <div><dt>Data</dt><dd>{{ fechamento.data_fechamento.isoformat() }}</dd></div>
+      </dl>
+      {% if fechamento.participacoes %}
+      <div class="modal-section">
+        <h4>Distribuição</h4>
+        {% for p in fechamento.participacoes %}
+        <div class="details-list">
+          <div><dt>Investidor</dt><dd>{{ p.investidor.nome }}</dd></div>
+          <div><dt>Participação</dt><dd>{{ p.percentual }}% · {{ money(p.valor) }}</dd></div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Fechar</button>
+    </div>
+    {% else %}
+    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML">
+      <div class="modal__body">
+        <dl class="details-list">
+          <div><dt>Receita</dt><dd>{{ money(preview.receita) }}</dd></div>
+          <div><dt>Custo do veículo</dt><dd>{{ money(preview.custo_veiculo) }}</dd></div>
+          <div><dt>Custos operacionais</dt><dd>{{ money(preview.custos_operacionais) }}</dd></div>
+          <div><dt>Débitos</dt><dd>{{ money(preview.debitos) }}</dd></div>
+          <div><dt>Lucro líquido</dt><dd>{{ money(preview.lucro_liquido) }}</dd></div>
+        </dl>
+        {% if not preview.elegivel %}
+          {{ ui.alert(preview.motivo) }}
+        {% elif preview.lucro_liquido > 0 %}
+        <div class="modal-section">
+          <h4>Rateio do lucro</h4>
+          {% for investidor in preview.investidores %}
+          <label class="field">
+            <span class="field__label">{{ investidor.nome }}</span>
+            <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
+            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00">
+          </label>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        <button class="btn btn--primary" type="submit" {% if not preview.elegivel %}disabled{% endif %}>Confirmar fechamento</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>

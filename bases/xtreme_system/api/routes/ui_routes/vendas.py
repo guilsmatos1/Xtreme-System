@@ -21,6 +21,7 @@ from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
+from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
@@ -68,6 +69,11 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     return data
 
 
+def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
+    fechamentos = fechamento_venda.list_all(session)
+    return {"fechamentos_by_venda": {f.venda_id: f for f in fechamentos}}
+
+
 register_crud_ui_routes(
     app,
     templates,
@@ -83,6 +89,7 @@ register_crud_ui_routes(
     ok_partial_template="_vendas_ok.html",
     form_template="_form_venda.html",
     ctx_form=_ctx_form_venda,
+    ctx_list=_ctx_lista_vendas,
     parse_form=_parse_venda_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
@@ -149,7 +156,7 @@ def _ok_venda(request: Request, session: Session, user: UIAdmin) -> HTMLResponse
     return templates.TemplateResponse(
         request,
         "_vendas_ok.html",
-        {"user": user, "vendas": vendas},
+        {"user": user, "vendas": vendas, **_ctx_lista_vendas(session, vendas)},
     )
 
 
@@ -326,3 +333,75 @@ def _baixar_contrato_venda(
     if not documentos:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
     return RedirectResponse(documentos[-1].url)
+
+
+@app.get("/ui/vendas/{item_id}/fechamento")
+def _form_fechamento_venda(
+    item_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(venda.get(session, item_id), "Venda")
+    preview = fechamento_venda.preview(session, obj)
+    return templates.TemplateResponse(
+        request,
+        "_modal_fechamento_venda.html",
+        {"venda": obj, "preview": preview, "fechamento": None, "erro": None},
+    )
+
+
+@app.post("/ui/vendas/{item_id}/fechamento")
+async def _confirmar_fechamento_venda(
+    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    obj = _found(venda.get(session, item_id), "Venda")
+    form = await request.form()
+    investidores = form.getlist("investidor_id")
+    percentuais = form.getlist("percentual")
+    participacoes = [
+        {"investidor_id": investidor_id, "percentual": percentual}
+        for investidor_id, percentual in zip(investidores, percentuais, strict=False)
+        if str(percentual).strip()
+    ]
+    try:
+        data = fechamento_venda.FechamentoVendaCreate.model_validate(
+            {"participacoes": participacoes}
+        )
+        session.info["usuario_id"] = user.id
+        fechamento_venda.confirmar(session, obj, data, usuario_id=user.id)
+    except (ValidationError, fechamento_venda.FechamentoVendaError) as exc:
+        msg = str(exc)
+        if isinstance(exc, ValidationError):
+            msg = "Dados inválidos"
+        return templates.TemplateResponse(
+            request,
+            "_modal_fechamento_venda.html",
+            {
+                "venda": obj,
+                "preview": fechamento_venda.preview(session, obj),
+                "fechamento": None,
+                "erro": msg,
+            },
+            status_code=400,
+        )
+    vendas = venda.list_all(session)
+    return templates.TemplateResponse(
+        request,
+        "_vendas_ok.html",
+        {"user": user, "vendas": vendas, **_ctx_lista_vendas(session, vendas)},
+    )
+
+
+@app.get("/ui/fechamentos-vendas/{fechamento_id}")
+def _detalhe_fechamento_venda(
+    fechamento_id: int, request: Request, session: SessionDep, _: UIUser
+) -> HTMLResponse:
+    fechamento = _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
+    return templates.TemplateResponse(
+        request,
+        "_modal_fechamento_venda.html",
+        {
+            "venda": fechamento.venda,
+            "preview": None,
+            "fechamento": fechamento,
+            "erro": None,
+        },
+    )
