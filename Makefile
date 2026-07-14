@@ -58,7 +58,7 @@ revision:
 	uv run alembic revision --autogenerate -m "$(m)"
 
 run:
-	uv run uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000
+	uv run uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000 --proxy-headers
 
 db-up:
 	docker compose up -d

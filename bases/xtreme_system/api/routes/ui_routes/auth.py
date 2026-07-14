@@ -47,6 +47,7 @@ def ui_login(
         token,
         httponly=True,
         samesite="lax",
+        secure=request.url.scheme == "https",
         max_age=auth.get_settings().auth_token_expire_minutes * 60,
     )
     return resp

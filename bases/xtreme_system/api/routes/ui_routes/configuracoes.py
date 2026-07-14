@@ -36,11 +36,14 @@ def ui_configuracoes_salvar(
     evolution_group_id: Annotated[str, Form()] = "",
     mensagem_template: Annotated[str, Form()] = "",
 ) -> HTMLResponse:
+    atual = whatsapp.get_config(session)
     config = whatsapp.atualizar_config(
         session,
         whatsapp.WhatsappConfigUpdate(
             evolution_api_url=evolution_api_url,
-            evolution_api_key=evolution_api_key,
+            # Campo vazio no formulário significa "manter a chave atual";
+            # assim a secret não precisa ser reenviada nem renderizada no HTML.
+            evolution_api_key=evolution_api_key or atual.evolution_api_key,
             evolution_instance=evolution_instance,
             evolution_group_id=evolution_group_id,
             mensagem_template=mensagem_template,

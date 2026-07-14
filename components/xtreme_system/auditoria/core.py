@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, Session, class_mapper, mapped_column
 from xtreme_system.database.core import Base
 
 AUDIT_SKIP = {"auditoria"}
-MASK = {"senha_hash"}
+MASK = {"senha_hash", "evolution_api_key"}
 TIPO_ACOES: tuple[str, ...] = ("CREATE", "UPDATE", "DELETE")
 
 
