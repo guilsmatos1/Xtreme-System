@@ -1,9 +1,9 @@
 ---
-name: 1b-send-to-linear
+name: send-to-linear
 description: Use when creating Linear issues from chat requests and issue metadata like priority or labels must be inferred from the request text.
 ---
 
-# 1b Send to Linear
+# Send to Linear
 
 Use `orca linear create` to create the issue.
 

@@ -1,9 +1,9 @@
 ---
-name: 1a-analyze-codebase
+name: analyze-codebase
 description: Analyze a codebase thoroughly and identify the 10 highest-impact improvement opportunities, prioritized by impact. Use when asked for a code review, technical debt audit, architecture critique, performance review, testing gap analysis, or a prioritized list of concrete improvements tied to specific files and snippets.
-trigger: /1a-analyze-codebase
+trigger: /analyze-codebase
 ---
-# /1a-analyze-codebase
+# /analyze-codebase
 
 Analyze this codebase thoroughly and identify the 10 best opportunities for improvement, prioritized by impact.
 
