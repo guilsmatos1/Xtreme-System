@@ -7,7 +7,6 @@ from uuid import uuid4
 import structlog
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fpdf import FPDF
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -129,7 +128,7 @@ register_crud_ui_routes(
         v.id,
         v.cliente.nome,
         f"{v.veiculo.modelo} ({v.veiculo.placa})",
-        v.data_venda.isoformat(),
+        v.data_venda.isoformat() if v.data_venda is not None else "",
         f"{v.valor_venda:.2f}",
         f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
         f"{v.debitos:.2f}" if v.debitos is not None else "",
@@ -212,76 +211,12 @@ def _resolver_cliente(
     return None, novo_cliente_data, None
 
 
-def _gerar_contrato_pdf(obj: venda.Venda) -> bytes:
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "CONTRATO DE VENDA", new_x="LMARGIN", new_y="NEXT", align="C")
-    pdf.ln(4)
-
-    def _secao(titulo: str) -> None:
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.cell(0, 8, titulo, new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 11)
-
-    def _linha(texto: str) -> None:
-        pdf.multi_cell(0, 7, texto, new_x="LMARGIN", new_y="NEXT")
-
-    _linha(f"Venda: #{obj.id}")
-    _linha(f"Data: {obj.data_venda.isoformat() if obj.data_venda else '-'}")
-
-    _secao("Cliente")
-    _linha(f"Nome: {obj.cliente.nome}")
-    _linha(f"CPF/CNPJ: {obj.cliente.documento}")
-    _linha(f"Telefone: {obj.cliente.telefone or '-'}")
-    _linha(f"Endereço: {obj.cliente.endereco or '-'}")
-
-    _secao("Veículo")
-    _linha(f"Modelo: {obj.veiculo.modelo}")
-    _linha(f"Placa: {obj.veiculo.placa}")
-    _linha(f"KM: {obj.km if obj.km is not None else '-'}")
-
-    _secao("Condições")
-    _linha(f"Valor da venda: R$ {obj.valor_venda:.2f}")
-    _linha(
-        f"Valor de entrada: R$ {obj.valor_entrada:.2f}"
-        if obj.valor_entrada is not None
-        else "Valor de entrada: -"
-    )
-    _linha(
-        f"Débitos do veículo: R$ {obj.debitos:.2f}"
-        if obj.debitos is not None
-        else "Débitos do veículo: -"
-    )
-    _linha(
-        f"Veículo da troca: {obj.veiculo_troca.modelo} ({obj.veiculo_troca.placa})"
-        if obj.veiculo_troca is not None
-        else "Veículo da troca: -"
-    )
-    _linha(
-        f"Valor da diferença: R$ {obj.valor_diferenca:.2f}"
-        if obj.valor_diferenca is not None
-        else "Valor da diferença: -"
-    )
-    _linha(
-        "Pagamento pendente: "
-        f"{'Sim' if obj.pagamento_pendente else 'Não'}"
-        f"{f' - R$ {obj.valor_pendente:.2f}' if obj.valor_pendente is not None else ''}"
-    )
-    _linha(f"Datas de pagamento: {obj.datas_pagamento or '-'}")
-    _linha(f"Forma de pagamento: {obj.forma_pagamento}")
-    _linha(f"Parcelas: {obj.parcelas}")
-    _linha(f"Observações: {obj.observacoes or '-'}")
-
-    return bytes(pdf.output())
-
-
 def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
-    path.write_bytes(_gerar_contrato_pdf(obj))
+    path.write_bytes(documento_contrato_venda.gerar_pdf(obj))
     try:
         documento_contrato_venda.create(
             session,
