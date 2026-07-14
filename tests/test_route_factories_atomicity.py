@@ -24,6 +24,7 @@ def atomic_client() -> Iterator[tuple[TestClient, FastAPI, Session]]:
                 username="admin", senha="senha", papel=usuario.Papel.admin
             ),
         )
+        session.commit()
 
         def override_session() -> Iterator[Session]:
             yield session
@@ -68,6 +69,7 @@ def test_json_update_rolls_back_when_after_update_fails(
 ) -> None:
     client, app, session = atomic_client
     existing = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    session.commit()
 
     def fail_after_update(_session: Session, _obj: object) -> None:
         raise RuntimeError("hook failed")
@@ -96,6 +98,7 @@ def test_json_delete_rolls_back_when_before_delete_fails_after_writes(
 ) -> None:
     client, app, session = atomic_client
     existing = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    session.commit()
 
     def fail_before_delete(session: Session, _obj: object) -> None:
         investidor.create(session, investidor.InvestidorCreate(nome="Bia"))
