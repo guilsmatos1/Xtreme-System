@@ -93,6 +93,7 @@ register_crud_ui_routes(
         "data": "data_venda",
         "valor": "valor_venda",
         "entrada": "valor_entrada",
+        "divida": "valor_pendente",
         "pagamento": "forma_pagamento",
         "parcelas": "parcelas",
         "status": "status",

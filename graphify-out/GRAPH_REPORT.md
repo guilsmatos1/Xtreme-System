@@ -1,16 +1,16 @@
-# Graph Report - tilefish  (2026-07-14)
+# Graph Report - needlefish  (2026-07-14)
 
 ## Corpus Check
-- 144 files · ~54,350 words
+- 144 files · ~54,395 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1338 nodes · 2600 edges · 204 communities (109 shown, 95 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 204 edges (avg confidence: 0.74)
+- 1335 nodes · 2602 edges · 213 communities (115 shown, 98 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 206 edges (avg confidence: 0.74)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0498dd64`
+- Built from commit: `3e395890`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -142,8 +142,8 @@
 - Session
 - Request
 - SessionDep
-- UIAdmin
-- UIUser
+- create_test_engine
+- test_api_compras.py
 - Session
 - Session
 - TestClient
@@ -159,8 +159,17 @@
 - Any
 - MonkeyPatch
 - TestClient
-- date
-- Decimal
+- test_api_rate_limit.py
+- test_api_health.py
+- main
+- Any
+- HTMLResponse
+- RedirectResponse
+- Request
+- Session
+- SessionDep
+- UIAdmin
+- UIUser
 
 ## God Nodes (most connected - your core abstractions)
 1. `_found()` - 43 edges
@@ -175,21 +184,21 @@
 10. `session()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `main()` --indirect_call--> `session()`  [INFERRED]
+  development/create_admin.py → tests/test_crud.py
 - `test_json_create_rolls_back_when_after_create_fails()` --calls--> `register_crud_routes()`  [INFERRED]
   tests/test_route_factories_atomicity.py → bases/xtreme_system/api/route_factories.py
 - `test_json_delete_rolls_back_when_before_delete_fails_after_writes()` --calls--> `register_crud_routes()`  [INFERRED]
   tests/test_route_factories_atomicity.py → bases/xtreme_system/api/route_factories.py
 - `test_json_update_rolls_back_when_after_update_fails()` --calls--> `register_crud_routes()`  [INFERRED]
   tests/test_route_factories_atomicity.py → bases/xtreme_system/api/route_factories.py
-- `main()` --indirect_call--> `session()`  [INFERRED]
-  development/create_admin.py → tests/test_crud.py
 - `ui_perfil_editar()` --calls--> `_found()`  [INFERRED]
   bases/xtreme_system/api/routes/ui_routes/perfis.py → bases/xtreme_system/api/deps.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (204 total, 95 thin omitted)
+## Communities (213 total, 98 thin omitted)
 
 ### Community 0 - "htmx.min.js"
 Cohesion: 0.08
@@ -204,32 +213,32 @@ Cohesion: 0.07
 Nodes (69): UploadFile, Retorna mensagem de erro do primeiro arquivo inválido, ou None.      Lote inteir, _validar_uploads(), _admin_headers(), client(), _criar_cliente(), _FakeFile, _FakeUpload (+61 more)
 
 ### Community 3 - "_found"
-Cohesion: 0.36
-Nodes (15): Form, HTMLResponse, Request, Response, SessionDep, UIAdmin, HTMX routes for usuarios., ui_usuario_criar() (+7 more)
+Cohesion: 0.15
+Nodes (26): _sort_key(), Form, HTMLResponse, Request, Response, SessionDep, UIAdmin, HTMX routes for usuarios. (+18 more)
 
 ### Community 4 - "route_factories.py"
 Cohesion: 0.16
 Nodes (20): create(), delete(), get(), list_all(), Perfil, PerfilCreate, PerfilRead, PerfilUpdate (+12 more)
 
 ### Community 5 - "core.py"
-Cohesion: 0.10
-Nodes (29): AdminUser, _csv_response(), Response, criar_usuario(), deletar_usuario(), _guard_lancamento_veiculo(), listar_auditoria(), listar_usuarios() (+21 more)
+Cohesion: 0.28
+Nodes (11): atualizar_config(), _enviar(), _formatar_mensagem(), get_config(), notificar_venda(), _PlaceholderDict, Notificação de venda via WhatsApp (Evolution API): config, formatação e envio., Envia a notificação da venda para o grupo do WhatsApp, best-effort.      Nunca p (+3 more)
 
 ### Community 6 - "core.py"
-Cohesion: 0.06
-Nodes (59): Base, _baixar_contrato_venda(), _criar_venda(), _ctx_form_venda(), _erro_venda(), _gerar_contrato_pdf(), _ok_venda(), _parse_venda_form() (+51 more)
+Cohesion: 0.08
+Nodes (51): TipoCliente, create(), delete(), get(), get_by_placa(), list_all(), Decimal, Session (+43 more)
 
 ### Community 7 - "setup.py"
-Cohesion: 0.07
-Nodes (28): Cookie, Exception, JSONResponse, oauth2_scheme, get_current_user(), get_ui_user(), _NaoAdminError, _NaoAutenticadoError (+20 more)
+Cohesion: 0.20
+Nodes (7): _rate_limit(), _rate_limit_response(), _RateLimiter, FastAPI app initialization, middlewares, and error handlers., Liga request_id ao contexto de log e loga erros não tratados.      Precisa ser u, Janela deslizante em memória, por chave (ex: IP do cliente)., _request_context()
 
 ### Community 8 - "Usuario"
 Cohesion: 0.12
 Nodes (16): Bug pre-existente — fora de escopo, Constantes, Contexto, Design, Design — Validação de uploads de imagens e documentos, Endpoints afetados, Error handling, Fluxo (+8 more)
 
 ### Community 9 - "veiculos.py"
-Cohesion: 0.10
-Nodes (71): Path, Shared helpers for HTMX route modules., _remover_upload(), _uploaded_file_path(), _uploads_cliente_dir(), _uploads_compra_dir(), _uploads_contrato_venda_dir(), _uploads_dir() (+63 more)
+Cohesion: 0.07
+Nodes (88): AdminUser, Path, Shared helpers for HTMX route modules., _remover_upload(), _uploaded_file_path(), _uploads_cliente_dir(), _uploads_compra_dir(), _uploads_contrato_venda_dir() (+80 more)
 
 ### Community 10 - "Base"
 Cohesion: 0.07
@@ -241,7 +250,7 @@ Nodes (31): Cliente, ClienteCreate, ClienteUpdate, create(), delete(), get(), ge
 
 ### Community 12 - "core.py"
 Cohesion: 0.08
-Nodes (39): _atomic_write(), _conflict_form_response(), _create_with_hook(), CrudModule, _delete_with_hook(), Any, FastAPI, HTMLResponse (+31 more)
+Nodes (38): _atomic_write(), _conflict_form_response(), _create_with_hook(), CrudModule, _csv_response(), _delete_with_hook(), Any, FastAPI (+30 more)
 
 ### Community 13 - "usuarios.py"
 Cohesion: 0.18
@@ -262,6 +271,10 @@ Nodes (9): create(), delete(), DocumentoProcuracao, DocumentoProcuracaoCreate, g
 ### Community 17 - "Design"
 Cohesion: 0.17
 Nodes (11): File Structure, Global Constraints, Self-Review Notes, Task 1: Helper `_validar_uploads` + constants, Task 2: Middleware `_limite_request_size` (20 MB por request), Task 3: Wire validation into `ui_veiculo_imagens_upload`, Task 4: Wire validation into `ui_cliente_documentos_upload`, Task 5: Wire validation into `_criar_veiculo` (documents + vehicle doc) (+3 more)
+
+### Community 18 - "test_api_auth.py"
+Cohesion: 0.17
+Nodes (22): Any, _baixar_contrato_venda(), _criar_venda(), _ctx_form_venda(), _erro_venda(), _gerar_contrato_pdf(), _ok_venda(), _parse_venda_form() (+14 more)
 
 ### Community 19 - "auditoria.py"
 Cohesion: 0.33
@@ -312,8 +325,8 @@ Cohesion: 0.40
 Nodes (4): downgrade(), Create imagem_comprovante_venda table., Drop imagem_comprovante_venda table., upgrade()
 
 ### Community 33 - "core.py"
-Cohesion: 0.11
-Nodes (18): BaseSettings, OAuth2PasswordRequestForm, login(), create_access_token(), decode_token(), get_settings(), Auth: settings, hash de senha e JWT (puro, sem FastAPI)., Settings (+10 more)
+Cohesion: 0.14
+Nodes (15): BaseSettings, create_access_token(), decode_token(), get_settings(), Auth: settings, hash de senha e JWT (puro, sem FastAPI)., Settings, TokenData, get_settings() (+7 more)
 
 ### Community 34 - "ui_configuracoes_salvar"
 Cohesion: 0.40
@@ -360,8 +373,8 @@ Cohesion: 0.17
 Nodes (11): Codebase Analysis - Xtreme Motors, Opportunity 10: Profile assignment can surface FK failures as 500s, Opportunity 1: Sale lifecycle invariants are not enforced, Opportunity 2: Upload validation trusts client metadata and unsafe paths, Opportunity 3: Deleting parent records leaves upload files behind, Opportunity 4: The rate limiter leaks per-IP buckets, Opportunity 5: Investor aggregates are computed in Python on every render, Opportunity 6: Latest purchase lookup scans too much history (+3 more)
 
 ### Community 85 - "auditoria.py"
-Cohesion: 0.06
-Nodes (47): Engine, client(), TestClient, API compras: CRUD via TestClient., _seed(), test_admin_crud_compras(), test_compra_cliente_inexistente_retorna_400(), test_vendedor_nao_cria_compra() (+39 more)
+Cohesion: 0.30
+Nodes (13): _investidor_e_veiculo(), CRUD end-to-end dos bricks, em SQLite in-memory (sem depender do Postgres)., CRUD de usuário: criar, buscar, listar, deletar e trocar senha., session(), test_atualizar_preco_ou_investidor_sincroniza_lancamento(), test_caixa_lancamento_veiculo_audit(), test_criar_veiculo_gera_lancamento_de_custo_e_reduz_saldo(), test_excluir_veiculo_apaga_lancamento_em_cascata() (+5 more)
 
 ### Community 86 - "Response"
 Cohesion: 0.42
@@ -384,34 +397,54 @@ Cohesion: 0.26
 Nodes (11): DeclarativeBase, Base, create(), delete(), get(), ImagemComprovanteVenda, ImagemComprovanteVendaCreate, ImagemComprovanteVendaRead (+3 more)
 
 ### Community 136 - "Path"
-Cohesion: 0.16
-Nodes (23): TipoCliente, Papel, create(), delete(), get(), get_by_placa(), list_all(), Decimal (+15 more)
+Cohesion: 0.20
+Nodes (8): Cookie, oauth2_scheme, get_current_user(), get_ui_user(), _NaoAutorizadoError, Dependências compartilhadas: sessão, autenticação (Bearer/cookie) e templates., require_admin(), _handle_nao_autorizado()
 
 ### Community 137 - "test_venda_whatsapp.py"
 Cohesion: 0.36
 Nodes (10): client(), _configurar(), _payload(), Notificação de venda via WhatsApp: disparo best-effort no after_create., _seed(), test_criar_venda_dispara_notificacao(), test_falha_no_envio_nao_impede_criacao_da_venda(), test_notificacao_ignora_placeholder_desconhecido() (+2 more)
 
 ### Community 138 - "perfis.py"
-Cohesion: 0.31
-Nodes (7): _perfis_ctx(), HTMX routes for perfis., ui_perfil_atualizar(), ui_perfil_criar(), ui_perfil_editar(), ui_perfil_excluir(), ui_perfis()
+Cohesion: 0.44
+Nodes (12): TestClient, API vendas: CRUD via TestClient., Cria investidor, cliente e veiculo., _seed(), test_admin_cria_venda(), test_admin_lista_vendas(), test_atualizar_venda_concluida_para_pendente_libera_veiculo(), test_atualizar_venda_sincroniza_status_do_veiculo() (+4 more)
+
+### Community 154 - "RedirectResponse"
+Cohesion: 0.25
+Nodes (8): Exception, JSONResponse, _NaoAdminError, _NaoAutenticadoError, health(), _handle_erro_interno(), _handle_nao_admin(), _handle_nao_autenticado()
+
+### Community 172 - "Request"
+Cohesion: 0.43
+Nodes (7): _ctx_auditoria(), _nomes_usuarios(), _pretty(), HTMX routes for auditoria., ui_auditoria(), ui_auditoria_detalhe(), ui_auditoria_exportar()
+
+### Community 173 - "SessionDep"
+Cohesion: 0.25
+Nodes (5): Limpa o estado dos limiters (usado em testes, que reusam o `app`)., reset_rate_limiters(), db_session(), Sessão isolada com schema migrado em Postgres ou SQLite local., _reset_rate_limiters()
+
+### Community 176 - "create_test_engine"
+Cohesion: 0.25
+Nodes (8): Engine, client(), create_test_engine(), Helpers for test database bootstrap., _reset_postgres_schema(), _run_migrations(), _free_port(), live_server_url()
+
+### Community 177 - "test_api_compras.py"
+Cohesion: 0.53
+Nodes (8): client(), TestClient, API compras: CRUD via TestClient., _seed(), test_admin_crud_compras(), test_compra_cliente_inexistente_retorna_400(), test_vendedor_nao_cria_compra(), _token()
 
 ## Knowledge Gaps
-- **112 isolated node(s):** `Visão geral`, `Enums`, ``investidor``, ``veiculo``, ``cliente`` (+107 more)
+- **112 isolated node(s):** `inventory_api`, `xtreme-system`, `agent-finish.sh script`, `InvestidorCreateFactory`, `VendaCreateFactory` (+107 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **95 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **98 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Base` connect `Form` to `core.py`, `create_test_engine`, `route_factories.py`, `core.py`, `Path`, `API - Xtreme Motors`, `usuarios.py`, `core.py`, `auditoria.py`, `Response`, `core.py`, `core.py`, `core.py`, `Setup`?**
-  _High betweenness centrality (0.080) - this node is a cross-community bridge._
-- **Why does `_found()` connect `veiculos.py` to `_found`, `core.py`, `setup.py`, `perfis.py`, `5c6914b729c6_index_fks_veiculo.py`, `test_venda_whatsapp.py`?**
+- **Why does `Base` connect `Form` to `core.py`, `create_test_engine`, `route_factories.py`, `core.py`, `core.py`, `API - Xtreme Motors`, `usuarios.py`, `core.py`, `auditoria.py`, `Response`, `core.py`, `core.py`, `core.py`, `Setup`?**
+  _High betweenness centrality (0.085) - this node is a cross-community bridge._
+- **Why does `create_test_engine()` connect `create_test_engine` to `test_ui.py`, `test_venda_whatsapp.py`, `perfis.py`, `test_api_health.py`, `test_api_rate_limit.py`, `SessionDep`, `core.py`, `test_api_compras.py`, `auditoria.py`, `core.py`?**
   _High betweenness centrality (0.066) - this node is a cross-community bridge._
-- **Why does `create_test_engine()` connect `auditoria.py` to `test_ui.py`, `setup.py`, `test_venda_whatsapp.py`, `core.py`, `core.py`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+- **Why does `_found()` connect `veiculos.py` to `_found`, `Path`, `Request`, `5c6914b729c6_index_fks_veiculo.py`, `test_venda_whatsapp.py`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **Are the 41 inferred relationships involving `_found()` (e.g. with `_veiculos_comprador_modal()` and `_veiculos_vendedor_modal()`) actually correct?**
   _`_found()` has 41 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Visão geral`, `Enums`, ``investidor`` to the rest of the system?**
+- **What connects `HTMX routes for vendas.`, `Retorna (cliente_existente, dados_novo_cliente, erro).`, `Run migrations in 'offline' mode.      This configures the context with just a U` to the rest of the system?**
   _221 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `htmx.min.js` be split into smaller, more focused modules?**
   _Cohesion score 0.0793040293040293 - nodes in this community are weakly interconnected._

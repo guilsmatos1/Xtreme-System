@@ -5,6 +5,7 @@
   <td>{{ v.data_venda.isoformat() }}</td>
   <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(v.valor_venda) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td class="cell-num">{% if v.valor_entrada is not none %}R$ {{ "{:,.2f}".format(v.valor_entrada) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
+  <td class="cell-num">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}R$ {{ "{:,.2f}".format(v.valor_pendente) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
   <td>{{ v.forma_pagamento }}</td>
   <td class="cell-num">{{ v.parcelas }}</td>
   <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span></td>
