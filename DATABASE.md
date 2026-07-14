@@ -94,6 +94,7 @@ Registro de vendas de veículos.
 | `valor_venda` | `NUMERIC(12,2)` | Não | - | |
 | `valor_entrada` | `NUMERIC(12,2)` | Sim | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
+| `km` | `INTEGER` | Sim | - | Quilometragem do veículo no momento da venda |
 | `forma_pagamento` | `VARCHAR` | Não | - | |
 | `parcelas` | `INTEGER` | Não | - | |
 | `status` | `statusvenda` | Não | `pendente` | `pendente`, `aprovado`, `cancelado`, `concluido` |
@@ -118,6 +119,16 @@ Imagens de comprovantes associados a uma venda.
 | `id` | `INTEGER` | Não | - | PK |
 | `venda_id` | `INTEGER` | Não | - | FK → `venda.id` (CASCADE), indexado |
 | `url` | `VARCHAR` | Não | - | URL da imagem |
+
+### `documento_contrato_venda`
+
+Contratos de venda gerados em PDF.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `venda_id` | `INTEGER` | Não | - | FK → `venda.id` (CASCADE), indexado |
+| `url` | `VARCHAR` | Não | - | URL do PDF do contrato |
 
 ### `compra`
 
@@ -205,6 +216,7 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 - Um **veículo** pode estar em várias **compras** (historicamente).
 - Um **usuário** (vendedor) pode estar em várias **vendas**.
 - Uma **venda** pode ter vários **comprovantes**.
+- Uma **venda** pode ter vários **contratos** (PDF gerado ao concluir a venda).
 - Uma **compra** pode ter vários **comprovantes de pagamento**.
 
 ---
@@ -225,6 +237,7 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `imagem_veiculo` | `ix_imagem_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `documento_veiculo` | `ix_documento_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `imagem_comprovante_venda` | `ix_imagem_comprovante_venda_venda_id` | `venda_id` | Não |
+| `documento_contrato_venda` | `ix_documento_contrato_venda_venda_id` | `venda_id` | Não |
 | `compra` | `ix_compra_cliente_id` | `cliente_id` | Não |
 | `compra` | `ix_compra_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |

@@ -24,6 +24,10 @@ def _uploads_compra_dir(compra_id: int) -> Path:
     return _ui_dir / "static" / "uploads" / "compras" / str(compra_id) / "comprovantes"
 
 
+def _uploads_contrato_venda_dir(venda_id: int) -> Path:
+    return _ui_dir / "static" / "uploads" / "vendas" / str(venda_id) / "contrato"
+
+
 _EXTENSOES_PERMITIDAS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
 _MAX_POR_ARQUIVO = 5 * 1024 * 1024
 _TIPO_POR_EXTENSAO = {

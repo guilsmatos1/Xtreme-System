@@ -20,6 +20,7 @@ from xtreme_system.caixa import core as _caixa  # noqa: F401
 from xtreme_system.cliente import core as _cliente  # noqa: F401
 from xtreme_system.compra import core as _compra  # noqa: F401
 from xtreme_system.database.core import Base, get_settings
+from xtreme_system.documento_contrato_venda import core as _documento_contrato_venda  # noqa: F401
 from xtreme_system.documento_procuracao import core as _documento_procuracao  # noqa: F401
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_comprovante_compra import core as _imagem_comprovante_compra  # noqa: F401

@@ -35,6 +35,7 @@ class Venda(Base):
     valor_venda: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     valor_entrada: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    km: Mapped[int | None] = mapped_column()
     forma_pagamento: Mapped[str]
     parcelas: Mapped[int]
     status: Mapped[StatusVenda] = mapped_column(default=StatusVenda.pendente)
@@ -53,6 +54,7 @@ class VendaCreate(BaseModel):
     valor_venda: Decimal
     valor_entrada: Decimal | None = None
     debitos: Decimal | None = None
+    km: int | None = None
     forma_pagamento: str
     parcelas: int
     status: StatusVenda = StatusVenda.pendente
@@ -67,6 +69,7 @@ class VendaUpdate(BaseModel):
     valor_venda: Decimal | None = None
     valor_entrada: Decimal | None = None
     debitos: Decimal | None = None
+    km: int | None = None
     forma_pagamento: str | None = None
     parcelas: int | None = None
     status: StatusVenda | None = None
@@ -84,6 +87,7 @@ class VendaRead(BaseModel):
     valor_venda: Decimal
     valor_entrada: Decimal | None
     debitos: Decimal | None
+    km: int | None
     forma_pagamento: str
     parcelas: int
     status: StatusVenda

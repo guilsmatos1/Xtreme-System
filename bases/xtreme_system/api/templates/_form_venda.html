@@ -6,20 +6,69 @@
       <button class="icon-btn" type="button" aria-label="Fechar"
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
-    <form hx-post="/ui/vendas{% if venda %}/{{ venda.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+    <form hx-post="/ui/vendas{% if venda %}/{{ venda.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
+          {% if not venda %}id="form-nova-venda"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
+          {% if venda %}
           <label class="field">
             <span class="field__label">Cliente</span>
-            <input class="input" id="cliente-search" name="cliente_id" type="hidden" required>
-            <input class="input" placeholder="Buscar por nome" list="clientes-list" onchange="document.getElementById('cliente-search').value = this.selectedOptions[0]?.dataset.id || ''">
+            <input class="input" id="cliente-search" name="cliente_id" type="hidden" value="{{ venda.cliente_id }}" required>
+            <input class="input" placeholder="Buscar por nome" list="clientes-list" value="{{ venda.cliente.nome }}" onchange="document.getElementById('cliente-search').value = this.selectedOptions[0]?.dataset.id || ''">
             <datalist id="clientes-list">
               {% for c in clientes %}
               <option value="{{ c.nome }}" data-id="{{ c.id }}"></option>
               {% endfor %}
             </datalist>
           </label>
+          {% else %}
+          <label class="field field--full">
+            <span class="field__label">Cliente</span>
+            <select class="select" id="cliente-select" name="cliente_id">
+              <option value="">➕ Cadastrar novo cliente</option>
+              {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }} ({{ c.documento }})</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Nome</span>
+            <input class="input" name="cli_nome" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">CPF</span>
+            <input class="input" name="cli_documento" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo</span>
+            <select class="select" name="cli_tipo" data-novo-cliente>
+              {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Telefone</span>
+            <input class="input" name="cli_telefone" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="cli_email" type="email" data-novo-cliente>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Endereço</span>
+            <input class="input" name="cli_endereco" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Cidade</span>
+            <input class="input" name="cli_cidade" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Estado</span>
+            <input class="input" name="cli_estado" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cli_cep" data-novo-cliente>
+          </label>
+          {% endif %}
           <label class="field">
             <span class="field__label">Veículo</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
@@ -29,6 +78,10 @@
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
               {% endfor %}
             </datalist>
+          </label>
+          <label class="field">
+            <span class="field__label">KM</span>
+            <input class="input" name="km" type="number" min="0" value="{{ venda.km if venda and venda.km is not none else '' }}">
           </label>
           <label class="field">
             <span class="field__label">Status</span>
@@ -46,6 +99,10 @@
           <label class="field">
             <span class="field__label">Entrada</span>
             <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda and venda.valor_entrada is not none else '' }}">
+          </label>
+          <label class="field">
+            <span class="field__label">Débitos do veículo</span>
+            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ venda.debitos if venda and venda.debitos is not none else '' }}">
           </label>
 
           <label class="field">
@@ -70,3 +127,22 @@
     </form>
   </div>
 </div>
+{% if not venda %}
+<script>
+(function () {
+  var form = document.getElementById('form-nova-venda');
+  var select = document.getElementById('cliente-select');
+  var campos = form.querySelectorAll('[data-novo-cliente]');
+
+  function sincronizarCliente() {
+    var existente = !!select.value;
+    campos.forEach(function (campo) {
+      campo.disabled = existente;
+      campo.closest('.field').style.display = existente ? 'none' : '';
+    });
+  }
+  select.addEventListener('change', sincronizarCliente);
+  sincronizarCliente();
+})();
+</script>
+{% endif %}
