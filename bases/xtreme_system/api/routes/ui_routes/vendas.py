@@ -276,7 +276,7 @@ def _gerar_contrato_pdf(obj: venda.Venda) -> bytes:
     return bytes(pdf.output())
 
 
-def _salvar_contrato_venda(session: Session, obj: venda.Venda) -> None:
+def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid4().hex}.pdf"
@@ -321,7 +321,7 @@ async def _criar_venda(
 
     obj = venda.create(session, data)
     whatsapp.notificar_venda(session, obj)
-    _salvar_contrato_venda(session, obj)
+    _persistir_contrato_venda(session, obj)
     return _ok_venda(request, session, user)
 
 

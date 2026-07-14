@@ -1,10 +1,7 @@
 """HTMX routes for compras."""
 
-import contextlib
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Annotated, Any
-from uuid import uuid4
 
 import structlog
 from fastapi import File, HTTPException, Request, UploadFile
@@ -19,6 +16,7 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_compra_dir,
     _validar_uploads,
 )
+from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
 from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
@@ -62,10 +60,7 @@ def _comprovantes_modal(
 ) -> HTMLResponse:
     item = _found(compra.get(session, compra_id), "Compra")
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
-    for comprovante in list(comprovantes):
-        path = _uploaded_file_path(comprovante.url or "")
-        if path is not None and not path.exists():
-            imagem_comprovante_compra.delete(session, comprovante)
+    remover_orfaos(session, comprovantes, imagem_comprovante_compra.delete)
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
     return templates.TemplateResponse(
         request,
@@ -98,27 +93,16 @@ def ui_compra_comprovantes_upload(
     if erro:
         return _comprovantes_modal(request, session, compra_id, erro)
 
-    upload_dir = _uploads_compra_dir(compra_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    for comprovante in comprovantes:
-        if not comprovante.filename:
-            continue
-        suffix = Path(comprovante.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        with path.open("wb") as f:
-            f.write(comprovante.file.read())
-        try:
-            imagem_comprovante_compra.create(
-                session,
-                imagem_comprovante_compra.ImagemComprovanteCompraCreate(
-                    compra_id=compra_id,
-                    url=f"/static/uploads/compras/{compra_id}/comprovantes/{filename}",
-                ),
-            )
-        except Exception:
-            _remover_upload(path)
-            raise
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_compra_dir(compra_id),
+        url_prefix=f"/static/uploads/compras/{compra_id}/comprovantes",
+        create_fn=imagem_comprovante_compra.create,
+        schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
+        fk_field="compra_id",
+        fk_id=compra_id,
+        arquivos=comprovantes,
+    )
     return _comprovantes_modal(request, session, compra_id)
 
 
@@ -135,12 +119,10 @@ def ui_compra_comprovantes_excluir(
     )
     if comprovante.compra_id != compra_id:
         raise HTTPException(status_code=404, detail="Comprovante não encontrado")
-    url = comprovante.url or ""
     imagem_comprovante_compra.delete(session, comprovante)
-    path = _uploaded_file_path(url)
+    path = _uploaded_file_path(comprovante.url or "")
     if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
+        _remover_upload(path)
     return _comprovantes_modal(request, session, compra_id)
 
 

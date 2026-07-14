@@ -1,17 +1,25 @@
 """HTMX routes for clientes."""
 
-from typing import Any
+from typing import Annotated, Any
 
 import structlog
-from fastapi import Request
+from fastapi import File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
 from xtreme_system.api.route_factories import register_crud_ui_routes
+from xtreme_system.api.routes.ui_routes.common import (
+    _remover_upload,
+    _uploaded_file_path,
+    _uploads_cliente_dir,
+    _validar_uploads,
+)
+from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.venda import core as venda
 
 logger = structlog.get_logger(__name__)
@@ -84,6 +92,77 @@ def _veiculos_vendedor_modal(
             "modal_kind": "vendedor",
         },
     )
+
+
+def _documentos_modal(
+    request: Request,
+    session: Session,
+    cliente_id: int,
+) -> HTMLResponse:
+    item = _found(cliente.get(session, cliente_id), "Cliente")
+    remover_orfaos(session, item.documentos, imagem_documento_cliente.delete)
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request, "_modal_documentos_cliente.html", {"cliente": item}
+    )
+
+
+@app.get("/ui/clientes/{cliente_id}/documentos")
+def ui_cliente_documentos(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+) -> HTMLResponse:
+    return _documentos_modal(request, session, cliente_id)
+
+
+@app.post("/ui/clientes/{cliente_id}/documentos")
+def ui_cliente_documentos_upload(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+    documentos: Annotated[list[UploadFile], File(default_factory=list)],
+) -> HTMLResponse:
+    item = _found(cliente.get(session, cliente_id), "Cliente")
+    erro = _validar_uploads(documentos)
+    if erro:
+        return templates.TemplateResponse(
+            request,
+            "_modal_documentos_cliente.html",
+            {"cliente": item, "erro": erro},
+            status_code=400,
+        )
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_cliente_dir(cliente_id),
+        url_prefix=f"/static/uploads/clientes/{cliente_id}/documentos",
+        create_fn=imagem_documento_cliente.create,
+        schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
+        fk_field="cliente_id",
+        fk_id=cliente_id,
+        arquivos=documentos,
+    )
+    return _documentos_modal(request, session, cliente_id)
+
+
+@app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
+def ui_cliente_documentos_excluir(
+    request: Request,
+    session: SessionDep,
+    _: UIAdmin,
+    cliente_id: int,
+    doc_id: int,
+) -> HTMLResponse:
+    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
+    if doc.cliente_id != cliente_id:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+    imagem_documento_cliente.delete(session, doc)
+    path = _uploaded_file_path(doc.url or "")
+    if path is not None:
+        _remover_upload(path)
+    return _documentos_modal(request, session, cliente_id)
 
 
 @app.get("/ui/clientes")

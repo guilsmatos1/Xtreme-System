@@ -1,14 +1,10 @@
-"""HTMX routes for veiculos."""
+"""HTMX routes for veículos — CRUD override (create/update transacionais)."""
 
-import contextlib
 from datetime import UTC, datetime
 from decimal import Decimal
-from pathlib import Path
-from typing import Annotated, Any, cast
-from uuid import uuid4
+from typing import Any, cast
 
-import structlog
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -16,14 +12,13 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.route_factories import register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
-    _remover_upload,
-    _uploaded_file_path,
     _uploads_cliente_dir,
     _uploads_compra_dir,
     _uploads_dir,
     _uploads_procuracao_dir,
     _validar_uploads,
 )
+from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.api.routes.workflows import validate_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
@@ -33,13 +28,8 @@ from xtreme_system.documento_procuracao import core as documento_procuracao
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
-from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.veiculo import core as veiculo
-
-logger = structlog.get_logger(__name__)
-
-# ---- Veículos (UI) ----
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
@@ -63,480 +53,6 @@ def _ctx_lista_veiculos(
             session, [item.id for item in veiculos]
         )
     }
-
-
-def _imagem_modal(request: Request, session: Session, veiculo_id: int) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    for img in list(item.imagens):
-        path = _uploaded_file_path(img.url or "")
-        if path is not None and not path.exists():
-            imagem_veiculo.delete(session, img)
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request, "_modal_imagens_veiculo.html", {"veiculo": item}
-    )
-
-
-@app.get("/ui/veiculos/{veiculo_id}/imagens")
-def ui_veiculo_imagens(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-) -> HTMLResponse:
-    return _imagem_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/imagens")
-def ui_veiculo_imagens_upload(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    imagens: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    erro = _validar_uploads(imagens)
-    if erro:
-        return templates.TemplateResponse(
-            request,
-            "_modal_imagens_veiculo.html",
-            {"veiculo": item, "erro": erro},
-            status_code=400,
-        )
-    upload_dir = _uploads_dir(veiculo_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    for imagem in imagens:
-        if not imagem.filename:
-            continue
-        suffix = Path(imagem.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        with path.open("wb") as f:
-            f.write(imagem.file.read())
-        try:
-            imagem_veiculo.create(
-                session,
-                imagem_veiculo.ImagemVeiculoCreate(
-                    veiculo_id=veiculo_id,
-                    url=f"/static/uploads/veiculos/{veiculo_id}/{filename}",
-                ),
-            )
-        except Exception:
-            _remover_upload(path)
-            raise
-    return _imagem_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/imagens/{img_id}/excluir")
-def ui_veiculo_imagens_excluir(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    img_id: int,
-) -> HTMLResponse:
-    img = _found(imagem_veiculo.get(session, img_id), "Imagem")
-    if img.veiculo_id != veiculo_id:
-        raise HTTPException(status_code=404, detail="Imagem não encontrada")
-    url = img.url or ""
-    imagem_veiculo.delete(session, img)
-    path = _uploaded_file_path(url)
-    if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
-    return _imagem_modal(request, session, veiculo_id)
-
-
-def _procuracao_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
-) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    for doc in list(item.documentos_procuracao):
-        path = _uploaded_file_path(doc.url or "")
-        if path is not None and not path.exists():
-            documento_procuracao.delete(session, doc)
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request,
-        "_modal_procuracao_veiculo.html",
-        {"veiculo": item, "erro": erro},
-        status_code=400 if erro else 200,
-    )
-
-
-@app.get("/ui/veiculos/{veiculo_id}/procuracao")
-def ui_veiculo_procuracao(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-) -> HTMLResponse:
-    return _procuracao_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/procuracao")
-def ui_veiculo_procuracao_upload(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    _found(veiculo.get(session, veiculo_id), "Veículo")
-    erro = _validar_uploads(documentos)
-    if erro:
-        return _procuracao_modal(request, session, veiculo_id, erro)
-    _salvar_documentos_procuracao(session, veiculo_id, documentos)
-    return _procuracao_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/procuracao/{doc_id}/excluir")
-def ui_veiculo_procuracao_excluir(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    doc = _found(documento_procuracao.get(session, doc_id), "Documento")
-    if doc.veiculo_id != veiculo_id:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    url = doc.url or ""
-    documento_procuracao.delete(session, doc)
-    path = _uploaded_file_path(url)
-    if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
-    return _procuracao_modal(request, session, veiculo_id)
-
-
-def _salvar_documentos_cliente(
-    session: Session, cliente_id: int, documentos: list[UploadFile]
-) -> None:
-    upload_dir = _uploads_cliente_dir(cliente_id)
-    for documento in documentos:
-        if not documento.filename:
-            continue
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        suffix = Path(documento.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        with path.open("wb") as f:
-            f.write(documento.file.read())
-        try:
-            imagem_documento_cliente.create(
-                session,
-                imagem_documento_cliente.ImagemDocumentoClienteCreate(
-                    cliente_id=cliente_id,
-                    url=f"/static/uploads/clientes/{cliente_id}/documentos/{filename}",
-                ),
-            )
-        except Exception:
-            _remover_upload(path)
-            raise
-
-
-def _salvar_documento_veiculo(
-    session: Session, veiculo_id: int, arquivo: UploadFile | None
-) -> None:
-    if not arquivo or not arquivo.filename:
-        return
-    upload_dir = _uploads_dir(veiculo_id) / "documentos"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    suffix = Path(arquivo.filename).suffix.lower()
-    filename = f"{uuid4().hex}{suffix}"
-    path = upload_dir / filename
-    with path.open("wb") as f:
-        f.write(arquivo.file.read())
-    try:
-        documento_veiculo.create(
-            session,
-            documento_veiculo.DocumentoVeiculoCreate(
-                veiculo_id=veiculo_id,
-                url=f"/static/uploads/veiculos/{veiculo_id}/documentos/{filename}",
-            ),
-        )
-    except Exception:
-        _remover_upload(path)
-        raise
-
-
-def _salvar_documentos_procuracao(
-    session: Session, veiculo_id: int, documentos: list[UploadFile]
-) -> None:
-    upload_dir = _uploads_procuracao_dir(veiculo_id)
-    for documento in documentos:
-        if not documento.filename:
-            continue
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        suffix = Path(documento.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        with path.open("wb") as f:
-            f.write(documento.file.read())
-        try:
-            documento_procuracao.create(
-                session,
-                documento_procuracao.DocumentoProcuracaoCreate(
-                    veiculo_id=veiculo_id,
-                    url=f"/static/uploads/veiculos/{veiculo_id}/procuracao/{filename}",
-                ),
-            )
-        except Exception:
-            _remover_upload(path)
-            raise
-
-
-def _salvar_comprovantes_pagamento(
-    session: Session, compra_id: int, comprovantes: list[UploadFile]
-) -> None:
-    upload_dir = _uploads_compra_dir(compra_id)
-    for comprovante in comprovantes:
-        if not comprovante.filename:
-            continue
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        suffix = Path(comprovante.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        with path.open("wb") as f:
-            f.write(comprovante.file.read())
-        try:
-            imagem_comprovante_compra.create(
-                session,
-                imagem_comprovante_compra.ImagemComprovanteCompraCreate(
-                    compra_id=compra_id,
-                    url=f"/static/uploads/compras/{compra_id}/comprovantes/{filename}",
-                ),
-            )
-        except Exception:
-            _remover_upload(path)
-            raise
-
-
-def _cliente_vendedor_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
-) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    documentos = []
-    if item_compra is not None:
-        for doc in list(item_compra.cliente.documentos):
-            path = _uploaded_file_path(doc.url or "")
-            if path is not None and not path.exists():
-                imagem_documento_cliente.delete(session, doc)
-        session.refresh(item_compra.cliente)
-        documentos = imagem_documento_cliente.list_by_cliente(
-            session, item_compra.cliente_id
-        )
-    return templates.TemplateResponse(
-        request,
-        "_modal_cliente_vendedor.html",
-        {
-            "veiculo": item,
-            "compra": item_compra,
-            "documentos": documentos,
-            "erro": erro,
-        },
-        status_code=400 if erro else 200,
-    )
-
-
-@app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
-def ui_veiculo_cliente_vendedor(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-) -> HTMLResponse:
-    return _cliente_vendedor_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos")
-def ui_veiculo_cliente_vendedor_documentos_upload(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    if item_compra is None:
-        return _cliente_vendedor_modal(
-            request, session, veiculo_id, "Cliente vendedor não encontrado"
-        )
-    erro = _validar_uploads(documentos)
-    if erro:
-        return _cliente_vendedor_modal(request, session, veiculo_id, erro)
-    _salvar_documentos_cliente(session, item_compra.cliente_id, documentos)
-    return _cliente_vendedor_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos/{doc_id}/excluir")
-def ui_veiculo_cliente_vendedor_documentos_excluir(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    if item_compra is None:
-        return _cliente_vendedor_modal(
-            request, session, veiculo_id, "Cliente vendedor não encontrado"
-        )
-    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
-    if doc.cliente_id != item_compra.cliente_id:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    url = doc.url or ""
-    imagem_documento_cliente.delete(session, doc)
-    path = _uploaded_file_path(url)
-    if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
-    return _cliente_vendedor_modal(request, session, veiculo_id)
-
-
-def _comprovantes_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
-) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    documentos = []
-    if item_compra is not None:
-        for doc in imagem_comprovante_compra.list_by_compra(session, item_compra.id):
-            path = _uploaded_file_path(doc.url or "")
-            if path is not None and not path.exists():
-                imagem_comprovante_compra.delete(session, doc)
-        documentos = imagem_comprovante_compra.list_by_compra(session, item_compra.id)
-    return templates.TemplateResponse(
-        request,
-        "_modal_comprovantes_veiculo.html",
-        {"veiculo": item, "documentos": documentos, "erro": erro},
-        status_code=400 if erro else 200,
-    )
-
-
-@app.get("/ui/veiculos/{veiculo_id}/comprovantes")
-def ui_veiculo_comprovantes(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-) -> HTMLResponse:
-    return _comprovantes_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/comprovantes")
-def ui_veiculo_comprovantes_upload(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    if item_compra is None:
-        return _comprovantes_modal(
-            request, session, veiculo_id, "Compra não encontrada para este veículo"
-        )
-    erro = _validar_uploads(documentos)
-    if erro:
-        return _comprovantes_modal(request, session, veiculo_id, erro)
-    _salvar_comprovantes_pagamento(session, item_compra.id, documentos)
-    return _comprovantes_modal(request, session, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/comprovantes/{doc_id}/excluir")
-def ui_veiculo_comprovantes_excluir(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    veiculo_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
-    if item_compra is None:
-        return _comprovantes_modal(
-            request, session, veiculo_id, "Compra não encontrada para este veículo"
-        )
-    doc = _found(imagem_comprovante_compra.get(session, doc_id), "Comprovante")
-    if doc.compra_id != item_compra.id:
-        raise HTTPException(status_code=404, detail="Comprovante não encontrado")
-    url = doc.url or ""
-    imagem_comprovante_compra.delete(session, doc)
-    path = _uploaded_file_path(url)
-    if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
-    return _comprovantes_modal(request, session, veiculo_id)
-
-
-def _documentos_modal(
-    request: Request,
-    session: Session,
-    cliente_id: int,
-) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
-    for doc in list(item.documentos):
-        path = _uploaded_file_path(doc.url or "")
-        if path is not None and not path.exists():
-            imagem_documento_cliente.delete(session, doc)
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request, "_modal_documentos_cliente.html", {"cliente": item}
-    )
-
-
-@app.get("/ui/clientes/{cliente_id}/documentos")
-def ui_cliente_documentos(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    cliente_id: int,
-) -> HTMLResponse:
-    return _documentos_modal(request, session, cliente_id)
-
-
-@app.post("/ui/clientes/{cliente_id}/documentos")
-def ui_cliente_documentos_upload(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    cliente_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
-    erro = _validar_uploads(documentos)
-    if erro:
-        return templates.TemplateResponse(
-            request,
-            "_modal_documentos_cliente.html",
-            {"cliente": item, "erro": erro},
-            status_code=400,
-        )
-    _salvar_documentos_cliente(session, cliente_id, documentos)
-    return _documentos_modal(request, session, cliente_id)
-
-
-@app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
-def ui_cliente_documentos_excluir(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    cliente_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
-    if doc.cliente_id != cliente_id:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    url = doc.url or ""
-    imagem_documento_cliente.delete(session, doc)
-    path = _uploaded_file_path(url)
-    if path is not None:
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
-    return _documentos_modal(request, session, cliente_id)
 
 
 register_crud_ui_routes(
@@ -763,10 +279,35 @@ async def _criar_veiculo(
     if novo_cliente_data is not None:
         seller = cliente.create(session, novo_cliente_data)
     assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
-    _salvar_documentos_cliente(session, seller.id, cast(list[UploadFile], documentos))
-    _salvar_documento_veiculo(session, obj.id, doc_veiculo)
-    _salvar_documentos_procuracao(
-        session, obj.id, cast(list[UploadFile], docs_procuracao)
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_cliente_dir(seller.id),
+        url_prefix=f"/static/uploads/clientes/{seller.id}/documentos",
+        create_fn=imagem_documento_cliente.create,
+        schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
+        fk_field="cliente_id",
+        fk_id=seller.id,
+        arquivos=cast(list[UploadFile], documentos),
+    )
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_dir(obj.id) / "documentos",
+        url_prefix=f"/static/uploads/veiculos/{obj.id}/documentos",
+        create_fn=documento_veiculo.create,
+        schema=documento_veiculo.DocumentoVeiculoCreate,
+        fk_field="veiculo_id",
+        fk_id=obj.id,
+        arquivos=[doc_veiculo] if doc_veiculo else [],
+    )
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_procuracao_dir(obj.id),
+        url_prefix=f"/static/uploads/veiculos/{obj.id}/procuracao",
+        create_fn=documento_procuracao.create,
+        schema=documento_procuracao.DocumentoProcuracaoCreate,
+        fk_field="veiculo_id",
+        fk_id=obj.id,
+        arquivos=cast(list[UploadFile], docs_procuracao),
     )
     nova_compra = compra.create(
         session,
@@ -778,8 +319,15 @@ async def _criar_veiculo(
             debitos=debitos,
         ),
     )
-    _salvar_comprovantes_pagamento(
-        session, nova_compra.id, cast(list[UploadFile], comprovantes_pagamento)
+    salvar_arquivos(
+        session,
+        upload_dir=_uploads_compra_dir(nova_compra.id),
+        url_prefix=f"/static/uploads/compras/{nova_compra.id}/comprovantes",
+        create_fn=imagem_comprovante_compra.create,
+        schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
+        fk_field="compra_id",
+        fk_id=nova_compra.id,
+        arquivos=cast(list[UploadFile], comprovantes_pagamento),
     )
     caixa.criar_lancamento_veiculo(session, obj)
     veiculos = veiculo.list_all(session)

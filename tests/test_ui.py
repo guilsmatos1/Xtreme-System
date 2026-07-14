@@ -2,7 +2,7 @@
 
 import contextlib
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -15,8 +15,11 @@ from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
+from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import get_session
+from xtreme_system.documento_veiculo import core as documento_veiculo
+from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -1274,42 +1277,42 @@ def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
 
 
 def test_salvar_documentos_cliente_remove_arquivo_se_create_falha(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    tmp_path: Path,
 ) -> None:
     def falha_create(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("db indisponivel")
 
-    monkeypatch.setattr(ui_routes, "_uploads_cliente_dir", lambda _id: tmp_path)
-    monkeypatch.setattr(
-        "xtreme_system.api.routes.ui.imagem_documento_cliente.create", falha_create
-    )
-
     with pytest.raises(RuntimeError, match="db indisponivel"):
-        ui_routes._salvar_documentos_cliente(  # noqa: SLF001
+        salvar_arquivos(
             cast(Session, object()),
-            1,
-            [_FakeUpload("doc.pdf", "application/pdf", 10)],  # type: ignore[list-item]
+            upload_dir=tmp_path,
+            url_prefix="/static/uploads/clientes/1/documentos",
+            create_fn=cast(Callable[[Session, Any], Any], falha_create),
+            schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
+            fk_field="cliente_id",
+            fk_id=1,
+            arquivos=[_FakeUpload("doc.pdf", "application/pdf", 10)],  # type: ignore[list-item]
         )
 
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
 
 def test_salvar_documento_veiculo_remove_arquivo_se_create_falha(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    tmp_path: Path,
 ) -> None:
     def falha_create(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("db indisponivel")
 
-    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
-    monkeypatch.setattr(
-        "xtreme_system.api.routes.ui.documento_veiculo.create", falha_create
-    )
-
     with pytest.raises(RuntimeError, match="db indisponivel"):
-        ui_routes._salvar_documento_veiculo(  # noqa: SLF001
+        salvar_arquivos(
             cast(Session, object()),
-            1,
-            _FakeUpload("doc.pdf", "application/pdf", 10),  # type: ignore[arg-type]
+            upload_dir=tmp_path,
+            url_prefix="/static/uploads/veiculos/1/documentos",
+            create_fn=cast(Callable[[Session, Any], Any], falha_create),
+            schema=documento_veiculo.DocumentoVeiculoCreate,
+            fk_field="veiculo_id",
+            fk_id=1,
+            arquivos=[_FakeUpload("doc.pdf", "application/pdf", 10)],  # type: ignore[list-item]
         )
 
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
