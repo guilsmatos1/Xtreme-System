@@ -49,6 +49,11 @@
           {{ ui.icon("users") }} Clientes
         </a>
         {% endif %}
+        {% if user and pode_acessar(user, 'compras') %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/compras') }}" href="/ui/compras">
+          {{ ui.icon("inbox") }} Compras
+        </a>
+        {% endif %}
         {% if user and pode_acessar(user, 'vendas') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/vendas') }}" href="/ui/vendas">
           {{ ui.icon("cash") }} Vendas

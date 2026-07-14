@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Compras{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Compras</h1>
+    <p class="page-head__subtitle">Registre e acompanhe as compras de veículos</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost" href="/ui/compras/exportar">
+      {{ ui.icon("inbox") }} Exportar dados
+    </a>
+    {% if user.papel.value == 'admin' %}
+    <button class="btn btn--primary" hx-get="/ui/compras/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Nova compra
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table--wide">
+    <thead>
+      <tr>
+        <th>{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
+        <th>Observações</th>
+        {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+      </tr>
+    </thead>
+    {% include "_linhas_compras.html" %}
+  </table>
+</div>
+{% endblock %}

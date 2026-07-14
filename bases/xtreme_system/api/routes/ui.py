@@ -4,9 +4,11 @@ import importlib
 import sys
 from types import ModuleType
 
+from xtreme_system.api.routes.ui_routes import compras as _compras
 from xtreme_system.api.routes.ui_routes import veiculos as _veiculos
 from xtreme_system.api.routes.ui_routes.common import (
     _uploads_cliente_dir,
+    _uploads_compra_dir,
     _uploads_dir,
     _validar_uploads,
 )
@@ -18,6 +20,7 @@ for _module_name in (
     "auditoria",
     "auth",
     "clientes",
+    "compras",
     "configuracoes",
     "dashboard",
     "investidores",
@@ -36,6 +39,8 @@ class _UiCompatModule(ModuleType):
         super().__setattr__(name, value)
         if name in {"_uploads_dir", "_uploads_cliente_dir"}:
             setattr(_veiculos, name, value)
+        if name == "_uploads_compra_dir":
+            setattr(_compras, name, value)
 
 
 sys.modules[__name__].__class__ = _UiCompatModule
@@ -44,6 +49,7 @@ __all__ = [
     "_salvar_documento_veiculo",
     "_salvar_documentos_cliente",
     "_uploads_cliente_dir",
+    "_uploads_compra_dir",
     "_uploads_dir",
     "_validar_uploads",
     "documento_veiculo",

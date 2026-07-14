@@ -460,6 +460,169 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_compras_crud_basico(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Carlos Compra",
+            "documento": "45678912300",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+    cliente_id = cliente_resp.json()["id"]
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    pagina = client.get("/ui/compras")
+    assert pagina.status_code == 200
+    assert 'id="linhas"' in pagina.text
+
+    modal = client.get("/ui/compras/novo")
+    assert modal.status_code == 200
+    assert "Onix" in modal.text
+    assert f'value="{veiculo_id}"' in modal.text
+
+    criado = client.post(
+        "/ui/compras",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_compra": "",
+            "valor_compra": "84000.00",
+            "debitos": "500.00",
+            "observacoes": "pagamento inicial",
+        },
+    )
+    assert criado.status_code == 200
+    assert "Carlos Compra" in criado.text
+    assert datetime.now(UTC).date().isoformat() in criado.text
+
+    compra_id = client.get("/compras", headers=headers).json()[0]["id"]
+
+    editado = client.post(
+        f"/ui/compras/{compra_id}",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_compra": "2026-07-09",
+            "valor_compra": "83000.00",
+            "debitos": "",
+            "observacoes": "ajustada",
+        },
+    )
+    assert editado.status_code == 200
+    assert "ajustada" in editado.text
+    assert "R$ 83.000,00" in editado.text
+
+    excluido = client.post(f"/ui/compras/{compra_id}/excluir")
+    assert excluido.status_code == 200
+    assert "Carlos Compra" not in excluido.text
+
+    csv_resp = client.get("/ui/compras/exportar")
+    assert csv_resp.status_code == 200
+    assert (
+        csv_resp.headers["content-disposition"] == 'attachment; filename="compras.csv"'
+    )
+    assert "text/csv" in csv_resp.headers["content-type"]
+    assert "Carlos Compra" not in csv_resp.text
+
+
+def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
+    _login_admin(client)
+    compra_id = _seed_compra(client, "45678912311")
+
+    modal = client.get(f"/ui/compras/{compra_id}/comprovantes")
+    assert modal.status_code == 200
+    assert f'hx-post="/ui/compras/{compra_id}/comprovantes"' in modal.text
+    assert 'type="file"' in modal.text
+
+    upload = client.post(
+        f"/ui/compras/{compra_id}/comprovantes",
+        files=[
+            (
+                "comprovantes",
+                ("comprovante.pdf", b"conteudo-pagto", "application/pdf"),
+            )
+        ],
+    )
+    assert upload.status_code == 200
+    assert "/static/uploads/compras/" in upload.text
+
+    match = re.search(
+        r'hx-post="/ui/compras/\d+/comprovantes/(?P<comp_id>\d+)/excluir"',
+        upload.text,
+    )
+    assert match is not None
+    comprovante_id = match.group("comp_id")
+
+    arquivo = re.search(
+        r"(?P<url>/static/uploads/compras/\d+/comprovantes/[a-f0-9]+\.pdf)",
+        upload.text,
+    )
+    assert arquivo is not None
+    caminho = Path("bases/xtreme_system/api").joinpath(arquivo.group("url").lstrip("/"))
+    try:
+        assert caminho.read_bytes() == b"conteudo-pagto"
+
+        excluido = client.post(
+            f"/ui/compras/{compra_id}/comprovantes/{comprovante_id}/excluir"
+        )
+        assert excluido.status_code == 200
+        assert "Nenhum comprovante" in excluido.text
+        assert not caminho.exists()
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            caminho.unlink()
+
+    upload_para_excluir_compra = client.post(
+        f"/ui/compras/{compra_id}/comprovantes",
+        files=[
+            (
+                "comprovantes",
+                ("comprovante2.pdf", b"conteudo-pagto-2", "application/pdf"),
+            )
+        ],
+    )
+    outro_arquivo = re.search(
+        r"(?P<url>/static/uploads/compras/\d+/comprovantes/[a-f0-9]+\.pdf)",
+        upload_para_excluir_compra.text,
+    )
+    assert outro_arquivo is not None
+    outro_caminho = Path("bases/xtreme_system/api").joinpath(
+        outro_arquivo.group("url").lstrip("/")
+    )
+    try:
+        assert outro_caminho.exists()
+
+        compra_excluida = client.post(f"/ui/compras/{compra_id}/excluir")
+        assert compra_excluida.status_code == 200
+        assert not outro_caminho.exists()
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            outro_caminho.unlink()
+
+
+def test_ui_compras_upload_comprovante_invalido_rejeita_lote(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _login_admin(client)
+    compra_id = _seed_compra(client, "45678912322")
+    monkeypatch.setattr(ui_routes, "_uploads_compra_dir", lambda _id: tmp_path)
+
+    resp = client.post(
+        f"/ui/compras/{compra_id}/comprovantes",
+        files={"comprovantes": ("malicioso.gif", b"dados", "image/gif")},
+    )
+
+    assert resp.status_code == 400
+    assert "Tipo não permitido" in resp.text
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
 def test_ui_dashboard_filtra_tendencia_por_periodo(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
@@ -604,6 +767,33 @@ def _admin_headers(client: TestClient) -> dict[str, str]:
         "/login", data={"username": "admin", "password": "senha"}
     ).json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def _seed_compra(client: TestClient, documento: str) -> int:
+    headers = _admin_headers(client)
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": f"Cliente Compra {documento[-2:]}",
+            "documento": documento,
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    compra_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_resp.json()["id"],
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-09",
+            "valor_compra": "84000.00",
+        },
+        headers=headers,
+    )
+    assert compra_resp.status_code == 201
+    return int(compra_resp.json()["id"])
 
 
 def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(

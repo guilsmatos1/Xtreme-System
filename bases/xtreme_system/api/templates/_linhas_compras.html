@@ -1,0 +1,10 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for c in compras %}
+    {% include "_row_compra.html" %}
+  {% else %}
+  <tr class="empty-row"><td colspan="7">
+    {% call ui.empty("inbox", "Nenhuma compra encontrada", "Cadastre uma compra para começar.") %}{% endcall %}
+  </td></tr>
+  {% endfor %}
+</tbody>

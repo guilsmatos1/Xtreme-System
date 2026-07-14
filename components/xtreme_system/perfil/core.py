@@ -14,6 +14,7 @@ PAGINAS: list[tuple[str, str]] = [
     ("veiculos", "Veículos"),
     ("investidores", "Investidores"),
     ("clientes", "Clientes"),
+    ("compras", "Compras"),
     ("vendas", "Vendas"),
 ]
 PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}

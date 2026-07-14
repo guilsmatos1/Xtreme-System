@@ -1,0 +1,57 @@
+{% import "_macros.html" as ui %}
+<div class="modal" onclick="if(event.target===this)this.remove()">
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mc-title">
+    <div class="modal__head">
+      <h3 id="mc-title">{{ 'Editar compra' if compra else 'Nova compra' }}</h3>
+      <button class="icon-btn" type="button" aria-label="Fechar"
+              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+    </div>
+    <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+      <div class="modal__body">
+        {% if erro %}{{ ui.alert(erro) }}{% endif %}
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Cliente</span>
+            <select class="select" name="cliente_id" required>
+              <option value="">Selecione</option>
+              {% for c in clientes %}
+              <option value="{{ c.id }}"{% if compra and compra.cliente_id == c.id %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Veículo</span>
+            <select class="select" name="veiculo_id" required>
+              <option value="">Selecione</option>
+              {% for veic in veiculos %}
+              <option value="{{ veic.id }}"{% if compra and compra.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Data da compra</span>
+            <input class="input" name="data_compra" type="date" value="{{ compra.data_compra.isoformat() if compra and compra.data_compra else '' }}">
+          </label>
+
+          <label class="field">
+            <span class="field__label">Valor da compra</span>
+            <input class="input" name="valor_compra" type="number" step="0.01" value="{{ compra.valor_compra if compra else '' }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Débitos</span>
+            <input class="input" name="debitos" type="number" step="0.01" value="{{ compra.debitos if compra and compra.debitos is not none else '' }}">
+          </label>
+
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4">{{ compra.observacoes if compra and compra.observacoes else '' }}</textarea>
+          </label>
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
