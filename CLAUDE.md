@@ -6,7 +6,6 @@ Read these files according to the task:
 - `ARCHITECTURE.md` — structural changes, flow between FastAPI/HTMX/Polylith components, authentication, middleware, and layer boundaries.
 - `API.md` — new or changed endpoints, payloads, status codes, HTTP authentication, and integration-facing contracts.
 - `DATABASE.md` — database schema, Alembic migrations, SQLAlchemy models, enums, indexes, constraints, and relationships.
-- `ROADMAP.md` — product priorities, planned/completed tasks, and context for pending requirements.
 
 Shortcuts by intent:
 
@@ -14,8 +13,6 @@ Shortcuts by intent:
 - Creating or changing a JSON/HTMX endpoint → read `API.md` and, if it affects internal flow, `ARCHITECTURE.md`.
 - Changing authentication, permissions, middleware, or Polylith organization → read `ARCHITECTURE.md`.
 - Running, testing, or configuring the environment → read `README.md`.
-- Prioritizing implementation or understanding product requests → read `ROADMAP.md`.
-{{&gt; AGENTS.md}}
 
 ## 1. Think Before Coding
 

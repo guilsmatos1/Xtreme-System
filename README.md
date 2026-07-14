@@ -105,15 +105,15 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_t
 Workspace Polylith (`workspace.toml`):
 
 
-| Pasta                       | Propósito                                                                                                                                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `bases/xtreme_system/api/`  | App FastAPI, templates Jinja2, arquivos estáticos                                                                                                                  |
+| Pasta                       | Propósito                                                                                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bases/xtreme_system/api/`  | App FastAPI, templates Jinja2, arquivos estáticos                                                                                                                            |
 | `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `custo_veiculo`, `perfil`, `crud` e submódulos de imagens/documentos |
-| `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                      |
-| `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                              |
-| `tests/`                    | Suite de testes com SQLite in-memory                                                                                                                               |
-| `alembic/`                  | Configuração do Alembic + migrations em `versions/`                                                                                                                |
-| `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                 |
+| `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                                |
+| `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                                        |
+| `tests/`                    | Suite de testes com SQLite in-memory                                                                                                                                         |
+| `alembic/`                  | Configuração do Alembic + migrations em `versions/`                                                                                                                          |
+| `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                           |
 
 
 Polylith namespace: `xtreme_system`. Cada componente (`auth`, `veiculo`, etc.)
@@ -130,3 +130,4 @@ Polylith namespace: `xtreme_system`. Cada componente (`auth`, `veiculo`, etc.)
 - Tests relaxam ruff: magic numbers (`PLR2004`) e `assert` (`S101`) são permitidos
 - Mypy é **strict** e verifica apenas `xtreme_system` (não tests)
 - **Sem importações** no `__init__.py` além do que é realmente exportado — mantenha mínimo
+
