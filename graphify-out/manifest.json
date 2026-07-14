@@ -1,7 +1,7 @@
 {
   "alembic/env.py": {
-    "mtime": 1784044148.6090674,
-    "ast_hash": "47500bd26d4542b21a87d6dca2846e16",
+    "mtime": 1784045498.4893076,
+    "ast_hash": "7d54b15f2d066155f3afc51da4beae52",
     "semantic_hash": ""
   },
   "alembic/versions/2c9d4e1e7a31_cliente.py": {
@@ -190,8 +190,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/common.py": {
-    "mtime": 1784044996.3795972,
-    "ast_hash": "6f2ebac9c1338348554f4f51726b6a4a",
+    "mtime": 1784045511.8839066,
+    "ast_hash": "c84e568d1110899d96560ec5d9debf42",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/configuracoes.py": {
@@ -220,8 +220,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/veiculos.py": {
-    "mtime": 1784044148.6193278,
-    "ast_hash": "d5a9e81becb461d8dab2157044d424a1",
+    "mtime": 1784045498.4901955,
+    "ast_hash": "7f0a99dd6ca4b7ae3463f4130ed834ed",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/routes/ui_routes/vendas.py": {
@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "components/xtreme_system/veiculo/core.py": {
-    "mtime": 1784044148.6496606,
-    "ast_hash": "4882f0415281c98ef484cab4a363748f",
+    "mtime": 1784045498.491968,
+    "ast_hash": "58ddb3ccadba2e8869d693773ff66f28",
     "semantic_hash": ""
   },
   "components/xtreme_system/venda/__init__.py": {
@@ -680,8 +680,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_veiculo.html": {
-    "mtime": 1784044148.6229603,
-    "ast_hash": "f301f3dda635ed22e8738a7a2b8224cf",
+    "mtime": 1784045498.4905994,
+    "ast_hash": "54c93f21abdbe02de91f42326a2cc9d9",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_form_venda.html": {
@@ -770,8 +770,8 @@
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_row_veiculo.html": {
-    "mtime": 1784044148.6382985,
-    "ast_hash": "e3f683828f84a2f30304651731b33a3c",
+    "mtime": 1784045498.4913385,
+    "ast_hash": "1210fb2fb6d32f38a706202c87dc49f9",
     "semantic_hash": ""
   },
   "bases/xtreme_system/api/templates/_row_venda.html": {
@@ -922,6 +922,26 @@
   "bases/xtreme_system/api/templates/compras.html": {
     "mtime": 1784044818.4885845,
     "ast_hash": "7d620deff0f56328b6a1c6744cbfcd23",
+    "semantic_hash": ""
+  },
+  "alembic/versions/abe3aa7a2c5b_add_documento_procuracao_table.py": {
+    "mtime": 1784045498.489616,
+    "ast_hash": "cc36eeb62f23db15d485d759d044c733",
+    "semantic_hash": ""
+  },
+  "components/xtreme_system/documento_procuracao/core.py": {
+    "mtime": 1784045498.4916315,
+    "ast_hash": "6a13987fdc044b4dd7376a13ede5dc7b",
+    "semantic_hash": ""
+  },
+  "bases/xtreme_system/api/templates/_modal_comprovantes_veiculo.html": {
+    "mtime": 1784045498.490822,
+    "ast_hash": "75f3c319da31fc307f50315ae778754a",
+    "semantic_hash": ""
+  },
+  "bases/xtreme_system/api/templates/_modal_procuracao_veiculo.html": {
+    "mtime": 1784045498.490989,
+    "ast_hash": "bb597c92b6a550444cf1b0661ed40643",
     "semantic_hash": ""
   }
 }

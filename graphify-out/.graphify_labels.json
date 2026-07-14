@@ -171,12 +171,8 @@
   "169": "Session",
   "170": "__init__.py",
   "171": "__init__.py",
-  "172": "File",
-  "173": "HTMLResponse",
   "174": "__init__.py",
   "175": "__init__.py",
-  "176": "Decimal",
-  "177": "Session",
   "178": "__init__.py",
   "179": "__init__.py",
   "180": "Session",
@@ -200,10 +196,5 @@
   "198": "TestClient",
   "199": "Any",
   "200": "MonkeyPatch",
-  "201": "TestClient",
-  "202": "Request",
-  "203": "SessionDep",
-  "204": "UIAdmin",
-  "205": "MonkeyPatch",
-  "206": "TestClient"
+  "201": "TestClient"
 }
