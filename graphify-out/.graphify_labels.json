@@ -175,8 +175,8 @@
   "173": "SessionDep",
   "174": "__init__.py",
   "175": "__init__.py",
-  "176": "UIAdmin",
-  "177": "UIUser",
+  "176": "create_test_engine",
+  "177": "test_api_compras.py",
   "178": "__init__.py",
   "179": "__init__.py",
   "180": "Session",
@@ -201,6 +201,15 @@
   "199": "Any",
   "200": "MonkeyPatch",
   "201": "TestClient",
-  "202": "date",
-  "203": "Decimal"
+  "202": "test_api_rate_limit.py",
+  "203": "test_api_health.py",
+  "204": "main",
+  "205": "Any",
+  "206": "HTMLResponse",
+  "207": "RedirectResponse",
+  "208": "Request",
+  "209": "Session",
+  "210": "SessionDep",
+  "211": "UIAdmin",
+  "212": "UIUser"
 }
