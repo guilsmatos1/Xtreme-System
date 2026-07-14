@@ -127,5 +127,19 @@
   "125": "Request",
   "126": "Session",
   "127": "SessionDep",
-  "135": "__init__.py"
+  "128": "test_fechamento_venda.py",
+  "129": "CurrentUser",
+  "130": "date",
+  "131": "Depends",
+  "132": "Form",
+  "133": "HTMLResponse",
+  "134": "RedirectResponse",
+  "135": "__init__.py",
+  "136": "Request",
+  "137": "UIAdmin",
+  "138": "UIUser",
+  "139": "BaseModel",
+  "140": "StrEnum",
+  "141": "BaseModel",
+  "142": "TestClient"
 }
