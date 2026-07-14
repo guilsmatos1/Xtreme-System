@@ -76,6 +76,7 @@ Use `make help` para a lista completa. Atalhos:
 make format      # ruff format .
 make lint        # ruff check + format --check, xenon, vulture, mypy
 make test        # pytest
+make test-postgres  # pytest usando TEST_DATABASE_URL e migrations Alembic
 make watch       # rerun pytest on file change
 make coverage    # pytest with coverage, fail under 75%
 make ci          # lint + coverage
@@ -96,6 +97,7 @@ uv run mypy                     # strict mode, package xtreme_system
 uv run xenon src bases components development projects  # complexidade
 uv run vulture                  # detecção de código morto
 uv run pytest
+TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test uv run pytest
 ```
 
 ## Estrutura do projeto

@@ -25,8 +25,8 @@
   "23": "core.py",
   "24": "core.py",
   "25": "factories.py",
-  "26": "Request",
-  "27": "Response",
+  "26": "core.py",
+  "27": "core.py",
   "28": "Validação de Uploads Implementation Plan",
   "29": "Setup",
   "30": "test_auditoria.py",
@@ -106,5 +106,10 @@
   "104": "__init__.py",
   "105": "__init__.py",
   "106": "__init__.py",
-  "107": "session"
+  "107": "session",
+  "108": "test_api_vendas.py",
+  "109": "core.py",
+  "110": "BaseModel",
+  "111": "test_api_compras.py",
+  "112": "test_api_rate_limit.py"
 }

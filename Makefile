@@ -1,4 +1,4 @@
-.PHONY: help hooks format lint test watch coverage ci pre-commit migrate revision run db-up db-down
+.PHONY: help hooks format lint test test-postgres watch coverage ci pre-commit migrate revision run db-up db-down
 
 PYTHON := uv run python
 
@@ -9,6 +9,7 @@ help:
 		'  make format      Format Python files with ruff' \
 		'  make lint        Run ruff, xenon, vulture, and mypy' \
 		'  make test        Run pytest' \
+		'  make test-postgres  Run pytest against migrated Postgres' \
 		'  make watch       Rerun pytest when Python files change' \
 		'  make coverage    Run pytest with coverage and fail under 75%' \
 		'  make ci          Run lint and coverage' \
@@ -34,6 +35,9 @@ lint:
 
 test:
 	$(PYTHON) -m pytest tests/ -q
+
+test-postgres:
+	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/ -q
 
 watch:
 	uv run ptw --runner "python -m pytest tests/ -q"
