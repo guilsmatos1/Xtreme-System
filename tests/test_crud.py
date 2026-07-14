@@ -15,6 +15,7 @@ from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.whatsapp import core as whatsapp
 
 
 @pytest.fixture
@@ -148,6 +149,13 @@ def test_senha_hash_masked_in_audit(session: Session) -> None:
     assert dados is not None
     assert dados["senha_hash"] == "***"
     assert "secret" not in str(dados)
+
+
+def test_evolution_api_key_masked_in_snapshot() -> None:
+    config = whatsapp.WhatsappConfig(id=1, evolution_api_key="chave-secreta")
+    dados = auditoria._snapshot(config)  # noqa: SLF001 -- exercita o helper de máscara
+    assert dados["evolution_api_key"] == "***"
+    assert "chave-secreta" not in str(dados)
 
 
 def test_caixa_lancamento_veiculo_audit(session: Session) -> None:

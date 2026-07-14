@@ -1,5 +1,6 @@
 """FastAPI app initialization, middlewares, and error handlers."""
 
+import os
 import time
 import uuid
 from collections import defaultdict, deque
@@ -36,12 +37,20 @@ _GERAL_LIMIT = 100
 _GERAL_WINDOW_SECONDS = 60.0
 _ROTAS_ISENTAS_RATE_LIMIT = {"/health", "/docs", "/redoc", "/openapi.json"}
 
+
+def _cors_origins() -> list[str]:
+    # ponytail: lê env direto para não acoplar setup.py a Settings (que exige
+    # AUTH_SECRET_KEY) durante o import do conftest de testes.
+    raw = os.environ.get("CORS_ORIGINS", "http://localhost:8000")
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
 app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins(),
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 

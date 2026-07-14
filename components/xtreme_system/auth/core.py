@@ -26,7 +26,7 @@ _hasher = PasswordHash.recommended()
 
 
 class Token(BaseModel):
-    access_token: str  # noqa: Pydantic field
+    access_token: str
     token_type: str = "bearer"  # noqa: S105 -- não é senha, é campo do OAuth2
 
 
