@@ -9,7 +9,6 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
       - id: check-added-large-files
-        exclude: ^graphify-out/
 
   - repo: local
     hooks:

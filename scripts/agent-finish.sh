@@ -3,22 +3,14 @@ set -euo pipefail
 
 TARGET_BRANCH="${AGENT_FINISH_TARGET_BRANCH:-master}"
 
-non_graphify_status() {
-  git status --porcelain -- . ':(exclude)graphify-out'
-}
-
-target_non_graphify_status() {
-  git -C "${1}" status --porcelain -- . ':(exclude)graphify-out'
-}
-
 current_branch="$(git branch --show-current)"
 if [[ -z "${current_branch}" ]]; then
   printf '%s\n' "agent-finish: detached HEAD is not supported" >&2
   exit 1
 fi
 
-if [[ -n "$(non_graphify_status)" ]]; then
-  git add -A -- . ':(exclude)graphify-out'
+if [[ -n "$(git status --porcelain)" ]]; then
+  git add -A
   git commit -m "chore: finish ${current_branch}"
 fi
 
@@ -45,7 +37,7 @@ if [[ -z "${target_worktree}" ]]; then
   exit 1
 fi
 
-if [[ -n "$(target_non_graphify_status "${target_worktree}")" ]]; then
+if [[ -n "$(git -C "${target_worktree}" status --porcelain)" ]]; then
   printf '%s\n' "agent-finish: target worktree '${target_worktree}' is dirty" >&2
   exit 1
 fi

@@ -79,26 +79,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
-## 5. Graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
-
-Rules:
-
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-- Never mix functional code/docs changes with graphify-out/ refreshes in the same commit. Commit the code/docs change first (e.g. `GUI-70 move transaction ownership out of CRUD helpers`), then commit the graphify-out/ update separately (e.g. `Update graphify output`). This keeps the real diff reviewable and lets a bad graph refresh be reverted or redone without touching the functional change.
-
-## 6. RTK
+## 5. RTK
 
 RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.
 
-## 7. Merge in a Worktree
+## 6. Merge in a Worktree
 
 Before merging into `master`, confirm with `git worktree list` that it is not
 checked out in another worktree. If Git says `master` is already in use, do the

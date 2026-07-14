@@ -5,7 +5,6 @@
   },
   "plugin": [
     "./.opencode/plugins/ponytail/.opencode/plugins/ponytail.mjs",
-    "./.opencode/plugins/graphify.js",
     "superpowers@git+https://github.com/obra/superpowers.git"
   ]
 }
