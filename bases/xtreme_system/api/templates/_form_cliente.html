@@ -6,7 +6,7 @@
       <button class="icon-btn" type="button" aria-label="Fechar"
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
-    <form hx-post="/ui/clientes{% if cliente %}/{{ cliente.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+    <form hx-post="{{ route_prefix or '/ui/clientes' }}{% if cliente %}/{{ cliente.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">

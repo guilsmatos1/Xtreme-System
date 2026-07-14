@@ -278,11 +278,17 @@ def register_crud_ui_routes(  # noqa: PLR0915
     delete_requires_admin: bool = True,
     register_create: bool = True,
     register_update: bool = True,
+    list_func: Callable[[Session], list[Any]] | None = None,
+    search_func: Callable[[Session, str], list[Any]] | None = None,
 ) -> None:
     def _query(session: Session, q: str) -> list[Any]:
+        if q and search_func is not None:
+            return list(search_func(session, q))
         if searchable and q:
             # searchable=True is the caller's promise that module has search.
             return list(cast(SearchableCrudModule, module).search(session, q))
+        if list_func is not None:
+            return list(list_func(session))
         return list(module.list_all(session))
 
     def _sort_key_fn(spec: str | Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -297,7 +303,7 @@ def register_crud_ui_routes(  # noqa: PLR0915
         return sorted(lista, key=_sort_key_fn(spec), reverse=order == "desc")
 
     def _ok(request: Request, session: Session, user: usuario.Usuario) -> HTMLResponse:
-        lista = module.list_all(session)
+        lista = _query(session, "")
         return templates.TemplateResponse(
             request,
             ok_partial_template,
@@ -446,7 +452,7 @@ def register_crud_ui_routes(  # noqa: PLR0915
         except IntegrityError:
             erro = _delete_conflict_detail(label)
             status_code = 409
-        lista = module.list_all(session)
+        lista = _query(session, "")
         return templates.TemplateResponse(
             request,
             list_partial_template,

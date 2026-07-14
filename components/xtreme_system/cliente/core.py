@@ -1,7 +1,7 @@
 """Cliente: enum de tipo, model, schemas e CRUD."""
 
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import or_
@@ -114,4 +114,40 @@ def search(session: Session, term: str) -> list[Cliente]:
             )
         )
         .all()
+    )
+
+
+def list_compradores(session: Session) -> list[Cliente]:
+    from xtreme_system.venda.core import Venda  # noqa: PLC0415
+
+    return list(session.query(Cliente).join(Venda).distinct().all())
+
+
+def search_compradores(session: Session, term: str) -> list[Cliente]:
+    from xtreme_system.venda.core import Venda  # noqa: PLC0415
+
+    return list(_search_com_vinculo(session, term).join(Venda).distinct().all())
+
+
+def list_vendedores(session: Session) -> list[Cliente]:
+    from xtreme_system.compra.core import Compra  # noqa: PLC0415
+
+    return list(session.query(Cliente).join(Compra).distinct().all())
+
+
+def search_vendedores(session: Session, term: str) -> list[Cliente]:
+    from xtreme_system.compra.core import Compra  # noqa: PLC0415
+
+    return list(_search_com_vinculo(session, term).join(Compra).distinct().all())
+
+
+def _search_com_vinculo(session: Session, term: str) -> Any:
+    pattern = f"%{term}%"
+    return session.query(Cliente).where(
+        or_(
+            Cliente.nome.ilike(pattern),
+            Cliente.documento.ilike(pattern),
+            Cliente.cidade.ilike(pattern),
+            Cliente.estado.ilike(pattern),
+        )
     )

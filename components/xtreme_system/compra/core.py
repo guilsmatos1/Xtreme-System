@@ -96,6 +96,10 @@ def get(session: Session, compra_id: int) -> Compra | None:
     return crud.get(session, Compra, compra_id)
 
 
+def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
+    return list(session.query(Compra).filter_by(cliente_id=cliente_id).all())
+
+
 def create(session: Session, data: CompraCreate) -> Compra:
     return crud.create(session, Compra, data)
 

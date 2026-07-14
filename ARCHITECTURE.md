@@ -107,7 +107,9 @@ para autenticação (httpOnly, mesmo segredo JWT):
 | `/ui/login` | GET exibe formulário; POST autentica e seta cookie |
 | `/ui/logout` | Limpa o cookie e redireciona |
 | `/ui/veiculos` | Listagem de veículos |
-| `/ui/clientes` | Listagem de clientes |
+| `/ui/clientes` | Redireciona para `/ui/clientes/compradores` |
+| `/ui/clientes/compradores` | Listagem de clientes com vendas registradas |
+| `/ui/clientes/vendedores` | Listagem de clientes com compras registradas |
 | `/ui/vendas` | Listagem de vendas |
 | `/ui/usuarios` | Gestão de usuários |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |

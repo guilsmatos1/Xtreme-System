@@ -2,11 +2,11 @@
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-veiculos-title">
   <div class="modal__panel">
     <div class="modal__head">
-      <h2 id="modal-veiculos-title">Veículos — {{ cliente.nome }}</h2>
+      <h2 id="modal-veiculos-title">{{ modal_title or "Veículos" }} — {{ cliente.nome }}</h2>
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
-      {% if vendas %}
+      {% if registros %}
       <div class="table-wrap">
         <table>
           <thead>
@@ -20,21 +20,21 @@
             </tr>
           </thead>
           <tbody>
-            {% for v in vendas %}
+            {% for v in registros %}
             <tr>
               <td class="cell-strong">{{ v.veiculo.modelo }}</td>
               <td class="cell-mono">{{ v.veiculo.placa }}</td>
               <td>{{ v.veiculo.ano }}</td>
-              <td class="cell-num">R$ {{ "{:,.2f}".format(v.valor_venda) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-              <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span></td>
-              <td>{{ v.data_venda.strftime("%d/%m/%Y") if v.data_venda else "-" }}</td>
+              <td class="cell-num">R$ {{ "{:,.2f}".format(v.valor_venda if modal_kind == "comprador" else v.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+              <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title if modal_kind == "comprador" else "Comprado" }}</span></td>
+              <td>{{ (v.data_venda if modal_kind == "comprador" else v.data_compra).strftime("%d/%m/%Y") if (v.data_venda if modal_kind == "comprador" else v.data_compra) else "-" }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      {{ ui.empty("vehicles", "Nenhum veículo", "Este cliente ainda não comprou nenhum veículo.") }}
+      {{ ui.empty("vehicles", "Nenhum veículo", modal_empty_text or "Este cliente ainda não possui veículos vinculados.") }}
       {% endif %}
     </div>
   </div>

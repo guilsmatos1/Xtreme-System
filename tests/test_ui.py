@@ -215,81 +215,137 @@ def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
             Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
 
 
-def test_ui_clientes_crud_basico(client: TestClient) -> None:
+def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0915
+    client: TestClient,
+) -> None:
     _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
 
-    pagina = client.get("/ui/clientes")
-    assert pagina.status_code == 200
-    assert 'id="linhas"' in pagina.text
-    assert "Status" not in pagina.text
+    comprador_id = _criar_cliente(client, headers, "Ana Compradora", "12345678901")
+    vendedor_id = _criar_cliente(client, headers, "Bia Vendedora", "12345678902")
+    ambos_id = _criar_cliente(client, headers, "Caio Ambos", "12345678903")
+    _criar_cliente(client, headers, "Dora Sem Vinculo", "12345678904")
 
-    modal_novo = client.get("/ui/clientes/novo")
-    assert modal_novo.status_code == 200
-    assert 'name="ativo"' not in modal_novo.text
-
-    criado = client.post(
-        "/ui/clientes",
-        data={
-            "nome": "Maria Lima",
-            "documento": "12345678901",
-            "tipo": "pessoa_fisica",
+    venda_resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": comprador_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "pix",
+            "parcelas": 1,
+            "status": "concluido",
         },
+        headers=headers,
     )
-    assert criado.status_code == 200
-    assert "Maria Lima" in criado.text
-
-    token = client.post(
-        "/login", data={"username": "admin", "password": "senha"}
-    ).json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    clientes = client.get("/clientes", headers=headers).json()
-    cliente_id = next(
-        item["id"] for item in clientes if item["documento"] == "12345678901"
+    assert venda_resp.status_code == 201
+    compra_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": vendedor_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-08",
+            "valor_compra": "80000.00",
+        },
+        headers=headers,
+    )
+    assert compra_resp.status_code == 201
+    assert (
+        client.post(
+            "/vendas",
+            json={
+                "cliente_id": ambos_id,
+                "veiculo_id": veiculo_id,
+                "data_venda": "2026-07-10",
+                "valor_venda": "86000.00",
+                "forma_pagamento": "pix",
+                "parcelas": 1,
+                "status": "pendente",
+            },
+            headers=headers,
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/compras",
+            json={
+                "cliente_id": ambos_id,
+                "veiculo_id": veiculo_id,
+                "data_compra": "2026-07-07",
+                "valor_compra": "79000.00",
+            },
+            headers=headers,
+        ).status_code
+        == 201
     )
 
     editado = client.post(
-        f"/ui/clientes/{cliente_id}",
+        f"/ui/clientes/compradores/{comprador_id}",
         data={
-            "nome": "Maria Lima",
+            "nome": "Ana Compradora",
             "documento": "12345678901",
             "tipo": "pessoa_fisica",
             "cidade": "São Paulo",
         },
     )
     assert editado.status_code == 200
+    assert "Ana Compradora" in editado.text
     assert "São Paulo" in editado.text
-    assert "Status" not in editado.text
+    assert "Bia Vendedora" not in editado.text
 
-    modal_edicao = client.get(f"/ui/clientes/{cliente_id}/editar")
-    assert modal_edicao.status_code == 200
-    assert 'name="ativo"' not in modal_edicao.text
+    compradores = client.get("/ui/clientes/compradores")
+    assert compradores.status_code == 200
+    assert "Clientes Compradores" in compradores.text
+    assert "Novo cliente" not in compradores.text
+    assert "Ana Compradora" in compradores.text
+    assert "Caio Ambos" in compradores.text
+    assert "Bia Vendedora" not in compradores.text
+    assert "Dora Sem Vinculo" not in compradores.text
 
-    excluido = client.post(f"/ui/clientes/{cliente_id}/excluir")
-    assert excluido.status_code == 200
-    assert "Maria Lima" not in excluido.text
+    vendedores = client.get("/ui/clientes/vendedores")
+    assert vendedores.status_code == 200
+    assert "Clientes Vendedores" in vendedores.text
+    assert "Bia Vendedora" in vendedores.text
+    assert "Caio Ambos" in vendedores.text
+    assert "Ana Compradora" not in vendedores.text
+    assert "Dora Sem Vinculo" not in vendedores.text
+
+    busca = client.get("/ui/clientes/compradores?q=Ana")
+    assert "Ana Compradora" in busca.text
+    assert "Caio Ambos" not in busca.text
+
+    export_compradores = client.get("/ui/clientes/compradores/exportar?q=Ana")
+    assert export_compradores.status_code == 200
+    assert (
+        export_compradores.headers["content-disposition"]
+        == 'attachment; filename="clientes-compradores.csv"'
+    )
+    assert "Ana Compradora" in export_compradores.text
+    assert "Caio Ambos" not in export_compradores.text
+
+    modal_comprador = client.get(f"/ui/clientes/compradores/{comprador_id}/veiculos")
+    assert modal_comprador.status_code == 200
+    assert "Veículos comprados" in modal_comprador.text
+    assert "R$ 85.000,00" in modal_comprador.text
+
+    modal_vendedor = client.get(f"/ui/clientes/vendedores/{vendedor_id}/veiculos")
+    assert modal_vendedor.status_code == 200
+    assert "Veículos vendidos" in modal_vendedor.text
+    assert "R$ 80.000,00" in modal_vendedor.text
+
+    redirecionamento = client.get("/ui/clientes", follow_redirects=False)
+    assert redirecionamento.status_code == 303
+    assert redirecionamento.headers["location"] == "/ui/clientes/compradores"
 
 
 def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
     _login_admin(client)
+    headers = _admin_headers(client)
 
-    criado = client.post(
-        "/ui/clientes",
-        data={
-            "nome": "João Documento",
-            "documento": "98765432109",
-            "tipo": "pessoa_fisica",
-        },
-    )
-    assert criado.status_code == 200
-
-    token = client.post(
-        "/login", data={"username": "admin", "password": "senha"}
-    ).json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    clientes = client.get("/clientes", headers=headers).json()
-    cliente_id = next(
-        item["id"] for item in clientes if item["documento"] == "98765432109"
-    )
+    cliente_id = _criar_cliente(client, headers, "João Documento", "98765432109")
 
     modal = client.get(f"/ui/clientes/{cliente_id}/documentos")
     assert modal.status_code == 200
@@ -767,6 +823,22 @@ def _admin_headers(client: TestClient) -> dict[str, str]:
         "/login", data={"username": "admin", "password": "senha"}
     ).json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def _criar_cliente(
+    client: TestClient, headers: dict[str, str], nome: str, documento: str
+) -> int:
+    resp = client.post(
+        "/clientes",
+        json={
+            "nome": nome,
+            "documento": documento,
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    return int(resp.json()["id"])
 
 
 def _seed_compra(client: TestClient, documento: str) -> int:

@@ -45,8 +45,11 @@
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'clientes') %}
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes') }}" href="/ui/clientes">
-          {{ ui.icon("users") }} Clientes
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/compradores') }}" href="/ui/clientes/compradores">
+          {{ ui.icon("users") }} Clientes Compradores
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/vendedores') }}" href="/ui/clientes/vendedores">
+          {{ ui.icon("users") }} Clientes Vendedores
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'compras') %}
