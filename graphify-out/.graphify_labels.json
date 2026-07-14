@@ -130,5 +130,6 @@
   "128": "UpdateSchemaT",
   "129": "HTMLResponse",
   "130": "Request",
+  "131": "TestClient",
   "135": "__init__.py"
 }
