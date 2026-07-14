@@ -8,6 +8,16 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: make ci
+
+  postgres-tests:
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16-alpine
@@ -30,4 +40,4 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-      - run: make ci
+      - run: make test

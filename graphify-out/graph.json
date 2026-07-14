@@ -990,7 +990,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_deps_found",
-      "community": 3,
+      "community": 9,
       "norm_label": "_found()"
     },
     {
@@ -1000,7 +1000,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "t",
-      "community": 3,
+      "community": 9,
       "norm_label": "t"
     },
     {
@@ -1079,7 +1079,7 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "bases_xtreme_system_api_deps_py_exception",
+      "id": "exception",
       "community": 7,
       "norm_label": "exception"
     },
@@ -1380,7 +1380,7 @@
       "source_location": "L210",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_route_factories_sort_key",
-      "community": 13,
+      "community": 4,
       "norm_label": "_sort_key()"
     },
     {
@@ -1410,7 +1410,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "jinja2templates",
-      "community": 4,
+      "community": 36,
       "norm_label": "jinja2templates"
     },
     {
@@ -1510,7 +1510,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json",
-      "community": 3,
+      "community": 8,
       "norm_label": "json.py"
     },
     {
@@ -1520,7 +1520,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_health",
-      "community": 3,
+      "community": 8,
       "norm_label": "health()"
     },
     {
@@ -1530,7 +1530,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_sessiondep",
-      "community": 3,
+      "community": 8,
       "norm_label": "sessiondep"
     },
     {
@@ -1550,7 +1550,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_login",
-      "community": 3,
+      "community": 8,
       "norm_label": "login()"
     },
     {
@@ -1560,7 +1560,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "oauth2passwordrequestform",
-      "community": 3,
+      "community": 8,
       "norm_label": "oauth2passwordrequestform"
     },
     {
@@ -1570,7 +1570,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_depends",
-      "community": 3,
+      "community": 8,
       "norm_label": "depends"
     },
     {
@@ -1580,7 +1580,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_criar_usuario",
-      "community": 3,
+      "community": 8,
       "norm_label": "criar_usuario()"
     },
     {
@@ -1590,7 +1590,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "adminuser",
-      "community": 3,
+      "community": 8,
       "norm_label": "adminuser"
     },
     {
@@ -1600,7 +1600,7 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_listar_usuarios",
-      "community": 3,
+      "community": 8,
       "norm_label": "listar_usuarios()"
     },
     {
@@ -1610,7 +1610,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_deletar_usuario",
-      "community": 3,
+      "community": 9,
       "norm_label": "deletar_usuario()"
     },
     {
@@ -1620,7 +1620,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_currentuser",
-      "community": 3,
+      "community": 9,
       "norm_label": "currentuser"
     },
     {
@@ -1630,7 +1630,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_trocar_senha_usuario",
-      "community": 3,
+      "community": 8,
       "norm_label": "trocar_senha_usuario()"
     },
     {
@@ -1640,7 +1640,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_form",
-      "community": 3,
+      "community": 8,
       "norm_label": "form"
     },
     {
@@ -1650,7 +1650,7 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_validate_investidor_lancamento",
-      "community": 3,
+      "community": 8,
       "norm_label": "_validate_investidor_lancamento()"
     },
     {
@@ -1660,7 +1660,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_session",
-      "community": 3,
+      "community": 8,
       "norm_label": "session"
     },
     {
@@ -1670,7 +1670,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_any",
-      "community": 3,
+      "community": 8,
       "norm_label": "any"
     },
     {
@@ -1680,7 +1680,7 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_guard_lancamento_veiculo",
-      "community": 3,
+      "community": 8,
       "norm_label": "_guard_lancamento_veiculo()"
     },
     {
@@ -1690,7 +1690,7 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_listar_auditoria",
-      "community": 3,
+      "community": 8,
       "norm_label": "listar_auditoria()"
     },
     {
@@ -1700,7 +1700,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_py_date",
-      "community": 3,
+      "community": 8,
       "norm_label": "date"
     },
     {
@@ -1710,7 +1710,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "bases_xtreme_system_api_routes_json_rationale_1",
-      "community": 3,
+      "community": 8,
       "norm_label": "rotas json: autenticacao, usuarios e crud dos recursos de negocio."
     },
     {
@@ -2490,7 +2490,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "httpexception",
-      "community": 3,
+      "community": 9,
       "norm_label": "httpexception"
     },
     {
@@ -3989,7 +3989,7 @@
       "source_file": "bases/xtreme_system/api/static/htmx.min.js",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_bases_xtreme_system_api_static_htmx_min",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_bases_xtreme_system_api_static_htmx_min",
       "community": 0,
       "norm_label": "_()"
     },
@@ -4810,7 +4810,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "components_xtreme_system_auditoria_core_auditoriaread",
-      "community": 8,
+      "community": 110,
       "norm_label": "auditoriaread"
     },
     {
@@ -4819,8 +4819,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "components_xtreme_system_auditoria_core_py_basemodel",
-      "community": 8,
+      "id": "basemodel",
+      "community": 110,
       "norm_label": "basemodel"
     },
     {
@@ -4949,7 +4949,7 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "components_xtreme_system_auth_core_py_basesettings",
+      "id": "basesettings",
       "community": 33,
       "norm_label": "basesettings"
     },
@@ -4970,18 +4970,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "components_xtreme_system_auth_core_token",
-      "community": 3,
+      "community": 8,
       "norm_label": "token"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_auth_core_py_basemodel",
-      "community": 33,
-      "norm_label": "basemodel"
     },
     {
       "label": "TokenData",
@@ -5079,7 +5069,7 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "components_xtreme_system_caixa_core_py_strenum",
+      "id": "strenum",
       "community": 5,
       "norm_label": "strenum"
     },
@@ -5112,16 +5102,6 @@
       "id": "components_xtreme_system_caixa_core_lancamentoinvestimentocreate",
       "community": 5,
       "norm_label": "lancamentoinvestimentocreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_caixa_core_py_basemodel",
-      "community": 5,
-      "norm_label": "basemodel"
     },
     {
       "label": "LancamentoInvestimentoUpdate",
@@ -5350,18 +5330,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "components_xtreme_system_cliente_core_tipocliente",
-      "community": 16,
+      "community": 5,
       "norm_label": "tipocliente"
-    },
-    {
-      "label": "StrEnum",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_cliente_core_py_strenum",
-      "community": 16,
-      "norm_label": "strenum"
     },
     {
       "label": "Cliente",
@@ -5384,16 +5354,6 @@
       "norm_label": "clientecreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_cliente_core_py_basemodel",
-      "community": 16,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "ClienteUpdate",
       "file_type": "code",
       "source_file": "components/xtreme_system/cliente/core.py",
@@ -5410,7 +5370,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "components_xtreme_system_cliente_core_clienteread",
-      "community": 16,
+      "community": 110,
       "norm_label": "clienteread"
     },
     {
@@ -5544,16 +5504,6 @@
       "norm_label": "compracreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_compra_core_py_basemodel",
-      "community": 22,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "CompraUpdate",
       "file_type": "code",
       "source_file": "components/xtreme_system/compra/core.py",
@@ -5570,7 +5520,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "components_xtreme_system_compra_core_compraread",
-      "community": 22,
+      "community": 110,
       "norm_label": "compraread"
     },
     {
@@ -5810,7 +5760,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core",
-      "community": 10,
+      "community": 33,
       "norm_label": "core.py"
     },
     {
@@ -5820,18 +5770,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_settings",
-      "community": 10,
+      "community": 33,
       "norm_label": "settings"
-    },
-    {
-      "label": "BaseSettings",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_database_core_py_basesettings",
-      "community": 10,
-      "norm_label": "basesettings"
     },
     {
       "label": "get_settings()",
@@ -5840,7 +5780,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_get_settings",
-      "community": 10,
+      "community": 33,
       "norm_label": "get_settings()"
     },
     {
@@ -5850,7 +5790,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_base",
-      "community": 10,
+      "community": 26,
       "norm_label": "base"
     },
     {
@@ -5860,7 +5800,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "declarativebase",
-      "community": 10,
+      "community": 26,
       "norm_label": "declarativebase"
     },
     {
@@ -5870,7 +5810,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_get_session",
-      "community": 10,
+      "community": 33,
       "norm_label": "get_session()"
     },
     {
@@ -5880,7 +5820,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_py_session",
-      "community": 10,
+      "community": 33,
       "norm_label": "session"
     },
     {
@@ -5890,7 +5830,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_database_core_rationale_1",
-      "community": 10,
+      "community": 33,
       "norm_label": "configuracao de banco: settings, engine, sessao e base declarativa."
     },
     {
@@ -5900,7 +5840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core",
-      "community": 10,
+      "community": 109,
       "norm_label": "core.py"
     },
     {
@@ -5910,7 +5850,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_documentoveiculo",
-      "community": 10,
+      "community": 109,
       "norm_label": "documentoveiculo"
     },
     {
@@ -5920,18 +5860,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_documentoveiculocreate",
-      "community": 10,
+      "community": 109,
       "norm_label": "documentoveiculocreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_documento_veiculo_core_py_basemodel",
-      "community": 10,
-      "norm_label": "basemodel"
     },
     {
       "label": "DocumentoVeiculoUpdate",
@@ -5940,7 +5870,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_documentoveiculoupdate",
-      "community": 10,
+      "community": 109,
       "norm_label": "documentoveiculoupdate"
     },
     {
@@ -5950,7 +5880,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_documentoveiculoread",
-      "community": 10,
+      "community": 110,
       "norm_label": "documentoveiculoread"
     },
     {
@@ -5960,7 +5890,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_list_all",
-      "community": 10,
+      "community": 109,
       "norm_label": "list_all()"
     },
     {
@@ -5970,7 +5900,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_py_session",
-      "community": 10,
+      "community": 109,
       "norm_label": "session"
     },
     {
@@ -5980,7 +5910,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_list_by_veiculo",
-      "community": 10,
+      "community": 109,
       "norm_label": "list_by_veiculo()"
     },
     {
@@ -5990,7 +5920,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_get",
-      "community": 10,
+      "community": 109,
       "norm_label": "get()"
     },
     {
@@ -6000,7 +5930,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_create",
-      "community": 10,
+      "community": 109,
       "norm_label": "create()"
     },
     {
@@ -6010,7 +5940,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_update",
-      "community": 10,
+      "community": 109,
       "norm_label": "update()"
     },
     {
@@ -6020,7 +5950,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_delete",
-      "community": 10,
+      "community": 109,
       "norm_label": "delete()"
     },
     {
@@ -6030,7 +5960,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_documento_veiculo_core_rationale_1",
-      "community": 10,
+      "community": 109,
       "norm_label": "documento de veiculo: model (fk veiculo), schemas e crud."
     },
     {
@@ -6074,23 +6004,13 @@
       "norm_label": "imagemcomprovantecompracreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_imagem_comprovante_compra_core_py_basemodel",
-      "community": 26,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "ImagemComprovanteCompraRead",
       "file_type": "code",
       "source_file": "components/xtreme_system/imagem_comprovante_compra/core.py",
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_xtreme_system_imagem_comprovante_compra_core_imagemcomprovantecompraread",
-      "community": 26,
+      "community": 110,
       "norm_label": "imagemcomprovantecompraread"
     },
     {
@@ -6202,16 +6122,6 @@
       "id": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendacreate",
       "community": 27,
       "norm_label": "imagemcomprovantevendacreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_imagem_comprovante_venda_core_py_basemodel",
-      "community": 27,
-      "norm_label": "basemodel"
     },
     {
       "label": "ImagemComprovanteVendaRead",
@@ -6334,16 +6244,6 @@
       "norm_label": "imagemdocumentoclientecreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_imagem_documento_cliente_core_py_basemodel",
-      "community": 23,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "ImagemDocumentoClienteUpdate",
       "file_type": "code",
       "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
@@ -6360,7 +6260,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclienteread",
-      "community": 23,
+      "community": 110,
       "norm_label": "imagemdocumentoclienteread"
     },
     {
@@ -6472,16 +6372,6 @@
       "id": "components_xtreme_system_imagem_veiculo_core_imagemveiculocreate",
       "community": 10,
       "norm_label": "imagemveiculocreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_imagem_veiculo_core_py_basemodel",
-      "community": 10,
-      "norm_label": "basemodel"
     },
     {
       "label": "ImagemVeiculoUpdate",
@@ -6624,16 +6514,6 @@
       "norm_label": "investidorcreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_investidor_core_py_basemodel",
-      "community": 24,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "InvestidorUpdate",
       "file_type": "code",
       "source_file": "components/xtreme_system/investidor/core.py",
@@ -6650,7 +6530,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "components_xtreme_system_investidor_core_investidorread",
-      "community": 24,
+      "community": 110,
       "norm_label": "investidorread"
     },
     {
@@ -6740,7 +6620,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core",
-      "community": 36,
+      "community": 33,
       "norm_label": "core.py"
     },
     {
@@ -6750,18 +6630,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core_settings",
-      "community": 36,
+      "community": 33,
       "norm_label": "settings"
-    },
-    {
-      "label": "BaseSettings",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_logging_core_py_basesettings",
-      "community": 36,
-      "norm_label": "basesettings"
     },
     {
       "label": "get_settings()",
@@ -6770,7 +6640,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core_get_settings",
-      "community": 36,
+      "community": 33,
       "norm_label": "get_settings()"
     },
     {
@@ -6780,7 +6650,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core_configure_logging",
-      "community": 36,
+      "community": 33,
       "norm_label": "configure_logging()"
     },
     {
@@ -6790,7 +6660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core_rationale_1",
-      "community": 36,
+      "community": 33,
       "norm_label": "configuracao de structlog: settings, processadores, integracao com logging stdli"
     },
     {
@@ -6800,7 +6670,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "components_xtreme_system_logging_core_rationale_24",
-      "community": 36,
+      "community": 33,
       "norm_label": "configura structlog e faz o logging stdlib (uvicorn, sqlalchemy) passar     pelo"
     },
     {
@@ -6842,16 +6712,6 @@
       "id": "components_xtreme_system_perfil_core_perfilcreate",
       "community": 12,
       "norm_label": "perfilcreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_perfil_core_py_basemodel",
-      "community": 12,
-      "norm_label": "basemodel"
     },
     {
       "label": "PerfilUpdate",
@@ -7000,18 +6860,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "components_xtreme_system_usuario_core_papel",
-      "community": 13,
+      "community": 5,
       "norm_label": "papel"
-    },
-    {
-      "label": "StrEnum",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_usuario_core_py_strenum",
-      "community": 13,
-      "norm_label": "strenum"
     },
     {
       "label": "Usuario",
@@ -7034,23 +6884,13 @@
       "norm_label": "usuariocreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_usuario_core_py_basemodel",
-      "community": 8,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "UsuarioRead",
       "file_type": "code",
       "source_file": "components/xtreme_system/usuario/core.py",
       "source_location": "L40",
       "_origin": "ast",
       "id": "components_xtreme_system_usuario_core_usuarioread",
-      "community": 8,
+      "community": 110,
       "norm_label": "usuarioread"
     },
     {
@@ -7174,16 +7014,6 @@
       "norm_label": "tipoveiculo"
     },
     {
-      "label": "StrEnum",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_veiculo_core_py_strenum",
-      "community": 5,
-      "norm_label": "strenum"
-    },
-    {
       "label": "StatusVeiculo",
       "file_type": "code",
       "source_file": "components/xtreme_system/veiculo/core.py",
@@ -7224,16 +7054,6 @@
       "norm_label": "veiculocreate"
     },
     {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_veiculo_core_py_basemodel",
-      "community": 5,
-      "norm_label": "basemodel"
-    },
-    {
       "label": "VeiculoUpdate",
       "file_type": "code",
       "source_file": "components/xtreme_system/veiculo/core.py",
@@ -7250,7 +7070,7 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "components_xtreme_system_veiculo_core_veiculoread",
-      "community": 5,
+      "community": 110,
       "norm_label": "veiculoread"
     },
     {
@@ -7390,7 +7210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core",
-      "community": 6,
+      "community": 5,
       "norm_label": "core.py"
     },
     {
@@ -7400,18 +7220,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_statusvenda",
-      "community": 6,
+      "community": 5,
       "norm_label": "statusvenda"
-    },
-    {
-      "label": "StrEnum",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_venda_core_py_strenum",
-      "community": 6,
-      "norm_label": "strenum"
     },
     {
       "label": "Venda",
@@ -7420,7 +7230,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_venda",
-      "community": 6,
+      "community": 5,
       "norm_label": "venda"
     },
     {
@@ -7430,18 +7240,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_vendacreate",
-      "community": 6,
+      "community": 5,
       "norm_label": "vendacreate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_venda_core_py_basemodel",
-      "community": 6,
-      "norm_label": "basemodel"
     },
     {
       "label": "VendaUpdate",
@@ -7450,7 +7250,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_vendaupdate",
-      "community": 6,
+      "community": 5,
       "norm_label": "vendaupdate"
     },
     {
@@ -7460,7 +7260,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_vendaread",
-      "community": 6,
+      "community": 110,
       "norm_label": "vendaread"
     },
     {
@@ -7470,7 +7270,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_list_all",
-      "community": 6,
+      "community": 5,
       "norm_label": "list_all()"
     },
     {
@@ -7480,7 +7280,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_py_session",
-      "community": 6,
+      "community": 5,
       "norm_label": "session"
     },
     {
@@ -7490,7 +7290,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_get",
-      "community": 6,
+      "community": 5,
       "norm_label": "get()"
     },
     {
@@ -7500,7 +7300,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_status_veiculo_para_venda",
-      "community": 6,
+      "community": 5,
       "norm_label": "_status_veiculo_para_venda()"
     },
     {
@@ -7510,7 +7310,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_sincronizar_status_veiculo",
-      "community": 6,
+      "community": 5,
       "norm_label": "_sincronizar_status_veiculo()"
     },
     {
@@ -7520,7 +7320,7 @@
       "source_location": "L134",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_create",
-      "community": 6,
+      "community": 5,
       "norm_label": "create()"
     },
     {
@@ -7530,7 +7330,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_update",
-      "community": 6,
+      "community": 5,
       "norm_label": "update()"
     },
     {
@@ -7540,7 +7340,7 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_delete",
-      "community": 6,
+      "community": 5,
       "norm_label": "delete()"
     },
     {
@@ -7550,7 +7350,7 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_mes_atual_inicio",
-      "community": 6,
+      "community": 5,
       "norm_label": "_mes_atual_inicio()"
     },
     {
@@ -7560,7 +7360,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_py_date",
-      "community": 6,
+      "community": 5,
       "norm_label": "date"
     },
     {
@@ -7570,7 +7370,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_resumo_mes",
-      "community": 6,
+      "community": 5,
       "norm_label": "resumo_mes()"
     },
     {
@@ -7580,7 +7380,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_py_decimal",
-      "community": 6,
+      "community": 5,
       "norm_label": "decimal"
     },
     {
@@ -7590,7 +7390,7 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_ticket_medio",
-      "community": 6,
+      "community": 5,
       "norm_label": "ticket_medio()"
     },
     {
@@ -7600,7 +7400,7 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_receita_por_tipo",
-      "community": 6,
+      "community": 5,
       "norm_label": "receita_por_tipo()"
     },
     {
@@ -7610,7 +7410,7 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_funil_status",
-      "community": 6,
+      "community": 5,
       "norm_label": "funil_status()"
     },
     {
@@ -7620,7 +7420,7 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_ranking_vendedores",
-      "community": 6,
+      "community": 5,
       "norm_label": "ranking_vendedores()"
     },
     {
@@ -7630,7 +7430,7 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_tendencia_por_periodo",
-      "community": 6,
+      "community": 5,
       "norm_label": "tendencia_por_periodo()"
     },
     {
@@ -7640,7 +7440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_1",
-      "community": 6,
+      "community": 5,
       "norm_label": "venda: enum de status, model (com fks), schemas e crud."
     },
     {
@@ -7650,7 +7450,7 @@
       "source_location": "L161",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_161",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna (contagem, soma) de vendas do mes atual com status != cancelado."
     },
     {
@@ -7660,7 +7460,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_173",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna valor medio de venda com status != cancelado."
     },
     {
@@ -7670,7 +7470,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_183",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna soma de valor_venda agrupada por tipo de veiculo, sem cancelados."
     },
     {
@@ -7680,7 +7480,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_195",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna (contagem, soma) de vendas por status (incluindo cancelado)."
     },
     {
@@ -7690,7 +7490,7 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_209",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna top n vendedores por valor vendido (status != cancelado).      retorna:"
     },
     {
@@ -7700,7 +7500,7 @@
       "source_location": "L234",
       "_origin": "ast",
       "id": "components_xtreme_system_venda_core_rationale_234",
-      "community": 6,
+      "community": 5,
       "norm_label": "retorna vendas agregadas por semana (30d/90d) ou mes (12m)."
     },
     {
@@ -7742,16 +7542,6 @@
       "id": "components_xtreme_system_whatsapp_core_whatsappconfigupdate",
       "community": 6,
       "norm_label": "whatsappconfigupdate"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "components_xtreme_system_whatsapp_core_py_basemodel",
-      "community": 6,
-      "norm_label": "basemodel"
     },
     {
       "label": "get_config()",
@@ -7870,7 +7660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "development_create_admin",
-      "community": 1,
+      "community": 107,
       "norm_label": "create_admin.py"
     },
     {
@@ -7880,7 +7670,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "development_create_admin_main",
-      "community": 1,
+      "community": 107,
       "norm_label": "main()"
     },
     {
@@ -7890,7 +7680,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "development_create_admin_rationale_1",
-      "community": 1,
+      "community": 107,
       "norm_label": "cria o primeiro admin: uv run python development/create_admin.py <user> <senha>."
     },
     {
@@ -8154,7 +7944,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_conftest_reset_rate_limiters",
-      "community": 7,
+      "community": 1,
       "norm_label": "_reset_rate_limiters()"
     },
     {
@@ -8624,7 +8414,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_compras",
-      "community": 1,
+      "community": 111,
       "norm_label": "test_api_compras.py"
     },
     {
@@ -8634,7 +8424,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "tests_test_api_compras_client",
-      "community": 1,
+      "community": 111,
       "norm_label": "client()"
     },
     {
@@ -8644,7 +8434,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_api_compras_py_testclient",
-      "community": 1,
+      "community": 111,
       "norm_label": "testclient"
     },
     {
@@ -8654,7 +8444,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "tests_test_api_compras_token",
-      "community": 1,
+      "community": 111,
       "norm_label": "_token()"
     },
     {
@@ -8664,7 +8454,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "tests_test_api_compras_seed",
-      "community": 1,
+      "community": 111,
       "norm_label": "_seed()"
     },
     {
@@ -8674,7 +8464,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "tests_test_api_compras_test_admin_crud_compras",
-      "community": 1,
+      "community": 111,
       "norm_label": "test_admin_crud_compras()"
     },
     {
@@ -8684,7 +8474,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "tests_test_api_compras_test_vendedor_nao_cria_compra",
-      "community": 1,
+      "community": 111,
       "norm_label": "test_vendedor_nao_cria_compra()"
     },
     {
@@ -8694,7 +8484,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "tests_test_api_compras_test_compra_cliente_inexistente_retorna_400",
-      "community": 1,
+      "community": 111,
       "norm_label": "test_compra_cliente_inexistente_retorna_400()"
     },
     {
@@ -8704,7 +8494,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_compras_rationale_1",
-      "community": 1,
+      "community": 111,
       "norm_label": "api compras: crud via testclient."
     },
     {
@@ -8774,7 +8564,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit",
-      "community": 1,
+      "community": 112,
       "norm_label": "test_api_rate_limit.py"
     },
     {
@@ -8784,7 +8574,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_client",
-      "community": 1,
+      "community": 112,
       "norm_label": "client()"
     },
     {
@@ -8794,7 +8584,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_py_testclient",
-      "community": 1,
+      "community": 112,
       "norm_label": "testclient"
     },
     {
@@ -8804,7 +8594,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_test_login_bloqueia_apos_limite",
-      "community": 1,
+      "community": 112,
       "norm_label": "test_login_bloqueia_apos_limite()"
     },
     {
@@ -8814,7 +8604,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_test_ui_login_bloqueia_apos_limite_e_retorna_html",
-      "community": 1,
+      "community": 112,
       "norm_label": "test_ui_login_bloqueia_apos_limite_e_retorna_html()"
     },
     {
@@ -8824,7 +8614,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_test_health_isento_de_rate_limit",
-      "community": 1,
+      "community": 112,
       "norm_label": "test_health_isento_de_rate_limit()"
     },
     {
@@ -8834,7 +8624,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_test_requests_gerais_bloqueiam_apos_limite",
-      "community": 1,
+      "community": 112,
       "norm_label": "test_requests_gerais_bloqueiam_apos_limite()"
     },
     {
@@ -8844,7 +8634,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_rate_limit_rationale_1",
-      "community": 1,
+      "community": 112,
       "norm_label": "rate limiting: tentativas de login e requests gerais da api."
     },
     {
@@ -8854,7 +8644,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_vendas",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_api_vendas.py"
     },
     {
@@ -8864,7 +8654,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "tests_test_api_vendas_client",
-      "community": 1,
+      "community": 108,
       "norm_label": "client()"
     },
     {
@@ -8874,7 +8664,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_api_vendas_py_testclient",
-      "community": 1,
+      "community": 108,
       "norm_label": "testclient"
     },
     {
@@ -8884,7 +8674,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "tests_test_api_vendas_token",
-      "community": 1,
+      "community": 108,
       "norm_label": "_token()"
     },
     {
@@ -8894,7 +8684,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "tests_test_api_vendas_seed",
-      "community": 1,
+      "community": 108,
       "norm_label": "_seed()"
     },
     {
@@ -8904,7 +8694,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_admin_cria_venda",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_admin_cria_venda()"
     },
     {
@@ -8914,7 +8704,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_admin_lista_vendas",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_admin_lista_vendas()"
     },
     {
@@ -8924,7 +8714,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_venda_concluida_marca_veiculo_vendido",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_venda_concluida_marca_veiculo_vendido()"
     },
     {
@@ -8934,7 +8724,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_atualizar_venda_sincroniza_status_do_veiculo",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_atualizar_venda_sincroniza_status_do_veiculo()"
     },
     {
@@ -8944,7 +8734,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_atualizar_venda_concluida_para_pendente_libera_veiculo",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_atualizar_venda_concluida_para_pendente_libera_veiculo()"
     },
     {
@@ -8954,7 +8744,7 @@
       "source_location": "L226",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_vendedor_nao_cria_venda",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_vendedor_nao_cria_venda()"
     },
     {
@@ -8964,7 +8754,7 @@
       "source_location": "L246",
       "_origin": "ast",
       "id": "tests_test_api_vendas_test_cliente_inexistente_retorna_400",
-      "community": 1,
+      "community": 108,
       "norm_label": "test_cliente_inexistente_retorna_400()"
     },
     {
@@ -8974,7 +8764,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_api_vendas_rationale_1",
-      "community": 1,
+      "community": 108,
       "norm_label": "api vendas: crud via testclient."
     },
     {
@@ -8984,7 +8774,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "tests_test_api_vendas_rationale_47",
-      "community": 1,
+      "community": 108,
       "norm_label": "cria investidor, cliente e veiculo."
     },
     {
@@ -9174,7 +8964,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_crud",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_crud.py"
     },
     {
@@ -9184,7 +8974,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "tests_test_crud_session",
-      "community": 1,
+      "community": 107,
       "norm_label": "session()"
     },
     {
@@ -9194,7 +8984,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "tests_test_crud_test_veiculo_ciclo_completo",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_veiculo_ciclo_completo()"
     },
     {
@@ -9204,7 +8994,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "tests_test_crud_test_placa_duplicada_rejeitada",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_placa_duplicada_rejeitada()"
     },
     {
@@ -9214,7 +9004,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "tests_test_crud_test_usuario_crud",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_usuario_crud()"
     },
     {
@@ -9224,7 +9014,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "tests_test_crud_test_senha_hash_masked_in_audit",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_senha_hash_masked_in_audit()"
     },
     {
@@ -9234,7 +9024,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "tests_test_crud_test_caixa_lancamento_veiculo_audit",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_caixa_lancamento_veiculo_audit()"
     },
     {
@@ -9244,7 +9034,7 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "tests_test_crud_investidor_e_veiculo",
-      "community": 1,
+      "community": 107,
       "norm_label": "_investidor_e_veiculo()"
     },
     {
@@ -9254,7 +9044,7 @@
       "source_location": "L228",
       "_origin": "ast",
       "id": "tests_test_crud_test_criar_veiculo_gera_lancamento_de_custo_e_reduz_saldo",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_criar_veiculo_gera_lancamento_de_custo_e_reduz_saldo()"
     },
     {
@@ -9264,7 +9054,7 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "tests_test_crud_test_atualizar_preco_ou_investidor_sincroniza_lancamento",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_atualizar_preco_ou_investidor_sincroniza_lancamento()"
     },
     {
@@ -9274,7 +9064,7 @@
       "source_location": "L252",
       "_origin": "ast",
       "id": "tests_test_crud_test_excluir_veiculo_apaga_lancamento_em_cascata",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_excluir_veiculo_apaga_lancamento_em_cascata()"
     },
     {
@@ -9284,7 +9074,7 @@
       "source_location": "L263",
       "_origin": "ast",
       "id": "tests_test_crud_test_lancamento_manual_ciclo_completo",
-      "community": 1,
+      "community": 107,
       "norm_label": "test_lancamento_manual_ciclo_completo()"
     },
     {
@@ -9294,7 +9084,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_crud_rationale_1",
-      "community": 1,
+      "community": 107,
       "norm_label": "crud end-to-end dos bricks, em sqlite in-memory (sem depender do postgres)."
     },
     {
@@ -9304,7 +9094,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "tests_test_crud_rationale_106",
-      "community": 1,
+      "community": 107,
       "norm_label": "crud de usuario: criar, buscar, listar, deletar e trocar senha."
     },
     {
@@ -9444,7 +9234,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity",
-      "community": 1,
+      "community": 4,
       "norm_label": "test_route_factories_atomicity.py"
     },
     {
@@ -9454,7 +9244,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_atomic_client",
-      "community": 1,
+      "community": 4,
       "norm_label": "atomic_client()"
     },
     {
@@ -9464,7 +9254,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_py_testclient",
-      "community": 1,
+      "community": 4,
       "norm_label": "testclient"
     },
     {
@@ -9474,7 +9264,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_py_fastapi",
-      "community": 1,
+      "community": 4,
       "norm_label": "fastapi"
     },
     {
@@ -9484,7 +9274,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_py_session",
-      "community": 1,
+      "community": 4,
       "norm_label": "session"
     },
     {
@@ -9494,7 +9284,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_test_json_create_rolls_back_when_after_create_fails",
-      "community": 1,
+      "community": 4,
       "norm_label": "test_json_create_rolls_back_when_after_create_fails()"
     },
     {
@@ -9504,7 +9294,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_test_json_update_rolls_back_when_after_update_fails",
-      "community": 1,
+      "community": 4,
       "norm_label": "test_json_update_rolls_back_when_after_update_fails()"
     },
     {
@@ -9514,7 +9304,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "tests_test_route_factories_atomicity_test_json_delete_rolls_back_when_before_delete_fails_after_writes",
-      "community": 1,
+      "community": 4,
       "norm_label": "test_json_delete_rolls_back_when_before_delete_fails_after_writes()"
     },
     {
@@ -9524,7 +9314,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui",
-      "community": 4,
+      "community": 36,
       "norm_label": "test_route_factories_ui.py"
     },
     {
@@ -9534,7 +9324,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_test_register_ui_simples_aceita_templates_injetado",
-      "community": 4,
+      "community": 36,
       "norm_label": "test_register_ui_simples_aceita_templates_injetado()"
     },
     {
@@ -9544,7 +9334,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_py_path",
-      "community": 4,
+      "community": 36,
       "norm_label": "path"
     },
     {
@@ -9554,7 +9344,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_test_sort_key_nulls",
-      "community": 13,
+      "community": 4,
       "norm_label": "test_sort_key_nulls()"
     },
     {
@@ -9564,18 +9354,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_stubschema",
-      "community": 4,
+      "community": 36,
       "norm_label": "_stubschema"
-    },
-    {
-      "label": "BaseModel",
-      "file_type": "code",
-      "source_file": "",
-      "source_location": "",
-      "_origin": "ast",
-      "id": "tests_test_route_factories_ui_py_basemodel",
-      "community": 4,
-      "norm_label": "basemodel"
     },
     {
       "label": "_StubItem",
@@ -9584,7 +9364,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_stubitem",
-      "community": 4,
+      "community": 36,
       "norm_label": "_stubitem"
     },
     {
@@ -9594,7 +9374,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_stubitem_init",
-      "community": 4,
+      "community": 36,
       "norm_label": ".__init__()"
     },
     {
@@ -9604,7 +9384,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule",
-      "community": 4,
+      "community": 36,
       "norm_label": "_conflictmodule"
     },
     {
@@ -9614,7 +9394,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_init",
-      "community": 4,
+      "community": 36,
       "norm_label": ".__init__()"
     },
     {
@@ -9624,7 +9404,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_list_all",
-      "community": 4,
+      "community": 36,
       "norm_label": ".list_all()"
     },
     {
@@ -9634,7 +9414,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_py_session",
-      "community": 4,
+      "community": 36,
       "norm_label": "session"
     },
     {
@@ -9644,7 +9424,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_get",
-      "community": 4,
+      "community": 36,
       "norm_label": ".get()"
     },
     {
@@ -9654,7 +9434,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_create",
-      "community": 4,
+      "community": 36,
       "norm_label": ".create()"
     },
     {
@@ -9664,7 +9444,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_py_any",
-      "community": 4,
+      "community": 36,
       "norm_label": "any"
     },
     {
@@ -9674,7 +9454,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_update",
-      "community": 4,
+      "community": 36,
       "norm_label": ".update()"
     },
     {
@@ -9684,7 +9464,7 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_conflictmodule_delete",
-      "community": 4,
+      "community": 36,
       "norm_label": ".delete()"
     },
     {
@@ -9694,7 +9474,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_stub_crud_client",
-      "community": 4,
+      "community": 36,
       "norm_label": "_stub_crud_client()"
     },
     {
@@ -9704,7 +9484,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_py_testclient",
-      "community": 4,
+      "community": 36,
       "norm_label": "testclient"
     },
     {
@@ -9714,7 +9494,7 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_test_crud_ui_create_integrity_error_retorna_409",
-      "community": 4,
+      "community": 36,
       "norm_label": "test_crud_ui_create_integrity_error_retorna_409()"
     },
     {
@@ -9724,7 +9504,7 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_test_crud_ui_update_integrity_error_retorna_409",
-      "community": 4,
+      "community": 36,
       "norm_label": "test_crud_ui_update_integrity_error_retorna_409()"
     },
     {
@@ -9734,7 +9514,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_test_crud_ui_delete_integrity_error_retorna_409",
-      "community": 4,
+      "community": 36,
       "norm_label": "test_crud_ui_delete_integrity_error_retorna_409()"
     },
     {
@@ -9744,7 +9524,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_rationale_1",
-      "community": 4,
+      "community": 36,
       "norm_label": "prova que register_ui_simples recebe jinja2templates como parametro (nao mais o"
     },
     {
@@ -9754,7 +9534,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "tests_test_route_factories_ui_rationale_69",
-      "community": 13,
+      "community": 4,
       "norm_label": "nullable fields sort deterministically without crashing mixed lists."
     },
     {
@@ -10583,7 +10363,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_agent_readable_workspace_map",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_agent_readable_workspace_map",
       "community": 35,
       "norm_label": "agent-readable workspace map"
     },
@@ -10593,7 +10373,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L20",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_1_think_before_coding",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_1_think_before_coding",
       "community": 35,
       "norm_label": "1. think before coding"
     },
@@ -10603,7 +10383,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L31",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_2_simplicity_first",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_2_simplicity_first",
       "community": 35,
       "norm_label": "2. simplicity first"
     },
@@ -10613,7 +10393,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L43",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_3_surgical_changes",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_3_surgical_changes",
       "community": 35,
       "norm_label": "3. surgical changes"
     },
@@ -10623,7 +10403,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L61",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_4_goal_driven_execution",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_4_goal_driven_execution",
       "community": 35,
       "norm_label": "4. goal-driven execution"
     },
@@ -10633,7 +10413,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L85",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_5_graphify",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_5_graphify",
       "community": 35,
       "norm_label": "5. graphify"
     },
@@ -10643,7 +10423,7 @@
       "source_file": "AGENTS.md",
       "source_location": "L99",
       "_origin": "ast",
-      "id": "users_guilsmatos_orca_projects_xtreme_system_agents_6_rtk",
+      "id": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_6_rtk",
       "community": 35,
       "norm_label": "6. rtk"
     },
@@ -11421,7 +11201,7 @@
       "label": "Estrutura do projeto",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L101",
+      "source_location": "L103",
       "_origin": "ast",
       "id": "readme_estrutura_do_projeto",
       "community": 29,
@@ -11431,7 +11211,7 @@
       "label": "Conven\u00e7\u00f5es do projeto",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L120",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "readme_conven\u00e7\u00f5es_do_projeto",
       "community": 29,
@@ -12966,7 +12746,7 @@
       "source_location": "L67",
       "weight": 1.0,
       "source": "bases_xtreme_system_api_deps_naoautenticadoerror",
-      "target": "bases_xtreme_system_api_deps_py_exception",
+      "target": "exception",
       "confidence_score": 1.0
     },
     {
@@ -12987,7 +12767,7 @@
       "source_location": "L71",
       "weight": 1.0,
       "source": "bases_xtreme_system_api_deps_naoadminerror",
-      "target": "bases_xtreme_system_api_deps_py_exception",
+      "target": "exception",
       "confidence_score": 1.0
     },
     {
@@ -12997,7 +12777,7 @@
       "source_location": "L75",
       "weight": 1.0,
       "source": "bases_xtreme_system_api_deps_naoautorizadoerror",
-      "target": "bases_xtreme_system_api_deps_py_exception",
+      "target": "exception",
       "confidence_score": 1.0
     },
     {
@@ -20654,7 +20434,7 @@
       "source_location": "L1",
       "weight": 1.0,
       "source": "bases_xtreme_system_api_static_htmx_min",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_bases_xtreme_system_api_static_htmx_min",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_bases_xtreme_system_api_static_htmx_min",
       "confidence_score": 1.0
     },
     {
@@ -24732,7 +24512,407 @@
       "source_location": "L80",
       "weight": 1.0,
       "source": "components_xtreme_system_auditoria_core_auditoriaread",
-      "target": "components_xtreme_system_auditoria_core_py_basemodel",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/auth/core.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "components_xtreme_system_auth_core_token",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/auth/core.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "components_xtreme_system_auth_core_tokendata",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/caixa/core.py",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentocreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/caixa/core.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentoread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/caixa/core.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentoupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/cliente/core.py",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "components_xtreme_system_cliente_core_clientecreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/cliente/core.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "components_xtreme_system_cliente_core_clienteread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/cliente/core.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "components_xtreme_system_cliente_core_clienteupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/compra/core.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "components_xtreme_system_compra_core_compracreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/compra/core.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "components_xtreme_system_compra_core_compraread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/compra/core.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "components_xtreme_system_compra_core_compraupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/documento_veiculo/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculocreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/documento_veiculo/core.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculoread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/documento_veiculo/core.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculoupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_comprovante_compra/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_comprovante_compra_core_imagemcomprovantecompracreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_comprovante_compra/core.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_comprovante_compra_core_imagemcomprovantecompraread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_comprovante_venda/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendacreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_comprovante_venda/core.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendaread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclientecreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclienteread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclienteupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculocreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculoread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculoupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/investidor/core.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "components_xtreme_system_investidor_core_investidorcreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/investidor/core.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "components_xtreme_system_investidor_core_investidorread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/investidor/core.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "components_xtreme_system_investidor_core_investidorupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/perfil/core.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "components_xtreme_system_perfil_core_perfilcreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/perfil/core.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "components_xtreme_system_perfil_core_perfilread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/perfil/core.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "components_xtreme_system_perfil_core_perfilupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/usuario/core.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "components_xtreme_system_usuario_core_usuariocreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/usuario/core.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "components_xtreme_system_usuario_core_usuarioread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_veiculocreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_veiculoread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_veiculoupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/venda/core.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "components_xtreme_system_venda_core_vendacreate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/venda/core.py",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "components_xtreme_system_venda_core_vendaread",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/venda/core.py",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "components_xtreme_system_venda_core_vendaupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/whatsapp/core.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "components_xtreme_system_whatsapp_core_whatsappconfigupdate",
+      "target": "basemodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_route_factories_ui.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "tests_test_route_factories_ui_stubschema",
+      "target": "basemodel",
       "confidence_score": 1.0
     },
     {
@@ -24898,7 +25078,27 @@
       "source_location": "L12",
       "weight": 1.0,
       "source": "components_xtreme_system_auth_core_settings",
-      "target": "components_xtreme_system_auth_core_py_basesettings",
+      "target": "basesettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/database/core.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "components_xtreme_system_database_core_settings",
+      "target": "basesettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/logging/core.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "components_xtreme_system_logging_core_settings",
+      "target": "basesettings",
       "confidence_score": 1.0
     },
     {
@@ -24921,26 +25121,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_auth_core_decode_token",
       "target": "components_xtreme_system_auth_core_get_settings",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/auth/core.py",
-      "source_location": "L28",
-      "weight": 1.0,
-      "source": "components_xtreme_system_auth_core_token",
-      "target": "components_xtreme_system_auth_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/auth/core.py",
-      "source_location": "L33",
-      "weight": 1.0,
-      "source": "components_xtreme_system_auth_core_tokendata",
-      "target": "components_xtreme_system_auth_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -25194,7 +25374,7 @@
       "source_location": "L17",
       "weight": 1.0,
       "source": "components_xtreme_system_caixa_core_tipolancamento",
-      "target": "components_xtreme_system_caixa_core_py_strenum",
+      "target": "strenum",
       "confidence_score": 1.0
     },
     {
@@ -25204,7 +25384,67 @@
       "source_location": "L22",
       "weight": 1.0,
       "source": "components_xtreme_system_caixa_core_origemlancamento",
-      "target": "components_xtreme_system_caixa_core_py_strenum",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/cliente/core.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "components_xtreme_system_cliente_core_tipocliente",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/usuario/core.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "components_xtreme_system_usuario_core_papel",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_statusveiculo",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_tipoentrada",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/veiculo/core.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "components_xtreme_system_veiculo_core_tipoveiculo",
+      "target": "strenum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "components/xtreme_system/venda/core.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "components_xtreme_system_venda_core_statusvenda",
+      "target": "strenum",
       "confidence_score": 1.0
     },
     {
@@ -25325,36 +25565,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_caixa_core_create",
       "target": "components_xtreme_system_caixa_core_lancamentoinvestimentocreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/caixa/core.py",
-      "source_location": "L42",
-      "weight": 1.0,
-      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentocreate",
-      "target": "components_xtreme_system_caixa_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/caixa/core.py",
-      "source_location": "L55",
-      "weight": 1.0,
-      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentoread",
-      "target": "components_xtreme_system_caixa_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/caixa/core.py",
-      "source_location": "L49",
-      "weight": 1.0,
-      "source": "components_xtreme_system_caixa_core_lancamentoinvestimentoupdate",
-      "target": "components_xtreme_system_caixa_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -25797,16 +26007,6 @@
       "relation": "inherits",
       "confidence": "EXTRACTED",
       "source_file": "components/xtreme_system/cliente/core.py",
-      "source_location": "L17",
-      "weight": 1.0,
-      "source": "components_xtreme_system_cliente_core_tipocliente",
-      "target": "components_xtreme_system_cliente_core_py_strenum",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/cliente/core.py",
       "source_location": "L22",
       "weight": 1.0,
       "source": "components_xtreme_system_cliente_core_cliente",
@@ -25891,16 +26091,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/cliente/core.py",
-      "source_location": "L42",
-      "weight": 1.0,
-      "source": "components_xtreme_system_cliente_core_clientecreate",
-      "target": "components_xtreme_system_cliente_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -25909,26 +26099,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_cliente_core_create",
       "target": "components_xtreme_system_cliente_core_clientecreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/cliente/core.py",
-      "source_location": "L68",
-      "weight": 1.0,
-      "source": "components_xtreme_system_cliente_core_clienteread",
-      "target": "components_xtreme_system_cliente_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/cliente/core.py",
-      "source_location": "L55",
-      "weight": 1.0,
-      "source": "components_xtreme_system_cliente_core_clienteupdate",
-      "target": "components_xtreme_system_cliente_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -26227,16 +26397,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/compra/core.py",
-      "source_location": "L35",
-      "weight": 1.0,
-      "source": "components_xtreme_system_compra_core_compracreate",
-      "target": "components_xtreme_system_compra_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -26245,26 +26405,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_compra_core_create",
       "target": "components_xtreme_system_compra_core_compracreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/compra/core.py",
-      "source_location": "L53",
-      "weight": 1.0,
-      "source": "components_xtreme_system_compra_core_compraread",
-      "target": "components_xtreme_system_compra_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/compra/core.py",
-      "source_location": "L44",
-      "weight": 1.0,
-      "source": "components_xtreme_system_compra_core_compraupdate",
-      "target": "components_xtreme_system_compra_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -26709,16 +26849,6 @@
       "relation": "inherits",
       "confidence": "EXTRACTED",
       "source_file": "components/xtreme_system/database/core.py",
-      "source_location": "L11",
-      "weight": 1.0,
-      "source": "components_xtreme_system_database_core_settings",
-      "target": "components_xtreme_system_database_core_py_basesettings",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/database/core.py",
       "source_location": "L22",
       "weight": 1.0,
       "source": "components_xtreme_system_database_core_base",
@@ -27034,36 +27164,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/documento_veiculo/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculocreate",
-      "target": "components_xtreme_system_documento_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/documento_veiculo/core.py",
-      "source_location": "L30",
-      "weight": 1.0,
-      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculoread",
-      "target": "components_xtreme_system_documento_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/documento_veiculo/core.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "components_xtreme_system_documento_veiculo_core_documentoveiculoupdate",
-      "target": "components_xtreme_system_documento_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -27297,26 +27397,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_comprovante_compra/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_comprovante_compra_core_imagemcomprovantecompracreate",
-      "target": "components_xtreme_system_imagem_comprovante_compra_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_comprovante_compra/core.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_comprovante_compra_core_imagemcomprovantecompraread",
-      "target": "components_xtreme_system_imagem_comprovante_compra_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -27525,26 +27605,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_imagem_comprovante_venda_core_create",
       "target": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendacreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_comprovante_venda/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendacreate",
-      "target": "components_xtreme_system_imagem_comprovante_venda_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_comprovante_venda/core.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_comprovante_venda_core_imagemcomprovantevendaread",
-      "target": "components_xtreme_system_imagem_comprovante_venda_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -27787,36 +27847,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_imagem_documento_cliente_core_create",
       "target": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclientecreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclientecreate",
-      "target": "components_xtreme_system_imagem_documento_cliente_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
-      "source_location": "L30",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclienteread",
-      "target": "components_xtreme_system_imagem_documento_cliente_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_documento_cliente/core.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_documento_cliente_core_imagemdocumentoclienteupdate",
-      "target": "components_xtreme_system_imagem_documento_cliente_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -28084,36 +28114,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculocreate",
-      "target": "components_xtreme_system_imagem_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
-      "source_location": "L30",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculoread",
-      "target": "components_xtreme_system_imagem_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/imagem_veiculo/core.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "components_xtreme_system_imagem_veiculo_core_imagemveiculoupdate",
-      "target": "components_xtreme_system_imagem_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -28368,36 +28368,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/investidor/core.py",
-      "source_location": "L17",
-      "weight": 1.0,
-      "source": "components_xtreme_system_investidor_core_investidorcreate",
-      "target": "components_xtreme_system_investidor_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/investidor/core.py",
-      "source_location": "L25",
-      "weight": 1.0,
-      "source": "components_xtreme_system_investidor_core_investidorread",
-      "target": "components_xtreme_system_investidor_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/investidor/core.py",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "components_xtreme_system_investidor_core_investidorupdate",
-      "target": "components_xtreme_system_investidor_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -28512,16 +28482,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_logging_core_get_settings",
       "target": "components_xtreme_system_logging_core_settings",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/logging/core.py",
-      "source_location": "L11",
-      "weight": 1.0,
-      "source": "components_xtreme_system_logging_core_settings",
-      "target": "components_xtreme_system_logging_core_py_basesettings",
       "confidence_score": 1.0
     },
     {
@@ -28765,36 +28725,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/perfil/core.py",
-      "source_location": "L30",
-      "weight": 1.0,
-      "source": "components_xtreme_system_perfil_core_perfilcreate",
-      "target": "components_xtreme_system_perfil_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/perfil/core.py",
-      "source_location": "L40",
-      "weight": 1.0,
-      "source": "components_xtreme_system_perfil_core_perfilread",
-      "target": "components_xtreme_system_perfil_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/perfil/core.py",
-      "source_location": "L35",
-      "weight": 1.0,
-      "source": "components_xtreme_system_perfil_core_perfilupdate",
-      "target": "components_xtreme_system_perfil_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -29003,16 +28933,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/usuario/core.py",
-      "source_location": "L16",
-      "weight": 1.0,
-      "source": "components_xtreme_system_usuario_core_papel",
-      "target": "components_xtreme_system_usuario_core_py_strenum",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -29131,26 +29051,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_usuario_core_create",
       "target": "components_xtreme_system_usuario_core_usuariocreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/usuario/core.py",
-      "source_location": "L33",
-      "weight": 1.0,
-      "source": "components_xtreme_system_usuario_core_usuariocreate",
-      "target": "components_xtreme_system_usuario_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/usuario/core.py",
-      "source_location": "L40",
-      "weight": 1.0,
-      "source": "components_xtreme_system_usuario_core_usuarioread",
-      "target": "components_xtreme_system_usuario_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -29402,16 +29302,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L17",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_tipoveiculo",
-      "target": "components_xtreme_system_veiculo_core_py_strenum",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "generic_arg",
       "confidence": "EXTRACTED",
@@ -29420,26 +29310,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_venda_core_receita_por_tipo",
       "target": "components_xtreme_system_veiculo_core_tipoveiculo",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L22",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_statusveiculo",
-      "target": "components_xtreme_system_veiculo_core_py_strenum",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L28",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_tipoentrada",
-      "target": "components_xtreme_system_veiculo_core_py_strenum",
       "confidence_score": 1.0
     },
     {
@@ -29572,36 +29442,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_veiculo_core_create",
       "target": "components_xtreme_system_veiculo_core_veiculocreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L57",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_veiculocreate",
-      "target": "components_xtreme_system_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L87",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_veiculoread",
-      "target": "components_xtreme_system_veiculo_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/veiculo/core.py",
-      "source_location": "L72",
-      "weight": 1.0,
-      "source": "components_xtreme_system_veiculo_core_veiculoupdate",
-      "target": "components_xtreme_system_veiculo_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -29969,16 +29809,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/venda/core.py",
-      "source_location": "L18",
-      "weight": 1.0,
-      "source": "components_xtreme_system_venda_core_statusvenda",
-      "target": "components_xtreme_system_venda_core_py_strenum",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "return_type",
       "confidence": "EXTRACTED",
@@ -30097,36 +29927,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_venda_core_create",
       "target": "components_xtreme_system_venda_core_vendacreate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/venda/core.py",
-      "source_location": "L48",
-      "weight": 1.0,
-      "source": "components_xtreme_system_venda_core_vendacreate",
-      "target": "components_xtreme_system_venda_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/venda/core.py",
-      "source_location": "L76",
-      "weight": 1.0,
-      "source": "components_xtreme_system_venda_core_vendaread",
-      "target": "components_xtreme_system_venda_core_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/venda/core.py",
-      "source_location": "L62",
-      "weight": 1.0,
-      "source": "components_xtreme_system_venda_core_vendaupdate",
-      "target": "components_xtreme_system_venda_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -30629,16 +30429,6 @@
       "weight": 1.0,
       "source": "components_xtreme_system_whatsapp_core_atualizar_config",
       "target": "components_xtreme_system_whatsapp_core_whatsappconfigupdate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "components/xtreme_system/whatsapp/core.py",
-      "source_location": "L40",
-      "weight": 1.0,
-      "source": "components_xtreme_system_whatsapp_core_whatsappconfigupdate",
-      "target": "components_xtreme_system_whatsapp_core_py_basemodel",
       "confidence_score": 1.0
     },
     {
@@ -34118,16 +33908,6 @@
       "confidence_score": 0.5
     },
     {
-      "relation": "inherits",
-      "confidence": "EXTRACTED",
-      "source_file": "tests/test_route_factories_ui.py",
-      "source_location": "L84",
-      "weight": 1.0,
-      "source": "tests_test_route_factories_ui_stubschema",
-      "target": "tests_test_route_factories_ui_py_basemodel",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "references",
       "context": "return_type",
       "confidence": "EXTRACTED",
@@ -36606,7 +36386,7 @@
       "source_location": "L20",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_1_think_before_coding",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_1_think_before_coding",
       "confidence_score": 1.0
     },
     {
@@ -36616,7 +36396,7 @@
       "source_location": "L31",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_2_simplicity_first",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_2_simplicity_first",
       "confidence_score": 1.0
     },
     {
@@ -36626,7 +36406,7 @@
       "source_location": "L43",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_3_surgical_changes",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_3_surgical_changes",
       "confidence_score": 1.0
     },
     {
@@ -36636,7 +36416,7 @@
       "source_location": "L61",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_4_goal_driven_execution",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_4_goal_driven_execution",
       "confidence_score": 1.0
     },
     {
@@ -36646,7 +36426,7 @@
       "source_location": "L85",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_5_graphify",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_5_graphify",
       "confidence_score": 1.0
     },
     {
@@ -36656,7 +36436,7 @@
       "source_location": "L99",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_6_rtk",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_6_rtk",
       "confidence_score": 1.0
     },
     {
@@ -36666,7 +36446,7 @@
       "source_location": "L1",
       "weight": 1.0,
       "source": "agents",
-      "target": "users_guilsmatos_orca_projects_xtreme_system_agents_agent_readable_workspace_map",
+      "target": "users_guilsmatos_orca_workspaces_xtreme_system_gui_93_run_tests_against_migrated_postgres_agents_agent_readable_workspace_map",
       "confidence_score": 1.0
     },
     {
@@ -37333,7 +37113,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0,
       "source": "readme_xtreme_motors",
       "target": "readme_conven\u00e7\u00f5es_do_projeto",
@@ -37343,7 +37123,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L101",
+      "source_location": "L103",
       "weight": 1.0,
       "source": "readme_xtreme_motors",
       "target": "readme_estrutura_do_projeto",
@@ -37701,5 +37481,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e29d9311452b0c859108a957ed76a848b8f5e29c"
+  "built_at_commit": "9b980e6aaf5330c6e3533e9e7784c737c69fe367"
 }
