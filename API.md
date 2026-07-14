@@ -290,6 +290,72 @@ Response: No content (204)
 - `cliente_id` (if provided) must reference an existing client
 - `veiculo_id` (if provided) must reference an existing vehicle
 
+### Fechamento de Vendas
+
+Fechamentos são registros financeiros imutáveis de vendas concluídas e sem
+pagamento pendente.
+
+#### Preview
+
+**Endpoint**: `GET /vendas/{venda_id}/fechamento/preview`
+
+**Permissions**: Requires authentication (any role)
+
+Response:
+
+```json
+{
+  "elegivel": true,
+  "motivo": null,
+  "ja_fechada": false,
+  "receita": "60000.00",
+  "custo_veiculo": "40000.00",
+  "custos_operacionais": "1500.00",
+  "debitos": "500.00",
+  "lucro_liquido": "18000.00",
+  "investidores": []
+}
+```
+
+#### Confirmar fechamento
+
+**Endpoint**: `POST /vendas/{venda_id}/fechamento`
+
+**Permissions**: Requires admin role
+
+Request:
+
+```json
+{
+  "participacoes": [
+    {"investidor_id": 1, "percentual": "60.00"},
+    {"investidor_id": 2, "percentual": "40.00"}
+  ]
+}
+```
+
+Rules:
+
+- `lucro_liquido = venda.valor_venda - veiculo.preco - custos_operacionais - debitos`
+- `debitos` nulo conta como `0`
+- venda precisa estar com `status = concluido` e `pagamento_pendente = false`
+- uma venda pode ter apenas um fechamento
+- se o lucro for positivo, as participações devem somar `100%`
+- se o lucro for zero ou negativo, o fechamento cria somente a receita da venda
+
+Side effects:
+
+- cria `receita_venda` para o investidor principal do veículo
+- cria `distribuicao_lucro` para cada participação quando há lucro positivo
+- lançamentos com origem `fechamento_venda` não podem ser editados pelos endpoints manuais de caixa
+
+#### Consulta
+
+**Endpoints**:
+
+- `GET /fechamentos-vendas`
+- `GET /fechamentos-vendas/{id}`
+
 ---
 
 ## Response Format

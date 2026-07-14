@@ -77,6 +77,10 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `/clientes` | GET, POST, PATCH, DELETE | idem |
 | `/compras` | GET, POST, PATCH, DELETE | idem |
 | `/vendas` | GET, POST, PATCH, DELETE | idem |
+| `/vendas/{id}/fechamento/preview` | GET | CurrentUser |
+| `/vendas/{id}/fechamento` | POST | Admin |
+| `/fechamentos-vendas` | GET | CurrentUser |
+| `/fechamentos-vendas/{id}` | GET | CurrentUser |
 
 ### Fábrica de CRUD (`register_crud_routes`)
 
@@ -112,6 +116,8 @@ para autenticação (httpOnly, mesmo segredo JWT):
 | `/ui/clientes/vendedores` | Listagem de clientes com compras registradas |
 | `/ui/custos-veiculos` | Custos operacionais de veículos |
 | `/ui/vendas` | Listagem de vendas |
+| `/ui/vendas/{id}/fechamento` | Modal HTMX de fechamento financeiro |
+| `/ui/fechamentos-vendas/{id}` | Modal HTMX de detalhe do fechamento |
 | `/ui/usuarios` | Gestão de usuários |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
 
@@ -131,6 +137,7 @@ Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 | `caixa/` | `LancamentoCaixa` | `investidor_id`, `tipo` (aporte/retirada), `valor`, `descricao`, `origem` (manual/veiculo) |
 | `compra/` | — | Componente de compras (não montado nas rotas atuais) |
 | `custo_veiculo/` | `CustoVeiculo` | Custos operacionais por veículo, sem impacto em saldo de investidor |
+| `fechamento_venda/` | `FechamentoVenda`, `ParticipacaoFechamentoVenda` | Fecha financeiramente vendas concluídas, calcula lucro líquido, persiste snapshots e gera lançamentos automáticos no caixa |
 | `crud/` | — | Helpers CRUD compartilhados |
 | `documento_veiculo/` | — | Documentos de veículos (arquivos/imagens) |
 | `imagem_veiculo/` | — | Imagens de veículos |

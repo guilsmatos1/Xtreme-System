@@ -1,0 +1,1 @@
+"""Fechamento financeiro de vendas."""

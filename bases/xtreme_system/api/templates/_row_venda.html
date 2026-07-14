@@ -8,11 +8,21 @@
   <td class="cell-num">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}R$ {{ "{:,.2f}".format(v.valor_pendente) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
   <td>{{ v.forma_pagamento }}</td>
   <td class="cell-num">{{ v.parcelas }}</td>
-  <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span></td>
+  <td>
+    {% set fechamento = fechamentos_by_venda.get(v.id) if fechamentos_by_venda is defined else none %}
+    {% if fechamento %}
+      <button class="badge badge--success" hx-get="/ui/fechamentos-vendas/{{ fechamento.id }}" hx-target="#modal" hx-swap="innerHTML">Fechada</button>
+    {% else %}
+      <span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span>
+    {% endif %}
+  </td>
   {% if user.papel.value == 'admin' %}
   <td class="col-actions">
     <div class="row-actions">
       <a class="btn btn--ghost btn--sm" href="/ui/vendas/{{ v.id }}/contrato" target="_blank" rel="noopener" aria-label="Baixar contrato da venda {{ v.id }}">{{ ui.icon("file") }}</a>
+      {% if not fechamento and v.status.value == 'concluido' and not v.pagamento_pendente %}
+      <button class="btn btn--ghost btn--sm" hx-get="/ui/vendas/{{ v.id }}/fechamento" hx-target="#modal" hx-swap="innerHTML" aria-label="Fechar venda {{ v.id }}">{{ ui.icon("cash") }}</button>
+      {% endif %}
       <button class="btn btn--ghost btn--sm" hx-get="/ui/vendas/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar venda {{ v.id }}">{{ ui.icon("edit") }}</button>
       <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/vendas/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta venda?" aria-label="Excluir venda {{ v.id }}">{{ ui.icon("trash") }}</button>
     </div>

@@ -17,8 +17,8 @@ O banco utiliza SQLAlchemy + Alembic (migrations em `alembic/versions/`). Abaixo
 | `tipocliente` | `pessoa_fisica`, `pessoa_juridica` | `cliente.tipo` |
 | `statusvenda` | `pendente`, `aprovado`, `cancelado`, `concluido` | `venda.status` |
 | `papel` | `admin`, `funcionario` | `usuario.papel` |
-| `tipolancamento` | `aporte`, `custo` | `lancamento_investimento.tipo` |
-| `origemlancamento` | `manual`, `veiculo` | `lancamento_investimento.origem` |
+| `tipolancamento` | `aporte`, `custo`, `receita_venda`, `distribuicao_lucro` | `lancamento_investimento.tipo` |
+| `origemlancamento` | `manual`, `veiculo`, `fechamento_venda` | `lancamento_investimento.origem` |
 
 ---
 
@@ -182,11 +182,40 @@ Lançamentos financeiros de aportes e custos dos investidores.
 | `id` | `INTEGER` | Não | - | PK |
 | `investidor_id` | `INTEGER` | Não | - | FK → `investidor.id` (CASCADE), indexado |
 | `veiculo_id` | `INTEGER` | Sim | - | FK → `veiculo.id` (CASCADE), indexado, único |
-| `tipo` | `tipolancamento` | Não | - | `aporte` ou `custo` |
-| `origem` | `origemlancamento` | Não | `manual` | `manual` ou `veiculo` |
+| `fechamento_venda_id` | `INTEGER` | Sim | - | FK → `fechamento_venda.id` (CASCADE), indexado |
+| `tipo` | `tipolancamento` | Não | - | `aporte`, `custo`, `receita_venda` ou `distribuicao_lucro` |
+| `origem` | `origemlancamento` | Não | `manual` | `manual`, `veiculo` ou `fechamento_venda` |
 | `valor` | `NUMERIC(12,2)` | Não | - | |
 | `descricao` | `VARCHAR` | Não | - | |
 | `criado_em` | `DATETIME` | Não | `now()` | |
+
+### `fechamento_venda`
+
+Fechamento financeiro imutável de uma venda concluída.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `venda_id` | `INTEGER` | Não | - | FK → `venda.id` (CASCADE), único, indexado |
+| `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id`, indexado |
+| `data_fechamento` | `DATE` | Não | `current_date` | |
+| `receita` | `NUMERIC(12,2)` | Não | - | Snapshot de `venda.valor_venda` |
+| `custo_veiculo` | `NUMERIC(12,2)` | Não | - | Snapshot de `veiculo.preco` |
+| `custos_operacionais` | `NUMERIC(12,2)` | Não | - | Soma de `custo_veiculo.valor` no fechamento |
+| `debitos` | `NUMERIC(12,2)` | Não | - | Snapshot de `venda.debitos`, com nulo como `0` |
+| `lucro_liquido` | `NUMERIC(12,2)` | Não | - | Receita menos custo do veículo, custos e débitos |
+
+### `participacao_fechamento_venda`
+
+Rateio manual do lucro positivo de um fechamento.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `fechamento_venda_id` | `INTEGER` | Não | - | FK → `fechamento_venda.id` (CASCADE), indexado |
+| `investidor_id` | `INTEGER` | Não | - | FK → `investidor.id`, indexado |
+| `percentual` | `NUMERIC(5,2)` | Não | - | Percentual manual do lucro |
+| `valor` | `NUMERIC(12,2)` | Não | - | Valor calculado do lucro no fechamento |
 
 ### `imagem_documento_cliente`
 
@@ -237,6 +266,9 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 - Um **usuário** (vendedor) pode estar em várias **vendas**.
 - Uma **venda** pode ter vários **comprovantes**.
 - Uma **venda** pode ter vários **contratos** (PDF gerado ao concluir a venda).
+- Uma **venda** pode ter no máximo um **fechamento de venda**.
+- Um **fechamento de venda** pode ter várias **participações de investidores**.
+- Um **fechamento de venda** gera lançamentos automáticos em `lancamento_investimento`.
 - Uma **compra** pode ter vários **comprovantes de pagamento**.
 
 ---
@@ -264,5 +296,11 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `custo_veiculo` | `ix_custo_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_veiculo_id` | `veiculo_id` | Sim |
+| `lancamento_investimento` | `ix_lancamento_investimento_fechamento_venda_id` | `fechamento_venda_id` | Não |
+| `fechamento_venda` | `ix_fechamento_venda_venda_id` | `venda_id` | Sim |
+| `fechamento_venda` | `ix_fechamento_venda_usuario_id` | `usuario_id` | Não |
+| `participacao_fechamento_venda` | `ix_participacao_fechamento_venda_fechamento_venda_id` | `fechamento_venda_id` | Não |
+| `participacao_fechamento_venda` | `ix_participacao_fechamento_venda_investidor_id` | `investidor_id` | Não |
+| `participacao_fechamento_venda` | `uq_participacao_fechamento_investidor` | `fechamento_venda_id`, `investidor_id` | Sim |
 | `imagem_documento_cliente` | `ix_imagem_documento_cliente_cliente_id` | `cliente_id` | Não |
 | `imagem_comprovante_compra` | `ix_imagem_comprovante_compra_compra_id` | `compra_id` | Não |

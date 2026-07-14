@@ -9,6 +9,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.pool import StaticPool
 
 from xtreme_system.database.core import Base, get_settings
+from xtreme_system.fechamento_venda import core as _fechamento_venda  # noqa: F401
 
 
 def create_test_engine() -> Engine:

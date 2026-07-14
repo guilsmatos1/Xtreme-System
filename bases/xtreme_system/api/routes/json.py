@@ -22,6 +22,7 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -140,10 +141,10 @@ def _validate_investidor_lancamento(session: Session, data: Any) -> None:
 
 
 def _guard_lancamento_veiculo(_session: Session, obj: Any, _data: Any = None) -> None:
-    if obj.origem == caixa.OrigemLancamento.veiculo:
+    if obj.origem != caixa.OrigemLancamento.manual:
         raise HTTPException(
             status_code=400,
-            detail="Lançamento de veículo só pode ser alterado na tela de Veículos",
+            detail="Lançamento automático não pode ser alterado manualmente",
         )
 
 
@@ -159,6 +160,59 @@ register_crud_routes(
     before_update=_guard_lancamento_veiculo,
     before_delete=_guard_lancamento_veiculo,
 )
+
+
+# ---- Fechamento de vendas ----
+
+
+@app.get(
+    "/vendas/{venda_id}/fechamento/preview",
+    response_model=fechamento_venda.FechamentoVendaPreview,
+)
+def preview_fechamento_venda(
+    venda_id: int, session: SessionDep, _: CurrentUser
+) -> fechamento_venda.FechamentoVendaPreview:
+    venda_obj = _found(venda.get(session, venda_id), "Venda")
+    return fechamento_venda.preview(session, venda_obj)
+
+
+@app.post(
+    "/vendas/{venda_id}/fechamento",
+    response_model=fechamento_venda.FechamentoVendaRead,
+    status_code=201,
+)
+def confirmar_fechamento_venda(
+    venda_id: int,
+    data: fechamento_venda.FechamentoVendaCreate,
+    session: SessionDep,
+    admin: AdminUser,
+) -> fechamento_venda.FechamentoVenda:
+    venda_obj = _found(venda.get(session, venda_id), "Venda")
+    session.info["usuario_id"] = admin.id
+    try:
+        return fechamento_venda.confirmar(session, venda_obj, data, usuario_id=admin.id)
+    except fechamento_venda.FechamentoVendaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+
+
+@app.get(
+    "/fechamentos-vendas",
+    response_model=list[fechamento_venda.FechamentoVendaRead],
+)
+def listar_fechamentos_vendas(
+    session: SessionDep, _: CurrentUser
+) -> list[fechamento_venda.FechamentoVenda]:
+    return fechamento_venda.list_all(session)
+
+
+@app.get(
+    "/fechamentos-vendas/{fechamento_id}",
+    response_model=fechamento_venda.FechamentoVendaRead,
+)
+def obter_fechamento_venda(
+    fechamento_id: int, session: SessionDep, _: CurrentUser
+) -> fechamento_venda.FechamentoVenda:
+    return _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
 
 
 # ---- Clientes ----
