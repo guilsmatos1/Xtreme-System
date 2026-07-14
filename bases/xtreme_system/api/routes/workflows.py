@@ -28,7 +28,10 @@ def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -
 def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
     cli_id = getattr(data, "cliente_id", None)
     vei_id = getattr(data, "veiculo_id", None)
+    troca_id = getattr(data, "veiculo_troca_id", None)
     if cli_id is not None and cliente.get(session, cli_id) is None:
         raise HTTPException(status_code=400, detail="cliente_id inexistente")
     if vei_id is not None and veiculo.get(session, vei_id) is None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
+    if troca_id is not None and veiculo.get(session, troca_id) is None:
+        raise HTTPException(status_code=400, detail="veiculo_troca_id inexistente")

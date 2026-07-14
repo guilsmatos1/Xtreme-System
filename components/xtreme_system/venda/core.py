@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric, func
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, false, func
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -40,9 +40,21 @@ class Venda(Base):
     parcelas: Mapped[int]
     status: Mapped[StatusVenda] = mapped_column(default=StatusVenda.pendente)
     observacoes: Mapped[str | None]
+    veiculo_troca_id: Mapped[int | None] = mapped_column(
+        ForeignKey("veiculo.id"), index=True
+    )
+    valor_diferenca: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    pagamento_pendente: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    valor_pendente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    datas_pagamento: Mapped[str | None]
 
     cliente: Mapped[Cliente] = relationship(lazy="joined")
-    veiculo: Mapped[Veiculo] = relationship(lazy="joined")
+    veiculo: Mapped[Veiculo] = relationship(lazy="joined", foreign_keys=[veiculo_id])
+    veiculo_troca: Mapped[Veiculo | None] = relationship(
+        lazy="joined", foreign_keys=[veiculo_troca_id]
+    )
     vendedor: Mapped[Usuario | None] = relationship(lazy="joined")
 
 
@@ -59,6 +71,11 @@ class VendaCreate(BaseModel):
     parcelas: int
     status: StatusVenda = StatusVenda.pendente
     observacoes: str | None = None
+    veiculo_troca_id: int | None = None
+    valor_diferenca: Decimal | None = None
+    pagamento_pendente: bool = False
+    valor_pendente: Decimal | None = None
+    datas_pagamento: str | None = None
 
 
 class VendaUpdate(BaseModel):
@@ -74,6 +91,11 @@ class VendaUpdate(BaseModel):
     parcelas: int | None = None
     status: StatusVenda | None = None
     observacoes: str | None = None
+    veiculo_troca_id: int | None = None
+    valor_diferenca: Decimal | None = None
+    pagamento_pendente: bool = False
+    valor_pendente: Decimal | None = None
+    datas_pagamento: str | None = None
 
 
 class VendaRead(BaseModel):
@@ -82,6 +104,7 @@ class VendaRead(BaseModel):
     id: int
     cliente: ClienteRead
     veiculo: VeiculoRead
+    veiculo_troca: VeiculoRead | None
     vendedor: UsuarioRead | None
     data_venda: date | None
     valor_venda: Decimal
@@ -92,6 +115,10 @@ class VendaRead(BaseModel):
     parcelas: int
     status: StatusVenda
     observacoes: str | None
+    valor_diferenca: Decimal | None
+    pagamento_pendente: bool
+    valor_pendente: Decimal | None
+    datas_pagamento: str | None
 
 
 def list_all(session: Session) -> list[Venda]:

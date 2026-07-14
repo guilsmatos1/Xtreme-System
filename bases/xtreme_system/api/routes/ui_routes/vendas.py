@@ -38,6 +38,7 @@ def _ctx_form_venda(session: Session) -> dict[str, Any]:
     return {
         "clientes": cliente.list_all(session),
         "veiculos": veiculos_disponiveis,
+        "veiculos_troca": veiculos,
         "status": list(venda.StatusVenda),
         "tipos": list(cliente.TipoCliente),
     }
@@ -53,6 +54,15 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
         data["km"] = None
     if data.get("observacoes") == "":
         data["observacoes"] = None
+    if data.get("veiculo_troca_id") == "":
+        data["veiculo_troca_id"] = None
+    if data.get("valor_diferenca") == "":
+        data["valor_diferenca"] = None
+    if data.get("valor_pendente") == "":
+        data["valor_pendente"] = None
+    if data.get("datas_pagamento") == "":
+        data["datas_pagamento"] = None
+    data["pagamento_pendente"] = bool(data.get("pagamento_pendente"))
     if not data.get("data_venda"):
         data["data_venda"] = str(datetime.now(UTC).date())
     return data
@@ -97,6 +107,11 @@ register_crud_ui_routes(
         "Valor Entrada",
         "Debitos",
         "KM",
+        "Veiculo Troca",
+        "Valor Diferenca",
+        "Pagamento Pendente",
+        "Valor Pendente",
+        "Datas Pagamento",
         "Forma Pagamento",
         "Parcelas",
         "Status",
@@ -111,6 +126,15 @@ register_crud_ui_routes(
         f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
         f"{v.debitos:.2f}" if v.debitos is not None else "",
         v.km if v.km is not None else "",
+        (
+            f"{v.veiculo_troca.modelo} ({v.veiculo_troca.placa})"
+            if v.veiculo_troca is not None
+            else ""
+        ),
+        f"{v.valor_diferenca:.2f}" if v.valor_diferenca is not None else "",
+        "Sim" if v.pagamento_pendente else "Não",
+        f"{v.valor_pendente:.2f}" if v.valor_pendente is not None else "",
+        v.datas_pagamento or "",
         v.forma_pagamento,
         v.parcelas,
         v.status.value,
@@ -221,6 +245,22 @@ def _gerar_contrato_pdf(obj: venda.Venda) -> bytes:
         if obj.debitos is not None
         else "Débitos do veículo: -"
     )
+    _linha(
+        f"Veículo da troca: {obj.veiculo_troca.modelo} ({obj.veiculo_troca.placa})"
+        if obj.veiculo_troca is not None
+        else "Veículo da troca: -"
+    )
+    _linha(
+        f"Valor da diferença: R$ {obj.valor_diferenca:.2f}"
+        if obj.valor_diferenca is not None
+        else "Valor da diferença: -"
+    )
+    _linha(
+        "Pagamento pendente: "
+        f"{'Sim' if obj.pagamento_pendente else 'Não'}"
+        f"{f' - R$ {obj.valor_pendente:.2f}' if obj.valor_pendente is not None else ''}"
+    )
+    _linha(f"Datas de pagamento: {obj.datas_pagamento or '-'}")
     _linha(f"Forma de pagamento: {obj.forma_pagamento}")
     _linha(f"Parcelas: {obj.parcelas}")
     _linha(f"Observações: {obj.observacoes or '-'}")

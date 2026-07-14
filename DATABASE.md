@@ -99,6 +99,11 @@ Registro de vendas de veículos.
 | `parcelas` | `INTEGER` | Não | - | |
 | `status` | `statusvenda` | Não | `pendente` | `pendente`, `aprovado`, `cancelado`, `concluido` |
 | `observacoes` | `VARCHAR` | Sim | - | |
+| `veiculo_troca_id` | `INTEGER` | Sim | - | FK → `veiculo.id`, indexado; presença indica troca |
+| `valor_diferenca` | `NUMERIC(12,2)` | Sim | - | Valor da diferença na troca |
+| `pagamento_pendente` | `BOOLEAN` | Não | `false` | Indica se faltou parte do pagamento |
+| `valor_pendente` | `NUMERIC(12,2)` | Sim | - | Valor que ficou pendente |
+| `datas_pagamento` | `VARCHAR` | Sim | - | Datas de pagamento em texto livre |
 
 ### `imagem_veiculo`
 
@@ -249,6 +254,7 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `venda` | `ix_venda_cliente_id` | `cliente_id` | Não |
 | `venda` | `ix_venda_veiculo_id` | `veiculo_id` | Não |
 | `venda` | `ix_venda_vendedor_id` | `vendedor_id` | Não |
+| `venda` | `ix_venda_veiculo_troca_id` | `veiculo_troca_id` | Não |
 | `imagem_veiculo` | `ix_imagem_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `documento_veiculo` | `ix_documento_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `imagem_comprovante_venda` | `ix_imagem_comprovante_venda_venda_id` | `venda_id` | Não |
