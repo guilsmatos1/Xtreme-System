@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
+from xtreme_system.api.crud_ui.query import sorted_list
 from xtreme_system.api.deps import get_ui_user
 from xtreme_system.api.route_factories import (
     _sort_key,
@@ -147,6 +148,60 @@ def test_sort_key_nulls() -> None:
     assert _sort_key(True) is True
     assert _sort_key(Decimal("1.50")) == Decimal("1.50")
     assert _sort_key("") == ""
+
+
+class _SortableItem:
+    def __init__(self, nome: str, status: str, prioridade: int) -> None:
+        self.nome = nome
+        self.status = status
+        self.prioridade = prioridade
+
+
+def test_sorted_list_aceita_sort_multicampo() -> None:
+    itens = [
+        _SortableItem("Carla", "ativo", 2),
+        _SortableItem("Bruno", "pendente", 1),
+        _SortableItem("Ana", "ativo", 3),
+    ]
+
+    ordenados = sorted_list(
+        itens,
+        "status_nome",
+        "asc",
+        {
+            "status_nome": lambda item: (_sort_key(item.status), _sort_key(item.nome)),
+        },
+    )
+
+    assert [item.nome for item in ordenados] == ["Ana", "Carla", "Bruno"]
+
+
+def test_sorted_list_aplica_desc() -> None:
+    itens = [
+        _SortableItem("Ana", "ativo", 1),
+        _SortableItem("Bruno", "ativo", 3),
+        _SortableItem("Carla", "ativo", 2),
+    ]
+
+    ordenados = sorted_list(
+        itens,
+        "prioridade",
+        "desc",
+        {"prioridade": "prioridade"},
+    )
+
+    assert [item.prioridade for item in ordenados] == [3, 2, 1]
+
+
+def test_sorted_list_sem_spec_retorna_lista_original() -> None:
+    itens = [
+        _SortableItem("Ana", "ativo", 1),
+        _SortableItem("Bruno", "ativo", 3),
+    ]
+
+    ordenados = sorted_list(itens, "inexistente", "asc", {})
+
+    assert ordenados is itens
 
 
 class _StubSchema(BaseModel):
