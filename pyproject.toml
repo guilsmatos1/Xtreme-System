@@ -24,6 +24,7 @@ dependencies = [
 dev = [
     "deptry>=0.25.1",
     "httpx>=0.28.1",
+    "import-linter>=2.3",
     "mypy>=1.17.0",
     "polyfactory>=3.3.0",
     "polylith-cli>=1.48.3",
@@ -33,6 +34,7 @@ dev = [
     "pytest-playwright>=0.8.0",
     "pytest-randomly>=3.16.0",
     "pytest-watch>=4.2.0",
+    "result>=0.17",
     "ruff>=0.12.0",
     "vulture>=2.14",
     "xenon>=0.9.3",
@@ -150,3 +152,13 @@ max-absolute = "B"
 max-modules = "A"
 max-average = "A"
 exclude = ["tests"]
+
+[tool.importlinter]
+root_package = "xtreme_system"
+
+[[tool.importlinter.contracts]]
+name = "Components must not import from the API base layer"
+type = "forbidden"
+source_modules = ["xtreme_system"]
+forbidden_modules = ["xtreme_system.api"]
+ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]

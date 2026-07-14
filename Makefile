@@ -32,6 +32,7 @@ lint:
 	uv run xenon src bases components development projects
 	uv run vulture
 	uv run mypy
+	uv run lint-imports
 
 test:
 	$(PYTHON) -m pytest tests/ -q

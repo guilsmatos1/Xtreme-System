@@ -1,0 +1,289 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "CLAUDE.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude",
+      "community": 0,
+      "norm_label": "claude.md"
+    },
+    {
+      "label": "Agent-Readable Workspace Map",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_agent_readable_workspace_map",
+      "community": 0,
+      "norm_label": "agent-readable workspace map"
+    },
+    {
+      "label": "1. Think Before Coding",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "claude_1_think_before_coding",
+      "community": 0,
+      "norm_label": "1. think before coding"
+    },
+    {
+      "label": "2. Simplicity First",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "claude_2_simplicity_first",
+      "community": 0,
+      "norm_label": "2. simplicity first"
+    },
+    {
+      "label": "3. Surgical Changes",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "claude_3_surgical_changes",
+      "community": 0,
+      "norm_label": "3. surgical changes"
+    },
+    {
+      "label": "4. Goal-Driven Execution",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "claude_4_goal_driven_execution",
+      "community": 0,
+      "norm_label": "4. goal-driven execution"
+    },
+    {
+      "label": "5. RTK",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L82",
+      "_origin": "ast",
+      "id": "claude_5_rtk",
+      "community": 0,
+      "norm_label": "5. rtk"
+    },
+    {
+      "label": "6. Merge in a Worktree",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "claude_6_merge_in_a_worktree",
+      "community": 0,
+      "norm_label": "6. merge in a worktree"
+    },
+    {
+      "label": "opencode.json",
+      "file_type": "code",
+      "source_file": "opencode.json",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "opencode",
+      "community": 1,
+      "norm_label": "opencode.json"
+    },
+    {
+      "label": "$schema",
+      "file_type": "code",
+      "source_file": "opencode.json",
+      "source_location": "L2",
+      "_origin": "ast",
+      "id": "opencode_schema",
+      "community": 1,
+      "norm_label": "$schema"
+    },
+    {
+      "label": "skills",
+      "file_type": "code",
+      "source_file": "opencode.json",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "opencode_skills",
+      "community": 1,
+      "norm_label": "skills"
+    },
+    {
+      "label": "paths",
+      "file_type": "code",
+      "source_file": "opencode.json",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "opencode_skills_paths",
+      "community": 1,
+      "norm_label": "paths"
+    },
+    {
+      "label": "plugin",
+      "file_type": "code",
+      "source_file": "opencode.json",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "opencode_plugin",
+      "community": 1,
+      "norm_label": "plugin"
+    },
+    {
+      "label": "agent-finish.sh",
+      "file_type": "code",
+      "source_file": "scripts/agent-finish.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "scripts_agent_finish",
+      "community": 2,
+      "norm_label": "agent-finish.sh"
+    },
+    {
+      "label": "agent-finish.sh script",
+      "file_type": "code",
+      "source_file": "scripts/agent-finish.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "scripts_agent_finish_sh__entry",
+      "community": 2,
+      "norm_label": "agent-finish.sh script"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_1_think_before_coding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_2_simplicity_first",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_3_surgical_changes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_4_goal_driven_execution",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_5_rtk",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_6_merge_in_a_worktree",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_agent_readable_workspace_map",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "opencode.json",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "opencode",
+      "target": "opencode_plugin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "opencode.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "opencode",
+      "target": "opencode_schema",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "opencode.json",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "opencode",
+      "target": "opencode_skills",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "opencode.json",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "opencode_skills",
+      "target": "opencode_skills_paths",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/agent-finish.sh",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "scripts_agent_finish",
+      "target": "scripts_agent_finish_sh__entry",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "1c663a89143bf9c0de0b38dbd9de869c9a3eb10b"
+}
