@@ -3,6 +3,7 @@
 import contextlib
 import re
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -406,6 +407,50 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Lima" not in csv_resp.text
+
+
+def test_ui_dashboard_filtra_tendencia_por_periodo(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    hoje = datetime.now(UTC).date()
+
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Cliente Dashboard",
+            "documento": "12312312399",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    venda_resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_resp.json()["id"],
+            "veiculo_id": veiculo_id,
+            "data_venda": hoje.isoformat(),
+            "valor_venda": "85000.00",
+            "valor_entrada": "10000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": 36,
+            "status": "aprovado",
+        },
+        headers=headers,
+    )
+    assert venda_resp.status_code == 201
+
+    pagina = client.get("/ui/dashboard?periodo=12m")
+
+    assert pagina.status_code == 200
+    assert "30 dias" in pagina.text
+    assert "90 dias" in pagina.text
+    assert "12 meses" in pagina.text
+    assert "Tendência de vendas por mês" in pagina.text
+    assert f"{hoje.year:04d}-{hoje.month:02d}" in pagina.text
+    assert "R$ 85.000" in pagina.text
 
 
 def test_ui_exportacao_de_dados_downloada_csv(client: TestClient) -> None:
