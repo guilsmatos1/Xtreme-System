@@ -101,6 +101,12 @@ Rules:
 
 RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.
 
+## 7. Merge in a Worktree
+
+Before merging into `master`, confirm with `git worktree list` that it is not
+checked out in another worktree. If Git says `master` is already in use, do the
+merge in the main worktree instead of trying to switch branches here.
+
 
 
 &nbsp;
