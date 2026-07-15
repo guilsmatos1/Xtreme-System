@@ -37,9 +37,10 @@ def _procuracao_modal(
 def ui_veiculo_procuracao(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     return _procuracao_modal(request, session, veiculo_id)
 
 
@@ -47,10 +48,11 @@ def ui_veiculo_procuracao(
 def ui_veiculo_procuracao_upload(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     _found(veiculo.get(session, veiculo_id), "Veículo")
     erro = _validar_uploads(documentos)
     if erro:
@@ -72,10 +74,11 @@ def ui_veiculo_procuracao_upload(
 def ui_veiculo_procuracao_excluir(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     doc = _found(documento_procuracao.get(session, doc_id), "Documento")
     if doc.veiculo_id != veiculo_id:
         raise HTTPException(status_code=404, detail="Documento não encontrado")

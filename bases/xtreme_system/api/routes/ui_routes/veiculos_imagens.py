@@ -32,9 +32,10 @@ def _imagem_modal(request: Request, session: Session, veiculo_id: int) -> HTMLRe
 def ui_veiculo_imagens(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     return _imagem_modal(request, session, veiculo_id)
 
 
@@ -42,10 +43,11 @@ def ui_veiculo_imagens(
 def ui_veiculo_imagens_upload(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     erro = _validar_uploads(imagens)
     if erro:
@@ -72,10 +74,11 @@ def ui_veiculo_imagens_upload(
 def ui_veiculo_imagens_excluir(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     img_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     img = _found(imagem_veiculo.get(session, img_id), "Imagem")
     if img.veiculo_id != veiculo_id:
         raise HTTPException(status_code=404, detail="Imagem não encontrada")

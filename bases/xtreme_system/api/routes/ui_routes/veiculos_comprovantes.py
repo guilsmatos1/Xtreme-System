@@ -42,9 +42,10 @@ def _comprovantes_modal(
 def ui_veiculo_comprovantes(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     return _comprovantes_modal(request, session, veiculo_id)
 
 
@@ -52,10 +53,11 @@ def ui_veiculo_comprovantes(
 def ui_veiculo_comprovantes_upload(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _comprovantes_modal(
@@ -81,10 +83,11 @@ def ui_veiculo_comprovantes_upload(
 def ui_veiculo_comprovantes_excluir(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _comprovantes_modal(

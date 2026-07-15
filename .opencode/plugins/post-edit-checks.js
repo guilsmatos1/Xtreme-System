@@ -32,9 +32,11 @@ function looksLikeEdit(tool, args) {
 }
 
 const CHECKS = [
+  { name: "ruff-fix", args: ["run", "ruff", "check", "--fix"] },
   { name: "ruff", args: ["run", "ruff", "check", "."] },
   { name: "ruff-format", args: ["run", "ruff", "format", ".", "--check"] },
   { name: "mypy", args: ["run", "mypy"] },
+  { name: "pytest", args: ["run", "pytest", "--full"] }
 ];
 
 function runCommand(args, cwd) {

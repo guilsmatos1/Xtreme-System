@@ -15,11 +15,12 @@ rtk session           # RTK adoption across recent sessions
 ## Key filters for this project
 
 ```bash
-rtk pytest            # Python tests (failures only, -90%)
-rtk ruff check        # Python linting (JSON, -80%)
-rtk git status        # Compact status (-80%)
-rtk git diff          # Condensed diff (-75%)
-rtk git log -n 10     # One-line commits (-80%)
-rtk uv run pytest     # Preserve uv env, errors only
-rtk ls                # Token-optimized directory tree
+uv run rtk pytest            # Python tests (failures only, -90%)
+uv run rtk ruff check        # Python linting (JSON, -80%)
+uv run rtk git status        # Compact status (-80%)
+uv run rtk git diff          # Condensed diff (-75%)
+uv run rtk git log -n 10     # One-line commits (-80%)
+uv run rtk uv run pytest     # Preserve uv env, errors only
+uv run rtk ls                # Token-optimized directory tree
 ```
+
