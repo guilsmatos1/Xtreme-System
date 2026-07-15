@@ -35,7 +35,6 @@ from xtreme_system.api.crud_ui.responses import (
     write_conflict_detail,
 )
 from xtreme_system.api.crud_writes import (
-    atomic_write,
     create_with_hook,
     delete_with_hook,
     run_hook,
@@ -369,11 +368,9 @@ def register_create_route(
                 status_code=400,
             )
         try:
-            atomic_write(
-                session,
-                lambda: create_with_hook(module, session, data, after_create),
-            )
+            create_with_hook(module, session, data, after_create)
         except IntegrityError:
+            session.rollback()
             return conflict_form_response(
                 templates,
                 request,
@@ -456,11 +453,9 @@ def register_update_route(
                 status_code=400,
             )
         try:
-            atomic_write(
-                session,
-                lambda: update_with_hook(module, session, obj, data, after_update),
-            )
+            update_with_hook(module, session, obj, data, after_update)
         except IntegrityError:
+            session.rollback()
             return conflict_form_response(
                 templates,
                 request,
@@ -519,11 +514,9 @@ def register_delete_route(
         erro = None
         status_code = 200
         try:
-            atomic_write(
-                session,
-                lambda: delete_with_hook(module, session, obj, before_delete),
-            )
+            delete_with_hook(module, session, obj, before_delete)
         except IntegrityError:
+            session.rollback()
             erro = delete_conflict_detail(label)
             status_code = 409
         lista = query_list(
