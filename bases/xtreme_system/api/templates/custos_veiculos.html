@@ -11,7 +11,7 @@
     <a class="btn btn--ghost" href="/ui/custos-veiculos/exportar">
       {{ ui.icon("cash") }} Exportar dados
     </a>
-    {% if user.papel.value == 'admin' %}
+    {% if is_admin(user) %}
     <button class="btn btn--primary" hx-get="/ui/custos-veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Novo custo
     </button>
@@ -42,7 +42,7 @@
         <th>{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos") }}</th>
         <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos") }}</th>
         <th>Descrição</th>
-        {% if user.papel.value == 'admin' %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+        {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_custos_veiculos.html" %}

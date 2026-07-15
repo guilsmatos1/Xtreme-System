@@ -16,7 +16,7 @@
       <span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span>
     {% endif %}
   </td>
-  {% if user.papel.value == 'admin' %}
+  {% if is_admin(user) %}
   <td class="col-actions">
     <div class="row-actions">
       <a class="btn btn--ghost btn--sm" href="/ui/vendas/{{ v.id }}/contrato" target="_blank" rel="noopener" aria-label="Baixar contrato da venda {{ v.id }}">{{ ui.icon("file") }}</a>

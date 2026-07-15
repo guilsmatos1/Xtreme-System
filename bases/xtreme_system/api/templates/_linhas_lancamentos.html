@@ -9,7 +9,7 @@
   </td>
   <td>{{ l.descricao }}</td>
   <td class="cell-num cell-strong">{{ '+' if l.tipo.value == 'aporte' else '-' }} R$ {{ "{:,.2f}".format(l.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-  {% if user.papel.value == 'admin' %}
+  {% if is_admin(user) %}
   <td class="col-actions">
     {% if l.origem.value == 'veiculo' %}
     <span class="muted">via Veículos</span>
