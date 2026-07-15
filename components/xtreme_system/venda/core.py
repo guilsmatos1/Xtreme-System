@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, false, func
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -278,23 +278,54 @@ def tendencia_por_periodo(
         inicio = hoje - timedelta(days=29)
         granularidade = "semana"
 
-    rows = (
-        session.query(Venda.data_venda, Venda.valor_venda)
+    base = (
+        session.query(Venda)
         .filter(Venda.data_venda >= inicio)
         .filter(Venda.data_venda.isnot(None))
         .filter(Venda.status != StatusVenda.cancelado)
-        .order_by(Venda.data_venda)
+    )
+
+    if granularidade == "mes":
+        ano_expr = extract("year", Venda.data_venda)
+        mes_expr = extract("month", Venda.data_venda)
+        rows = (
+            base.with_entities(
+                ano_expr.label("ano"),
+                mes_expr.label("mes"),
+                func.count(Venda.id).label("count"),
+                func.sum(Venda.valor_venda).label("total"),
+            )
+            .group_by(ano_expr, mes_expr)
+            .order_by(ano_expr, mes_expr)
+            .all()
+        )
+        return [
+            (f"{ano:04d}-{mes:02d}", count or 0, total or Decimal("0"))
+            for ano, mes, count, total in rows
+        ]
+
+    ano_expr = extract("year", Venda.data_venda)
+    mes_expr = extract("month", Venda.data_venda)
+    dia_expr = extract("day", Venda.data_venda)
+    dia_rows = (
+        base.with_entities(
+            ano_expr.label("ano"),
+            mes_expr.label("mes"),
+            dia_expr.label("dia"),
+            func.count(Venda.id).label("count"),
+            func.sum(Venda.valor_venda).label("total"),
+        )
+        .group_by(ano_expr, mes_expr, dia_expr)
+        .order_by(ano_expr, mes_expr, dia_expr)
         .all()
     )
 
     grupos: dict[str, tuple[int, Decimal]] = {}
-    for data_venda, valor in rows:
-        if granularidade == "mes":
-            chave = f"{data_venda.year:04d}-{data_venda.month:02d}"
-        else:
-            ano, semana, _ = data_venda.isocalendar()
-            chave = f"{ano:04d}-S{semana:02d}"
-        count, total = grupos.get(chave, (0, Decimal("0")))
-        grupos[chave] = count + 1, total + (valor or Decimal("0"))
+    for ano, mes, dia, count, total in dia_rows:
+        data_venda = date(ano, mes, dia)
+        iso_ano, iso_semana, _ = data_venda.isocalendar()
+        chave = f"{iso_ano:04d}-S{iso_semana:02d}"
+        prev_count, prev_total = grupos.get(chave, (0, Decimal("0")))
+        grupos[chave] = prev_count + count, prev_total + total
 
     return [(chave, count, total) for chave, (count, total) in grupos.items()]
