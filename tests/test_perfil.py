@@ -48,6 +48,10 @@ def test_vendedor_acessa_apenas_paginas_do_seu_perfil(db_session: Session) -> No
 
 
 def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    db_session.add(u)
+    db_session.flush()
+    db_session.info["usuario_id"] = u.id
     leitor = perfil.Perfil(nome="Leitor", paginas=["veiculos"])
     db_session.add(leitor)
     db_session.flush()

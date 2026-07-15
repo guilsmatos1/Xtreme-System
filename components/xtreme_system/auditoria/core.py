@@ -15,6 +15,10 @@ MASK = {"senha_hash", "evolution_api_key"}
 TIPO_ACOES: tuple[str, ...] = ("CREATE", "UPDATE", "DELETE")
 
 
+class AuditError(ValueError):
+    """session.info['usuario_id'] required for audited writes."""
+
+
 class Auditoria(Base):
     __tablename__ = "auditoria"
 
@@ -66,6 +70,8 @@ def auditar(
     if tabela in AUDIT_SKIP:
         return
     usuario_id = session.info.get("usuario_id")
+    if usuario_id is None:
+        raise AuditError
     row = Auditoria(
         tabela=tabela,
         tipo_acao=tipo_acao,

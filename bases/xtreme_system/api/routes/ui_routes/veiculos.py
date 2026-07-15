@@ -7,6 +7,7 @@ from typing import Any, cast
 from fastapi import HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
@@ -172,11 +173,15 @@ async def _atualizar_veiculo(
         except Exception:
             return _erro_veiculo(request, session, "Débitos inválidos")
 
-    atualizado = veiculo.update(session, obj, data)
-    compra_atual = compra.get_latest_by_veiculo(session, atualizado.id)
-    if compra_atual is not None:
-        compra.update(session, compra_atual, compra.CompraUpdate(debitos=debitos))
-    caixa.sincronizar_lancamento_veiculo(session, atualizado)
+    try:
+        atualizado = veiculo.update(session, obj, data)
+        compra_atual = compra.get_latest_by_veiculo(session, atualizado.id)
+        if compra_atual is not None:
+            compra.update(session, compra_atual, compra.CompraUpdate(debitos=debitos))
+        caixa.sincronizar_lancamento_veiculo(session, atualizado)
+    except IntegrityError:
+        session.rollback()
+        return _erro_veiculo(request, session, "Veículo já existe")
     return _ok_veiculo(request, session, user)
 
 
@@ -275,61 +280,65 @@ async def _criar_veiculo(
     if erro:
         return _erro_veiculo(request, session, erro)
 
-    obj = veiculo.create(session, data)
-    if novo_cliente_data is not None:
-        seller = cliente.create(session, novo_cliente_data)
-    assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
-    salvar_arquivos(
-        session,
-        upload_dir=_uploads_cliente_dir(seller.id),
-        url_prefix=f"/static/uploads/clientes/{seller.id}/documentos",
-        create_fn=imagem_documento_cliente.create,
-        schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
-        fk_field="cliente_id",
-        fk_id=seller.id,
-        arquivos=cast(list[UploadFile], documentos),
-    )
-    salvar_arquivos(
-        session,
-        upload_dir=_uploads_dir(obj.id) / "documentos",
-        url_prefix=f"/static/uploads/veiculos/{obj.id}/documentos",
-        create_fn=documento_veiculo.create,
-        schema=documento_veiculo.DocumentoVeiculoCreate,
-        fk_field="veiculo_id",
-        fk_id=obj.id,
-        arquivos=[doc_veiculo] if doc_veiculo else [],
-    )
-    salvar_arquivos(
-        session,
-        upload_dir=_uploads_procuracao_dir(obj.id),
-        url_prefix=f"/static/uploads/veiculos/{obj.id}/procuracao",
-        create_fn=documento_procuracao.create,
-        schema=documento_procuracao.DocumentoProcuracaoCreate,
-        fk_field="veiculo_id",
-        fk_id=obj.id,
-        arquivos=cast(list[UploadFile], docs_procuracao),
-    )
-    nova_compra = compra.create(
-        session,
-        compra.CompraCreate(
-            cliente_id=seller.id,
-            veiculo_id=obj.id,
-            data_compra=datetime.now(UTC).date(),
-            valor_compra=obj.preco,
-            debitos=debitos,
-        ),
-    )
-    salvar_arquivos(
-        session,
-        upload_dir=_uploads_compra_dir(nova_compra.id),
-        url_prefix=f"/static/uploads/compras/{nova_compra.id}/comprovantes",
-        create_fn=imagem_comprovante_compra.create,
-        schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
-        fk_field="compra_id",
-        fk_id=nova_compra.id,
-        arquivos=cast(list[UploadFile], comprovantes_pagamento),
-    )
-    caixa.criar_lancamento_veiculo(session, obj)
+    try:
+        obj = veiculo.create(session, data)
+        if novo_cliente_data is not None:
+            seller = cliente.create(session, novo_cliente_data)
+        assert seller is not None  # noqa: S101 -- invariante interna: erro is None garante seller definido
+        salvar_arquivos(
+            session,
+            upload_dir=_uploads_cliente_dir(seller.id),
+            url_prefix=f"/static/uploads/clientes/{seller.id}/documentos",
+            create_fn=imagem_documento_cliente.create,
+            schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
+            fk_field="cliente_id",
+            fk_id=seller.id,
+            arquivos=cast(list[UploadFile], documentos),
+        )
+        salvar_arquivos(
+            session,
+            upload_dir=_uploads_dir(obj.id) / "documentos",
+            url_prefix=f"/static/uploads/veiculos/{obj.id}/documentos",
+            create_fn=documento_veiculo.create,
+            schema=documento_veiculo.DocumentoVeiculoCreate,
+            fk_field="veiculo_id",
+            fk_id=obj.id,
+            arquivos=[doc_veiculo] if doc_veiculo else [],
+        )
+        salvar_arquivos(
+            session,
+            upload_dir=_uploads_procuracao_dir(obj.id),
+            url_prefix=f"/static/uploads/veiculos/{obj.id}/procuracao",
+            create_fn=documento_procuracao.create,
+            schema=documento_procuracao.DocumentoProcuracaoCreate,
+            fk_field="veiculo_id",
+            fk_id=obj.id,
+            arquivos=cast(list[UploadFile], docs_procuracao),
+        )
+        nova_compra = compra.create(
+            session,
+            compra.CompraCreate(
+                cliente_id=seller.id,
+                veiculo_id=obj.id,
+                data_compra=datetime.now(UTC).date(),
+                valor_compra=obj.preco,
+                debitos=debitos,
+            ),
+        )
+        salvar_arquivos(
+            session,
+            upload_dir=_uploads_compra_dir(nova_compra.id),
+            url_prefix=f"/static/uploads/compras/{nova_compra.id}/comprovantes",
+            create_fn=imagem_comprovante_compra.create,
+            schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
+            fk_field="compra_id",
+            fk_id=nova_compra.id,
+            arquivos=cast(list[UploadFile], comprovantes_pagamento),
+        )
+        caixa.criar_lancamento_veiculo(session, obj)
+    except IntegrityError:
+        session.rollback()
+        return _erro_veiculo(request, session, "Veículo já existe")
     veiculos = veiculo.list_all(session)
     return templates.TemplateResponse(
         request,

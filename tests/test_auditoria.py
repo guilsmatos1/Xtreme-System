@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from sqlalchemy.orm import Session
 
 from xtreme_system.auditoria import core as auditoria
@@ -10,10 +11,9 @@ from xtreme_system.usuario import core as usuario
 
 
 def _seed_admin(session: Session) -> usuario.Usuario:
-    admin = usuario.create(
-        session,
-        usuario.UsuarioCreate(username="admin", senha="s", papel=usuario.Papel.admin),
-    )
+    admin = usuario.Usuario(username="admin", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(admin)
+    session.flush()
     session.info["usuario_id"] = admin.id
     return admin
 
@@ -63,6 +63,7 @@ def test_count_respeita_filtros(db_session: Session) -> None:
 
 
 def test_tabelas_distintas(db_session: Session) -> None:
+    _seed_admin(db_session)
     usuario.create(
         db_session,
         usuario.UsuarioCreate(username="u", senha="s", papel=usuario.Papel.admin),
@@ -82,15 +83,11 @@ def test_query_filtra_por_data_de(db_session: Session) -> None:
     assert auditoria.query(db_session, data_de=hoje + timedelta(days=10)) == []
 
 
-def test_auditoria_read_serializa_usuario_id_none(db_session: Session) -> None:
-    usuario.create(
-        db_session,
-        usuario.UsuarioCreate(
-            username="sem_autor", senha="s", papel=usuario.Papel.admin
-        ),
-    )
-    rows = auditoria.query(db_session, tabela="usuario", limit=10000)
-    read = auditoria.AuditoriaRead.model_validate(rows[0])
-    assert read.usuario_id is None
-    assert read.tabela == "usuario"
-    assert read.tipo_acao == "CREATE"
+def test_auditar_rejeita_usuario_id_none(db_session: Session) -> None:
+    with pytest.raises(auditoria.AuditError):
+        usuario.create(
+            db_session,
+            usuario.UsuarioCreate(
+                username="sem_autor", senha="s", papel=usuario.Papel.admin
+            ),
+        )

@@ -40,6 +40,10 @@ def test_register_ui_simples_aceita_templates_injetado(tmp_path: Path) -> None:
 
     engine = create_test_engine()
     session = sessionmaker(bind=engine)()
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(u)
+    session.flush()
+    session.info["usuario_id"] = u.id
     admin = usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -108,6 +112,10 @@ def test_register_ui_simples_rolls_back_when_write_fails_late(
 
     engine = create_test_engine()
     session = sessionmaker(bind=engine)()
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(u)
+    session.flush()
+    session.info["usuario_id"] = u.id
     admin = usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -324,6 +332,10 @@ def _stub_crud_client(tmp_path: Path, module: _ConflictModule) -> TestClient:
     templates = Jinja2Templates(directory=tmp_path)
     engine = create_test_engine()
     session = sessionmaker(bind=engine)()
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(u)
+    session.flush()
+    session.info["usuario_id"] = u.id
     admin = usuario.create(
         session,
         usuario.UsuarioCreate(
