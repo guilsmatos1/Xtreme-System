@@ -1,6 +1,7 @@
 """Notificação de venda via WhatsApp (Evolution API): config, formatação e envio."""
 
 import json
+import threading
 import urllib.error
 import urllib.request
 
@@ -107,17 +108,44 @@ def _enviar(config: WhatsappConfig, texto: str) -> None:
         resp.read()
 
 
+def _notificar_em_background(
+    api_url: str, api_key: str, instance: str, group_id: str, texto: str
+) -> None:
+    """Executada em thread separada — apenas o HTTP, sem acesso a banco."""
+    config = WhatsappConfig(
+        id=0,
+        evolution_api_url=api_url,
+        evolution_api_key=api_key,
+        evolution_instance=instance,
+        evolution_group_id=group_id,
+    )
+    try:
+        _enviar(config, texto)
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
+        logger.warning("whatsapp_notify_failed", error=str(exc))
+
+
 def notificar_venda(session: Session, venda_obj: Venda) -> None:
     """Envia a notificação da venda para o grupo do WhatsApp, best-effort.
 
-    Nunca propaga exceção: uma falha de rede/servidor Evolution não pode
+    A leitura do banco e a formatação da mensagem rodam na thread da
+    requisição. O envio HTTP é despachado para uma thread separada e não
+    bloqueia a resposta. Uma falha de rede/servidor Evolution não pode
     impedir a criação da venda. Se a integração ainda não foi configurada
     (página de Configurações), não tenta enviar.
     """
     config = get_config(session)
     if not (config.evolution_api_url and config.evolution_instance):
         return
-    try:
-        _enviar(config, _formatar_mensagem(config, venda_obj))
-    except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
-        logger.warning("whatsapp_notify_failed", error=str(exc))
+    texto = _formatar_mensagem(config, venda_obj)
+    threading.Thread(
+        target=_notificar_em_background,
+        args=(
+            config.evolution_api_url,
+            config.evolution_api_key,
+            config.evolution_instance,
+            config.evolution_group_id,
+            texto,
+        ),
+        daemon=True,
+    ).start()
