@@ -65,7 +65,7 @@
 {%- endmacro %}
 
 {% macro papel_badge(papel) -%}
-{%- if papel.value == "admin" -%}
+{%- if papel == Papel.admin -%}
   <span class="badge badge--accent badge--plain">Admin</span>
 {%- else -%}
   <span class="badge badge--info badge--plain">Funcionário</span>

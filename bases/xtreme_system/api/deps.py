@@ -18,6 +18,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["pode_acessar"] = perfil.pode_acessar
 templates.env.globals["paginas_labels"] = dict(perfil.PAGINAS)
 templates.env.globals["is_admin"] = usuario.is_admin
+templates.env.globals["Papel"] = usuario.Papel
 
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
