@@ -13,7 +13,7 @@
    <td class="muted">{{ v.procuracao or "-" }}</td>
    <td class="cell-center">{% if v.revisao %}✓{% else %}-{% endif %}</td>
    <td class="cell-num">{% if compra_v and compra_v.debitos is not none %}R$ {{ "{:,.2f}".format(compra_v.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
-   {% if user.papel.value == 'admin' %}
+   {% if is_admin(user) %}
   <td class="col-actions">
     <div class="row-actions">
       <button class="btn btn--ghost btn--sm btn--focus" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>

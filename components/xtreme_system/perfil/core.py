@@ -80,6 +80,8 @@ def pagina_da_rota(path: str) -> str | None:
 
 
 def pode_acessar(user: Any, pagina: str) -> bool:
-    if user.papel.value == "admin":
+    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
+
+    if is_admin(user):
         return True
     return bool(user.perfil and pagina in user.perfil.paginas)

@@ -17,6 +17,7 @@ from xtreme_system.usuario import core as usuario
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["pode_acessar"] = perfil.pode_acessar
 templates.env.globals["paginas_labels"] = dict(perfil.PAGINAS)
+templates.env.globals["is_admin"] = usuario.is_admin
 
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -53,7 +54,7 @@ CurrentUser = Annotated[usuario.Usuario, Depends(get_current_user)]
 
 
 def require_admin(user: CurrentUser) -> usuario.Usuario:
-    if user.papel != usuario.Papel.admin:
+    if not usuario.is_admin(user):
         raise HTTPException(status_code=403, detail="Requer papel admin")
     return user
 
@@ -100,7 +101,7 @@ UIUser = Annotated[usuario.Usuario, Depends(get_ui_user)]
 
 
 def require_ui_admin(user: UIUser) -> usuario.Usuario:
-    if user.papel != usuario.Papel.admin:
+    if not usuario.is_admin(user):
         raise _NaoAdminError
     return user
 

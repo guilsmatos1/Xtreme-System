@@ -30,6 +30,10 @@ class Usuario(Base):
     perfil: Mapped[Perfil | None] = relationship()
 
 
+def is_admin(user: Usuario) -> bool:
+    return user.papel == Papel.admin
+
+
 class UsuarioCreate(BaseModel):
     username: str
     senha: str
