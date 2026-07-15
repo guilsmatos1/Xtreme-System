@@ -147,7 +147,6 @@ def _sincronizar_status_veiculo(
     status_anterior: StatusVenda | None = None,
 ) -> Venda:
     status_veiculo = _status_veiculo_para_venda(obj.status)
-    sincronizado = False
     if (
         veiculo_anterior_id is not None
         and veiculo_anterior_id != obj.veiculo_id
@@ -156,11 +155,7 @@ def _sincronizar_status_veiculo(
         veiculo_anterior = session.get(Veiculo, veiculo_anterior_id)
         if veiculo_anterior is not None:
             veiculo_anterior.status = StatusVeiculo.disponivel
-            sincronizado = True
     obj.veiculo.status = status_veiculo
-    sincronizado = True
-    if not sincronizado:
-        return obj
     crud.flush(session)
     session.refresh(obj)
     return obj
