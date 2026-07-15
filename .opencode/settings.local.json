@@ -1,0 +1,11 @@
+{
+  "skillOverrides": {
+    "computer-use": "off",
+    "find-skills": "off",
+    "orca-cli": "off",
+    "orca-linear": "off",
+    "linear-duplicate-triage": "off",
+    "send-to-linear": "off",
+    "orchestration": "off"
+  }
+}
