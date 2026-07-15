@@ -1,5 +1,6 @@
 """Notificação de venda via WhatsApp: disparo best-effort no after_create."""
 
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -111,6 +112,7 @@ def test_criar_venda_dispara_notificacao(
     )
 
     assert resp.status_code == 201
+    time.sleep(0.1)
     assert len(mensagens) == 1
     assert "João Silva" in mensagens[0]
     assert "Gol" in mensagens[0]
@@ -179,6 +181,7 @@ def test_notificacao_usa_template_customizado(
     )
 
     assert resp.status_code == 201
+    time.sleep(0.1)
     assert mensagens == ["Venda para João Silva no valor de R$ 40000.00"]
 
 
@@ -199,4 +202,5 @@ def test_notificacao_ignora_placeholder_desconhecido(
     )
 
     assert resp.status_code == 201
+    time.sleep(0.1)
     assert mensagens == ["Olá João Silva, código {inexistente}"]
