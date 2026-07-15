@@ -39,7 +39,7 @@ _ROTAS_ISENTAS_RATE_LIMIT = {"/health", "/docs", "/redoc", "/openapi.json"}
 
 
 def _cors_origins() -> list[str]:
-    # ponytail: lê env direto para não acoplar setup.py a Settings (que exige
+    # Lê env direto para não acoplar setup.py a Settings (que exige
     # AUTH_SECRET_KEY) durante o import do conftest de testes.
     raw = os.environ.get("CORS_ORIGINS", "http://localhost:8000")
     return [o.strip() for o in raw.split(",") if o.strip()]

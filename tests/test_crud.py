@@ -99,7 +99,7 @@ def test_placa_duplicada_rejeitada(session: Session) -> None:
     assert veiculo.get_by_placa(session, "AAA1B22") is not None
 
     with pytest.raises(IntegrityError):
-        # ponytail: DB unique constraint catches the duplicate
+        # DB unique constraint catches the duplicate
         veiculo.create(session, dados)
 
 

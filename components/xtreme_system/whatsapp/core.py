@@ -89,7 +89,7 @@ def _formatar_mensagem(config: WhatsappConfig, venda_obj: Venda) -> str:
 
 
 def _enviar(config: WhatsappConfig, texto: str) -> None:
-    # ponytail: payload assume o formato do endpoint sendText do Evolution API v2
+    # Payload assume o formato do endpoint sendText do Evolution API v2
     # (POST /message/sendText/{instance}, header apikey, body {number, text}).
     # Conferir contra a versão real da instância quando ela subir.
     url = f"{config.evolution_api_url}/message/sendText/{config.evolution_instance}"

@@ -45,7 +45,7 @@ def _snapshot(obj: Any) -> dict[str, Any]:
         elif isinstance(val, date):
             val = val.isoformat()
         elif isinstance(val, Decimal):
-            # ponytail: str preserves precision for audit snapshots
+            # str preserves precision for audit snapshots
             val = str(val)
         elif hasattr(val, "value"):
             val = val.value
@@ -108,7 +108,7 @@ def _filtros(
     if data_de is not None:
         stmt = stmt.where(Auditoria.criado_em >= datetime.combine(data_de, time.min))
     if data_ate is not None:
-        # ponytail: exclusive upper bound cobre o dia inteiro e usa o índice
+        # Exclusive upper bound cobre o dia inteiro e usa o índice
         fim = datetime.combine(data_ate, time.min) + timedelta(days=1)
         stmt = stmt.where(Auditoria.criado_em < fim)
     return stmt

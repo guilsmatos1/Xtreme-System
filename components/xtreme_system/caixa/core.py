@@ -201,7 +201,7 @@ def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
         crud.delete(session, lancamento)
 
 
-# ponytail: in-memory aggregations for caixa table. Query-level if row counts grow.
+# In-memory aggregations for caixa table. Query-level if row counts grow.
 def agregados_investidores(
     session: Session,
 ) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:

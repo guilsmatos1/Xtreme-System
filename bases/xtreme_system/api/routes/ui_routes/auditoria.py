@@ -136,7 +136,7 @@ def ui_auditoria_exportar(
     data_de: date | None = None,
     data_ate: date | None = None,
 ) -> Response:
-    # ponytail: teto de 10k linhas no export; paginar se crescer além disso.
+    # Teto de 10k linhas no export; paginar se crescer além disso.
     registros = auditoria.query(
         session,
         usuario_id=usuario_id,
