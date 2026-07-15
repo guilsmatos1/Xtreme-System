@@ -162,7 +162,7 @@ def criar_lancamento_veiculo(
         registro_id=obj.id,
         dados_depois=_snapshot(obj),
     )
-    crud.commit(session)
+    crud.flush(session)
     return obj
 
 
@@ -187,7 +187,7 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
         dados_antes=antes,
         dados_depois=_snapshot(lancamento),
     )
-    crud.commit(session)
+    crud.flush(session)
 
 
 def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
@@ -251,5 +251,5 @@ def criar_lancamento_fechamento(
         registro_id=obj.id,
         dados_depois=_snapshot(obj),
     )
-    crud.commit(session)
+    crud.flush(session)
     return obj

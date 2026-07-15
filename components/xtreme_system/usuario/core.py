@@ -72,7 +72,7 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
         registro_id=obj.id,
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    crud.flush(session)
     return obj
 
 
@@ -96,7 +96,7 @@ def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
         dados_antes=antes,
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    crud.flush(session)
 
 
 def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
@@ -111,4 +111,4 @@ def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
         dados_antes=antes,
         dados_depois=_snapshot(obj),
     )
-    session.commit()
+    crud.flush(session)

@@ -241,7 +241,7 @@ def confirmar(
                 valor=valor,
                 descricao=f"Distribuição de lucro da venda #{venda_obj.id}",
             )
-    crud.commit(session)
+    crud.flush(session)
     session.refresh(fechamento)
     return fechamento
 
