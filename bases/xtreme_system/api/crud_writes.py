@@ -16,13 +16,10 @@ from xtreme_system.api.crud_types import (
 )
 
 
-def safe_write(
-    session: Session, op: Callable[[], ResultT], *, conflict_msg: str
-) -> ResultT:
+def safe_write(op: Callable[[], ResultT], *, conflict_msg: str) -> ResultT:
     try:
         return op()
     except IntegrityError:
-        session.rollback()
         raise HTTPException(status_code=409, detail=conflict_msg) from None
 
 

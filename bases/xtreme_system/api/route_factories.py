@@ -76,7 +76,6 @@ def register_crud_routes(
         if before_create:
             before_create(session, data)
         obj = _safe_write(
-            session,
             lambda: module.create(session, data),
             conflict_msg=f"{label} já existe",
         )
@@ -99,7 +98,6 @@ def register_crud_routes(
         if before_update:
             before_update(session, obj, data)
         obj = _safe_write(
-            session,
             lambda: module.update(session, obj, data),
             conflict_msg=f"{label} já existe",
         )
@@ -120,7 +118,6 @@ def register_crud_routes(
             try:
                 module.delete(session, obj)
             except IntegrityError:
-                session.rollback()
                 raise HTTPException(
                     status_code=409, detail=f"{label} possui veículos vinculados"
                 ) from None
