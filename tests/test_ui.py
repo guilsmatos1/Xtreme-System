@@ -226,6 +226,24 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
 
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    vei2 = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Civic",
+            "cor": "Preto",
+            "ano": 2020,
+            "placa": "XYZ9G87",
+            "km": 10000,
+            "preco": "80000.00",
+            "investidor_id": inv_id,
+        },
+        headers=headers,
+    )
+    assert vei2.status_code == 201
+    veiculo2_id = vei2.json()["id"]
+
     comprador_id = _criar_cliente(client, headers, "Ana Compradora", "12345678901")
     vendedor_id = _criar_cliente(client, headers, "Bia Vendedora", "12345678902")
     ambos_id = _criar_cliente(client, headers, "Caio Ambos", "12345678903")
@@ -261,7 +279,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
             "/vendas",
             json={
                 "cliente_id": ambos_id,
-                "veiculo_id": veiculo_id,
+                "veiculo_id": veiculo2_id,
                 "data_venda": "2026-07-10",
                 "valor_venda": "86000.00",
                 "forma_pagamento": "pix",

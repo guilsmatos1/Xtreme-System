@@ -17,7 +17,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploads_contrato_venda_dir,
 )
-from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
+from xtreme_system.api.routes.workflows import (
+    recompute_vehicle_status_on_delete,
+    validate_cliente_veiculo_fks,
+    validate_veiculo_disponivel_para_venda,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
@@ -93,6 +97,7 @@ register_crud_ui_routes(
     parse_form=_parse_venda_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
+    before_delete=recompute_vehicle_status_on_delete,
     after_create=whatsapp.notificar_venda,
     sort_fields={
         "cliente": lambda v: _sort_key(v.cliente.nome),
@@ -255,6 +260,7 @@ async def _criar_venda(
             {**_parse_venda_form(form), "cliente_id": cliente_obj.id}
         )
         validate_cliente_veiculo_fks(session, data)
+        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
     except (ValidationError, HTTPException) as exc:
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_venda(request, session, msg)

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.cliente import core as cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.venda.core import StatusVenda, Venda
 
 
 def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -> None:
@@ -35,3 +36,33 @@ def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
     if troca_id is not None and veiculo.get(session, troca_id) is None:
         raise HTTPException(status_code=400, detail="veiculo_troca_id inexistente")
+
+
+def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
+    v = veiculo.get(session, veiculo_id)
+    if v is None:
+        raise HTTPException(status_code=400, detail="veiculo_id inexistente")
+    if v.status != veiculo.StatusVeiculo.disponivel:
+        raise HTTPException(status_code=409, detail="veículo indisponível")
+
+
+def recompute_vehicle_status_on_delete(session: Session, venda_obj: Any) -> None:
+
+    veiculo_id = venda_obj.veiculo_id
+
+    concluida = (
+        session.query(Venda)
+        .filter(
+            Venda.veiculo_id == veiculo_id,
+            Venda.id != venda_obj.id,
+            Venda.status == StatusVenda.concluido,
+        )
+        .first()
+    )
+
+    v = veiculo.get(session, veiculo_id)
+    if v is not None:
+        if concluida is not None:
+            v.status = veiculo.StatusVeiculo.vendido
+        else:
+            v.status = veiculo.StatusVeiculo.disponivel

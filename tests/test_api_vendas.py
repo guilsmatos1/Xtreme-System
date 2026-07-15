@@ -261,3 +261,216 @@ def test_cliente_inexistente_retorna_400(client: TestClient) -> None:
     )
     assert resp.status_code == 400
     assert "cliente_id" in resp.json()["detail"]
+
+
+def test_cria_venda_para_veiculo_vendido_retorna_409(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+
+    resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 409
+    assert "indisponível" in resp.json()["detail"]
+
+
+def test_atualizar_venda_para_veiculo_indisponivel_retorna_409(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    vei2 = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Civic",
+            "cor": "Preto",
+            "ano": 2020,
+            "placa": "XYZ9G87",
+            "km": 10000,
+            "preco": "80000.00",
+            "investidor_id": inv_id,
+        },
+        headers=headers,
+    )
+    assert vei2.status_code == 201
+    veiculo2_id = vei2.json()["id"]
+
+    client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo2_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "80000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+
+    venda = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+        },
+        headers=headers,
+    )
+    assert venda.status_code == 201, venda.text
+    venda_id = venda.json()["id"]
+
+    resp = client.patch(
+        f"/vendas/{venda_id}",
+        json={"veiculo_id": veiculo2_id},
+        headers=headers,
+    )
+    assert resp.status_code == 409
+    assert "indisponível" in resp.json()["detail"]
+
+
+def test_deletar_venda_concluida_restaura_status_veiculo(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    venda = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    assert venda.status_code == 201
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "vendido"
+
+    resp = client.delete(f"/vendas/{venda.json()['id']}", headers=headers)
+    assert resp.status_code == 204
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "disponivel"
+
+
+def test_deletar_venda_mantem_veiculo_vendido_se_ha_outra_concluida(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    venda1 = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda1.status_code == 201
+
+    venda2 = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-02",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda2.status_code == 201
+
+    client.patch(
+        f"/vendas/{venda1.json()['id']}",
+        json={"status": "concluido"},
+        headers=headers,
+    )
+    client.patch(
+        f"/vendas/{venda2.json()['id']}",
+        json={"status": "concluido"},
+        headers=headers,
+    )
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "vendido"
+
+    resp = client.delete(f"/vendas/{venda1.json()['id']}", headers=headers)
+    assert resp.status_code == 204
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "vendido"
+
+
+def test_deletar_venda_pendente_mantem_veiculo_disponivel(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    venda = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda.status_code == 201
+    assert venda.json()["veiculo"]["status"] == "disponivel"
+
+    resp = client.delete(f"/vendas/{venda.json()['id']}", headers=headers)
+    assert resp.status_code == 204
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "disponivel"
