@@ -32,12 +32,7 @@ from xtreme_system.api.crud_ui.routes import (
 from xtreme_system.api.crud_ui.simple import (
     register_ui_simples as _register_ui_simples_impl,
 )
-from xtreme_system.api.crud_writes import (
-    atomic_write as _atomic_write,
-)
-from xtreme_system.api.crud_writes import (
-    safe_write as _safe_write,
-)
+from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
 
 _sort_key = sort_key
@@ -75,10 +70,7 @@ def register_crud_routes(
         user: AdminUser,
     ) -> EntityT:
         session.info["usuario_id"] = user.id
-        return _atomic_write(
-            session,
-            lambda: _create_atomic(data, session),
-        )
+        return _create_atomic(data, session)
 
     def _create_atomic(data: CreateSchemaT, session: Session) -> EntityT:
         if before_create:
@@ -100,10 +92,7 @@ def register_crud_routes(
         user: AdminUser,
     ) -> EntityT:
         session.info["usuario_id"] = user.id
-        return _atomic_write(
-            session,
-            lambda: _update_atomic(item_id, data, session),
-        )
+        return _update_atomic(item_id, data, session)
 
     def _update_atomic(item_id: int, data: UpdateSchemaT, session: Session) -> EntityT:
         obj = _found(module.get(session, item_id), label)
@@ -121,7 +110,7 @@ def register_crud_routes(
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
         session.info["usuario_id"] = user.id
-        _atomic_write(session, lambda: _delete_atomic(item_id, session))
+        _delete_atomic(item_id, session)
 
     def _delete_atomic(item_id: int, session: Session) -> None:
         obj = _found(module.get(session, item_id), label)

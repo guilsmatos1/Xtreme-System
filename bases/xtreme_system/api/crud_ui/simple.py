@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_types import CrudModule
 from xtreme_system.api.crud_ui.query import sort_key
 from xtreme_system.api.crud_ui.responses import csv_response
-from xtreme_system.api.crud_writes import atomic_write
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found
 from xtreme_system.usuario import core as usuario
 
@@ -101,9 +100,7 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            atomic_write(
-                session, lambda: module.create(session, create_schema(nome=nome))
-            )
+            module.create(session, create_schema(nome=nome))
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -131,9 +128,7 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            atomic_write(
-                session, lambda: module.update(session, obj, update_schema(nome=nome))
-            )
+            module.update(session, obj, update_schema(nome=nome))
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -154,7 +149,7 @@ def register_ui_simples(
         obj = _found(module.get(session, item_id), titulo)
         msg = None
         try:
-            atomic_write(session, lambda: module.delete(session, obj))
+            module.delete(session, obj)
         except IntegrityError:
             session.rollback()
             msg = f"{titulo} possui veículos vinculados"

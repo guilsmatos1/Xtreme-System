@@ -27,7 +27,11 @@ def atomic_client() -> Iterator[tuple[TestClient, FastAPI, Session]]:
         session.commit()
 
         def override_session() -> Iterator[Session]:
-            yield session
+            try:
+                yield session
+            except Exception:
+                session.rollback()
+                raise
 
         def override_user() -> usuario.Usuario:
             return admin

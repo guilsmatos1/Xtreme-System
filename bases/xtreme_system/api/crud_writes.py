@@ -26,17 +26,6 @@ def safe_write(
         raise HTTPException(status_code=409, detail=conflict_msg) from None
 
 
-def atomic_write(session: Session, op: Callable[[], ResultT]) -> ResultT:
-    try:
-        result = op()
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    else:
-        return result
-
-
 def run_hook(
     hook: Callable[[Session, ArgT], object] | None,
     session: Session,
