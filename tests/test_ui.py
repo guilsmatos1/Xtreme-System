@@ -96,7 +96,7 @@ def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
 
     resp = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
-        files={"imagens": ("foto.jpg", b"conteudo-da-foto", "image/jpeg")},
+        files={"imagens": ("foto.jpg", b"\xff\xd8\xffconteudo-da-foto", "image/jpeg")},
     )
     assert resp.status_code == 200
 
@@ -109,7 +109,7 @@ def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
     try:
         arquivo = client.get(url)
         assert arquivo.status_code == 200
-        assert arquivo.content == b"conteudo-da-foto"
+        assert arquivo.content == b"\xff\xd8\xffconteudo-da-foto"
     finally:
         with contextlib.suppress(FileNotFoundError):
             Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
@@ -122,7 +122,7 @@ def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> No
 
     upload = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
-        files={"imagens": ("foto.jpg", b"conteudo-da-foto", "image/jpeg")},
+        files={"imagens": ("foto.jpg", b"\xff\xd8\xffconteudo-da-foto", "image/jpeg")},
     )
     match = re.search(r'src="([^"]+\.jpg)"', upload.text)
     assert match is not None
@@ -163,7 +163,7 @@ def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
         files={
             "documentos_cliente": (
                 "documento.pdf",
-                b"conteudo-do-documento",
+                b"%PDF-conteudo-do-documento",
                 "application/pdf",
             )
         },
@@ -217,7 +217,7 @@ def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
     try:
         arquivo = client.get(url)
         assert arquivo.status_code == 200
-        assert arquivo.content == b"conteudo-do-documento"
+        assert arquivo.content == b"%PDF-conteudo-do-documento"
     finally:
         with contextlib.suppress(FileNotFoundError):
             Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
@@ -381,7 +381,9 @@ def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
 
     upload = client.post(
         f"/ui/clientes/{cliente_id}/documentos",
-        files=[("documentos", ("comprovante.pdf", b"conteudo-doc", "application/pdf"))],
+        files=[
+            ("documentos", ("comprovante.pdf", b"%PDF-conteudo-doc", "application/pdf"))
+        ],
     )
     assert upload.status_code == 200
     assert "João Documento" in upload.text
@@ -403,7 +405,7 @@ def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
         caminho = arquivo.group("url")
         salvo = client.get(caminho)
         assert salvo.status_code == 200
-        assert salvo.content == b"conteudo-doc"
+        assert salvo.content == b"%PDF-conteudo-doc"
     finally:
         with contextlib.suppress(FileNotFoundError):
             Path("bases/xtreme_system/api").joinpath(caminho.lstrip("/")).unlink()
@@ -643,7 +645,7 @@ def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
         files=[
             (
                 "comprovantes",
-                ("comprovante.pdf", b"conteudo-pagto", "application/pdf"),
+                ("comprovante.pdf", b"%PDF-conteudo-pagto", "application/pdf"),
             )
         ],
     )
@@ -664,7 +666,7 @@ def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
     assert arquivo is not None
     caminho = Path("bases/xtreme_system/api").joinpath(arquivo.group("url").lstrip("/"))
     try:
-        assert caminho.read_bytes() == b"conteudo-pagto"
+        assert caminho.read_bytes() == b"%PDF-conteudo-pagto"
 
         excluido = client.post(
             f"/ui/compras/{compra_id}/comprovantes/{comprovante_id}/excluir"
@@ -681,7 +683,7 @@ def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
         files=[
             (
                 "comprovantes",
-                ("comprovante2.pdf", b"conteudo-pagto-2", "application/pdf"),
+                ("comprovante2.pdf", b"%PDF-conteudo-pagto-2", "application/pdf"),
             )
         ],
     )
@@ -1177,12 +1179,22 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
 # ---- Validação de uploads ----
 
 
+_MAGIC: dict[str, bytes] = {
+    ".jpg": b"\xff\xd8\xff",
+    ".jpeg": b"\xff\xd8\xff",
+    ".png": b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a",
+    ".webp": b"RIFF",
+    ".pdf": b"%PDF",
+}
+
+
 class _FakeFile:
     """Minimal file-like stub with seek/tell for size fallback in tests."""
 
-    def __init__(self, size: int):
+    def __init__(self, size: int, filename: str = ""):
         self._size = size
         self._pos = 0
+        self._filename = filename
 
     def seek(self, offset: int, whence: int = 0) -> int:
         self._pos = self._size + offset if whence == 2 else offset
@@ -1192,7 +1204,11 @@ class _FakeFile:
         return self._pos
 
     def read(self, _n: int = -1) -> bytes:
-        return b""
+        return self._magic() or b""
+
+    def _magic(self) -> bytes | None:
+        ext = Path(self._filename).suffix.lower()
+        return _MAGIC.get(ext)
 
 
 class _FakeUpload:
@@ -1202,7 +1218,7 @@ class _FakeUpload:
         self.filename = filename
         self.content_type = content_type
         self._size = size
-        self.file = _FakeFile(size or 0)
+        self.file = _FakeFile(size or 0, filename=filename)
 
     @property
     def size(self) -> int | None:
@@ -1309,7 +1325,7 @@ def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
     with pytest.raises(RuntimeError, match="db indisponivel"):
         client.post(
             f"/ui/veiculos/{veiculo_id}/imagens",
-            files={"imagens": ("foto.jpg", b"dados", "image/jpeg")},
+            files={"imagens": ("foto.jpg", b"\xff\xd8\xffdados", "image/jpeg")},
         )
 
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []

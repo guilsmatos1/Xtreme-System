@@ -37,6 +37,13 @@ _TIPO_POR_EXTENSAO = {
     ".webp": {"image/webp"},
     ".pdf": {"application/pdf"},
 }
+_MAGIC_BYTES: dict[str, bytes] = {
+    ".jpg": b"\xff\xd8\xff",
+    ".jpeg": b"\xff\xd8\xff",
+    ".png": b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a",
+    ".webp": b"RIFF",
+    ".pdf": b"%PDF",
+}
 
 
 def _validar_uploads(arquivos: list[UploadFile]) -> str | None:
@@ -61,13 +68,25 @@ def _validar_uploads(arquivos: list[UploadFile]) -> str | None:
             arq.file.seek(0)
         if tam > _MAX_POR_ARQUIVO:
             return f"{arq.filename} excede 5 MB ({tam // 1024 // 1024} MB)"
+        assinatura = _MAGIC_BYTES[ext]
+        prefixo = arq.file.read(len(assinatura))
+        arq.file.seek(0)
+        if prefixo != assinatura:
+            return (
+                f"Assinatura do arquivo não confere com a extensão "
+                f"declarada: {arq.filename}"
+            )
     return None
 
 
 def _uploaded_file_path(url: str) -> Path | None:
     if not url.startswith("/static/uploads/"):
         return None
-    return _ui_dir / url.lstrip("/")
+    candidate = (_ui_dir / url.lstrip("/")).resolve()
+    uploads_root = (_ui_dir / "static" / "uploads").resolve()
+    if not candidate.is_relative_to(uploads_root):
+        return None
+    return candidate
 
 
 def _remover_upload(path: Path) -> None:
