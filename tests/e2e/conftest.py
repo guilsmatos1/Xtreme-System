@@ -30,6 +30,10 @@ def live_server_url() -> Iterator[str]:
     maker = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
     with maker() as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
         usuario.create(
             session,
             usuario.UsuarioCreate(

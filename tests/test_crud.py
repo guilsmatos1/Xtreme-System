@@ -25,7 +25,16 @@ def session() -> Iterator[Session]:
         yield s
 
 
+def _seed_usuario(session: Session) -> usuario.Usuario:
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(u)
+    session.flush()
+    session.info["usuario_id"] = u.id
+    return u
+
+
 def test_veiculo_ciclo_completo(session: Session) -> None:
+    _seed_usuario(session)
     u = usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -84,6 +93,7 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
 
 
 def test_placa_duplicada_rejeitada(session: Session) -> None:
+    _seed_usuario(session)
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
     dados = veiculo.VeiculoCreate(
         tipo=veiculo.TipoVeiculo.carro,
@@ -105,6 +115,7 @@ def test_placa_duplicada_rejeitada(session: Session) -> None:
 
 def test_usuario_crud(session: Session) -> None:
     """CRUD de usuário: criar, buscar, listar, deletar e trocar senha."""
+    _seed_usuario(session)
     u = usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -119,7 +130,7 @@ def test_usuario_crud(session: Session) -> None:
     assert encontrado.username == "teste"
 
     lista = usuario.list_all(session)
-    assert len(lista) == 1
+    assert len(lista) == 2
 
     usuario.change_password(session, u, "nova")
     senha_hash_antes = u.senha_hash
@@ -128,7 +139,7 @@ def test_usuario_crud(session: Session) -> None:
 
     usuario.delete(session, u)
     assert usuario.get(session, u.id) is None
-    assert len(usuario.list_all(session)) == 0
+    assert len(usuario.list_all(session)) == 1
 
 
 def test_senha_hash_masked_in_audit(session: Session) -> None:
@@ -159,6 +170,7 @@ def test_evolution_api_key_masked_in_snapshot() -> None:
 
 
 def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
+    _seed_usuario(session)
     u = usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -216,6 +228,8 @@ def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
 def _investidor_e_veiculo(
     session: Session,
 ) -> tuple[investidor.Investidor, veiculo.Veiculo]:
+    if "usuario_id" not in session.info:
+        _seed_usuario(session)
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
     v = veiculo.create(
         session,
@@ -269,6 +283,7 @@ def test_excluir_veiculo_apaga_lancamento_em_cascata(session: Session) -> None:
 
 
 def test_lancamento_manual_ciclo_completo(session: Session) -> None:
+    _seed_usuario(session)
     inv, _v = _investidor_e_veiculo(session)
     aporte = caixa.create(
         session,

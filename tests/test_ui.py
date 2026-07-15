@@ -30,6 +30,10 @@ from xtreme_system.veiculo import core as veiculo
 def client() -> Iterator[TestClient]:
     engine = create_test_engine()
     with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
         usuario.create(
             session,
             usuario.UsuarioCreate(
@@ -406,6 +410,10 @@ def test_ui_investidor_criar_falha_se_aporte_inicial_falhar(
 ) -> None:
     engine = create_test_engine()
     with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
         usuario.create(
             session,
             usuario.UsuarioCreate(

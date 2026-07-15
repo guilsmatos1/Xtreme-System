@@ -8,10 +8,15 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.investidor import core as investidor
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
 
 def _veiculo(session: Session) -> veiculo.Veiculo:
+    u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(u)
+    session.flush()
+    session.info["usuario_id"] = u.id
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor"))
     return veiculo.create(
         session,

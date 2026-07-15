@@ -18,6 +18,10 @@ def atomic_client() -> Iterator[tuple[TestClient, FastAPI, Session]]:
     engine = create_test_engine()
     app = FastAPI()
     with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
         admin = usuario.create(
             session,
             usuario.UsuarioCreate(

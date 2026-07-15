@@ -24,6 +24,10 @@ from xtreme_system.venda import core as venda
 def session() -> Iterator[Session]:
     engine = create_test_engine()
     with Session(engine) as s:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        s.add(u)
+        s.flush()
+        s.info["usuario_id"] = u.id
         yield s
     engine.dispose()
 
@@ -32,6 +36,10 @@ def session() -> Iterator[Session]:
 def client() -> Iterator[TestClient]:
     engine = create_test_engine()
     with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
         usuario.create(
             session,
             usuario.UsuarioCreate(
