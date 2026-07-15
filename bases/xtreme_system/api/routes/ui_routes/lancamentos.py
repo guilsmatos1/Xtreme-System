@@ -156,6 +156,7 @@ def ui_lancamento_editar(
 async def ui_lancamento_criar(
     investidor_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     _found(investidor.get(session, investidor_id), "Investidor")
     form = await request.form()
     try:
@@ -176,6 +177,7 @@ async def ui_lancamento_atualizar(
     session: SessionDep,
     user: UIAdmin,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     obj = _found(caixa.get(session, lancamento_id), "Lançamento")
     if obj.origem == caixa.OrigemLancamento.veiculo:
         raise HTTPException(
@@ -198,6 +200,7 @@ def ui_lancamento_excluir(
     session: SessionDep,
     user: UIAdmin,
 ) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
     obj = _found(caixa.get(session, lancamento_id), "Lançamento")
     if obj.origem == caixa.OrigemLancamento.veiculo:
         raise HTTPException(
