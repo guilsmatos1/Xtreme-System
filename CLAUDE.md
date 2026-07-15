@@ -92,5 +92,5 @@ merge in the main worktree instead of trying to switch branches here.
 
 ## 7. Others
 
-- Changing transaction boundaries, commits, or rollbacks → read `bases/xtreme_system/api/crud_writes.py` (atomic_write / safe_write) and `components/xtreme_system/database/core.py` (get_session). Find all callers of `atomic_write` with `rg "atomic_write" --include "*.py"` before editing.
+- Changing transaction boundaries, commits, or rollbacks → read `bases/xtreme_system/api/crud_writes.py` (safe_write) and `components/xtreme_system/database/core.py` (get_session). Find all callers of `session.rollback()` with `rg "session\.rollback\(\)" --include "*.py"` before editing. Rollback is centralized in `get_session()`. If a handler re-raises an `IntegrityError` as `HTTPException`, `get_session` will rollback on its own — do not call `session.rollback()` in that path. When a handler catches `IntegrityError` internally and returns a response directly, the handler must call `session.rollback()` to reset the session state before `get_session` attempts its commit.
 
