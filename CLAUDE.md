@@ -13,6 +13,7 @@ Shortcuts by intent:
 - Creating or changing a JSON/HTMX endpoint → read `API.md` and, if it affects internal flow, `ARCHITECTURE.md`.
 - Changing authentication, permissions, middleware, or Polylith organization → read `ARCHITECTURE.md`.
 - Running, testing, or configuring the environment → read `README.md`.
+- Placing validation → business invariants go in `components/*/core.py`; FK existence / availability checks in `workflows.py`; route-specific 400/409 in `bases/api/routes/`. Ex: `FechamentoVendaError` raised in `fechamento_venda/core.py`, caught at the route layer.
 
 ## 1. Think Before Coding
 
@@ -89,6 +90,7 @@ Before merging into `master`, confirm with `git worktree list` that it is not
 checked out in another worktree. If Git says `master` is already in use, do the
 merge in the main worktree instead of trying to switch branches here.
 
+## 7. Others
 
+- Changing transaction boundaries, commits, or rollbacks → read `bases/xtreme_system/api/crud_writes.py` (atomic_write / safe_write) and `components/xtreme_system/database/core.py` (get_session). Find all callers of `atomic_write` with `rg "atomic_write" --include "*.py"` before editing.
 
-&nbsp;
