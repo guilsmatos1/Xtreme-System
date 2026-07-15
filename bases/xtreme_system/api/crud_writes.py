@@ -14,7 +14,6 @@ from xtreme_system.api.crud_types import (
     ResultT,
     UpdateSchemaT,
 )
-from xtreme_system.crud import core as crud
 
 
 def safe_write(
@@ -28,8 +27,6 @@ def safe_write(
 
 
 def atomic_write(session: Session, op: Callable[[], ResultT]) -> ResultT:
-    previous = session.info.get(crud.DEFER_COMMIT_KEY)
-    session.info[crud.DEFER_COMMIT_KEY] = True
     try:
         result = op()
         session.commit()
@@ -38,11 +35,6 @@ def atomic_write(session: Session, op: Callable[[], ResultT]) -> ResultT:
         raise
     else:
         return result
-    finally:
-        if previous is None:
-            session.info.pop(crud.DEFER_COMMIT_KEY, None)
-        else:
-            session.info[crud.DEFER_COMMIT_KEY] = previous
 
 
 def run_hook(

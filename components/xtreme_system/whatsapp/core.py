@@ -51,7 +51,7 @@ def get_config(session: Session) -> WhatsappConfig:
     if config is None:
         config = WhatsappConfig(id=_CONFIG_ID)
         session.add(config)
-        crud.commit(session)
+        crud.flush(session)
         session.refresh(config)
     return config
 
@@ -63,7 +63,7 @@ def atualizar_config(session: Session, data: WhatsappConfigUpdate) -> WhatsappCo
     config.evolution_instance = data.evolution_instance
     config.evolution_group_id = data.evolution_group_id
     config.mensagem_template = data.mensagem_template
-    crud.commit(session)
+    crud.flush(session)
     session.refresh(config)
     return config
 
