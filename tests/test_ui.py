@@ -19,6 +19,7 @@ from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.caixa import core as caixa
 from xtreme_system.database.core import get_session
 from xtreme_system.documento_veiculo import core as documento_veiculo
+from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -517,6 +518,18 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Lima" not in csv_resp.text
+
+
+def test_ui_vendas_sem_tabela_de_fechamento_nao_quebra(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    monkeypatch.setattr(fechamento_venda, "_schema_disponivel", lambda _session: False)
+
+    pagina = client.get("/ui/vendas")
+
+    assert pagina.status_code == 200
+    assert 'id="linhas"' in pagina.text
 
 
 def test_ui_compras_crud_basico(client: TestClient) -> None:

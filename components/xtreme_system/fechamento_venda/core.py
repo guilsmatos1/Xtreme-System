@@ -4,7 +4,7 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func
+from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func, inspect
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.auditoria.core import _snapshot, auditar
@@ -23,6 +23,9 @@ ERRO_RATEIO_OBRIGATORIO = "Informe o rateio do lucro"
 ERRO_INVESTIDOR_DUPLICADO = "Investidor duplicado no rateio"
 ERRO_INVESTIDOR_INEXISTENTE = "investidor_id inexistente no rateio"
 ERRO_RATEIO_TOTAL = "Rateio deve somar 100%"
+ERRO_SCHEMA_DESATUALIZADO = (
+    "Atualize o banco com `make migrate` para usar fechamento de vendas"
+)
 
 
 class FechamentoVendaError(ValueError):
@@ -122,15 +125,31 @@ class FechamentoVendaPreview(BaseModel):
     investidores: list[InvestidorRead]
 
 
+def _schema_disponivel(session: Session) -> bool:
+    # Inspeciona a conexão ativa da sessão (não o engine): inspecionar o engine
+    # abriria uma conexão própria cujo rollback descarta escritas ainda não
+    # commitadas da sessão (flush sem commit).
+    inspector = inspect(session.connection())
+    return inspector.has_table(FechamentoVenda.__tablename__) and inspector.has_table(
+        ParticipacaoFechamentoVenda.__tablename__
+    )
+
+
 def list_all(session: Session) -> list[FechamentoVenda]:
+    if not _schema_disponivel(session):
+        return []
     return list(session.query(FechamentoVenda).order_by(FechamentoVenda.id).all())
 
 
 def get(session: Session, fechamento_id: int) -> FechamentoVenda | None:
+    if not _schema_disponivel(session):
+        return None
     return crud.get(session, FechamentoVenda, fechamento_id)
 
 
 def get_by_venda(session: Session, venda_id: int) -> FechamentoVenda | None:
+    if not _schema_disponivel(session):
+        return None
     return session.query(FechamentoVenda).filter_by(venda_id=venda_id).one_or_none()
 
 
@@ -160,6 +179,8 @@ def confirmar(
     *,
     usuario_id: int | None,
 ) -> FechamentoVenda:
+    if not _schema_disponivel(session):
+        raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)
     receita, custo_veiculo, custos_operacionais, debitos, lucro = _calcular(
         session, venda_obj
     )
