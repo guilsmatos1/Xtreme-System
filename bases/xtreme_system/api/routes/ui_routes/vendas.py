@@ -8,6 +8,7 @@ import structlog
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
@@ -242,7 +243,11 @@ async def _criar_venda(
         return _erro_venda(request, session, erro)
 
     if novo_cliente_data is not None:
-        cliente_obj = cliente.create(session, novo_cliente_data)
+        try:
+            cliente_obj = cliente.create(session, novo_cliente_data)
+        except IntegrityError:
+            session.rollback()
+            return _erro_venda(request, session, "Cliente já existe")
     assert cliente_obj is not None  # noqa: S101 -- invariante interna: erro is None garante cliente_obj definido
 
     try:
@@ -254,9 +259,13 @@ async def _criar_venda(
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_venda(request, session, msg)
 
-    obj = venda.create(session, data)
-    whatsapp.notificar_venda(session, obj)
-    _persistir_contrato_venda(session, obj)
+    try:
+        obj = venda.create(session, data)
+        whatsapp.notificar_venda(session, obj)
+        _persistir_contrato_venda(session, obj)
+    except IntegrityError:
+        session.rollback()
+        return _erro_venda(request, session, "Venda já existe")
     return _ok_venda(request, session, user)
 
 
