@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.cliente import core as cliente
 from xtreme_system.investidor import core as investidor
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda.core import StatusVenda, Venda
 
@@ -36,6 +37,9 @@ def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
     if troca_id is not None and veiculo.get(session, troca_id) is None:
         raise HTTPException(status_code=400, detail="veiculo_troca_id inexistente")
+    ven_id = getattr(data, "vendedor_id", None)
+    if ven_id is not None and usuario.get(session, ven_id) is None:
+        raise HTTPException(status_code=400, detail="vendedor_id inexistente")
 
 
 def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
