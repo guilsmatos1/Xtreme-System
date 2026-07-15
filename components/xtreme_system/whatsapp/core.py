@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
-from xtreme_system.database.core import Base
+from xtreme_system.database.core import Base, register_post_commit
 from xtreme_system.venda.core import Venda
 
 logger = structlog.get_logger(__name__)
@@ -126,26 +126,28 @@ def _notificar_em_background(
 
 
 def notificar_venda(session: Session, venda_obj: Venda) -> None:
-    """Envia a notificação da venda para o grupo do WhatsApp, best-effort.
+    """Agenda a notificação da venda para depois do commit, best-effort.
 
     A leitura do banco e a formatação da mensagem rodam na thread da
-    requisição. O envio HTTP é despachado para uma thread separada e não
-    bloqueia a resposta. Uma falha de rede/servidor Evolution não pode
-    impedir a criação da venda. Se a integração ainda não foi configurada
-    (página de Configurações), não tenta enviar.
+    requisição. O envio HTTP só é despachado (em thread separada) após o
+    commit bem-sucedido da transação. Se o commit falhar, a mensagem não é
+    enviada. Uma falha de rede/servidor Evolution não impede a criação da
+    venda. Se a integração ainda não foi configurada (página de
+    Configurações), não agenda o envio.
     """
     config = get_config(session)
     if not (config.evolution_api_url and config.evolution_instance):
         return
     texto = _formatar_mensagem(config, venda_obj)
-    threading.Thread(
-        target=_notificar_em_background,
-        args=(
-            config.evolution_api_url,
-            config.evolution_api_key,
-            config.evolution_instance,
-            config.evolution_group_id,
-            texto,
-        ),
-        daemon=True,
-    ).start()
+    api_url = config.evolution_api_url
+    api_key = config.evolution_api_key
+    instance = config.evolution_instance
+    group_id = config.evolution_group_id
+    register_post_commit(
+        session,
+        lambda: threading.Thread(
+            target=_notificar_em_background,
+            args=(api_url, api_key, instance, group_id, texto),
+            daemon=True,
+        ).start(),
+    )

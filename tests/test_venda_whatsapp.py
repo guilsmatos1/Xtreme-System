@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
-from xtreme_system.database.core import get_session
+from xtreme_system.database.core import _invoke_post_commit, get_session
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
 
@@ -32,6 +32,7 @@ def client() -> Iterator[TestClient]:
 
         def override() -> Iterator[Session]:
             yield session
+            _invoke_post_commit(session)
 
         app.dependency_overrides[get_session] = override
         yield TestClient(app)

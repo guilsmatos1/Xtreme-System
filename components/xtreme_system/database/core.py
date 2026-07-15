@@ -1,11 +1,16 @@
 """Configuração de banco: settings, engine, sessão e Base declarativa."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import lru_cache
 
+import structlog
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+logger = structlog.get_logger(__name__)
+
+_POST_COMMIT_KEY = "_post_commit_callbacks"
 
 
 class Settings(BaseSettings):
@@ -29,11 +34,26 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
+def register_post_commit(session: Session, callback: Callable[[], None]) -> None:
+    callbacks = session.info.setdefault(_POST_COMMIT_KEY, [])
+    callbacks.append(callback)
+
+
+def _invoke_post_commit(session: Session) -> None:
+    callbacks: list[Callable[[], None]] = session.info.pop(_POST_COMMIT_KEY, [])
+    for cb in callbacks:
+        try:
+            cb()
+        except Exception:
+            logger.warning("post_commit_callback_failed", exc_info=True)
+
+
 def get_session() -> Iterator[Session]:
     session = SessionLocal()
     try:
         yield session
         session.commit()
+        _invoke_post_commit(session)
     except Exception:
         session.rollback()
         raise
