@@ -58,7 +58,7 @@ testpaths = ["tests"]
 line-length = 88
 target-version = "py312"
 src = ["tests", "bases", "components", "development", "projects"]
-exclude = [".opencode/plugins/ponytail", ".agents/skills", "alembic"]
+exclude = [".agents/skills", "alembic"]
 
 [tool.ruff.lint]
 select = [

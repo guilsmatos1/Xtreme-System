@@ -3,8 +3,17 @@
   "skills": {
     "paths": [".agents/skills"]
   },
+  "agent": {
+    "build": {
+      "model": "opencode-go/glm-5.2",
+      "variant": "max"
+    },
+    "plan": {
+      "model": "openai/gpt-5.5",
+      "variant": "high"
+    }
+  },
   "plugin": [
-    "./.opencode/plugins/ponytail/.opencode/plugins/ponytail.mjs",
-    "superpowers@git+https://github.com/obra/superpowers.git"
+    "./.opencode/plugins/post-edit-checks.js"
   ]
 }

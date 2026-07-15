@@ -8,21 +8,24 @@ import sys
 from pathlib import Path
 
 MAX_OUTPUT_CHARS = 12000
+SOURCE_SUFFIXES = (".py", ".ts", ".js", ".tsx", ".jsx")
 
 
 def project_dir(payload: dict) -> Path:
     return Path(os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or ".")
 
 
-def working_tree_dirty(root: Path) -> bool:
+def changed_source_files(root: Path) -> list[str]:
     result = subprocess.run(
-        ["git", "status", "--porcelain"],
+        ["git", "diff", "--name-only", "HEAD"],
         cwd=root,
         capture_output=True,
         text=True,
         check=False,
     )
-    return bool(result.stdout.strip())
+    return [
+        path for path in result.stdout.splitlines() if path.endswith(SOURCE_SUFFIXES)
+    ]
 
 
 def main() -> int:
@@ -37,11 +40,12 @@ def main() -> int:
         return 0
 
     root = project_dir(payload)
-    if not working_tree_dirty(root):
+    changed = changed_source_files(root)
+    if not changed:
         return 0
 
-    result = subprocess.run(
-        ["uv", "run", "pre-commit", "run", "--all-files"],
+    result = subprocess.run(  # noqa: S603
+        ["uv", "run", "pre-commit", "run", "--files", *changed],
         cwd=root,
         capture_output=True,
         text=True,
@@ -57,7 +61,7 @@ def main() -> int:
                 "decision": "block",
                 "reason": (
                     "Post-edit checks failed "
-                    "(uv run pre-commit run --all-files):\n\n"
+                    "(uv run pre-commit run --files ...):\n\n"
                     f"{output}\n\nFix the failures, then stop again."
                 ),
             }

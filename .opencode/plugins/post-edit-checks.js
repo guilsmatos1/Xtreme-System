@@ -31,9 +31,15 @@ function looksLikeEdit(tool, args) {
   return false;
 }
 
-function runChecks(cwd) {
+const CHECKS = [
+  { name: "ruff", args: ["run", "ruff", "check", "."] },
+  { name: "ruff-format", args: ["run", "ruff", "format", ".", "--check"] },
+  { name: "mypy", args: ["run", "mypy"] },
+];
+
+function runCommand(args, cwd) {
   return new Promise((resolve) => {
-    const child = spawn("uv", ["run", "pre-commit", "run", "--all-files"], {
+    const child = spawn("uv", args, {
       cwd,
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -53,6 +59,16 @@ function runChecks(cwd) {
       resolve({ code: code ?? 1, output });
     });
   });
+}
+
+async function runChecks(cwd) {
+  for (const check of CHECKS) {
+    const result = await runCommand(check.args, cwd);
+    if (result.code !== 0) {
+      return { name: check.name, ...result };
+    }
+  }
+  return null;
 }
 
 function trimOutput(output) {
@@ -79,12 +95,12 @@ export const PostEditChecks = async ({ client, directory, worktree }) => ({
     const result = await runChecks(cwd);
     running = false;
 
-    if (result.code === 0) return;
+    if (result === null) return;
 
     const sessionID = event.properties?.sessionID ?? event.sessionID;
     if (!sessionID) return;
 
-    const output = trimOutput(result.output || "pre-commit failed without output.");
+    const output = trimOutput(result.output || `${result.name} failed without output.`);
     await client.session.prompt({
       path: { id: sessionID },
       body: {
@@ -92,9 +108,9 @@ export const PostEditChecks = async ({ client, directory, worktree }) => ({
           {
             type: "text",
             text: [
-              "Post-edit checks failed.",
+              `Post-edit check "${result.name}" failed.`,
               "",
-              "Command: uv run pre-commit run --all-files",
+              `Command: uv ${CHECKS.find((c) => c.name === result.name).args.join(" ")}`,
               "",
               "```",
               output,
