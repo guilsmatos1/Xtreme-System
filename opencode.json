@@ -5,6 +5,10 @@
   },
   "agent": {
     "build": {
+      "model": "opencode-go/deepseek-v4-pro",
+      "variant": "max"
+    },
+    "build_2": {
       "model": "opencode-go/glm-5.2",
       "variant": "max"
     },
