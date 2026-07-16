@@ -2,9 +2,11 @@
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
+from weakref import WeakKeyDictionary
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func, inspect
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.auditoria.core import _snapshot, auditar
@@ -26,6 +28,7 @@ ERRO_RATEIO_TOTAL = "Rateio deve somar 100%"
 ERRO_SCHEMA_DESATUALIZADO = (
     "Atualize o banco com `make migrate` para usar fechamento de vendas"
 )
+_SCHEMA_DISPONIVEL_POR_ENGINE: WeakKeyDictionary[Engine, bool] = WeakKeyDictionary()
 
 
 class FechamentoVendaError(ValueError):
@@ -126,13 +129,21 @@ class FechamentoVendaPreview(BaseModel):
 
 
 def _schema_disponivel(session: Session) -> bool:
+    bind = session.get_bind()
+    engine = bind.engine if isinstance(bind, Connection) else bind
+    try:
+        return _SCHEMA_DISPONIVEL_POR_ENGINE[engine]
+    except KeyError:
+        pass
     # Inspeciona a conexão ativa da sessão (não o engine): inspecionar o engine
     # abriria uma conexão própria cujo rollback descarta escritas ainda não
     # commitadas da sessão (flush sem commit).
     inspector = inspect(session.connection())
-    return inspector.has_table(FechamentoVenda.__tablename__) and inspector.has_table(
+    disponivel = inspector.has_table(FechamentoVenda.__tablename__) and inspector.has_table(
         ParticipacaoFechamentoVenda.__tablename__
     )
+    _SCHEMA_DISPONIVEL_POR_ENGINE[engine] = disponivel
+    return disponivel
 
 
 def list_all(session: Session) -> list[FechamentoVenda]:
