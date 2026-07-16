@@ -52,3 +52,8 @@
     </form>
   </div>
 </div>
+{% if action_oob %}
+{% set v = veiculo %}
+{% set has_comprovantes = documentos %}
+{% include "_action_veiculo_comprovantes.html" %}
+{% endif %}

@@ -6,6 +6,9 @@ from types import ModuleType
 
 from xtreme_system.api.routes.ui_routes import compras as _compras
 from xtreme_system.api.routes.ui_routes import veiculos as _veiculos
+from xtreme_system.api.routes.ui_routes import (
+    veiculos_comprovantes as _veiculos_comprovantes,
+)
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as _veiculos_imagens
 from xtreme_system.api.routes.ui_routes.common import (
     _uploads_cliente_dir,
@@ -44,6 +47,7 @@ class _UiCompatModule(ModuleType):
             setattr(_veiculos, name, value)
         if name == "_uploads_compra_dir":
             setattr(_compras, name, value)
+            setattr(_veiculos_comprovantes, name, value)
 
 
 sys.modules[__name__].__class__ = _UiCompatModule

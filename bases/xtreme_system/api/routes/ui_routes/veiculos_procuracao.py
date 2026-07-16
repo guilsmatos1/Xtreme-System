@@ -20,7 +20,12 @@ from xtreme_system.veiculo import core as veiculo
 
 
 def _procuracao_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
+    request: Request,
+    session: Session,
+    veiculo_id: int,
+    erro: str | None = None,
+    *,
+    action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     remover_orfaos(session, item.documentos_procuracao, documento_procuracao.delete)
@@ -28,7 +33,7 @@ def _procuracao_modal(
     return templates.TemplateResponse(
         request,
         "_modal_procuracao_veiculo.html",
-        {"veiculo": item, "erro": erro},
+        {"veiculo": item, "erro": erro, "action_oob": action_oob},
         status_code=400 if erro else 200,
     )
 
@@ -67,7 +72,7 @@ def ui_veiculo_procuracao_upload(
         fk_id=veiculo_id,
         arquivos=documentos,
     )
-    return _procuracao_modal(request, session, veiculo_id)
+    return _procuracao_modal(request, session, veiculo_id, action_oob=True)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/procuracao/{doc_id}/excluir")
@@ -86,4 +91,4 @@ def ui_veiculo_procuracao_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _procuracao_modal(request, session, veiculo_id)
+    return _procuracao_modal(request, session, veiculo_id, action_oob=True)

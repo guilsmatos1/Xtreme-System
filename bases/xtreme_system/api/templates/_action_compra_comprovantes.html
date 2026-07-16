@@ -1,0 +1,4 @@
+{% import "_macros.html" as ui %}
+{% set comprovantes_lookup = comprovantes_por_compra if comprovantes_por_compra is defined else {} %}
+{% set tem_comprovantes = has_comprovantes if has_comprovantes is defined else comprovantes_lookup.get(c.id) %}
+<button id="action-compra-{{ c.id }}-comprovantes" class="btn btn--ghost btn--sm{% if tem_comprovantes %} action-file{% endif %}"{% if action_oob %} hx-swap-oob="outerHTML"{% endif %} hx-get="/ui/compras/{{ c.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" aria-label="Comprovantes da compra {{ c.id }}">{{ ui.icon("file") }}</button>

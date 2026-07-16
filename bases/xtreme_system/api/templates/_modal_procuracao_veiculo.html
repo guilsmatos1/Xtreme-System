@@ -52,3 +52,7 @@
     </form>
   </div>
 </div>
+{% if action_oob %}
+{% set v = veiculo %}
+{% include "_action_veiculo_procuracao.html" %}
+{% endif %}

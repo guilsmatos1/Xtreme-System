@@ -416,6 +416,131 @@ def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
     assert "Nenhum documento" in excluido.text
 
 
+def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    pagina_veiculos = client.get("/ui/veiculos").text
+    assert "action-edit" in pagina_veiculos
+    assert "action-user" in pagina_veiculos
+    assert "action-delete" in pagina_veiculos
+    assert "action-image" not in _classes_do_botao(
+        pagina_veiculos, f"action-veiculo-{veiculo_id}-imagens"
+    )
+    assert "action-file" not in _classes_do_botao(
+        pagina_veiculos, f"action-veiculo-{veiculo_id}-procuracao"
+    )
+
+    upload_img = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("foto-cor.jpg", b"\xff\xd8\xfffoto", "image/jpeg")},
+    )
+    assert upload_img.status_code == 200
+    assert 'hx-swap-oob="outerHTML"' in upload_img.text
+    assert "action-image" in _classes_do_botao(
+        upload_img.text, f"action-veiculo-{veiculo_id}-imagens"
+    )
+
+    img_id_match = re.search(
+        r"/ui/veiculos/\d+/imagens/(?P<img_id>\d+)/excluir", upload_img.text
+    )
+    assert img_id_match is not None
+    exclui_img = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens/{img_id_match.group('img_id')}/excluir"
+    )
+    assert exclui_img.status_code == 200
+    assert "action-image" not in _classes_do_botao(
+        exclui_img.text, f"action-veiculo-{veiculo_id}-imagens"
+    )
+
+    upload_proc = client.post(
+        f"/ui/veiculos/{veiculo_id}/procuracao",
+        files={"documentos": ("procuracao-cor.pdf", b"%PDF-proc", "application/pdf")},
+    )
+    assert upload_proc.status_code == 200
+    assert "action-file" in _classes_do_botao(
+        upload_proc.text, f"action-veiculo-{veiculo_id}-procuracao"
+    )
+
+    cliente_id = _criar_cliente(client, headers, "Cliente Cor", "12312312312")
+    client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-11",
+            "valor_venda": "90000.00",
+            "forma_pagamento": "pix",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    pagina_clientes = client.get("/ui/clientes/compradores").text
+    assert "action-file" not in _classes_do_botao(
+        pagina_clientes, f"action-cliente-{cliente_id}-documentos"
+    )
+
+    upload_doc_cliente = client.post(
+        f"/ui/clientes/{cliente_id}/documentos",
+        files={"documentos": ("cliente-cor.pdf", b"%PDF-cliente", "application/pdf")},
+    )
+    assert upload_doc_cliente.status_code == 200
+    assert "action-file" in _classes_do_botao(
+        upload_doc_cliente.text, f"action-cliente-{cliente_id}-documentos"
+    )
+
+    pagina_vendas = client.get("/ui/vendas").text
+    assert 'href="/ui/vendas/' in pagina_vendas
+    assert "action-file" in pagina_vendas
+
+    compra_id = _seed_compra(client, "32132132199")
+    pagina_compras = client.get("/ui/compras").text
+    assert "action-file" not in _classes_do_botao(
+        pagina_compras, f"action-compra-{compra_id}-comprovantes"
+    )
+
+    upload_compra = client.post(
+        f"/ui/compras/{compra_id}/comprovantes",
+        files={
+            "comprovantes": (
+                "comprovante-cor.pdf",
+                b"%PDF-comprovante",
+                "application/pdf",
+            )
+        },
+    )
+    assert upload_compra.status_code == 200
+    assert "action-file" in _classes_do_botao(
+        upload_compra.text, f"action-compra-{compra_id}-comprovantes"
+    )
+
+    upload_comp_veiculo = client.post(
+        f"/ui/veiculos/{veiculo_id}/comprovantes",
+        files={
+            "documentos": (
+                "comprovante-veiculo-cor.pdf",
+                b"%PDF-comprovante-veiculo",
+                "application/pdf",
+            )
+        },
+    )
+    assert upload_comp_veiculo.status_code == 200
+    assert "action-cash" in _classes_do_botao(
+        upload_comp_veiculo.text, f"action-veiculo-{veiculo_id}-comprovantes"
+    )
+
+    for resposta in (
+        upload_img,
+        upload_proc,
+        upload_doc_cliente,
+        upload_compra,
+        upload_comp_veiculo,
+    ):
+        _remover_uploads_renderizados(resposta.text)
+
+
 def test_ui_investidores_crud_basico(client: TestClient) -> None:
     _login_admin(client)
 
@@ -1033,6 +1158,18 @@ def _criar_cliente(
     )
     assert resp.status_code == 201
     return int(resp.json()["id"])
+
+
+def _classes_do_botao(html: str, element_id: str) -> str:
+    match = re.search(rf'id="{re.escape(element_id)}" class="([^"]+)"', html)
+    assert match is not None
+    return match.group(1)
+
+
+def _remover_uploads_renderizados(html: str) -> None:
+    for url in re.findall(r"/static/uploads/[^\"<]+", html):
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
 
 
 def _seed_compra(client: TestClient, documento: str) -> int:

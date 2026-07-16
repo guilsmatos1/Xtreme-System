@@ -1,0 +1,2 @@
+{% import "_macros.html" as ui %}
+<button id="action-cliente-{{ c.id }}-documentos" class="btn btn--ghost btn--sm{% if c.documentos %} action-file{% endif %}"{% if action_oob %} hx-swap-oob="outerHTML"{% endif %} hx-get="/ui/clientes/{{ c.id }}/documentos" hx-target="#modal" hx-swap="innerHTML" aria-label="Documentos de {{ c.nome }}">{{ ui.icon("file") }}</button>

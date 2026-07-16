@@ -1,5 +1,7 @@
 {% import "_macros.html" as ui %}
 {% set compra_v = compras_por_veiculo.get(v.id) if compras_por_veiculo else none %}
+{% set comprovantes_lookup = comprovantes_por_compra if comprovantes_por_compra is defined else {} %}
+{% set has_comprovantes = compra_v and comprovantes_lookup.get(compra_v.id) %}
 <tr id="veiculo-{{ v.id }}">
   <td class="cell-strong" data-col="modelo">{{ v.modelo }}</td>
   <td class="cell-mono" data-col="placa">{{ v.placa }}</td>
@@ -13,14 +15,15 @@
    <td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>
    <td class="cell-center" data-col="revisao">{% if v.revisao %}✓{% else %}-{% endif %}</td>
    <td class="cell-num" data-col="debitos">{% if compra_v and compra_v.debitos is not none %}R$ {{ "{:,.2f}".format(compra_v.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
-   {% if is_admin(user) %}
+  {% if is_admin(user) %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm btn--focus" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/cliente-vendedor" hx-target="#modal" hx-swap="innerHTML" aria-label="Cliente vendedor de {{ v.modelo }}">{{ ui.icon("user") }}</button>
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/imagens" hx-target="#modal" hx-swap="innerHTML" aria-label="Imagens de {{ v.modelo }}">{{ ui.icon("image") }}</button>
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/procuracao" hx-target="#modal" hx-swap="innerHTML" aria-label="Procuração de {{ v.modelo }}">{{ ui.icon("file") }}</button>
-      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/veiculos/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o veículo {{ v.modelo }} ({{ v.placa }})?" aria-label="Excluir {{ v.modelo }}">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm btn--focus action-edit" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm action-user" hx-get="/ui/veiculos/{{ v.id }}/cliente-vendedor" hx-target="#modal" hx-swap="innerHTML" aria-label="Cliente vendedor de {{ v.modelo }}">{{ ui.icon("user") }}</button>
+      {% include "_action_veiculo_imagens.html" %}
+      {% include "_action_veiculo_procuracao.html" %}
+      {% include "_action_veiculo_comprovantes.html" %}
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/veiculos/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o veículo {{ v.modelo }} ({{ v.placa }})?" aria-label="Excluir {{ v.modelo }}">{{ ui.icon("trash") }}</button>
     </div>
   </td>
   {% endif %}

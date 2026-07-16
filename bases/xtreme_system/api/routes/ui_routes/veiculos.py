@@ -34,14 +34,18 @@ from xtreme_system.veiculo import core as veiculo
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
+    compras_por_veiculo = compra.latest_by_veiculo_ids(
+        session, [item.id for item in veiculo.list_all(session)]
+    )
     return {
         "tipos": list(veiculo.TipoVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
         "investidores": investidor.list_all(session),
         "clientes": cliente.list_all(session),
         "tipos_cliente": list(cliente.TipoCliente),
-        "compras_por_veiculo": compra.latest_by_veiculo_ids(
-            session, [item.id for item in veiculo.list_all(session)]
+        "compras_por_veiculo": compras_por_veiculo,
+        "comprovantes_por_compra": _comprovantes_por_compra(
+            session, list(compras_por_veiculo.values())
         ),
     }
 
@@ -49,10 +53,23 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
 def _ctx_lista_veiculos(
     session: Session, veiculos: list[veiculo.Veiculo]
 ) -> dict[str, Any]:
+    compras_por_veiculo = compra.latest_by_veiculo_ids(
+        session, [item.id for item in veiculos]
+    )
     return {
-        "compras_por_veiculo": compra.latest_by_veiculo_ids(
-            session, [item.id for item in veiculos]
-        )
+        "compras_por_veiculo": compras_por_veiculo,
+        "comprovantes_por_compra": _comprovantes_por_compra(
+            session, list(compras_por_veiculo.values())
+        ),
+    }
+
+
+def _comprovantes_por_compra(
+    session: Session, compras: list[compra.Compra]
+) -> dict[int, list[imagem_comprovante_compra.ImagemComprovanteCompra]]:
+    return {
+        item.id: imagem_comprovante_compra.list_by_compra(session, item.id)
+        for item in compras
     }
 
 

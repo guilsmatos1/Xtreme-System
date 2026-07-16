@@ -12,8 +12,8 @@
   </td>
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/perfis/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/perfis/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/perfis/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/perfis/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
     </div>
   </td>
 </tr>
