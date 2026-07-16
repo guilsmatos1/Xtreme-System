@@ -3,7 +3,7 @@
 import os
 import time
 import uuid
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -88,22 +88,29 @@ async def _limite_request_size(
 
 
 class _RateLimiter:
-    """Janela deslizante em memória, por chave (ex: IP do cliente)."""
+    """Janela deslizante em memória, por chave (ex: IP do cliente).
+
+    Chaves cujo deque esvazia (todos os hits expiraram) são removidas do
+    dicionário para evitar crescimento monotônico da memória do processo.
+    """
 
     def __init__(self, limit: int, window_seconds: float) -> None:
         self._limit = limit
         self._window = window_seconds
-        self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._hits: dict[str, deque[float]] = {}
 
     def allow(self, key: str) -> bool:
         now = time.monotonic()
-        hits = self._hits[key]
+        hits = self._hits.pop(key, deque())
         cutoff = now - self._window
         while hits and hits[0] < cutoff:
             hits.popleft()
         if len(hits) >= self._limit:
+            if hits:
+                self._hits[key] = hits
             return False
         hits.append(now)
+        self._hits[key] = hits
         return True
 
     def reset(self) -> None:
