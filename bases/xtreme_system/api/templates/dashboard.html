@@ -16,22 +16,22 @@
 </div>
 
 <section class="stats" aria-label="KPIs de venda">
-  <article class="card stat">
+  <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("cash") }} Vendas este mês</div>
     <div class="stat__value cell-num">{{ vendas_mes_count }}</div>
     <div class="stat__hint">R$ {{ "{:,.0f}".format(vendas_mes_total or 0) | replace(",", ".") }}</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("tag") }} Ticket médio</div>
     <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(ticket_medio or 0) | replace(",", ".") }}</div>
     <div class="stat__hint">valor médio de venda</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("check") }} Taxa de conversão</div>
     <div class="stat__value cell-num">{{ "{:.1f}".format(taxa_conversao) }}%</div>
     <div class="stat__hint">{{ vendidos }}/{{ disponiveis + vendidos }} avaliados</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("wallet") }} Valor em estoque</div>
     <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(valor_estoque or 0) | replace(",", ".") }}</div>
     <div class="stat__hint">{{ disponiveis }} disponíveis</div>
@@ -40,7 +40,7 @@
 
 <section class="stats" aria-label="Receita por tipo de veículo">
   {% for item in receita_tipo %}
-  <article class="card stat">
+  <article class="card stat {{ 'stat--accent' if item.icone == 'car' else 'stat--warning' }}">
     <div class="stat__label">{{ ui.icon(item.icone) }} {{ item.label }}</div>
     <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(item.valor or 0) | replace(",", ".") }}</div>
     <div class="stat__hint">faturamento</div>

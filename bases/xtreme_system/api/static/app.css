@@ -30,6 +30,7 @@
   --success:           #167c48; --success-soft: #e2f3e9;
   --danger:            #d32f2f; --danger-hover: #b71c1c; --danger-soft: #fdecec;
   --warning:           #a86a00; --warning-soft: #fbefd9;
+  --info:              #1a5fd9; --info-soft: #e3eeff;
 
   /* Sidebar (escura mesmo no tema claro — cara de ERP) */
   --sidebar-bg:        #17181b;
@@ -89,6 +90,7 @@
     --success:         #3dd68c; --success-soft: #10231a;
     --danger:          #f0685a; --danger-hover: #f27f72; --danger-soft: #2a1613;
     --warning:         #e0a832; --warning-soft: #251d0f;
+    --info:            #68a4f1; --info-soft: #0f1e33;
 
     --sidebar-bg:        #101113;
     --sidebar-fg:        #eef0f3;
@@ -114,6 +116,7 @@
   --success:#3dd68c; --success-soft:#10231a;
   --danger:#f0685a; --danger-hover:#f27f72; --danger-soft:#2a1613;
   --warning:#e0a832; --warning-soft:#251d0f;
+  --info:#68a4f1; --info-soft:#0f1e33;
   --sidebar-bg:#101113; --sidebar-fg:#eef0f3; --sidebar-fg-muted:#7f858e;
   --sidebar-border:#24262b; --sidebar-hover:#1c1e22;
   --sidebar-active-bg:rgba(240,85,69,.16); --sidebar-active-fg:#ff8579;
@@ -311,6 +314,22 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .stat__label svg { width: 15px; height: 15px; color: var(--text-tertiary); }
 .stat__value { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; margin-top: var(--s-1); font-variant-numeric: tabular-nums; }
 .stat__hint { font-size: .74rem; color: var(--text-tertiary); margin-top: 2px; }
+
+.stat--accent { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 28%, transparent); }
+.stat--accent .stat__label svg { color: var(--accent); }
+.stat--accent .stat__value { color: var(--accent); }
+
+.stat--success { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 28%, transparent); }
+.stat--success .stat__label svg { color: var(--success); }
+.stat--success .stat__value { color: var(--success); }
+
+.stat--warning { background: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 28%, transparent); }
+.stat--warning .stat__label svg { color: var(--warning); }
+.stat--warning .stat__value { color: var(--warning); }
+
+.stat--info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 28%, transparent); }
+.stat--info .stat__label svg { color: var(--info); }
+.stat--info .stat__value { color: var(--info); }
 
 /* ---- 10. Table ----------------------------------------------------------- */
 .table-wrap { position: relative; overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
