@@ -48,16 +48,3 @@ If master **is** in another worktree (e.g. `~/orca/projects/xtreme-system [maste
 git merge <branch-name> --no-ff -m "merge <branch>: <msg>"
 ```
 
-### 4. Confirm
-
-Show `git log --oneline --graph -5` at the end.
-
-
-### 5. Export the current session history to a JSON log file so the run is recorded. `opencode export` without a `sessionID` exports the running session:
-
-```bash
-mkdir -p logs
-opencode export --sanitize > "logs/session-$(date +%Y%m%d-%H%M%S).json"
-```
-
-Report the saved file path to the user.
