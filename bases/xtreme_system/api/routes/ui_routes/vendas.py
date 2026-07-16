@@ -267,8 +267,8 @@ async def _criar_venda(
 
     try:
         obj = venda.create(session, data)
-        whatsapp.notificar_venda(session, obj)
         _persistir_contrato_venda(session, obj)
+        whatsapp.notificar_venda(session, obj)
     except IntegrityError:
         session.rollback()
         return _erro_venda(request, session, "Venda já existe")

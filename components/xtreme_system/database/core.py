@@ -5,7 +5,7 @@ from functools import lru_cache
 
 import structlog
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 logger = structlog.get_logger(__name__)
@@ -32,6 +32,11 @@ engine = create_engine(
     get_settings().database_url, future=True, pool_pre_ping=True, pool_recycle=1800
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+
+@event.listens_for(Session, "after_rollback")
+def _drop_post_commit_on_rollback(session: Session) -> None:
+    session.info.pop(_POST_COMMIT_KEY, None)
 
 
 def register_post_commit(session: Session, callback: Callable[[], None]) -> None:
