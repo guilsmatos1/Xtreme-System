@@ -172,7 +172,12 @@ def _sincronizar_status_veiculo(
                 veiculo_anterior.status = StatusVeiculo.vendido
             else:
                 veiculo_anterior.status = StatusVeiculo.disponivel
-    obj.veiculo.status = status_veiculo
+    if status_veiculo == StatusVeiculo.disponivel and veiculo_tem_outra_venda_concluida(
+        session, obj.veiculo_id, excluir_venda_id=obj.id
+    ):
+        obj.veiculo.status = StatusVeiculo.vendido
+    else:
+        obj.veiculo.status = status_veiculo
     crud.flush(session)
     session.refresh(obj)
     return obj
