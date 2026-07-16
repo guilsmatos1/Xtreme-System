@@ -1,5 +1,5 @@
 ---
-name: linear-duplicate-triage
+name: 0001-linear-duplicate-triage
 description: >-
   Find duplicate Linear issues across a team's open backlog and mark the
   redundant ones, using Orca's `orca linear ...` CLI. Lists open issues at the

@@ -1,13 +1,13 @@
 ---
-name: analyze-codebase
+name: 0001-analyze-codebase
 description: Analyze a codebase thoroughly and identify the 10 highest-impact improvement opportunities, prioritized by impact. Use when asked for a code review, technical debt audit, architecture critique, performance review, testing gap analysis, or a prioritized list of concrete improvements tied to specific files and snippets.
-trigger: /analyze-codebase
 ---
-# /analyze-codebase
+
+# Analyze Codebase
 
 Analyze this codebase thoroughly and identify the 10 best opportunities for improvement, prioritized by impact.
-
 Prioritize issues affecting correctness, reliability, and operational risk over stylistic preferences.
+
 
 ## Review Dimensions
 
@@ -53,7 +53,7 @@ For each opportunity, evaluate the relevant dimensions below:
 4. Prefer high-confidence findings over generic review advice.
 5. Tie every recommendation to a specific file, function, and snippet when possible.
 6. Avoid broad refactors unless the current design is clearly causing correctness, reliability, or maintenance problems.
-7. After preparing the final report, save the same content to `docs/codebase-analysis.md` as Markdown.
+7. After preparing the final report, save the same content to `docs/0001-codebase-analysis.md` as Markdown.
 
 ## Suggested Workflow
 
@@ -99,10 +99,10 @@ For each opportunity, include:
 
 ## Output Format
 
-Use this structure for every item:
+Use this structure for EVERY item:
 
 ```text
-## Opportunity N: <short title>
+## <short title>
 
 Location: path/to/file.py:123
 Impact: High
@@ -124,9 +124,10 @@ Example:
 
 ## Persistence
 
-- Write the final 10-opportunity report to `docs/codebase-analysis.md`.
+- Write the final 10-opportunity report to `docs/0001-codebase-analysis.md`.
 - Keep the file in Markdown and make it match the assistant output as closely as possible.
 - If the file already exists, overwrite it with the latest report unless the user explicitly asks for a different filename.
+- Do not use Markdown tables in the generated file. Use the text format specified in "Output Format" above for every item.
 
 ## Review Standard
 
@@ -135,3 +136,8 @@ Example:
 - Name the tradeoff when a fix is larger than the immediate issue.
 - If multiple files share the same problem, cite the best representative examples instead of repeating yourself.
 - If a suspected issue is uncertain, say so explicitly and lower its priority.
+
+**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
+
+The full 10-opportunity report is the deliverable, and it goes to
+`docs/0001-codebase-analysis.md` ONLY.

@@ -1,5 +1,5 @@
 ---
-name: send-to-linear
+name: 0001-send-to-linear
 description: Use when creating Linear issues from chat requests and issue metadata like priority or labels must be inferred from the request text.
 ---
 
