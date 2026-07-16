@@ -167,7 +167,8 @@ register_crud_ui_routes(
     before_delete=_remover_arquivos_comprovantes,
     sort_fields={
         "cliente": lambda c: _sort_key(c.cliente.nome),
-        "veiculo": lambda c: _sort_key(c.veiculo.modelo),
+        "modelo": lambda c: _sort_key(c.veiculo.modelo),
+        "placa": lambda c: _sort_key(c.veiculo.placa),
         "data": "data_compra",
         "valor": "valor_compra",
         "debitos": "debitos",
@@ -176,7 +177,8 @@ register_crud_ui_routes(
     csv_headers=[
         "ID",
         "Cliente",
-        "Veiculo",
+        "Modelo",
+        "Placa",
         "Data",
         "Valor Compra",
         "Debitos",
@@ -185,7 +187,8 @@ register_crud_ui_routes(
     csv_row=lambda c: [
         c.id,
         c.cliente.nome,
-        f"{c.veiculo.modelo} ({c.veiculo.placa})",
+        c.veiculo.modelo,
+        c.veiculo.placa,
         c.data_compra.isoformat(),
         f"{c.valor_compra:.2f}",
         f"{c.debitos:.2f}" if c.debitos is not None else "",
