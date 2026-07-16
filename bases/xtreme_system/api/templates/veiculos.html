@@ -24,22 +24,22 @@
 </div>
 
 <section class="stats" aria-label="Resumo do estoque">
-  <article class="card stat">
+  <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("vehicles") }} Total no estoque</div>
     <div class="stat__value cell-num">{{ veiculos | length }}</div>
     <div class="stat__hint">veículos cadastrados</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("check") }} Disponíveis</div>
     <div class="stat__value cell-num">{{ disponiveis | length }}</div>
     <div class="stat__hint">prontos para venda</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("tag") }} Vendidos</div>
     <div class="stat__value cell-num">{{ vendidos | length }}</div>
     <div class="stat__hint">baixados do estoque</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("wallet") }} Valor disponível</div>
     <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(valor_estoque or 0) | replace(",", ".") }}</div>
     <div class="stat__hint">soma dos disponíveis</div>
