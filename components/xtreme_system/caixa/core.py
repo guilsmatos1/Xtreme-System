@@ -215,19 +215,25 @@ def agregados_investidores(
     session: Session,
 ) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:
     """Return (num_veiculos, valor_veiculos, total_aportado) per investidor_id."""
-    veiculos = crud.list_all(session, Veiculo)
-    num: dict[int, int] = {}
-    valor: dict[int, Decimal] = {}
-    for v in veiculos:
-        iid = v.investidor_id
-        num[iid] = num.get(iid, 0) + 1
-        valor[iid] = valor.get(iid, Decimal("0")) + v.preco
+    veiculo_rows = (
+        session.query(
+            Veiculo.investidor_id,
+            func.count(Veiculo.id),
+            func.sum(Veiculo.preco),
+        )
+        .group_by(Veiculo.investidor_id)
+        .all()
+    )
+    num = {investidor_id: int(cnt) for investidor_id, cnt, _ in veiculo_rows}
+    valor = {
+        investidor_id: total or Decimal("0") for investidor_id, _, total in veiculo_rows
+    }
     rows = (
         session.query(LancamentoInvestimento.investidor_id, _APORTES_EXPR)
         .group_by(LancamentoInvestimento.investidor_id)
         .all()
     )
-    aportes: dict[int, Decimal] = {iid: total for iid, total in rows}  # noqa: C416
+    aportes = {iid: total for iid, total in rows}
     return num, valor, aportes
 
 
