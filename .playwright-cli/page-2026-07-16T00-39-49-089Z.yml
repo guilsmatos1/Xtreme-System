@@ -1,0 +1,149 @@
+- generic [ref=f20e2]:
+  - complementary "Navegação principal" [ref=f20e3]:
+    - generic [ref=f20e4]: Xtreme Motors
+    - generic [ref=f20e10]: Gestão
+    - navigation [ref=f20e11]:
+      - link "Dashboard" [ref=f20e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f20e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f20e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f20e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f20e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f20e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f20e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f20e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f20e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f20e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f20e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f20e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f20e65]:
+      - button "Alternar tema" [ref=f20e66] [cursor=pointer]:
+        - generic [ref=f20e70]: Tema
+      - generic [ref=f20e71]:
+        - generic [ref=f20e72]: A
+        - generic [ref=f20e73]:
+          - generic [ref=f20e74]: admin
+          - generic [ref=f20e75]: admin
+        - button "Sair" [ref=f20e77] [cursor=pointer]
+  - main [ref=f20e81]:
+    - generic [ref=f20e82]:
+      - generic [ref=f20e83]:
+        - heading "Investidores" [level=1] [ref=f20e84]
+        - paragraph [ref=f20e85]: 7 registros cadastrados
+      - generic [ref=f20e86]:
+        - link "Exportar dados" [ref=f20e87] [cursor=pointer]:
+          - /url: /ui/investidores/exportar
+        - button "Add Investidor" [ref=f20e91] [cursor=pointer]
+    - table [ref=f20e95]:
+      - rowgroup [ref=f20e96]:
+        - row [ref=f20e97]:
+          - columnheader [ref=f20e98]:
+            - link "Nome" [ref=f20e99] [cursor=pointer]:
+              - /url: /ui/investidores?sort=nome&order=asc
+          - columnheader [ref=f20e100]:
+            - link "Nº Veículos" [ref=f20e101] [cursor=pointer]:
+              - /url: /ui/investidores?sort=num_veiculos&order=asc
+          - columnheader [ref=f20e102]:
+            - link "Total Investido" [ref=f20e103] [cursor=pointer]:
+              - /url: /ui/investidores?sort=total_investido&order=asc
+          - columnheader [ref=f20e104]:
+            - link "Valor em Veículos" [ref=f20e105] [cursor=pointer]:
+              - /url: /ui/investidores?sort=valor_veiculos&order=asc
+          - columnheader "Pendente" [ref=f20e106]
+          - columnheader "Ações" [ref=f20e107]
+      - rowgroup [ref=f20e109]:
+        - row [ref=f20e110]:
+          - cell "Gustavo" [ref=f20e111]
+          - cell "81" [ref=f20e112]
+          - cell "R$ -120.000,00" [ref=f20e113]
+          - cell "R$ 2.092.210,00" [ref=f20e114]
+          - cell "R$ -2.212.210,00" [ref=f20e115]
+          - cell [ref=f20e116]:
+            - generic [ref=f20e117]:
+              - link "Lançamentos de Gustavo" [ref=f20e118] [cursor=pointer]:
+                - /url: /ui/investidores/1/lancamentos
+              - button "Editar Gustavo" [ref=f20e122] [cursor=pointer]
+              - button "Excluir Gustavo" [ref=f20e125] [cursor=pointer]
+        - row [ref=f20e128]:
+          - cell "XTreme" [ref=f20e129]
+          - cell "1" [ref=f20e130]
+          - cell "R$ 0,00" [ref=f20e131]
+          - cell "R$ 12.900,00" [ref=f20e132]
+          - cell "R$ -12.900,00" [ref=f20e133]
+          - cell [ref=f20e134]:
+            - generic [ref=f20e135]:
+              - link "Lançamentos de XTreme" [ref=f20e136] [cursor=pointer]:
+                - /url: /ui/investidores/2/lancamentos
+              - button "Editar XTreme" [ref=f20e140] [cursor=pointer]
+              - button "Excluir XTreme" [ref=f20e143] [cursor=pointer]
+        - row [ref=f20e146]:
+          - cell "Guilherme" [ref=f20e147]
+          - cell "13" [ref=f20e148]
+          - cell "R$ 99.500,00" [ref=f20e149]
+          - cell "R$ 637.700,00" [ref=f20e150]
+          - cell "R$ -538.200,00" [ref=f20e151]
+          - cell [ref=f20e152]:
+            - generic [ref=f20e153]:
+              - link "Lançamentos de Guilherme" [ref=f20e154] [cursor=pointer]:
+                - /url: /ui/investidores/3/lancamentos
+              - button "Editar Guilherme" [ref=f20e158] [cursor=pointer]
+              - button "Excluir Guilherme" [ref=f20e161] [cursor=pointer]
+        - row [ref=f20e164]:
+          - cell "Zuppo" [ref=f20e165]
+          - cell "2" [ref=f20e166]
+          - cell "R$ 0,00" [ref=f20e167]
+          - cell "R$ 61.800,00" [ref=f20e168]
+          - cell "R$ -61.800,00" [ref=f20e169]
+          - cell [ref=f20e170]:
+            - generic [ref=f20e171]:
+              - link "Lançamentos de Zuppo" [ref=f20e172] [cursor=pointer]:
+                - /url: /ui/investidores/4/lancamentos
+              - button "Editar Zuppo" [ref=f20e176] [cursor=pointer]
+              - button "Excluir Zuppo" [ref=f20e179] [cursor=pointer]
+        - row [ref=f20e182]:
+          - cell "Barba" [ref=f20e183]
+          - cell "3" [ref=f20e184]
+          - cell "R$ 0,00" [ref=f20e185]
+          - cell "R$ 92.700,00" [ref=f20e186]
+          - cell "R$ -92.700,00" [ref=f20e187]
+          - cell [ref=f20e188]:
+            - generic [ref=f20e189]:
+              - link "Lançamentos de Barba" [ref=f20e190] [cursor=pointer]:
+                - /url: /ui/investidores/5/lancamentos
+              - button "Editar Barba" [ref=f20e194] [cursor=pointer]
+              - button "Excluir Barba" [ref=f20e197] [cursor=pointer]
+        - row [ref=f20e200]:
+          - cell "Cassio" [ref=f20e201]
+          - cell "2" [ref=f20e202]
+          - cell "R$ 0,00" [ref=f20e203]
+          - cell "R$ 49.800,00" [ref=f20e204]
+          - cell "R$ -49.800,00" [ref=f20e205]
+          - cell [ref=f20e206]:
+            - generic [ref=f20e207]:
+              - link "Lançamentos de Cassio" [ref=f20e208] [cursor=pointer]:
+                - /url: /ui/investidores/6/lancamentos
+              - button "Editar Cassio" [ref=f20e212] [cursor=pointer]
+              - button "Excluir Cassio" [ref=f20e215] [cursor=pointer]
+        - row [ref=f20e218]:
+          - cell "Gabriela" [ref=f20e219]
+          - cell "1" [ref=f20e220]
+          - cell "R$ 0,00" [ref=f20e221]
+          - cell "R$ 18.900,00" [ref=f20e222]
+          - cell "R$ -18.900,00" [ref=f20e223]
+          - cell [ref=f20e224]:
+            - generic [ref=f20e225]:
+              - link "Lançamentos de Gabriela" [ref=f20e226] [cursor=pointer]:
+                - /url: /ui/investidores/7/lancamentos
+              - button "Editar Gabriela" [ref=f20e230] [cursor=pointer]
+              - button "Excluir Gabriela" [ref=f20e233] [cursor=pointer]

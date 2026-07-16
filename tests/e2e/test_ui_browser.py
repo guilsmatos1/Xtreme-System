@@ -1,6 +1,8 @@
+import pytest
 from playwright.sync_api import Page, expect
 
 
+@pytest.mark.e2e
 def test_login_admin_abre_veiculos(page: Page, live_server_url: str) -> None:
     page.goto(f"{live_server_url}/ui/login")
 
@@ -13,6 +15,7 @@ def test_login_admin_abre_veiculos(page: Page, live_server_url: str) -> None:
     expect(page.get_by_text("Onix")).to_be_visible()
 
 
+@pytest.mark.e2e
 def test_wizard_htmx_cria_veiculo(page: Page, live_server_url: str) -> None:
     _login(page, live_server_url)
 

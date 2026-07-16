@@ -1,0 +1,74 @@
+- generic [ref=f21e2]:
+  - complementary "Navegação principal" [ref=f21e3]:
+    - generic [ref=f21e4]: Xtreme Motors
+    - generic [ref=f21e10]: Gestão
+    - navigation [ref=f21e11]:
+      - link "Dashboard" [ref=f21e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f21e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f21e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f21e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f21e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f21e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f21e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f21e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f21e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f21e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f21e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f21e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f21e65]:
+      - button "Alternar tema" [ref=f21e66] [cursor=pointer]:
+        - generic [ref=f21e70]: Tema
+      - generic [ref=f21e71]:
+        - generic [ref=f21e72]: A
+        - generic [ref=f21e73]:
+          - generic [ref=f21e74]: admin
+          - generic [ref=f21e75]: admin
+        - button "Sair" [ref=f21e77] [cursor=pointer]
+  - main [ref=f21e81]:
+    - generic [ref=f21e82]:
+      - generic [ref=f21e83]:
+        - heading "Clientes Compradores" [level=1] [ref=f21e84]
+        - paragraph [ref=f21e85]: Clientes com pelo menos uma venda registrada
+      - link "Exportar dados" [ref=f21e87] [cursor=pointer]:
+        - /url: /ui/clientes/compradores/exportar?q=
+    - searchbox "Buscar clientes" [ref=f21e93]
+    - table [ref=f21e95]:
+      - rowgroup [ref=f21e96]:
+        - row [ref=f21e97]:
+          - columnheader [ref=f21e98]:
+            - link "Nome" [ref=f21e99] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=nome&order=asc
+          - columnheader [ref=f21e100]:
+            - link "CPF" [ref=f21e101] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=documento&order=asc
+          - columnheader [ref=f21e102]:
+            - link "Telefone" [ref=f21e103] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=telefone&order=asc
+          - columnheader [ref=f21e104]:
+            - link "Tipo" [ref=f21e105] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=tipo&order=asc
+          - columnheader [ref=f21e106]:
+            - link "Cidade" [ref=f21e107] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=cidade&order=asc
+          - columnheader [ref=f21e108]:
+            - link "Estado" [ref=f21e109] [cursor=pointer]:
+              - /url: /ui/clientes/compradores?sort=estado&order=asc
+          - columnheader "Ações" [ref=f21e110]
+      - rowgroup [ref=f21e112]:
+        - row [ref=f21e113]:
+          - cell [ref=f21e114]:
+            - generic [ref=f21e115]:
+              - heading "Nenhum comprador encontrado" [level=3] [ref=f21e121]
+              - paragraph [ref=f21e122]: Registre uma venda para que o cliente apareça aqui.

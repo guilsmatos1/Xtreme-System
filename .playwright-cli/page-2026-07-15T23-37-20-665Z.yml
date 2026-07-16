@@ -1,0 +1,86 @@
+- generic [ref=f19e2]:
+  - complementary "Navegação principal" [ref=f19e3]:
+    - generic [ref=f19e4]: Xtreme Motors
+    - generic [ref=f19e10]: Visão Geral
+    - navigation [ref=f19e11]:
+      - link "Dashboard" [ref=f19e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f19e18]: Operações
+    - navigation [ref=f19e19]:
+      - link "Veículos" [ref=f19e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f19e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f19e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f19e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f19e36]: Pessoas
+    - navigation [ref=f19e37]:
+      - link "Investidores" [ref=f19e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f19e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f19e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f19e52]: Administração
+    - navigation [ref=f19e53]:
+      - link "Usuários" [ref=f19e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f19e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f19e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f19e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f19e71]:
+      - button "Alternar tema" [ref=f19e72] [cursor=pointer]:
+        - generic [ref=f19e76]: Tema
+      - generic [ref=f19e77]:
+        - generic [ref=f19e78]: A
+        - generic [ref=f19e79]:
+          - generic [ref=f19e80]: admin
+          - generic [ref=f19e81]: admin
+        - button "Sair" [ref=f19e83] [cursor=pointer]
+  - main [ref=f19e87]:
+    - generic [ref=f19e88]:
+      - generic [ref=f19e89]:
+        - heading "Custos de Veículos" [level=1] [ref=f19e90]
+        - paragraph [ref=f19e91]: Registre manutenção, peças e outros custos operacionais
+      - generic [ref=f19e92]:
+        - link "Exportar dados" [ref=f19e93] [cursor=pointer]:
+          - /url: /ui/custos-veiculos/exportar
+        - button "Novo custo" [ref=f19e97] [cursor=pointer]
+    - region "Resumo de custos" [ref=f19e100]:
+      - article [ref=f19e101]:
+        - generic [ref=f19e102]: Total de custos
+        - generic [ref=f19e106]: R$ 0,00
+        - generic [ref=f19e107]: custos visíveis
+      - article [ref=f19e108]:
+        - generic [ref=f19e109]: Lançamentos
+        - generic [ref=f19e113]: "0"
+        - generic [ref=f19e114]: registros visíveis
+    - table [ref=f19e116]:
+      - rowgroup [ref=f19e117]:
+        - row [ref=f19e118]:
+          - columnheader [ref=f19e119]:
+            - link "Veículo" [ref=f19e120] [cursor=pointer]:
+              - /url: /ui/custos-veiculos?sort=veiculo&order=asc
+          - columnheader "Placa" [ref=f19e121]
+          - columnheader [ref=f19e122]:
+            - link "Categoria" [ref=f19e123] [cursor=pointer]:
+              - /url: /ui/custos-veiculos?sort=categoria&order=asc
+          - columnheader [ref=f19e124]:
+            - link "Data" [ref=f19e125] [cursor=pointer]:
+              - /url: /ui/custos-veiculos?sort=data&order=asc
+          - columnheader [ref=f19e126]:
+            - link "Valor" [ref=f19e127] [cursor=pointer]:
+              - /url: /ui/custos-veiculos?sort=valor&order=asc
+          - columnheader "Descrição" [ref=f19e128]
+          - columnheader "Ações" [ref=f19e129]
+      - rowgroup [ref=f19e131]:
+        - row [ref=f19e132]:
+          - cell [ref=f19e133]:
+            - generic [ref=f19e134]:
+              - heading "Nenhum custo encontrado" [level=3] [ref=f19e139]
+              - paragraph [ref=f19e140]: Cadastre um custo de veículo para começar.

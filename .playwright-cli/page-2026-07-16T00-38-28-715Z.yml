@@ -1,0 +1,84 @@
+- generic [ref=f18e2]:
+  - complementary "Navegação principal" [ref=f18e3]:
+    - generic [ref=f18e4]: Xtreme Motors
+    - generic [ref=f18e10]: Gestão
+    - navigation [ref=f18e11]:
+      - link "Dashboard" [ref=f18e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f18e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f18e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f18e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f18e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f18e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f18e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f18e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f18e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f18e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f18e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f18e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f18e65]:
+      - button "Alternar tema" [ref=f18e66] [cursor=pointer]:
+        - generic [ref=f18e70]: Tema
+      - generic [ref=f18e71]:
+        - generic [ref=f18e72]: A
+        - generic [ref=f18e73]:
+          - generic [ref=f18e74]: admin
+          - generic [ref=f18e75]: admin
+        - button "Sair" [ref=f18e77] [cursor=pointer]
+  - main [ref=f18e81]:
+    - generic [ref=f18e82]:
+      - generic [ref=f18e83]:
+        - heading "Vendas" [level=1] [ref=f18e84]
+        - paragraph [ref=f18e85]: Registre e acompanhe as vendas de veículos
+      - generic [ref=f18e86]:
+        - link "Exportar dados" [ref=f18e87] [cursor=pointer]:
+          - /url: /ui/vendas/exportar
+        - button "Nova venda" [ref=f18e91] [cursor=pointer]
+    - table [ref=f18e95]:
+      - rowgroup [ref=f18e96]:
+        - row [ref=f18e97]:
+          - columnheader [ref=f18e98]:
+            - link "Cliente" [ref=f18e99] [cursor=pointer]:
+              - /url: /ui/vendas?sort=cliente&order=asc
+          - columnheader [ref=f18e100]:
+            - link "Veículo" [ref=f18e101] [cursor=pointer]:
+              - /url: /ui/vendas?sort=veiculo&order=asc
+          - columnheader [ref=f18e102]:
+            - link "Data" [ref=f18e103] [cursor=pointer]:
+              - /url: /ui/vendas?sort=data&order=asc
+          - columnheader [ref=f18e104]:
+            - link "Valor" [ref=f18e105] [cursor=pointer]:
+              - /url: /ui/vendas?sort=valor&order=asc
+          - columnheader [ref=f18e106]:
+            - link "Entrada" [ref=f18e107] [cursor=pointer]:
+              - /url: /ui/vendas?sort=entrada&order=asc
+          - columnheader [ref=f18e108]:
+            - link "Dívida" [ref=f18e109] [cursor=pointer]:
+              - /url: /ui/vendas?sort=divida&order=asc
+          - columnheader [ref=f18e110]:
+            - link "Pagamento" [ref=f18e111] [cursor=pointer]:
+              - /url: /ui/vendas?sort=pagamento&order=asc
+          - columnheader [ref=f18e112]:
+            - link "Parcelas" [ref=f18e113] [cursor=pointer]:
+              - /url: /ui/vendas?sort=parcelas&order=asc
+          - columnheader [ref=f18e114]:
+            - link "Status" [ref=f18e115] [cursor=pointer]:
+              - /url: /ui/vendas?sort=status&order=asc
+          - columnheader "Ações" [ref=f18e116]
+      - rowgroup [ref=f18e118]:
+        - row [ref=f18e119]:
+          - cell [ref=f18e120]:
+            - generic [ref=f18e121]:
+              - heading "Nenhuma venda encontrada" [level=3] [ref=f18e126]
+              - paragraph [ref=f18e127]: Cadastre uma venda para começar.

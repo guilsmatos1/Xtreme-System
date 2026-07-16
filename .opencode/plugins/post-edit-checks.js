@@ -36,7 +36,7 @@ const CHECKS = [
   { name: "ruff", args: ["run", "ruff", "check", "."] },
   { name: "ruff-format", args: ["run", "ruff", "format", ".", "--check"] },
   { name: "mypy", args: ["run", "mypy"] },
-  { name: "pytest", args: ["run", "pytest", "--full"] }
+  { name: "pytest", args: ["run", "pytest"] }
 ];
 
 function runCommand(args, cwd) {

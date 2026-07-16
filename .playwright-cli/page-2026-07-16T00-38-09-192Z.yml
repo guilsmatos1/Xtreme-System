@@ -1,0 +1,146 @@
+- generic [ref=f16e2]:
+  - complementary "Navegação principal" [ref=f16e3]:
+    - generic [ref=f16e4]: Xtreme Motors
+    - generic [ref=f16e10]: Gestão
+    - navigation [ref=f16e11]:
+      - link "Dashboard" [ref=f16e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f16e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f16e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f16e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f16e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f16e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f16e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f16e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f16e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f16e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f16e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f16e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f16e65]:
+      - button "Alternar tema" [ref=f16e66] [cursor=pointer]:
+        - generic [ref=f16e70]: Tema
+      - generic [ref=f16e71]:
+        - generic [ref=f16e72]: A
+        - generic [ref=f16e73]:
+          - generic [ref=f16e74]: admin
+          - generic [ref=f16e75]: admin
+        - button "Sair" [ref=f16e77] [cursor=pointer]
+  - main [ref=f16e81]:
+    - generic [ref=f16e82]:
+      - generic [ref=f16e83]:
+        - heading "Veículos" [level=1] [ref=f16e84]
+        - paragraph [ref=f16e85]: Gerencie o estoque de veículos da operação
+      - generic [ref=f16e86]:
+        - link "Exportar dados" [ref=f16e87] [cursor=pointer]:
+          - /url: /ui/veiculos/exportar?q=
+        - button "Novo veículo" [ref=f16e91] [cursor=pointer]
+    - region "Resumo do estoque" [ref=f16e94]:
+      - article [ref=f16e95]:
+        - generic [ref=f16e96]: Total no estoque
+        - generic [ref=f16e100]: "101"
+        - generic [ref=f16e101]: veículos cadastrados
+      - article [ref=f16e102]:
+        - generic [ref=f16e103]: Disponíveis
+        - generic [ref=f16e106]: "100"
+        - generic [ref=f16e107]: prontos para venda
+      - article [ref=f16e108]:
+        - generic [ref=f16e109]: Vendidos
+        - generic [ref=f16e113]: "1"
+        - generic [ref=f16e114]: baixados do estoque
+      - article [ref=f16e115]:
+        - generic [ref=f16e116]: Valor disponível
+        - generic [ref=f16e120]: R$ 2.903.110
+        - generic [ref=f16e121]: soma dos disponíveis
+    - searchbox "Buscar veículos" [active] [ref=f16e124]: XRE
+    - table [ref=f16e126]:
+      - rowgroup [ref=f16e127]:
+        - row [ref=f16e128]:
+          - columnheader [ref=f16e129]:
+            - link "Modelo" [ref=f16e130] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=modelo&order=asc
+          - columnheader [ref=f16e131]:
+            - link "Placa" [ref=f16e132] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=placa&order=asc
+          - columnheader [ref=f16e133]:
+            - link "Tipo" [ref=f16e134] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo&order=asc
+          - columnheader [ref=f16e135]:
+            - link "Ano" [ref=f16e136] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=ano&order=asc
+          - columnheader [ref=f16e137]:
+            - link "KM" [ref=f16e138] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=km&order=asc
+          - columnheader [ref=f16e139]:
+            - link "Status" [ref=f16e140] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=status&order=asc
+          - columnheader [ref=f16e141]:
+            - link "Preço de Custo" [ref=f16e142] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=preco&order=asc
+          - columnheader [ref=f16e143]:
+            - link "Tipo de Entrada" [ref=f16e144] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo_entrada&order=asc
+          - columnheader [ref=f16e145]:
+            - link "Investidor" [ref=f16e146] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=investidor&order=asc
+          - columnheader [ref=f16e147]:
+            - link "Procurador" [ref=f16e148] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=procuracao&order=asc
+          - columnheader [ref=f16e149]:
+            - link "Revisão" [ref=f16e150] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=revisao&order=asc
+          - columnheader "Débitos" [ref=f16e151]
+          - columnheader "Ações" [ref=f16e152]
+      - rowgroup [ref=f16e4490]:
+        - row [ref=f16e4491]:
+          - cell "XRE 190 SE" [ref=f16e4492]
+          - cell "SUD9C97" [ref=f16e4493]
+          - cell [ref=f16e4494]
+          - cell "2024" [ref=f16e4499]
+          - cell "45.000" [ref=f16e4500]
+          - cell "Disponível" [ref=f16e4501]
+          - cell "R$ 23.900,00" [ref=f16e4503]
+          - cell "Compra" [ref=f16e4504]
+          - cell "Gustavo" [ref=f16e4505]
+          - cell "XTREME" [ref=f16e4506]
+          - cell "-" [ref=f16e4507]
+          - cell "-" [ref=f16e4508]
+          - cell [ref=f16e4509]:
+            - generic [ref=f16e4510]:
+              - button "Editar XRE 190 SE" [ref=f16e4511] [cursor=pointer]
+              - button "Cliente vendedor de XRE 190 SE" [ref=f16e4514] [cursor=pointer]
+              - button "Imagens de XRE 190 SE" [ref=f16e4518] [cursor=pointer]
+              - button "Procuração de XRE 190 SE" [ref=f16e4523] [cursor=pointer]
+              - button "Comprovante de pagamento de XRE 190 SE" [ref=f16e4527] [cursor=pointer]
+              - button "Excluir XRE 190 SE" [ref=f16e4531] [cursor=pointer]
+        - row [ref=f16e4534]:
+          - cell "XRE 300" [ref=f16e4535]
+          - cell "EJQ2B17" [ref=f16e4536]
+          - cell [ref=f16e4537]
+          - cell "2010" [ref=f16e4542]
+          - cell "99.000" [ref=f16e4543]
+          - cell "Disponível" [ref=f16e4544]
+          - cell "R$ 16.900,00" [ref=f16e4546]
+          - cell "Compra" [ref=f16e4547]
+          - cell "Gustavo" [ref=f16e4548]
+          - cell "XTREME" [ref=f16e4549]
+          - cell "-" [ref=f16e4550]
+          - cell "-" [ref=f16e4551]
+          - cell [ref=f16e4552]:
+            - generic [ref=f16e4553]:
+              - button "Editar XRE 300" [ref=f16e4554] [cursor=pointer]
+              - button "Cliente vendedor de XRE 300" [ref=f16e4557] [cursor=pointer]
+              - button "Imagens de XRE 300" [ref=f16e4561] [cursor=pointer]
+              - button "Procuração de XRE 300" [ref=f16e4566] [cursor=pointer]
+              - button "Comprovante de pagamento de XRE 300" [ref=f16e4570] [cursor=pointer]
+              - button "Excluir XRE 300" [ref=f16e4574] [cursor=pointer]

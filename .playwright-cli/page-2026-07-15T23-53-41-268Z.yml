@@ -1,0 +1,16 @@
+- main [ref=f18e2]:
+  - article [ref=f18e3]:
+    - generic [ref=f18e4]: Xtreme Motors
+    - generic [ref=f18e10]:
+      - heading "Bem-vindo de volta" [level=1] [ref=f18e11]
+      - paragraph [ref=f18e12]: Entre com suas credenciais para continuar
+    - generic [ref=f18e13]:
+      - generic [ref=f18e14]:
+        - generic [ref=f18e15]: Usuário
+        - textbox "Usuário" [active] [ref=f18e16]:
+          - /placeholder: seu.usuario
+      - generic [ref=f18e17]:
+        - generic [ref=f18e18]: Senha
+        - textbox "Senha" [ref=f18e19]:
+          - /placeholder: ••••••••
+      - button "Entrar" [ref=f18e20] [cursor=pointer]

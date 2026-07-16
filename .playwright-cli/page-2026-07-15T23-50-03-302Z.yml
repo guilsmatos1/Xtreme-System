@@ -1,0 +1,70 @@
+- generic [ref=f14e2]:
+  - complementary "Navegação principal" [ref=f14e3]:
+    - generic [ref=f14e4]: Xtreme Motors
+    - generic [ref=f14e10]: Visão Geral
+    - navigation [ref=f14e11]:
+      - link "Dashboard" [ref=f14e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f14e18]: Operações
+    - navigation [ref=f14e19]:
+      - link "Veículos" [ref=f14e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f14e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f14e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f14e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f14e36]: Pessoas
+    - navigation [ref=f14e37]:
+      - link "Investidores" [ref=f14e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f14e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f14e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f14e52]: Administração
+    - navigation [ref=f14e53]:
+      - link "Usuários" [ref=f14e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f14e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f14e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f14e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f14e71]:
+      - button "Alternar tema" [ref=f14e72] [cursor=pointer]:
+        - generic [ref=f14e76]: Tema
+      - generic [ref=f14e77]:
+        - generic [ref=f14e78]: A
+        - generic [ref=f14e79]:
+          - generic [ref=f14e80]: admin
+          - generic [ref=f14e81]: admin
+        - button "Sair" [ref=f14e83] [cursor=pointer]
+  - main [ref=f14e87]:
+    - generic [ref=f14e88]:
+      - generic [ref=f14e89]:
+        - heading "Perfis" [level=1] [ref=f14e90]
+        - paragraph [ref=f14e91]: Controle quais páginas cada perfil de usuário pode acessar
+      - button "Novo perfil" [ref=f14e93] [cursor=pointer]
+    - table [ref=f14e97]:
+      - rowgroup [ref=f14e98]:
+        - row [ref=f14e99]:
+          - columnheader [ref=f14e100]:
+            - link "Nome" [ref=f14e101] [cursor=pointer]:
+              - /url: /ui/perfis?sort=nome&order=asc
+          - columnheader "Páginas" [ref=f14e102]
+          - columnheader "Ações" [ref=f14e103]
+      - rowgroup [ref=f14e105]:
+        - row [ref=f14e106]:
+          - cell "Vendedores" [ref=f14e107]
+          - cell "Veículos Investidores Clientes Vendas" [ref=f14e108]:
+            - generic [ref=f14e109]: Veículos
+            - generic [ref=f14e110]: Investidores
+            - generic [ref=f14e111]: Clientes
+            - generic [ref=f14e112]: Vendas
+          - cell [ref=f14e113]:
+            - generic [ref=f14e114]:
+              - button "Editar Vendedores" [ref=f14e115] [cursor=pointer]
+              - button "Excluir Vendedores" [ref=f14e118] [cursor=pointer]

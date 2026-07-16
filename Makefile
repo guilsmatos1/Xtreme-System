@@ -1,4 +1,4 @@
-.PHONY: help hooks format lint test test-postgres watch coverage ci pre-commit migrate revision run db-up db-down
+.PHONY: help hooks format lint test test-postgres test-e2e watch coverage ci pre-commit migrate revision run db-up db-down
 
 PYTHON := uv run python
 
@@ -10,6 +10,7 @@ help:
 		'  make lint        Run ruff, xenon, vulture, and mypy' \
 		'  make test        Run pytest' \
 		'  make test-postgres  Run pytest against migrated Postgres' \
+		'  make test-e2e    Run Playwright browser tests (headed)' \
 		'  make watch       Rerun pytest when Python files change' \
 		'  make coverage    Run pytest with coverage and fail under 75%' \
 		'  make ci          Run lint and coverage' \
@@ -39,6 +40,12 @@ test:
 
 test-postgres:
 	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/ -q
+
+test-e2e:
+	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium --headed -p pytest_playwright
+
+test-e2e-headless:
+	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium -p pytest_playwright
 
 watch:
 	uv run ptw --runner "python -m pytest tests/ -q"

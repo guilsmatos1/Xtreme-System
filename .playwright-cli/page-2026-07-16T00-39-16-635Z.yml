@@ -1,0 +1,128 @@
+- generic [ref=f12e2]:
+  - complementary "Navegação principal" [ref=f12e3]:
+    - generic [ref=f12e4]: Xtreme Motors
+    - generic [ref=f12e10]: Gestão
+    - navigation [ref=f12e11]:
+      - link "Dashboard" [ref=f12e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f12e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f12e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f12e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f12e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f12e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f12e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f12e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f12e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f12e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f12e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f12e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f12e65]:
+      - button "Alternar tema" [ref=f12e66] [cursor=pointer]:
+        - generic [ref=f12e70]: Tema
+      - generic [ref=f12e71]:
+        - generic [ref=f12e72]: A
+        - generic [ref=f12e73]:
+          - generic [ref=f12e74]: admin
+          - generic [ref=f12e75]: admin
+        - button "Sair" [ref=f12e77] [cursor=pointer]
+  - main [ref=f12e81]:
+    - generic [ref=f12e82]:
+      - generic [ref=f12e83]:
+        - heading "Usuários" [level=1] [ref=f12e84]
+        - paragraph [ref=f12e85]: Controle de acesso e papéis da equipe
+      - link "Exportar dados" [ref=f12e86] [cursor=pointer]:
+        - /url: /ui/usuarios/exportar
+    - generic [ref=f12e90]:
+      - generic [ref=f12e91]:
+        - heading "Novo usuário" [level=3] [ref=f12e92]
+        - generic [ref=f12e94]:
+          - generic [ref=f12e95]:
+            - generic [ref=f12e96]: Usuário
+            - textbox "Usuário" [ref=f12e97]:
+              - /placeholder: nome.sobrenome
+          - generic [ref=f12e98]:
+            - generic [ref=f12e99]: Senha
+            - textbox "Senha" [ref=f12e100]:
+              - /placeholder: ••••••••
+          - generic [ref=f12e101]:
+            - generic [ref=f12e102]: Papel
+            - combobox "Papel" [ref=f12e103] [cursor=pointer]:
+              - option "Funcionário" [selected]
+              - option "Admin"
+          - generic [ref=f12e104]:
+            - generic [ref=f12e105]: Perfil
+            - combobox "Perfil" [ref=f12e106] [cursor=pointer]:
+              - option "Nenhum" [selected]
+              - option "Vendedores"
+          - button "Criar usuário" [ref=f12e108] [cursor=pointer]
+      - table [ref=f12e112]:
+        - rowgroup [ref=f12e113]:
+          - row [ref=f12e114]:
+            - columnheader [ref=f12e115]:
+              - link "ID" [ref=f12e116] [cursor=pointer]:
+                - /url: /ui/usuarios?sort=id&order=asc
+            - columnheader [ref=f12e117]:
+              - link "Usuário" [ref=f12e118] [cursor=pointer]:
+                - /url: /ui/usuarios?sort=username&order=asc
+            - columnheader [ref=f12e119]:
+              - link "Papel" [ref=f12e120] [cursor=pointer]:
+                - /url: /ui/usuarios?sort=papel&order=asc
+            - columnheader "Perfil" [ref=f12e121]
+            - columnheader [ref=f12e122]:
+              - link "Status" [ref=f12e123] [cursor=pointer]:
+                - /url: /ui/usuarios?sort=ativo&order=asc
+            - columnheader [ref=f12e124]
+        - rowgroup [ref=f12e125]:
+          - row [ref=f12e126]:
+            - cell "3" [ref=f12e127]
+            - cell "G guilsmatos" [ref=f12e128]:
+              - generic [ref=f12e129]:
+                - generic [ref=f12e130]: G
+                - text: guilsmatos
+            - cell "Admin" [ref=f12e131]
+            - cell "-" [ref=f12e133]
+            - cell "Ativo" [ref=f12e134]
+            - cell [ref=f12e136]:
+              - generic [ref=f12e137]:
+                - button "Alterar perfil" [ref=f12e138] [cursor=pointer]
+                - button "Alterar senha" [ref=f12e142] [cursor=pointer]
+                - button "Excluir usuário" [ref=f12e145] [cursor=pointer]
+          - row [ref=f12e148]:
+            - cell "4" [ref=f12e149]
+            - cell "G gustavo" [ref=f12e150]:
+              - generic [ref=f12e151]:
+                - generic [ref=f12e152]: G
+                - text: gustavo
+            - cell "Admin" [ref=f12e153]
+            - cell "-" [ref=f12e155]
+            - cell "Ativo" [ref=f12e156]
+            - cell [ref=f12e158]:
+              - generic [ref=f12e159]:
+                - button "Alterar perfil" [ref=f12e160] [cursor=pointer]
+                - button "Alterar senha" [ref=f12e164] [cursor=pointer]
+                - button "Excluir usuário" [ref=f12e167] [cursor=pointer]
+          - row [ref=f12e170]:
+            - cell "1" [ref=f12e171]
+            - cell "A admin" [ref=f12e172]:
+              - generic [ref=f12e173]:
+                - generic [ref=f12e174]: A
+                - text: admin
+            - cell "Admin" [ref=f12e175]
+            - cell "-" [ref=f12e177]
+            - cell "Ativo" [ref=f12e178]
+            - cell [ref=f12e180]:
+              - generic [ref=f12e181]:
+                - button "Alterar perfil" [ref=f12e182] [cursor=pointer]
+                - button "Alterar senha" [ref=f12e186] [cursor=pointer]
+                - button "Excluir usuário" [ref=f12e189] [cursor=pointer]

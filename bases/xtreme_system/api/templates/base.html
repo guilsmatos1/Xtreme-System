@@ -27,29 +27,21 @@
         <span>Xtreme Motors</span>
       </div>
 
-      <div class="sidebar__section">Gestão</div>
+      {% if user and is_admin(user) %}
+      <div class="sidebar__section">Visão Geral</div>
       <nav class="nav">
-        {% if user and is_admin(user) %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/dashboard') }}" href="/ui/dashboard">
           {{ ui.icon("dashboard") }} Dashboard
         </a>
-        {% endif %}
+      </nav>
+      {% endif %}
+
+      {% if user and (pode_acessar(user, 'veiculos') or pode_acessar(user, 'compras') or pode_acessar(user, 'custos-veiculos') or pode_acessar(user, 'vendas')) %}
+      <div class="sidebar__section">Operações</div>
+      <nav class="nav">
         {% if user and pode_acessar(user, 'veiculos') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/veiculos') }}" href="/ui/veiculos">
           {{ ui.icon("vehicles") }} Veículos
-        </a>
-        {% endif %}
-        {% if user and pode_acessar(user, 'investidores') %}
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
-          {{ ui.icon("wallet") }} Investidores
-        </a>
-        {% endif %}
-        {% if user and pode_acessar(user, 'clientes') %}
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/compradores') }}" href="/ui/clientes/compradores">
-          {{ ui.icon("users") }} Clientes Compradores
-        </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/vendedores') }}" href="/ui/clientes/vendedores">
-          {{ ui.icon("users") }} Clientes Vendedores
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'compras') %}
@@ -67,7 +59,31 @@
           {{ ui.icon("cash") }} Vendas
         </a>
         {% endif %}
-        {% if user and is_admin(user) %}
+      </nav>
+      {% endif %}
+
+      {% if user and (pode_acessar(user, 'investidores') or pode_acessar(user, 'clientes')) %}
+      <div class="sidebar__section">Pessoas</div>
+      <nav class="nav">
+        {% if user and pode_acessar(user, 'investidores') %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
+          {{ ui.icon("wallet") }} Investidores
+        </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'clientes') %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/compradores') }}" href="/ui/clientes/compradores">
+          {{ ui.icon("users") }} Clientes Compradores
+        </a>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/vendedores') }}" href="/ui/clientes/vendedores">
+          {{ ui.icon("users") }} Clientes Vendedores
+        </a>
+        {% endif %}
+      </nav>
+      {% endif %}
+
+      {% if user and is_admin(user) %}
+      <div class="sidebar__section">Administração</div>
+      <nav class="nav">
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/usuarios') }}" href="/ui/usuarios">
           {{ ui.icon("users") }} Usuários
         </a>
@@ -80,8 +96,8 @@
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/configuracoes') }}" href="/ui/configuracoes">
           {{ ui.icon("settings") }} Configurações
         </a>
-        {% endif %}
       </nav>
+      {% endif %}
 
       <div class="sidebar__footer">
         <button class="btn btn--ghost btn--sm" type="button" onclick="toggleTheme()" aria-label="Alternar tema">

@@ -51,8 +51,12 @@ dev-mode-dirs = ["components", "bases", "development"]
 addopts = [
     "--strict-config",
     "--strict-markers",
+    "--ignore=tests/e2e",
 ]
 testpaths = ["tests"]
+markers = [
+    "e2e: browser-based end-to-end tests (requires Playwright)",
+]
 
 [tool.ruff]
 line-length = 88

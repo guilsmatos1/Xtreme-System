@@ -1,0 +1,184 @@
+- generic [ref=f16e1]:
+  - generic [ref=f16e2]:
+    - complementary "Navegação principal" [ref=f16e3]:
+      - generic [ref=f16e4]: Xtreme Motors
+      - generic [ref=f16e10]: Visão Geral
+      - navigation [ref=f16e11]:
+        - link "Dashboard" [ref=f16e12] [cursor=pointer]:
+          - /url: /ui/dashboard
+      - generic [ref=f16e18]: Operações
+      - navigation [ref=f16e19]:
+        - link "Veículos" [ref=f16e20] [cursor=pointer]:
+          - /url: /ui/veiculos
+        - link "Compras" [ref=f16e24] [cursor=pointer]:
+          - /url: /ui/compras
+        - link "Custos" [ref=f16e28] [cursor=pointer]:
+          - /url: /ui/custos-veiculos
+        - link "Vendas" [ref=f16e32] [cursor=pointer]:
+          - /url: /ui/vendas
+      - generic [ref=f16e36]: Pessoas
+      - navigation [ref=f16e37]:
+        - link "Investidores" [ref=f16e38] [cursor=pointer]:
+          - /url: /ui/investidores
+        - link "Clientes Compradores" [ref=f16e42] [cursor=pointer]:
+          - /url: /ui/clientes/compradores
+        - link "Clientes Vendedores" [ref=f16e47] [cursor=pointer]:
+          - /url: /ui/clientes/vendedores
+      - generic [ref=f16e52]: Administração
+      - navigation [ref=f16e53]:
+        - link "Usuários" [ref=f16e54] [cursor=pointer]:
+          - /url: /ui/usuarios
+        - link "Auditoria" [ref=f16e59] [cursor=pointer]:
+          - /url: /ui/auditoria
+        - link "Perfis" [ref=f16e63] [cursor=pointer]:
+          - /url: /ui/perfis
+        - link "Configurações" [ref=f16e67] [cursor=pointer]:
+          - /url: /ui/configuracoes
+      - generic [ref=f16e71]:
+        - button "Alternar tema" [ref=f16e72] [cursor=pointer]:
+          - generic [ref=f16e76]: Tema
+        - generic [ref=f16e77]:
+          - generic [ref=f16e78]: A
+          - generic [ref=f16e79]:
+            - generic [ref=f16e80]: admin
+            - generic [ref=f16e81]: admin
+          - button "Sair" [ref=f16e83] [cursor=pointer]
+    - main [ref=f16e87]:
+      - generic [ref=f16e88]:
+        - generic [ref=f16e89]:
+          - heading "Veículos" [level=1] [ref=f16e90]
+          - paragraph [ref=f16e91]: Gerencie o estoque de veículos da operação
+        - generic [ref=f16e92]:
+          - link "Exportar dados" [ref=f16e93] [cursor=pointer]:
+            - /url: /ui/veiculos/exportar?q=
+          - button "Novo veículo" [ref=f16e97] [cursor=pointer]
+      - region "Resumo do estoque" [ref=f16e100]:
+        - article [ref=f16e101]:
+          - generic [ref=f16e102]: Total no estoque
+          - generic [ref=f16e106]: "101"
+          - generic [ref=f16e107]: veículos cadastrados
+        - article [ref=f16e108]:
+          - generic [ref=f16e109]: Disponíveis
+          - generic [ref=f16e112]: "100"
+          - generic [ref=f16e113]: prontos para venda
+        - article [ref=f16e114]:
+          - generic [ref=f16e115]: Vendidos
+          - generic [ref=f16e119]: "1"
+          - generic [ref=f16e120]: baixados do estoque
+        - article [ref=f16e121]:
+          - generic [ref=f16e122]: Valor disponível
+          - generic [ref=f16e126]: R$ 2.903.110
+          - generic [ref=f16e127]: soma dos disponíveis
+      - searchbox "Buscar veículos" [active] [ref=f16e130]: Teste Auto
+      - table [ref=f16e132]:
+        - rowgroup [ref=f16e133]:
+          - row [ref=f16e134]:
+            - columnheader [ref=f16e135]:
+              - link "Modelo" [ref=f16e136] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=modelo&order=asc
+            - columnheader [ref=f16e137]:
+              - link "Placa" [ref=f16e138] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=placa&order=asc
+            - columnheader [ref=f16e139]:
+              - link "Tipo" [ref=f16e140] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=tipo&order=asc
+            - columnheader [ref=f16e141]:
+              - link "Ano" [ref=f16e142] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=ano&order=asc
+            - columnheader [ref=f16e143]:
+              - link "KM" [ref=f16e144] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=km&order=asc
+            - columnheader [ref=f16e145]:
+              - link "Status" [ref=f16e146] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=status&order=asc
+            - columnheader [ref=f16e147]:
+              - link "Preço de Custo" [ref=f16e148] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=preco&order=asc
+            - columnheader [ref=f16e149]:
+              - link "Tipo de Entrada" [ref=f16e150] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=tipo_entrada&order=asc
+            - columnheader [ref=f16e151]:
+              - link "Investidor" [ref=f16e152] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=investidor&order=asc
+            - columnheader [ref=f16e153]:
+              - link "Procurador" [ref=f16e154] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=procuracao&order=asc
+            - columnheader [ref=f16e155]:
+              - link "Revisão" [ref=f16e156] [cursor=pointer]:
+                - /url: /ui/veiculos?sort=revisao&order=asc
+            - columnheader "Débitos" [ref=f16e157]
+            - columnheader "Ações" [ref=f16e158]
+        - rowgroup [ref=f16e9066]:
+          - row [ref=f16e9067]:
+            - cell "Teste Auto" [ref=f16e9068]
+            - cell "TST7E99" [ref=f16e9069]
+            - cell [ref=f16e9070]
+            - cell "2023" [ref=f16e9075]
+            - cell "10.000" [ref=f16e9076]
+            - cell "Disponível" [ref=f16e9077]
+            - cell "R$ 25.000,00" [ref=f16e9079]
+            - cell "Compra" [ref=f16e9080]
+            - cell "Gustavo" [ref=f16e9081]
+            - cell "-" [ref=f16e9082]
+            - cell "-" [ref=f16e9083]
+            - cell "R$ 1.000,00" [ref=f16e9084]
+            - cell [ref=f16e9085]:
+              - generic [ref=f16e9086]:
+                - button "Editar Teste Auto" [ref=f16e9087] [cursor=pointer]
+                - button "Cliente vendedor de Teste Auto" [ref=f16e9090] [cursor=pointer]
+                - button "Imagens de Teste Auto" [ref=f16e9094] [cursor=pointer]
+                - button "Procuração de Teste Auto" [ref=f16e9099] [cursor=pointer]
+                - button "Comprovante de pagamento de Teste Auto" [ref=f16e9103] [cursor=pointer]
+                - button "Excluir Teste Auto" [ref=f16e9107] [cursor=pointer]
+  - dialog [ref=f16e8974]:
+    - generic [ref=f16e8975]:
+      - heading "Novo veículo" [level=3] [ref=f16e8976]
+      - button "Fechar" [ref=f16e8977] [cursor=pointer]
+    - generic [ref=f16e8980]:
+      - generic [ref=f16e8981]:
+        - generic [ref=f16e8982]: Passo 4 de 4
+        - group [ref=f16e9029]:
+          - generic [ref=f16e9030]:
+            - generic [ref=f16e9031]: Cliente vendedor
+            - combobox "Cliente vendedor" [ref=f16e9032] [cursor=pointer]:
+              - option "➕ Cadastrar novo cliente" [selected]
+              - option "Guilherme Silva (40919629806)"
+              - option "Teste Ta (09391832164)"
+              - option "Teste Cliente (12345678901)"
+              - option "Teste Cli (11122233344)"
+          - generic [ref=f16e9033]:
+            - generic [ref=f16e9034]: Nome
+            - textbox "Nome" [ref=f16e9035]: Teste Cli
+          - generic [ref=f16e9036]:
+            - generic [ref=f16e9037]: CPF
+            - textbox "CPF" [ref=f16e9038]: "11122233344"
+          - generic [ref=f16e9039]:
+            - generic [ref=f16e9040]: Tipo
+            - combobox "Tipo" [ref=f16e9041] [cursor=pointer]:
+              - option "Pessoa Fisica" [selected]
+              - option "Pessoa Juridica"
+          - generic [ref=f16e9042]:
+            - generic [ref=f16e9043]: Telefone
+            - textbox "Telefone" [ref=f16e9044]: "11988888888"
+          - generic [ref=f16e9045]:
+            - generic [ref=f16e9046]: Email
+            - textbox "Email" [ref=f16e9047]: cli@teste.com
+          - generic [ref=f16e9048]:
+            - generic [ref=f16e9049]: Endereço
+            - textbox "Endereço" [ref=f16e9050]: Av Teste, 1
+          - generic [ref=f16e9051]:
+            - generic [ref=f16e9052]: Cidade
+            - textbox "Cidade" [ref=f16e9053]: SP
+          - generic [ref=f16e9054]:
+            - generic [ref=f16e9055]: Estado
+            - textbox "Estado" [ref=f16e9056]
+          - generic [ref=f16e9057]:
+            - generic [ref=f16e9058]: CEP
+            - textbox "CEP" [ref=f16e9059]: "01001000"
+          - generic [ref=f16e9060]:
+            - generic [ref=f16e9061]: Documentos do cliente
+            - button "Documentos do cliente" [ref=f16e9062]
+      - generic [ref=f16e8990]:
+        - button "Cancelar" [ref=f16e8991] [cursor=pointer]
+        - button "Voltar" [ref=f16e9009] [cursor=pointer]
+        - button "Salvar" [ref=f16e9063] [cursor=pointer]

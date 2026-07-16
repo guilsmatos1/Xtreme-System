@@ -67,3 +67,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: test-ui
+        name: test-ui
+        entry: bash development/test-ui-pre-commit.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true

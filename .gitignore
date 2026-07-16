@@ -20,3 +20,8 @@ build/
 bases/xtreme_system/api/media/
 bases/xtreme_system/api/static/uploads/
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+

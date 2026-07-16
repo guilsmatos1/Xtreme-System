@@ -1,0 +1,554 @@
+- generic [ref=f13e2]:
+  - complementary "Navegação principal" [ref=f13e3]:
+    - generic [ref=f13e4]: Xtreme Motors
+    - generic [ref=f13e10]: Gestão
+    - navigation [ref=f13e11]:
+      - link "Dashboard" [ref=f13e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+      - link "Veículos" [ref=f13e18] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Investidores" [ref=f13e22] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f13e26] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f13e31] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+      - link "Compras" [ref=f13e36] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f13e40] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f13e44] [cursor=pointer]:
+        - /url: /ui/vendas
+      - link "Usuários" [ref=f13e48] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f13e53] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f13e57] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f13e61] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f13e65]:
+      - button "Alternar tema" [ref=f13e66] [cursor=pointer]:
+        - generic [ref=f13e70]: Tema
+      - generic [ref=f13e71]:
+        - generic [ref=f13e72]: A
+        - generic [ref=f13e73]:
+          - generic [ref=f13e74]: admin
+          - generic [ref=f13e75]: admin
+        - button "Sair" [ref=f13e77] [cursor=pointer]
+  - main [ref=f13e81]:
+    - generic [ref=f13e82]:
+      - generic [ref=f13e83]:
+        - heading "Auditoria" [level=1] [ref=f13e84]
+        - paragraph [ref=f13e85]: Registro de alterações no sistema
+      - link "Exportar dados" [ref=f13e86] [cursor=pointer]:
+        - /url: /ui/auditoria/exportar
+    - generic [ref=f13e91]:
+      - generic [ref=f13e92]:
+        - generic [ref=f13e93]: De
+        - textbox "De" [ref=f13e94]
+      - generic [ref=f13e95]:
+        - generic [ref=f13e96]: Até
+        - textbox "Até" [ref=f13e97]
+      - generic [ref=f13e98]:
+        - generic [ref=f13e99]: Usuário
+        - combobox "Usuário" [ref=f13e100] [cursor=pointer]:
+          - option "Todos" [selected]
+          - option "guilsmatos"
+          - option "gustavo"
+          - option "admin"
+      - generic [ref=f13e101]:
+        - generic [ref=f13e102]: Tabela
+        - combobox "Tabela" [ref=f13e103] [cursor=pointer]:
+          - option "Todas" [selected]
+          - option "cliente"
+          - option "compra"
+          - option "documento_procuracao"
+          - option "documento_veiculo"
+          - option "imagem_comprovante_compra"
+          - option "imagem_documento_cliente"
+          - option "imagem_veiculo"
+          - option "investidor"
+          - option "lancamento_investimento"
+          - option "perfil"
+          - option "usuario"
+          - option "veiculo"
+          - option "venda"
+      - generic [ref=f13e104]:
+        - generic [ref=f13e105]: Ação
+        - combobox "Ação" [ref=f13e106] [cursor=pointer]:
+          - option "Todas" [selected]
+          - option "CREATE"
+          - option "UPDATE"
+          - option "DELETE"
+      - generic [ref=f13e107]:
+        - button "Filtrar" [ref=f13e108] [cursor=pointer]
+        - link "Limpar" [ref=f13e112] [cursor=pointer]:
+          - /url: /ui/auditoria
+    - generic [ref=f13e113]:
+      - table [ref=f13e115]:
+        - rowgroup [ref=f13e116]:
+          - row [ref=f13e117]:
+            - columnheader "ID" [ref=f13e118]
+            - columnheader "Data" [ref=f13e119]
+            - columnheader "Usuário" [ref=f13e120]
+            - columnheader "Tabela" [ref=f13e121]
+            - columnheader "Ação" [ref=f13e122]
+            - columnheader "Registro" [ref=f13e123]
+            - columnheader [ref=f13e124]
+        - rowgroup [ref=f13e125]:
+          - row [ref=f13e126]:
+            - cell "76" [ref=f13e127]
+            - cell "15/07/2026 20:37" [ref=f13e128]
+            - cell "admin" [ref=f13e129]
+            - cell "veiculo" [ref=f13e130]
+            - cell "CREATE" [ref=f13e131]
+            - cell "108" [ref=f13e132]
+            - cell [ref=f13e133]:
+              - button "Ver detalhes" [ref=f13e134] [cursor=pointer]
+          - row [ref=f13e138]:
+            - cell "79" [ref=f13e139]
+            - cell "15/07/2026 20:37" [ref=f13e140]
+            - cell "admin" [ref=f13e141]
+            - cell "lancamento_investimento" [ref=f13e142]
+            - cell "CREATE" [ref=f13e143]
+            - cell "15" [ref=f13e144]
+            - cell [ref=f13e145]:
+              - button "Ver detalhes" [ref=f13e146] [cursor=pointer]
+          - row [ref=f13e150]:
+            - cell "78" [ref=f13e151]
+            - cell "15/07/2026 20:37" [ref=f13e152]
+            - cell "admin" [ref=f13e153]
+            - cell "compra" [ref=f13e154]
+            - cell "CREATE" [ref=f13e155]
+            - cell "6" [ref=f13e156]
+            - cell [ref=f13e157]:
+              - button "Ver detalhes" [ref=f13e158] [cursor=pointer]
+          - row [ref=f13e162]:
+            - cell "77" [ref=f13e163]
+            - cell "15/07/2026 20:37" [ref=f13e164]
+            - cell "admin" [ref=f13e165]
+            - cell "cliente" [ref=f13e166]
+            - cell "CREATE" [ref=f13e167]
+            - cell "6" [ref=f13e168]
+            - cell [ref=f13e169]:
+              - button "Ver detalhes" [ref=f13e170] [cursor=pointer]
+          - row [ref=f13e174]:
+            - cell "72" [ref=f13e175]
+            - cell "15/07/2026 20:25" [ref=f13e176]
+            - cell "admin" [ref=f13e177]
+            - cell "veiculo" [ref=f13e178]
+            - cell "CREATE" [ref=f13e179]
+            - cell "107" [ref=f13e180]
+            - cell [ref=f13e181]:
+              - button "Ver detalhes" [ref=f13e182] [cursor=pointer]
+          - row [ref=f13e186]:
+            - cell "75" [ref=f13e187]
+            - cell "15/07/2026 20:25" [ref=f13e188]
+            - cell "admin" [ref=f13e189]
+            - cell "lancamento_investimento" [ref=f13e190]
+            - cell "CREATE" [ref=f13e191]
+            - cell "14" [ref=f13e192]
+            - cell [ref=f13e193]:
+              - button "Ver detalhes" [ref=f13e194] [cursor=pointer]
+          - row [ref=f13e198]:
+            - cell "74" [ref=f13e199]
+            - cell "15/07/2026 20:25" [ref=f13e200]
+            - cell "admin" [ref=f13e201]
+            - cell "compra" [ref=f13e202]
+            - cell "CREATE" [ref=f13e203]
+            - cell "5" [ref=f13e204]
+            - cell [ref=f13e205]:
+              - button "Ver detalhes" [ref=f13e206] [cursor=pointer]
+          - row [ref=f13e210]:
+            - cell "73" [ref=f13e211]
+            - cell "15/07/2026 20:25" [ref=f13e212]
+            - cell "admin" [ref=f13e213]
+            - cell "cliente" [ref=f13e214]
+            - cell "CREATE" [ref=f13e215]
+            - cell "5" [ref=f13e216]
+            - cell [ref=f13e217]:
+              - button "Ver detalhes" [ref=f13e218] [cursor=pointer]
+          - row [ref=f13e222]:
+            - cell "71" [ref=f13e223]
+            - cell "15/07/2026 19:13" [ref=f13e224]
+            - cell "guilsmatos" [ref=f13e225]
+            - cell "compra" [ref=f13e226]
+            - cell "DELETE" [ref=f13e227]
+            - cell "2" [ref=f13e228]
+            - cell [ref=f13e229]:
+              - button "Ver detalhes" [ref=f13e230] [cursor=pointer]
+          - row [ref=f13e234]:
+            - cell "70" [ref=f13e235]
+            - cell "15/07/2026 19:10" [ref=f13e236]
+            - cell "guilsmatos" [ref=f13e237]
+            - cell "investidor" [ref=f13e238]
+            - cell "DELETE" [ref=f13e239]
+            - cell "11" [ref=f13e240]
+            - cell [ref=f13e241]:
+              - button "Ver detalhes" [ref=f13e242] [cursor=pointer]
+          - row [ref=f13e246]:
+            - cell "69" [ref=f13e247]
+            - cell "15/07/2026 19:10" [ref=f13e248]
+            - cell "guilsmatos" [ref=f13e249]
+            - cell "lancamento_investimento" [ref=f13e250]
+            - cell "DELETE" [ref=f13e251]
+            - cell "13" [ref=f13e252]
+            - cell [ref=f13e253]:
+              - button "Ver detalhes" [ref=f13e254] [cursor=pointer]
+          - row [ref=f13e258]:
+            - cell "68" [ref=f13e259]
+            - cell "15/07/2026 19:10" [ref=f13e260]
+            - cell "guilsmatos" [ref=f13e261]
+            - cell "lancamento_investimento" [ref=f13e262]
+            - cell "CREATE" [ref=f13e263]
+            - cell "13" [ref=f13e264]
+            - cell [ref=f13e265]:
+              - button "Ver detalhes" [ref=f13e266] [cursor=pointer]
+          - row [ref=f13e270]:
+            - cell "67" [ref=f13e271]
+            - cell "15/07/2026 19:10" [ref=f13e272]
+            - cell "guilsmatos" [ref=f13e273]
+            - cell "investidor" [ref=f13e274]
+            - cell "CREATE" [ref=f13e275]
+            - cell "11" [ref=f13e276]
+            - cell [ref=f13e277]:
+              - button "Ver detalhes" [ref=f13e278] [cursor=pointer]
+          - row [ref=f13e282]:
+            - cell "66" [ref=f13e283]
+            - cell "15/07/2026 19:10" [ref=f13e284]
+            - cell "guilsmatos" [ref=f13e285]
+            - cell "investidor" [ref=f13e286]
+            - cell "UPDATE" [ref=f13e287]
+            - cell "1" [ref=f13e288]
+            - cell [ref=f13e289]:
+              - button "Ver detalhes" [ref=f13e290] [cursor=pointer]
+          - row [ref=f13e294]:
+            - cell "65" [ref=f13e295]
+            - cell "15/07/2026 19:06" [ref=f13e296]
+            - cell "guilsmatos" [ref=f13e297]
+            - cell "imagem_comprovante_compra" [ref=f13e298]
+            - cell "CREATE" [ref=f13e299]
+            - cell "3" [ref=f13e300]
+            - cell [ref=f13e301]:
+              - button "Ver detalhes" [ref=f13e302] [cursor=pointer]
+          - row [ref=f13e306]:
+            - cell "64" [ref=f13e307]
+            - cell "15/07/2026 19:06" [ref=f13e308]
+            - cell "guilsmatos" [ref=f13e309]
+            - cell "documento_procuracao" [ref=f13e310]
+            - cell "CREATE" [ref=f13e311]
+            - cell "4" [ref=f13e312]
+            - cell [ref=f13e313]:
+              - button "Ver detalhes" [ref=f13e314] [cursor=pointer]
+          - row [ref=f13e318]:
+            - cell "63" [ref=f13e319]
+            - cell "15/07/2026 19:05" [ref=f13e320]
+            - cell "guilsmatos" [ref=f13e321]
+            - cell "imagem_veiculo" [ref=f13e322]
+            - cell "CREATE" [ref=f13e323]
+            - cell "7" [ref=f13e324]
+            - cell [ref=f13e325]:
+              - button "Ver detalhes" [ref=f13e326] [cursor=pointer]
+          - row [ref=f13e330]:
+            - cell "62" [ref=f13e331]
+            - cell "15/07/2026 19:03" [ref=f13e332]
+            - cell "guilsmatos" [ref=f13e333]
+            - cell "veiculo" [ref=f13e334]
+            - cell "DELETE" [ref=f13e335]
+            - cell "106" [ref=f13e336]
+            - cell [ref=f13e337]:
+              - button "Ver detalhes" [ref=f13e338] [cursor=pointer]
+          - row [ref=f13e342]:
+            - cell "61" [ref=f13e343]
+            - cell "15/07/2026 19:03" [ref=f13e344]
+            - cell "guilsmatos" [ref=f13e345]
+            - cell "lancamento_investimento" [ref=f13e346]
+            - cell "DELETE" [ref=f13e347]
+            - cell "12" [ref=f13e348]
+            - cell [ref=f13e349]:
+              - button "Ver detalhes" [ref=f13e350] [cursor=pointer]
+          - row [ref=f13e354]:
+            - cell "59" [ref=f13e355]
+            - cell "15/07/2026 18:56" [ref=f13e356]
+            - cell "guilsmatos" [ref=f13e357]
+            - cell "compra" [ref=f13e358]
+            - cell "UPDATE" [ref=f13e359]
+            - cell "4" [ref=f13e360]
+            - cell [ref=f13e361]:
+              - button "Ver detalhes" [ref=f13e362] [cursor=pointer]
+          - row [ref=f13e366]:
+            - cell "60" [ref=f13e367]
+            - cell "15/07/2026 18:56" [ref=f13e368]
+            - cell "guilsmatos" [ref=f13e369]
+            - cell "lancamento_investimento" [ref=f13e370]
+            - cell "UPDATE" [ref=f13e371]
+            - cell "12" [ref=f13e372]
+            - cell [ref=f13e373]:
+              - button "Ver detalhes" [ref=f13e374] [cursor=pointer]
+          - row [ref=f13e378]:
+            - cell "58" [ref=f13e379]
+            - cell "15/07/2026 18:56" [ref=f13e380]
+            - cell "guilsmatos" [ref=f13e381]
+            - cell "veiculo" [ref=f13e382]
+            - cell "UPDATE" [ref=f13e383]
+            - cell "106" [ref=f13e384]
+            - cell [ref=f13e385]:
+              - button "Ver detalhes" [ref=f13e386] [cursor=pointer]
+          - row [ref=f13e390]:
+            - cell "56" [ref=f13e391]
+            - cell "15/07/2026 18:55" [ref=f13e392]
+            - cell "guilsmatos" [ref=f13e393]
+            - cell "compra" [ref=f13e394]
+            - cell "UPDATE" [ref=f13e395]
+            - cell "2" [ref=f13e396]
+            - cell [ref=f13e397]:
+              - button "Ver detalhes" [ref=f13e398] [cursor=pointer]
+          - row [ref=f13e402]:
+            - cell "57" [ref=f13e403]
+            - cell "15/07/2026 18:55" [ref=f13e404]
+            - cell "guilsmatos" [ref=f13e405]
+            - cell "lancamento_investimento" [ref=f13e406]
+            - cell "UPDATE" [ref=f13e407]
+            - cell "10" [ref=f13e408]
+            - cell [ref=f13e409]:
+              - button "Ver detalhes" [ref=f13e410] [cursor=pointer]
+          - row [ref=f13e414]:
+            - cell "55" [ref=f13e415]
+            - cell "15/07/2026 18:55" [ref=f13e416]
+            - cell "guilsmatos" [ref=f13e417]
+            - cell "veiculo" [ref=f13e418]
+            - cell "UPDATE" [ref=f13e419]
+            - cell "104" [ref=f13e420]
+            - cell [ref=f13e421]:
+              - button "Ver detalhes" [ref=f13e422] [cursor=pointer]
+          - row [ref=f13e426]:
+            - cell "53" [ref=f13e427]
+            - cell "14/07/2026 13:17" [ref=f13e428]
+            - cell "guilsmatos" [ref=f13e429]
+            - cell "compra" [ref=f13e430]
+            - cell "CREATE" [ref=f13e431]
+            - cell "4" [ref=f13e432]
+            - cell [ref=f13e433]:
+              - button "Ver detalhes" [ref=f13e434] [cursor=pointer]
+          - row [ref=f13e438]:
+            - cell "54" [ref=f13e439]
+            - cell "14/07/2026 13:17" [ref=f13e440]
+            - cell "guilsmatos" [ref=f13e441]
+            - cell "lancamento_investimento" [ref=f13e442]
+            - cell "CREATE" [ref=f13e443]
+            - cell "12" [ref=f13e444]
+            - cell [ref=f13e445]:
+              - button "Ver detalhes" [ref=f13e446] [cursor=pointer]
+          - row [ref=f13e450]:
+            - cell "52" [ref=f13e451]
+            - cell "14/07/2026 13:17" [ref=f13e452]
+            - cell "guilsmatos" [ref=f13e453]
+            - cell "veiculo" [ref=f13e454]
+            - cell "CREATE" [ref=f13e455]
+            - cell "106" [ref=f13e456]
+            - cell [ref=f13e457]:
+              - button "Ver detalhes" [ref=f13e458] [cursor=pointer]
+          - row [ref=f13e462]:
+            - cell "51" [ref=f13e463]
+            - cell "14/07/2026 13:03" [ref=f13e464]
+            - cell "—" [ref=f13e465]
+            - cell "imagem_comprovante_compra" [ref=f13e466]
+            - cell "DELETE" [ref=f13e467]
+            - cell "1" [ref=f13e468]
+            - cell [ref=f13e469]:
+              - button "Ver detalhes" [ref=f13e470] [cursor=pointer]
+          - row [ref=f13e474]:
+            - cell "50" [ref=f13e475]
+            - cell "14/07/2026 13:03" [ref=f13e476]
+            - cell "—" [ref=f13e477]
+            - cell "imagem_comprovante_compra" [ref=f13e478]
+            - cell "CREATE" [ref=f13e479]
+            - cell "2" [ref=f13e480]
+            - cell [ref=f13e481]:
+              - button "Ver detalhes" [ref=f13e482] [cursor=pointer]
+          - row [ref=f13e486]:
+            - cell "49" [ref=f13e487]
+            - cell "14/07/2026 13:02" [ref=f13e488]
+            - cell "—" [ref=f13e489]
+            - cell "documento_procuracao" [ref=f13e490]
+            - cell "CREATE" [ref=f13e491]
+            - cell "2" [ref=f13e492]
+            - cell [ref=f13e493]:
+              - button "Ver detalhes" [ref=f13e494] [cursor=pointer]
+          - row [ref=f13e498]:
+            - cell "48" [ref=f13e499]
+            - cell "14/07/2026 13:02" [ref=f13e500]
+            - cell "—" [ref=f13e501]
+            - cell "lancamento_investimento" [ref=f13e502]
+            - cell "CREATE" [ref=f13e503]
+            - cell "11" [ref=f13e504]
+            - cell [ref=f13e505]:
+              - button "Ver detalhes" [ref=f13e506] [cursor=pointer]
+          - row [ref=f13e510]:
+            - cell "43" [ref=f13e511]
+            - cell "14/07/2026 13:02" [ref=f13e512]
+            - cell "—" [ref=f13e513]
+            - cell "veiculo" [ref=f13e514]
+            - cell "CREATE" [ref=f13e515]
+            - cell "105" [ref=f13e516]
+            - cell [ref=f13e517]:
+              - button "Ver detalhes" [ref=f13e518] [cursor=pointer]
+          - row [ref=f13e522]:
+            - cell "44" [ref=f13e523]
+            - cell "14/07/2026 13:02" [ref=f13e524]
+            - cell "—" [ref=f13e525]
+            - cell "cliente" [ref=f13e526]
+            - cell "CREATE" [ref=f13e527]
+            - cell "4" [ref=f13e528]
+            - cell [ref=f13e529]:
+              - button "Ver detalhes" [ref=f13e530] [cursor=pointer]
+          - row [ref=f13e534]:
+            - cell "45" [ref=f13e535]
+            - cell "14/07/2026 13:02" [ref=f13e536]
+            - cell "—" [ref=f13e537]
+            - cell "documento_procuracao" [ref=f13e538]
+            - cell "CREATE" [ref=f13e539]
+            - cell "1" [ref=f13e540]
+            - cell [ref=f13e541]:
+              - button "Ver detalhes" [ref=f13e542] [cursor=pointer]
+          - row [ref=f13e546]:
+            - cell "46" [ref=f13e547]
+            - cell "14/07/2026 13:02" [ref=f13e548]
+            - cell "—" [ref=f13e549]
+            - cell "compra" [ref=f13e550]
+            - cell "CREATE" [ref=f13e551]
+            - cell "3" [ref=f13e552]
+            - cell [ref=f13e553]:
+              - button "Ver detalhes" [ref=f13e554] [cursor=pointer]
+          - row [ref=f13e558]:
+            - cell "47" [ref=f13e559]
+            - cell "14/07/2026 13:02" [ref=f13e560]
+            - cell "—" [ref=f13e561]
+            - cell "imagem_comprovante_compra" [ref=f13e562]
+            - cell "CREATE" [ref=f13e563]
+            - cell "1" [ref=f13e564]
+            - cell [ref=f13e565]:
+              - button "Ver detalhes" [ref=f13e566] [cursor=pointer]
+          - row [ref=f13e570]:
+            - cell "42" [ref=f13e571]
+            - cell "14/07/2026 13:01" [ref=f13e572]
+            - cell "—" [ref=f13e573]
+            - cell "usuario" [ref=f13e574]
+            - cell "CREATE" [ref=f13e575]
+            - cell "11" [ref=f13e576]
+            - cell [ref=f13e577]:
+              - button "Ver detalhes" [ref=f13e578] [cursor=pointer]
+          - row [ref=f13e582]:
+            - cell "41" [ref=f13e583]
+            - cell "14/07/2026 12:37" [ref=f13e584]
+            - cell "—" [ref=f13e585]
+            - cell "imagem_documento_cliente" [ref=f13e586]
+            - cell "DELETE" [ref=f13e587]
+            - cell "3" [ref=f13e588]
+            - cell [ref=f13e589]:
+              - button "Ver detalhes" [ref=f13e590] [cursor=pointer]
+          - row [ref=f13e594]:
+            - cell "40" [ref=f13e595]
+            - cell "14/07/2026 12:37" [ref=f13e596]
+            - cell "—" [ref=f13e597]
+            - cell "imagem_documento_cliente" [ref=f13e598]
+            - cell "DELETE" [ref=f13e599]
+            - cell "2" [ref=f13e600]
+            - cell [ref=f13e601]:
+              - button "Ver detalhes" [ref=f13e602] [cursor=pointer]
+          - row [ref=f13e606]:
+            - cell "39" [ref=f13e607]
+            - cell "14/07/2026 12:36" [ref=f13e608]
+            - cell "—" [ref=f13e609]
+            - cell "venda" [ref=f13e610]
+            - cell "CREATE" [ref=f13e611]
+            - cell "2" [ref=f13e612]
+            - cell [ref=f13e613]:
+              - button "Ver detalhes" [ref=f13e614] [cursor=pointer]
+          - row [ref=f13e618]:
+            - cell "36" [ref=f13e619]
+            - cell "14/07/2026 12:35" [ref=f13e620]
+            - cell "—" [ref=f13e621]
+            - cell "imagem_documento_cliente" [ref=f13e622]
+            - cell "CREATE" [ref=f13e623]
+            - cell "2" [ref=f13e624]
+            - cell [ref=f13e625]:
+              - button "Ver detalhes" [ref=f13e626] [cursor=pointer]
+          - row [ref=f13e630]:
+            - cell "37" [ref=f13e631]
+            - cell "14/07/2026 12:35" [ref=f13e632]
+            - cell "—" [ref=f13e633]
+            - cell "imagem_documento_cliente" [ref=f13e634]
+            - cell "CREATE" [ref=f13e635]
+            - cell "3" [ref=f13e636]
+            - cell [ref=f13e637]:
+              - button "Ver detalhes" [ref=f13e638] [cursor=pointer]
+          - row [ref=f13e642]:
+            - cell "35" [ref=f13e643]
+            - cell "14/07/2026 12:34" [ref=f13e644]
+            - cell "—" [ref=f13e645]
+            - cell "usuario" [ref=f13e646]
+            - cell "CREATE" [ref=f13e647]
+            - cell "10" [ref=f13e648]
+            - cell [ref=f13e649]:
+              - button "Ver detalhes" [ref=f13e650] [cursor=pointer]
+          - row [ref=f13e654]:
+            - cell "29" [ref=f13e655]
+            - cell "14/07/2026 12:19" [ref=f13e656]
+            - cell "guilsmatos" [ref=f13e657]
+            - cell "veiculo" [ref=f13e658]
+            - cell "CREATE" [ref=f13e659]
+            - cell "104" [ref=f13e660]
+            - cell [ref=f13e661]:
+              - button "Ver detalhes" [ref=f13e662] [cursor=pointer]
+          - row [ref=f13e666]:
+            - cell "34" [ref=f13e667]
+            - cell "14/07/2026 12:19" [ref=f13e668]
+            - cell "guilsmatos" [ref=f13e669]
+            - cell "lancamento_investimento" [ref=f13e670]
+            - cell "CREATE" [ref=f13e671]
+            - cell "10" [ref=f13e672]
+            - cell [ref=f13e673]:
+              - button "Ver detalhes" [ref=f13e674] [cursor=pointer]
+          - row [ref=f13e678]:
+            - cell "33" [ref=f13e679]
+            - cell "14/07/2026 12:19" [ref=f13e680]
+            - cell "guilsmatos" [ref=f13e681]
+            - cell "compra" [ref=f13e682]
+            - cell "CREATE" [ref=f13e683]
+            - cell "2" [ref=f13e684]
+            - cell [ref=f13e685]:
+              - button "Ver detalhes" [ref=f13e686] [cursor=pointer]
+          - row [ref=f13e690]:
+            - cell "32" [ref=f13e691]
+            - cell "14/07/2026 12:19" [ref=f13e692]
+            - cell "guilsmatos" [ref=f13e693]
+            - cell "documento_veiculo" [ref=f13e694]
+            - cell "CREATE" [ref=f13e695]
+            - cell "5" [ref=f13e696]
+            - cell [ref=f13e697]:
+              - button "Ver detalhes" [ref=f13e698] [cursor=pointer]
+          - row [ref=f13e702]:
+            - cell "31" [ref=f13e703]
+            - cell "14/07/2026 12:19" [ref=f13e704]
+            - cell "guilsmatos" [ref=f13e705]
+            - cell "imagem_documento_cliente" [ref=f13e706]
+            - cell "CREATE" [ref=f13e707]
+            - cell "1" [ref=f13e708]
+            - cell [ref=f13e709]:
+              - button "Ver detalhes" [ref=f13e710] [cursor=pointer]
+          - row [ref=f13e714]:
+            - cell "30" [ref=f13e715]
+            - cell "14/07/2026 12:19" [ref=f13e716]
+            - cell "guilsmatos" [ref=f13e717]
+            - cell "cliente" [ref=f13e718]
+            - cell "CREATE" [ref=f13e719]
+            - cell "3" [ref=f13e720]
+            - cell [ref=f13e721]:
+              - button "Ver detalhes" [ref=f13e722] [cursor=pointer]
+      - generic [ref=f13e726]:
+        - generic [ref=f13e727]: Mostrando 1–50 de 73
+        - generic [ref=f13e728]:
+          - button "Anterior" [disabled]
+          - button "Próxima" [ref=f13e729] [cursor=pointer]

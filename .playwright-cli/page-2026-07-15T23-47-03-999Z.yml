@@ -1,0 +1,117 @@
+- generic [ref=f5e2]:
+  - complementary "Navegação principal" [ref=f5e3]:
+    - generic [ref=f5e4]: Xtreme Motors
+    - generic [ref=f5e10]: Visão Geral
+    - navigation [ref=f5e11]:
+      - link "Dashboard" [ref=f5e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f5e18]: Operações
+    - navigation [ref=f5e19]:
+      - link "Veículos" [ref=f5e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f5e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f5e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f5e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f5e36]: Pessoas
+    - navigation [ref=f5e37]:
+      - link "Investidores" [ref=f5e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f5e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f5e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f5e52]: Administração
+    - navigation [ref=f5e53]:
+      - link "Usuários" [ref=f5e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f5e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f5e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f5e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f5e71]:
+      - button "Alternar tema" [ref=f5e72] [cursor=pointer]:
+        - generic [ref=f5e76]: Tema
+      - generic [ref=f5e77]:
+        - generic [ref=f5e78]: A
+        - generic [ref=f5e79]:
+          - generic [ref=f5e80]: admin
+          - generic [ref=f5e81]: admin
+        - button "Sair" [ref=f5e83] [cursor=pointer]
+  - main [ref=f5e87]:
+    - generic [ref=f5e88]:
+      - generic [ref=f5e89]:
+        - heading "Dashboard" [level=1] [ref=f5e90]
+        - paragraph [ref=f5e91]: Resumo executivo de vendas e operações
+      - generic [ref=f5e92]:
+        - link "30 dias" [ref=f5e93] [cursor=pointer]:
+          - /url: /ui/dashboard?periodo=30d
+        - link "90 dias" [ref=f5e94] [cursor=pointer]:
+          - /url: /ui/dashboard?periodo=90d
+        - link "12 meses" [ref=f5e95] [cursor=pointer]:
+          - /url: /ui/dashboard?periodo=12m
+    - region "KPIs de venda" [ref=f5e96]:
+      - article [ref=f5e97]:
+        - generic [ref=f5e98]: Vendas este mês
+        - generic [ref=f5e102]: "0"
+        - generic [ref=f5e103]: R$ 0
+      - article [ref=f5e104]:
+        - generic [ref=f5e105]: Ticket médio
+        - generic [ref=f5e109]: R$ 0
+        - generic [ref=f5e110]: valor médio de venda
+      - article [ref=f5e111]:
+        - generic [ref=f5e112]: Taxa de conversão
+        - generic [ref=f5e115]: 1.0%
+        - generic [ref=f5e116]: 1/101 avaliados
+      - article [ref=f5e117]:
+        - generic [ref=f5e118]: Valor em estoque
+        - generic [ref=f5e122]: R$ 2.903.110
+        - generic [ref=f5e123]: 100 disponíveis
+    - region "Receita por tipo de veículo" [ref=f5e124]:
+      - article [ref=f5e125]:
+        - generic [ref=f5e126]: Carros
+        - generic [ref=f5e130]: R$ 0
+        - generic [ref=f5e131]: faturamento
+      - article [ref=f5e132]:
+        - generic [ref=f5e133]: Motos
+        - generic [ref=f5e138]: R$ 0
+        - generic [ref=f5e139]: faturamento
+    - generic [ref=f5e140]:
+      - heading "Tendência de vendas por semana" [level=2] [ref=f5e141]
+      - generic [ref=f5e142]:
+        - heading "Sem vendas no período" [level=3] [ref=f5e147]
+        - paragraph [ref=f5e148]: Nenhuma venda foi registrada neste intervalo
+    - generic [ref=f5e149]:
+      - heading "Funil de vendas" [level=2] [ref=f5e150]
+      - table [ref=f5e152]:
+        - rowgroup [ref=f5e153]:
+          - row [ref=f5e154]:
+            - columnheader "Status" [ref=f5e155]
+            - columnheader "Quantidade" [ref=f5e156]
+            - columnheader "Valor total" [ref=f5e157]
+        - rowgroup [ref=f5e158]:
+          - row [ref=f5e159]:
+            - cell "pendente" [ref=f5e160]
+            - cell "0" [ref=f5e161]
+            - cell "R$ 0" [ref=f5e162]
+          - row [ref=f5e163]:
+            - cell "aprovado" [ref=f5e164]
+            - cell "0" [ref=f5e165]
+            - cell "R$ 0" [ref=f5e166]
+          - row [ref=f5e167]:
+            - cell "cancelado" [ref=f5e168]
+            - cell "0" [ref=f5e169]
+            - cell "R$ 0" [ref=f5e170]
+          - row [ref=f5e171]:
+            - cell "concluido" [ref=f5e172]
+            - cell "0" [ref=f5e173]
+            - cell "R$ 0" [ref=f5e174]
+    - generic [ref=f5e175]:
+      - heading "Ranking de vendedores" [level=2] [ref=f5e176]
+      - generic [ref=f5e177]:
+        - heading "Sem vendas registradas" [level=3] [ref=f5e183]
+        - paragraph [ref=f5e184]: Nenhuma venda foi realizada ainda
