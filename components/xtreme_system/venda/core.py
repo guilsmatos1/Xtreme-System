@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -202,6 +202,23 @@ def update(session: Session, obj: Venda, data: VendaUpdate) -> Venda:
 
 def delete(session: Session, obj: Venda) -> None:
     crud.delete(session, obj)
+
+
+def search(session: Session, term: str) -> list[Venda]:
+    pattern = f"%{term}%"
+    return (
+        session.query(Venda)
+        .where(
+            or_(
+                Cliente.nome.ilike(pattern),
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Venda.status.ilike(pattern),
+                Venda.observacoes.ilike(pattern),
+            )
+        )
+        .all()
+    )
 
 
 def _mes_atual_inicio() -> date:

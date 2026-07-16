@@ -32,15 +32,27 @@
   </article>
 </section>
 
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/custos-veiculos" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por veículo, placa, categoria ou descrição…"
+           value="{{ q or '' }}" aria-label="Buscar custos">
+  </div>
+</div>
+
 <div class="table-wrap">
   <table class="table--wide">
+    {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead>
       <tr>
-        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos", sort_qs) }}</th>
         <th>Placa</th>
-        <th>{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos") }}</th>
+        <th>{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos", sort_qs) }}</th>
+        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos", sort_qs) }}</th>
+        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos", sort_qs) }}</th>
         <th>Descrição</th>
         {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>

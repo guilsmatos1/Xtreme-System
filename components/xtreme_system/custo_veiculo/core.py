@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -76,3 +76,19 @@ def update(
 
 def delete(session: Session, obj: CustoVeiculo) -> None:
     crud.delete(session, obj)
+
+
+def search(session: Session, term: str) -> list[CustoVeiculo]:
+    pattern = f"%{term}%"
+    return (
+        session.query(CustoVeiculo)
+        .where(
+            or_(
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                CustoVeiculo.categoria.ilike(pattern),
+                CustoVeiculo.descricao.ilike(pattern),
+            )
+        )
+        .all()
+    )
