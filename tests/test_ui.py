@@ -17,6 +17,7 @@ from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.caixa import core as caixa
+from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import get_session
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
@@ -558,6 +559,69 @@ def test_ui_vendas_sem_tabela_de_fechamento_nao_quebra(
 
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
+
+
+def test_venda_inline_cliente_nao_persiste_quando_validacao_falha() -> None:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor A")
+        )
+        veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Onix",
+                cor="Prata",
+                ano=2024,
+                placa="XYZ9999",
+                km=12000,
+                preco=85000,
+                investidor_id=inv.id,
+            ),
+        )
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
+        app.dependency_overrides[get_session] = override
+        try:
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                _login_admin(test_client)
+                resp = test_client.post(
+                    "/ui/vendas",
+                    data={
+                        "cli_nome": "Cliente Fantasma",
+                        "cli_documento": "00011122233",
+                        "cli_tipo": "pessoa_fisica",
+                        "veiculo_id": "99999",
+                        "data_venda": "2026-07-15",
+                        "valor_venda": "50000.00",
+                        "forma_pagamento": "financiamento",
+                        "parcelas": "36",
+                    },
+                )
+        finally:
+            app.dependency_overrides.clear()
+
+        assert resp.status_code == 400
+        assert cliente.get_by_documento(session, "00011122233") is None
+    engine.dispose()
 
 
 def test_ui_compras_crud_basico(client: TestClient) -> None:

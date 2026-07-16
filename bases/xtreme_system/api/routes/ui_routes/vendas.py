@@ -262,6 +262,8 @@ async def _criar_venda(
         validate_cliente_veiculo_fks(session, data)
         validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
     except (ValidationError, HTTPException) as exc:
+        if novo_cliente_data is not None:
+            session.rollback()
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_venda(request, session, msg)
 
