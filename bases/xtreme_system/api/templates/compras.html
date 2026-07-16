@@ -20,16 +20,16 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide">
+  <table class="table--wide" data-table="compras">
     <thead>
       <tr>
-        <th>{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
-        <th>Observações</th>
-        {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+        <th data-col="cliente" data-col-label="Cliente">{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras") }}</th>
+        <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras") }}</th>
+        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
+        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
+        <th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
+        <th data-col="observacoes" data-col-label="Observações">Observações</th>
+        {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_compras.html" %}

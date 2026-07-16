@@ -50,32 +50,32 @@
   </section>
 
   <div class="table-wrap">
-    <table>
+    <table data-table="usuarios">
       <thead><tr>
-        <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
-        <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
-        <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
-        <th>Perfil</th>
-        <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
-        <th style="width:1%"></th>
+        <th style="width:1%" data-col="id" data-col-label="ID">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
+        <th data-col="username" data-col-label="Usuário">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
+        <th data-col="papel" data-col-label="Papel">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
+        <th data-col="perfil" data-col-label="Perfil">Perfil</th>
+        <th data-col="ativo" data-col-label="Status">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
+        <th style="width:1%" data-col="acoes" data-col-fixed></th>
       </tr></thead>
       <tbody>
         {% for u in usuarios %}
         <tr>
-          <td class="cell-mono">{{ u.id }}</td>
-          <td class="cell-strong">
+          <td class="cell-mono" data-col="id">{{ u.id }}</td>
+          <td class="cell-strong" data-col="username">
             <span style="display:inline-flex;align-items:center;gap:var(--s-2)">
               <span class="avatar" style="width:24px;height:24px;font-size:.7rem">{{ u.username[0] | upper }}</span>
               {{ u.username }}
             </span>
           </td>
-          <td>{{ ui.papel_badge(u.papel) }}</td>
-          <td>{{ u.perfil.nome if u.perfil else '-' }}</td>
-          <td>
+          <td data-col="papel">{{ ui.papel_badge(u.papel) }}</td>
+          <td data-col="perfil">{{ u.perfil.nome if u.perfil else '-' }}</td>
+          <td data-col="ativo">
             {% if u.ativo %}<span class="badge badge--success">Ativo</span>
             {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
           </td>
-          <td>
+          <td data-col="acoes" data-col-fixed>
             <div style="display:flex;gap:var(--s-2)">
               <button class="btn btn--ghost" style="padding:var(--s-2)"
                       hx-get="/ui/usuarios/{{ u.id }}/perfil"

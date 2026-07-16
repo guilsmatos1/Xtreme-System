@@ -33,16 +33,16 @@
 </section>
 
 <div class="table-wrap">
-  <table class="table--wide">
+  <table class="table--wide" data-table="custos-veiculos">
     <thead>
       <tr>
-        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>Placa</th>
-        <th>{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos") }}</th>
-        <th>Descrição</th>
-        {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+        <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos") }}</th>
+        <th data-col="placa" data-col-label="Placa">Placa</th>
+        <th data-col="categoria" data-col-label="Categoria">{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos") }}</th>
+        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos") }}</th>
+        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos") }}</th>
+        <th data-col="descricao" data-col-label="Descrição">Descrição</th>
+        {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_custos_veiculos.html" %}

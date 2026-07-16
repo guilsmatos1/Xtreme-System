@@ -1,13 +1,13 @@
 {% import "_macros.html" as ui %}
 <tr id="custo-{{ c.id }}">
-  <td class="cell-strong">{{ c.veiculo.modelo }}</td>
-  <td>{{ c.veiculo.placa }}</td>
-  <td>{{ c.categoria }}</td>
-  <td>{{ c.data_custo.isoformat() }}</td>
-  <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-  <td>{{ c.descricao or "-" }}</td>
+  <td class="cell-strong" data-col="veiculo">{{ c.veiculo.modelo }}</td>
+  <td data-col="placa">{{ c.veiculo.placa }}</td>
+  <td data-col="categoria">{{ c.categoria }}</td>
+  <td data-col="data">{{ c.data_custo.isoformat() }}</td>
+  <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td data-col="descricao">{{ c.descricao or "-" }}</td>
   {% if is_admin(user) %}
-  <td class="col-actions">
+  <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       <button class="btn btn--ghost btn--sm" hx-get="/ui/custos-veiculos/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar custo {{ c.id }}">{{ ui.icon("edit") }}</button>
       <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/custos-veiculos/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este custo?" aria-label="Excluir custo {{ c.id }}">{{ ui.icon("trash") }}</button>
