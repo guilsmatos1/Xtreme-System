@@ -3,6 +3,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import ForeignKey, Numeric, case, func
@@ -233,7 +234,7 @@ def agregados_investidores(
         .group_by(LancamentoInvestimento.investidor_id)
         .all()
     )
-    aportes = dict(rows)
+    aportes: dict[int, Any] = {r[0]: r[1] for r in rows}
     return num, valor, aportes
 
 

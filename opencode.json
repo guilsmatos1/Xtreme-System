@@ -18,6 +18,7 @@
     }
   },
   "plugin": [
-    "./.opencode/plugins/post-edit-checks.js"
+    "./.opencode/plugins/post-edit-checks.js",
+    "./.opencode/plugins/worktree-finish.js"
   ]
 }
