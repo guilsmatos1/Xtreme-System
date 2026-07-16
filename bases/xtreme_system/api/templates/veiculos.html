@@ -61,17 +61,17 @@
   <table class="table--wide" data-table="veiculos">
     {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead><tr>
-      <th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="ano" data-col-label="Ano">{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="km" data-col-label="KM">{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="status" data-col-label="Status">{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="preco" data-col-label="Preço de Custo">{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="tipo_entrada" data-col-label="Tipo de Entrada">{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="investidor" data-col-label="Investidor">{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="procuracao" data-col-label="Procurador">{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th data-col="revisao" data-col-label="Revisão">{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", sort_qs) }}</th>
+      <th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="ano" data-col-label="Ano">{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="km" data-col-label="KM">{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="status" data-col-label="Status">{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="preco" data-col-label="Preço de Custo">{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="tipo_entrada" data-col-label="Tipo de Entrada">{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="investidor" data-col-label="Investidor">{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="procuracao" data-col-label="Procurador">{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th data-col="revisao" data-col-label="Revisão">{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
       <th data-col="debitos" data-col-label="Débitos">Débitos</th>
       {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>

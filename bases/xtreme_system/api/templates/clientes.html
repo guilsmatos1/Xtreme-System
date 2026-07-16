@@ -35,12 +35,12 @@
   <table class="table--wide" data-table="clientes">
     <thead>
       <tr>
-        <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th data-col="documento" data-col-label="CPF">{{ ui.sortable("documento", "CPF", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th data-col="telefone" data-col-label="Telefone">{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th data-col="cidade" data-col-label="Cidade">{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th data-col="estado" data-col-label="Estado">{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
+        <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="documento" data-col-label="CPF">{{ ui.sortable("documento", "CPF", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="telefone" data-col-label="Telefone">{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="cidade" data-col-label="Cidade">{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="estado" data-col-label="Estado">{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
