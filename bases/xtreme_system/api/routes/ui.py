@@ -28,7 +28,6 @@ for _module_name in (
     "perfis",
     "usuarios",
     "veiculos_cliente_vendedor",
-    "veiculos_comprovantes",
     "veiculos_procuracao",
     "vendas",
 ):
