@@ -25,3 +25,5 @@ bases/xtreme_system/api/static/uploads/
 /playwright-report/
 /playwright/.cache/
 
+# Local notes
+docs/new-improvements.md

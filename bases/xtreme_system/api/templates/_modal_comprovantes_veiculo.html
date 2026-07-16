@@ -35,14 +35,16 @@
         {% endfor %}
       </div>
       {% else %}
-        {{ ui.empty("cash", "Nenhum comprovante", "Envie o comprovante de pagamento deste veículo usando a área abaixo.") }}
+        <div class="empty">
+          <h3>Nenhum comprovante</h3>
+          <p>Envie o comprovante de pagamento deste veículo usando a área abaixo.</p>
+        </div>
       {% endif %}
     </div>
     <form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
       <label class="mmgr__drop">
         <input type="file" name="documentos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
                onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste comprovantes aqui ou clique para selecionar'">
-        <span class="mmgr__drop-icon">{{ ui.icon("cash") }}</span>
         <span class="mmgr__drop-text">Arraste comprovantes aqui ou clique para selecionar</span>
         <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
       </label>
