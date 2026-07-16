@@ -161,6 +161,7 @@ register_crud_ui_routes(
     ctx_form=_ctx_form_compra,
     ctx_list=_ctx_lista_compras,
     parse_form=_parse_compra_form,
+    searchable=True,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
     before_delete=_remover_arquivos_comprovantes,

@@ -59,6 +59,7 @@ register_crud_ui_routes(
     ctx_form=_ctx_form_custo,
     ctx_list=_ctx_list_custos,
     parse_form=_parse_custo_form,
+    searchable=True,
     before_create=_validar_veiculo_fk,
     before_update=_validar_veiculo_fk,
     sort_fields={

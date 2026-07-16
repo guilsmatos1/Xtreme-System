@@ -19,15 +19,27 @@
   </div>
 </div>
 
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/compras" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por cliente, veículo, placa ou observações…"
+           value="{{ q or '' }}" aria-label="Buscar compras">
+  </div>
+</div>
+
 <div class="table-wrap">
   <table class="table--wide" data-table="compras">
+    {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead>
       <tr>
-        <th data-col="cliente" data-col-label="Cliente">{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras") }}</th>
-        <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras") }}</th>
-        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
-        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
-        <th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
+        <th data-col="cliente" data-col-label="Cliente">{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras", sort_qs) }}</th>
         <th data-col="observacoes" data-col-label="Observações">Observações</th>
         {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
