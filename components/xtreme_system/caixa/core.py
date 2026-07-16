@@ -121,6 +121,16 @@ _SALDO_EXPR = func.sum(
     )
 )
 
+_APORTES_EXPR = func.sum(
+    case(
+        (
+            LancamentoInvestimento.tipo == TipoLancamento.aporte,
+            LancamentoInvestimento.valor,
+        ),
+        else_=0,
+    )
+)
+
 
 def saldo(session: Session, investidor_id: int) -> Decimal:
     valor = session.query(_SALDO_EXPR).filter_by(investidor_id=investidor_id).scalar()
@@ -201,7 +211,6 @@ def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
         crud.delete(session, lancamento)
 
 
-# In-memory aggregations for caixa table. Query-level if row counts grow.
 def agregados_investidores(
     session: Session,
 ) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:
@@ -213,13 +222,12 @@ def agregados_investidores(
         iid = v.investidor_id
         num[iid] = num.get(iid, 0) + 1
         valor[iid] = valor.get(iid, Decimal("0")) + v.preco
-    aportes: dict[int, Decimal] = {}
-    for lanc in list_all(session):
-        aportes[lanc.investidor_id] = aportes.get(lanc.investidor_id, Decimal("0")) + (
-            lanc.valor
-            if lanc.tipo in {TipoLancamento.aporte, TipoLancamento.receita_venda}
-            else -lanc.valor
-        )
+    rows = (
+        session.query(LancamentoInvestimento.investidor_id, _APORTES_EXPR)
+        .group_by(LancamentoInvestimento.investidor_id)
+        .all()
+    )
+    aportes: dict[int, Decimal] = {iid: total for iid, total in rows}  # noqa: C416
     return num, valor, aportes
 
 
