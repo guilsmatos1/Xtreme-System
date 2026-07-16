@@ -28,6 +28,7 @@
         <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
         <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
         <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("status", "Status", sort, order, "/ui/compras") }}</th>
         <th>Observações</th>
         {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
