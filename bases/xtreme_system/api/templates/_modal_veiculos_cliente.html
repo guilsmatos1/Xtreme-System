@@ -26,7 +26,7 @@
               <td class="cell-mono">{{ v.veiculo.placa }}</td>
               <td>{{ v.veiculo.ano }}</td>
               <td class="cell-num">R$ {{ "{:,.2f}".format(v.valor_venda if modal_kind == "comprador" else v.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-              <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title if modal_kind == "comprador" else "Comprado" }}</span></td>
+              <td><span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span></td>
               <td>{{ (v.data_venda if modal_kind == "comprador" else v.data_compra).strftime("%d/%m/%Y") if (v.data_venda if modal_kind == "comprador" else v.data_compra) else "-" }}</td>
             </tr>
             {% endfor %}

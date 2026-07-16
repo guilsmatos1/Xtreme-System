@@ -2,6 +2,7 @@
 
 from datetime import date
 from decimal import Decimal
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Date, ForeignKey, Numeric, or_
@@ -11,6 +12,11 @@ from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.veiculo.core import Veiculo, VeiculoRead
+
+
+class StatusCompra(StrEnum):
+    pendente = "pendente"
+    finalizado = "finalizado"
 
 
 class Compra(Base):
@@ -27,6 +33,7 @@ class Compra(Base):
     valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     observacoes: Mapped[str | None]
+    status: Mapped[StatusCompra] = mapped_column(default=StatusCompra.pendente)
 
     cliente: Mapped[Cliente] = relationship(lazy="joined")
     veiculo: Mapped[Veiculo] = relationship(lazy="joined")
@@ -39,6 +46,7 @@ class CompraCreate(BaseModel):
     valor_compra: Decimal
     debitos: Decimal | None = None
     observacoes: str | None = None
+    status: StatusCompra = StatusCompra.pendente
 
 
 class CompraUpdate(BaseModel):
@@ -48,6 +56,7 @@ class CompraUpdate(BaseModel):
     valor_compra: Decimal | None = None
     debitos: Decimal | None = None
     observacoes: str | None = None
+    status: StatusCompra | None = None
 
 
 class CompraRead(BaseModel):
@@ -60,6 +69,7 @@ class CompraRead(BaseModel):
     valor_compra: Decimal
     debitos: Decimal | None
     observacoes: str | None
+    status: StatusCompra
 
 
 def list_all(session: Session) -> list[Compra]:
