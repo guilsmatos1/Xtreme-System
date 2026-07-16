@@ -17,7 +17,7 @@
 
 <section class="stats" aria-label="KPIs de venda">
   <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("cash") }} Vendas este mês</div>
+    <div class="stat__label">{{ ui.icon("cash") }} Vendas</div>
     <div class="stat__value cell-num">{{ vendas_mes_count }}</div>
     <div class="stat__hint">R$ {{ "{:,.0f}".format(vendas_mes_total or 0) | replace(",", ".") }}</div>
   </article>

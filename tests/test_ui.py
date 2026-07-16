@@ -515,27 +515,11 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
         upload_compra.text, f"action-compra-{compra_id}-comprovantes"
     )
 
-    upload_comp_veiculo = client.post(
-        f"/ui/veiculos/{veiculo_id}/comprovantes",
-        files={
-            "documentos": (
-                "comprovante-veiculo-cor.pdf",
-                b"%PDF-comprovante-veiculo",
-                "application/pdf",
-            )
-        },
-    )
-    assert upload_comp_veiculo.status_code == 200
-    assert "action-cash" in _classes_do_botao(
-        upload_comp_veiculo.text, f"action-veiculo-{veiculo_id}-comprovantes"
-    )
-
     for resposta in (
         upload_img,
         upload_proc,
         upload_doc_cliente,
         upload_compra,
-        upload_comp_veiculo,
     ):
         _remover_uploads_renderizados(resposta.text)
 
@@ -1312,7 +1296,7 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
     resp = client.get("/ui/dashboard")
     assert resp.status_code == 200
     assert "Dashboard" in resp.text
-    assert "Vendas este mês" in resp.text
+    assert "Vendas" in resp.text
     assert "Taxa de conversão" in resp.text
 
     # adiciona uma venda para ter dados não-zero

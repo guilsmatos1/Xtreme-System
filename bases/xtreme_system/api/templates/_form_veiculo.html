@@ -82,7 +82,23 @@
 
           <label class="field field--full">
             <span class="field__label">Documento do veículo</span>
-            <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
+            {% if veiculo.documentos %}
+            <ul class="midia-list" style="margin-bottom:var(--s-2)">
+              {% for d in veiculo.documentos %}
+              <li class="midia-list__item">
+                {{ ui.icon("file") }}
+                <a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.url.split("/") | last }}</a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            <label class="mmgr__drop" style="margin-top:0">
+              <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste um documento ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
+              <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
+            </label>
           </label>
 
         </div>
@@ -144,7 +160,13 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Documento do veículo</span>
-            <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
+            <label class="mmgr__drop" style="margin-top:0">
+              <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste um documento ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
+              <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
+            </label>
           </label>
           <label class="field field--full">
             <span class="field__label">Documentos de procuração</span>

@@ -104,7 +104,7 @@ register_crud_ui_routes(
         "Ano",
         "KM",
         "Preco",
-        "Status",
+        "Estado",
         "Tipo de Entrada",
         "Revisao",
         "Investidor",
