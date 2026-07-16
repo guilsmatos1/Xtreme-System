@@ -139,6 +139,18 @@ def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
     return StatusVeiculo.disponivel
 
 
+def veiculo_tem_outra_venda_concluida(
+    session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
+) -> bool:
+    query = session.query(Venda).filter(
+        Venda.veiculo_id == veiculo_id,
+        Venda.status == StatusVenda.concluido,
+    )
+    if excluir_venda_id is not None:
+        query = query.filter(Venda.id != excluir_venda_id)
+    return query.first() is not None
+
+
 def _sincronizar_status_veiculo(
     session: Session,
     obj: Venda,
@@ -154,7 +166,12 @@ def _sincronizar_status_veiculo(
     ):
         veiculo_anterior = session.get(Veiculo, veiculo_anterior_id)
         if veiculo_anterior is not None:
-            veiculo_anterior.status = StatusVeiculo.disponivel
+            if veiculo_tem_outra_venda_concluida(
+                session, veiculo_anterior_id, excluir_venda_id=obj.id
+            ):
+                veiculo_anterior.status = StatusVeiculo.vendido
+            else:
+                veiculo_anterior.status = StatusVeiculo.disponivel
     obj.veiculo.status = status_veiculo
     crud.flush(session)
     session.refresh(obj)
