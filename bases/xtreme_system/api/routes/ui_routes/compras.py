@@ -84,7 +84,7 @@ def ui_compra_comprovantes(
 def ui_compra_comprovantes_upload(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     compra_id: int,
     comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -93,6 +93,7 @@ def ui_compra_comprovantes_upload(
     if erro:
         return _comprovantes_modal(request, session, compra_id, erro)
 
+    session.info["usuario_id"] = user.id
     salvar_arquivos(
         session,
         upload_dir=_uploads_compra_dir(compra_id),
@@ -110,7 +111,7 @@ def ui_compra_comprovantes_upload(
 def ui_compra_comprovantes_excluir(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     compra_id: int,
     comprovante_id: int,
 ) -> HTMLResponse:
@@ -119,6 +120,7 @@ def ui_compra_comprovantes_excluir(
     )
     if comprovante.compra_id != compra_id:
         raise HTTPException(status_code=404, detail="Comprovante não encontrado")
+    session.info["usuario_id"] = user.id
     imagem_comprovante_compra.delete(session, comprovante)
     path = _uploaded_file_path(comprovante.url or "")
     if path is not None:

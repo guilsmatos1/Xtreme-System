@@ -121,7 +121,7 @@ def ui_cliente_documentos(
 def ui_cliente_documentos_upload(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     cliente_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -134,6 +134,7 @@ def ui_cliente_documentos_upload(
             {"cliente": item, "erro": erro},
             status_code=400,
         )
+    session.info["usuario_id"] = user.id
     salvar_arquivos(
         session,
         upload_dir=_uploads_cliente_dir(cliente_id),
@@ -151,13 +152,14 @@ def ui_cliente_documentos_upload(
 def ui_cliente_documentos_excluir(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: UIAdmin,
     cliente_id: int,
     doc_id: int,
 ) -> HTMLResponse:
     doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
     if doc.cliente_id != cliente_id:
         raise HTTPException(status_code=404, detail="Documento não encontrado")
+    session.info["usuario_id"] = user.id
     imagem_documento_cliente.delete(session, doc)
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
