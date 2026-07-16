@@ -1,7 +1,7 @@
 """HTMX routes for auditoria."""
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, cast
 from urllib.parse import urlencode
 
@@ -110,6 +110,10 @@ def ui_auditoria(
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
+    if data_de is None:
+        data_de = datetime.now(UTC).date() - timedelta(days=1)
+    if data_ate is None:
+        data_ate = datetime.now(UTC).date()
     ctx = _ctx_auditoria(
         session,
         user,

@@ -312,6 +312,11 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .stat__value { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; margin-top: var(--s-1); font-variant-numeric: tabular-nums; }
 .stat__hint { font-size: .74rem; color: var(--text-tertiary); margin-top: 2px; }
 
+.stat--accent { border-left: 3px solid var(--accent); }
+.stat--accent .stat__label svg { color: var(--accent); }
+.stat--success { border-left: 3px solid var(--success); }
+.stat--success .stat__label svg { color: var(--success); }
+
 /* ---- 10. Table ----------------------------------------------------------- */
 .table-wrap { position: relative; overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: .83rem; }
