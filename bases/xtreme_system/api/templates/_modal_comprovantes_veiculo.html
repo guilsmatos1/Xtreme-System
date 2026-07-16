@@ -3,51 +3,51 @@
   <div class="modal__panel">
     <div class="modal__head">
       <h2 id="modal-comprovantes-title">
-        Comprovantes — compra {{ compra.id }}
-        {% if comprovantes %}<span class="mmgr__count">{{ comprovantes | length }}</span>{% endif %}
+        Comprovante de pagamento — {{ veiculo.modelo }} ({{ veiculo.placa }})
+        {% if documentos %}<span class="mmgr__count">{{ documentos | length }}</span>{% endif %}
       </h2>
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% if erro %}{{ ui.alert(erro) }}{% endif %}
-      {% if comprovantes %}
+      {% if documentos %}
       <div class="mmgr__grid">
-        {% for comp in comprovantes %}
-        {% set is_imagem = comp.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
+        {% for doc in documentos %}
+        {% set is_imagem = doc.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
         <div class="mmgr__card">
           {% if is_imagem %}
           <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar comprovante">
-            <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}" loading="lazy">
+            <img src="{{ doc.url }}" alt="Comprovante de pagamento de {{ veiculo.modelo }}" loading="lazy">
           </button>
           <dialog class="image-preview" onclick="if (event.target === this) this.close()">
             <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
-            <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}">
+            <img src="{{ doc.url }}" alt="Comprovante de pagamento de {{ veiculo.modelo }}">
           </dialog>
           {% else %}
-          <a class="mmgr__doc" href="{{ comp.url }}" target="_blank" rel="noopener" aria-label="Abrir comprovante PDF">
+          <a class="mmgr__doc" href="{{ doc.url }}" target="_blank" rel="noopener" aria-label="Abrir comprovante PDF">
             <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
             <span class="mmgr__doc-badge">PDF</span>
-            <span class="mmgr__doc-name">{{ comp.url.split("/") | last }}</span>
+            <span class="mmgr__doc-name">{{ doc.url.split("/") | last }}</span>
           </a>
           {% endif %}
-          <button class="mmgr__del" type="button" hx-post="/ui/compras/{{ compra.id }}/comprovantes/{{ comp.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este comprovante?" aria-label="Excluir comprovante">{{ ui.icon("trash") }}</button>
+          <button class="mmgr__del" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/comprovantes/{{ doc.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este comprovante?" aria-label="Excluir comprovante">{{ ui.icon("trash") }}</button>
         </div>
         {% endfor %}
       </div>
       {% else %}
-        {{ ui.empty("file", "Nenhum comprovante", "Envie comprovantes desta compra usando a área abaixo.") }}
+        {{ ui.empty("cash", "Nenhum comprovante", "Envie o comprovante de pagamento deste veículo usando a área abaixo.") }}
       {% endif %}
     </div>
-    <form class="mmgr__upload" hx-post="/ui/compras/{{ compra.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+    <form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
       <label class="mmgr__drop">
-        <input type="file" name="comprovantes" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
+        <input type="file" name="documentos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
                onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste comprovantes aqui ou clique para selecionar'">
-        <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
+        <span class="mmgr__drop-icon">{{ ui.icon("cash") }}</span>
         <span class="mmgr__drop-text">Arraste comprovantes aqui ou clique para selecionar</span>
         <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
       </label>
       <div class="mmgr__upload-actions">
-        <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar comprovantes</button>
+        <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar comprovante</button>
       </div>
     </form>
   </div>
