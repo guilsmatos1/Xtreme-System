@@ -15,11 +15,11 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide">
+  <table class="table--wide" data-table="perfis">
     <thead><tr>
-      <th>{{ ui.sortable("nome", "Nome", sort, order, "/ui/perfis") }}</th>
-      <th>Páginas</th>
-      <th class="col-actions"><span class="sr-only">Ações</span></th>
+      <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, "/ui/perfis") }}</th>
+      <th data-col="paginas" data-col-label="Páginas">Páginas</th>
+      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
     </tr></thead>
     {% include "_linhas_perfis.html" %}
   </table>

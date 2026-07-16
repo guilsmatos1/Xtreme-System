@@ -383,6 +383,17 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .modal-section { display: flex; flex-direction: column; gap: var(--s-2); }
 .modal-section h4 { font-size: .88rem; }
 
+/* ---- Configuração de colunas das tabelas -------------------------------- */
+.col-hidden { display: none !important; }
+.cols-hint { font-size: .78rem; color: var(--text-secondary); margin: 0; }
+.cols-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cols-list li { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2); border-radius: var(--r-md); border: 1px solid transparent; }
+.cols-list li:hover { background: var(--surface-hover); }
+.cols-list li.dragging { opacity: .5; border-color: var(--border); background: var(--surface-2); }
+.cols-list__grip { display: inline-flex; width: 18px; height: 18px; color: var(--text-tertiary); cursor: grab; flex: none; }
+.cols-list__grip svg { width: 18px; height: 18px; }
+.cols-list__label { display: flex; align-items: center; gap: var(--s-2); flex: 1; min-width: 0; cursor: pointer; }
+
 /* ---- 13. Alert / inline messages ---------------------------------------- */
 .alert {
   display: flex; align-items: center; gap: var(--s-2);

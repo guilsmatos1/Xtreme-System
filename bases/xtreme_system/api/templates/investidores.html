@@ -20,14 +20,14 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide">
+  <table class="table--wide" data-table="investidores">
     <thead><tr>
-      <th>{{ ui.sortable("nome", "Nome", sort, order, prefixo) }}</th>
-      <th>{{ ui.sortable("num_veiculos", "Nº Veículos", sort, order, prefixo) }}</th>
-      <th>{{ ui.sortable("total_investido", "Total Investido", sort, order, prefixo) }}</th>
-      <th>{{ ui.sortable("valor_veiculos", "Valor em Veículos", sort, order, prefixo) }}</th>
-      <th>Pendente</th>
-      {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+      <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, prefixo) }}</th>
+      <th data-col="num_veiculos" data-col-label="Nº Veículos">{{ ui.sortable("num_veiculos", "Nº Veículos", sort, order, prefixo) }}</th>
+      <th data-col="total_investido" data-col-label="Total Investido">{{ ui.sortable("total_investido", "Total Investido", sort, order, prefixo) }}</th>
+      <th data-col="valor_veiculos" data-col-label="Valor em Veículos">{{ ui.sortable("valor_veiculos", "Valor em Veículos", sort, order, prefixo) }}</th>
+      <th data-col="pendente" data-col-label="Pendente">Pendente</th>
+      {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_investidores.html" %}
   </table>

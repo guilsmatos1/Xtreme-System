@@ -1,13 +1,13 @@
 {% import "_macros.html" as ui %}
 <tr id="compra-{{ c.id }}">
-  <td class="cell-strong">{{ c.cliente.nome }}</td>
-  <td>{{ c.veiculo.modelo }} / {{ c.veiculo.placa }}</td>
-  <td>{{ c.data_compra.isoformat() }}</td>
-  <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-  <td class="cell-num">{% if c.debitos is not none %}R$ {{ "{:,.2f}".format(c.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
-  <td>{{ c.observacoes or "-" }}</td>
+  <td class="cell-strong" data-col="cliente">{{ c.cliente.nome }}</td>
+  <td data-col="veiculo">{{ c.veiculo.modelo }} / {{ c.veiculo.placa }}</td>
+  <td data-col="data">{{ c.data_compra.isoformat() }}</td>
+  <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td class="cell-num" data-col="debitos">{% if c.debitos is not none %}R$ {{ "{:,.2f}".format(c.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
+  <td data-col="observacoes">{{ c.observacoes or "-" }}</td>
   {% if is_admin(user) %}
-  <td class="col-actions">
+  <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       <button class="btn btn--ghost btn--sm" hx-get="/ui/compras/{{ c.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" aria-label="Comprovantes da compra {{ c.id }}">{{ ui.icon("file") }}</button>
       <button class="btn btn--ghost btn--sm" hx-get="/ui/compras/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar compra {{ c.id }}">{{ ui.icon("edit") }}</button>

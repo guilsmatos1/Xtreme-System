@@ -26,13 +26,13 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide">
+  <table class="table--wide" data-table="lancamentos">
     <thead><tr>
-      <th>{{ ui.sortable("data", "Data", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
-      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
-      <th>{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
-      <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
-      {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+      <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th data-col="descricao" data-col-label="Descrição">{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+      {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_lancamentos.html" %}
   </table>
