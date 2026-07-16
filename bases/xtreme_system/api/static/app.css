@@ -401,6 +401,33 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .wizard-steps { font-size: .78rem; font-weight: 550; color: var(--text-secondary); }
 .wizard-step { display: none; border: 0; margin: 0; padding: 0; min-width: 0; }
 .wizard-step.is-active { display: grid; }
+
+/* Wizard modal — larger panel & fields */
+.modal__panel--wizard { max-width: 600px; }
+.modal__panel--wizard .field__label { font-size: .82rem; }
+.modal__panel--wizard .input,
+.modal__panel--wizard .select,
+.modal__panel--wizard textarea.input { height: 40px; font-size: .9rem; }
+.modal__panel--wizard textarea.input { height: auto; padding: var(--s-3); }
+.modal__panel--wizard .form-grid { gap: var(--s-4); }
+
+/* Stepper */
+.stepper { display: flex; align-items: flex-start; margin-bottom: var(--s-2); }
+.stepper__item { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); flex: 1; text-align: center; position: relative; }
+.stepper__connector { flex: 1; height: 2px; background: var(--border-strong); margin-top: 15px; }
+.stepper__connector.is-done { background: var(--accent); }
+.stepper__num {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-full);
+  border: 2px solid var(--border-strong); color: var(--text-secondary);
+  font-size: .82rem; font-weight: 650; background: var(--surface);
+  transition: background .12s, border-color .12s, color .12s;
+}
+.stepper__num svg { width: 16px; height: 16px; }
+.stepper__label { font-size: .76rem; font-weight: 550; color: var(--text-tertiary); }
+.stepper__item.is-active .stepper__num { border-color: var(--accent); color: var(--accent); }
+.stepper__item.is-active .stepper__label { color: var(--text); }
+.stepper__item.is-done .stepper__num { border-color: var(--accent); background: var(--accent); color: var(--accent-contrast); }
+.stepper__item.is-done .stepper__label { color: var(--text-secondary); }
 .details-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin: 0; }
 .details-list div { min-width: 0; }
 .details-list dt { font-size: .72rem; font-weight: 650; color: var(--text-secondary); text-transform: uppercase; }
