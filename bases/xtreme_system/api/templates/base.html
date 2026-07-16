@@ -100,6 +100,9 @@
       {% endif %}
 
       <div class="sidebar__footer">
+        <a class="btn btn--ghost btn--sm {{ 'is-active' if path.startswith('/ui/conta') }}" href="/ui/conta">
+          {{ ui.icon("users") }} <span>Minha conta</span>
+        </a>
         <button class="btn btn--ghost btn--sm" type="button" onclick="toggleTheme()" aria-label="Alternar tema">
           {{ ui.icon("sun") }} <span>Tema</span>
         </button>
