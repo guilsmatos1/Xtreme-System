@@ -41,6 +41,7 @@
         <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
         <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
         <th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th data-col="status" data-col-label="Status">{{ ui.sortable("status", "Status", sort, order, "/ui/compras", sort_qs) }}</th>
         <th data-col="observacoes" data-col-label="Observações">Observações</th>
         {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>

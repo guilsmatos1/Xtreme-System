@@ -6,6 +6,7 @@
   <td data-col="data">{{ c.data_compra.isoformat() }}</td>
   <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td class="cell-num" data-col="debitos">{% if c.debitos is not none %}R$ {{ "{:,.2f}".format(c.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
+  <td data-col="status"><span class="badge badge--plain">{{ c.status.value | replace("_", " ") | title }}</span></td>
   <td data-col="observacoes">{{ c.observacoes or "-" }}</td>
   {% if is_admin(user) %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
