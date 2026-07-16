@@ -4,6 +4,11 @@ Sistema de gestão de estoque e vendas de veículos para a **Xtreme Motors**.
 Desenvolvido em Python 3.12+, gerenciado com `uv` e estruturado como um
 workspace [Polylith](https://polylith.gitbook.io/polylith) (namespace: `xtreme_system`).
 
+## Negócio
+
+- **Descrição**: plataforma interna para centralizar a operação da revenda, com gestão de estoque, compras, vendas, clientes, caixa e investidores.
+- **Problema que resolve**: elimina o uso de planilhas e controles dispersos, reduz retrabalho e ajuda a manter estoque, vendas e financeiro consistentes entre si.
+
 - API REST (JSON) com documentação Swagger em `/docs`
 - Interface web com HTMX e Jinja2 para uso interno
 - Autenticação JWT + argon2 com dois modos: Bearer token (API) e cookie httpOnly (UI)
@@ -130,4 +135,3 @@ Polylith namespace: `xtreme_system`. Cada componente (`auth`, `veiculo`, etc.)
 - Tests relaxam ruff: magic numbers (`PLR2004`) e `assert` (`S101`) são permitidos
 - Mypy é **strict** e verifica apenas `xtreme_system` (não tests)
 - **Sem importações** no `__init__.py` além do que é realmente exportado — mantenha mínimo
-

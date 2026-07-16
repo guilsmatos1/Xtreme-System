@@ -4,15 +4,19 @@
     "paths": [".agents/skills", ".claude/skills"]
   },
   "agent": {
-    "build": {
+    "Build Pro": {
       "model": "opencode-go/deepseek-v4-pro",
       "variant": "max"
     },
-    "build_2": {
+    "Build Pro 2": {
       "model": "opencode-go/glm-5.2",
       "variant": "max"
     },
-    "plan": {
+    "Build Flash": {
+      "model": "opencode/deepseek-v4-flash-free",
+      "variant": "max"
+    },
+    "Plan": {
       "model": "openai/gpt-5.5",
       "variant": "high"
     }

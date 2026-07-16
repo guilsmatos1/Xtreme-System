@@ -1,0 +1,90 @@
+- generic [ref=f18e2]:
+  - complementary "Navegação principal" [ref=f18e3]:
+    - generic [ref=f18e4]: Xtreme Motors
+    - generic [ref=f18e10]: Visão Geral
+    - navigation [ref=f18e11]:
+      - link "Dashboard" [ref=f18e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f18e18]: Operações
+    - navigation [ref=f18e19]:
+      - link "Veículos" [ref=f18e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f18e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f18e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f18e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f18e36]: Pessoas
+    - navigation [ref=f18e37]:
+      - link "Investidores" [ref=f18e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f18e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f18e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f18e52]: Administração
+    - navigation [ref=f18e53]:
+      - link "Usuários" [ref=f18e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f18e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f18e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f18e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f18e71]:
+      - button "Alternar tema" [ref=f18e72] [cursor=pointer]:
+        - generic [ref=f18e76]: Tema
+      - generic [ref=f18e77]:
+        - generic [ref=f18e78]: A
+        - generic [ref=f18e79]:
+          - generic [ref=f18e80]: admin
+          - generic [ref=f18e81]: admin
+        - button "Sair" [ref=f18e83] [cursor=pointer]
+  - main [ref=f18e87]:
+    - generic [ref=f18e88]:
+      - generic [ref=f18e89]:
+        - heading "Vendas" [level=1] [ref=f18e90]
+        - paragraph [ref=f18e91]: Registre e acompanhe as vendas de veículos
+      - generic [ref=f18e92]:
+        - link "Exportar dados" [ref=f18e93] [cursor=pointer]:
+          - /url: /ui/vendas/exportar
+        - button "Nova venda" [ref=f18e97] [cursor=pointer]
+    - table [ref=f18e101]:
+      - rowgroup [ref=f18e102]:
+        - row [ref=f18e103]:
+          - columnheader [ref=f18e104]:
+            - link "Cliente" [ref=f18e105] [cursor=pointer]:
+              - /url: /ui/vendas?sort=cliente&order=asc
+          - columnheader [ref=f18e106]:
+            - link "Veículo" [ref=f18e107] [cursor=pointer]:
+              - /url: /ui/vendas?sort=veiculo&order=asc
+          - columnheader [ref=f18e108]:
+            - link "Data" [ref=f18e109] [cursor=pointer]:
+              - /url: /ui/vendas?sort=data&order=asc
+          - columnheader [ref=f18e110]:
+            - link "Valor" [ref=f18e111] [cursor=pointer]:
+              - /url: /ui/vendas?sort=valor&order=asc
+          - columnheader [ref=f18e112]:
+            - link "Entrada" [ref=f18e113] [cursor=pointer]:
+              - /url: /ui/vendas?sort=entrada&order=asc
+          - columnheader [ref=f18e114]:
+            - link "Dívida" [ref=f18e115] [cursor=pointer]:
+              - /url: /ui/vendas?sort=divida&order=asc
+          - columnheader [ref=f18e116]:
+            - link "Pagamento" [ref=f18e117] [cursor=pointer]:
+              - /url: /ui/vendas?sort=pagamento&order=asc
+          - columnheader [ref=f18e118]:
+            - link "Parcelas" [ref=f18e119] [cursor=pointer]:
+              - /url: /ui/vendas?sort=parcelas&order=asc
+          - columnheader [ref=f18e120]:
+            - link "Status" [ref=f18e121] [cursor=pointer]:
+              - /url: /ui/vendas?sort=status&order=asc
+          - columnheader "Ações" [ref=f18e122]
+      - rowgroup [ref=f18e124]:
+        - row [ref=f18e125]:
+          - cell [ref=f18e126]:
+            - generic [ref=f18e127]:
+              - heading "Nenhuma venda encontrada" [level=3] [ref=f18e132]
+              - paragraph [ref=f18e133]: Cadastre uma venda para começar.

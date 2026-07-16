@@ -2,53 +2,62 @@
 name: commit-merge
 description: Stage, commit, and merge the current branch into master with --no-ff. Handles worktree conflicts.
 ---
+# Commit &amp; Merge
 
-# Commit & Merge
+Flow for stage + commit + merge into master with `--no-ff`.
 
-Flow para stage + commit + merge no master com `--no-ff`.
-
-## Gatilhos
+## Triggers
 
 - "commit and merge"
 - "commit + merge"
 - "commita e faz merge"
-- "git add . && git commit && git merge"
+- "git add . &amp;&amp; git commit &amp;&amp; git merge"
 
-## Fluxo
+## Flow
 
-### 1. Verifica se master está livre
+### 1. Check if master is free
 
 ```bash
 git worktree list
 ```
 
-Se `master` aparece em outro worktree (não no atual), o merge será feito **no worktree principal** (aquele que tem `master`).
+If `master` appears in another worktree (not the current one), the merge will be done **in the main worktree** (the one that has `master`).
 
 ### 2. Stage + commit
 
 ```bash
 git add .
-git commit -am "<mensagem>"
+git commit -am "<message>"
 ```
 
-Escreva uma mensagem concisa no estilo do repo (inglês, lowercase, imperative).
+Write a concise message in the repo style (English, lowercase, imperative).
 
 ### 3. Merge
 
-Se master **não** está em outro worktree:
+If master is **not** in another worktree:
 
 ```bash
 git checkout master
 git merge - --no-ff -m "merge <branch>: <msg>"
 ```
 
-Se master **está** em outro worktree (ex: `~/orca/projects/xtreme-system [master]`):
+If master **is** in another worktree (e.g. `~/orca/projects/xtreme-system [master]`):
 
 ```bash
-# No worktree principal (use o workdir do bash tool, não mude de branch aqui)
-git merge <nome-da-branch> --no-ff -m "merge <branch>: <msg>"
+# In the main worktree (use the bash tool's workdir, don't switch branches here)
+git merge <branch-name> --no-ff -m "merge <branch>: <msg>"
 ```
 
-### 4. Confirma
+### 4. Confirm
 
-Mostre `git log --oneline --graph -5` no final.
+Show `git log --oneline --graph -5` at the end.
+
+
+### 5. Export the current session history to a JSON log file so the run is recorded. `opencode export` without a `sessionID` exports the running session:
+
+```bash
+mkdir -p logs
+opencode export --sanitize > "logs/session-$(date +%Y%m%d-%H%M%S).json"
+```
+
+Report the saved file path to the user.
