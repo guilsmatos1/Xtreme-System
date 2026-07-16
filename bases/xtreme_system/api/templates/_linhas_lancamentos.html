@@ -15,8 +15,8 @@
     <span class="muted">via Veículos</span>
     {% else %}
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar lançamento">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm btn--danger" hx-post="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este lançamento?" aria-label="Excluir lançamento">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar lançamento">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/investidores/{{ investidor_id }}/lancamentos/{{ l.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este lançamento?" aria-label="Excluir lançamento">{{ ui.icon("trash") }}</button>
     </div>
     {% endif %}
   </td>

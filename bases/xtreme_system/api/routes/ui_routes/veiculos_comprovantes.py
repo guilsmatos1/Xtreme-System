@@ -21,7 +21,12 @@ from xtreme_system.veiculo import core as veiculo
 
 
 def _comprovantes_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
+    request: Request,
+    session: Session,
+    veiculo_id: int,
+    erro: str | None = None,
+    *,
+    action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
@@ -33,7 +38,12 @@ def _comprovantes_modal(
     return templates.TemplateResponse(
         request,
         "_modal_comprovantes_veiculo.html",
-        {"veiculo": item, "documentos": documentos, "erro": erro},
+        {
+            "veiculo": item,
+            "documentos": documentos,
+            "erro": erro,
+            "action_oob": action_oob,
+        },
         status_code=400 if erro else 200,
     )
 
@@ -76,7 +86,7 @@ def ui_veiculo_comprovantes_upload(
         fk_id=item_compra.id,
         arquivos=documentos,
     )
-    return _comprovantes_modal(request, session, veiculo_id)
+    return _comprovantes_modal(request, session, veiculo_id, action_oob=True)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/comprovantes/{doc_id}/excluir")
@@ -100,4 +110,4 @@ def ui_veiculo_comprovantes_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _comprovantes_modal(request, session, veiculo_id)
+    return _comprovantes_modal(request, session, veiculo_id, action_oob=True)

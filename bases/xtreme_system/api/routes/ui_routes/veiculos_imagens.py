@@ -19,12 +19,20 @@ from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.veiculo import core as veiculo
 
 
-def _imagem_modal(request: Request, session: Session, veiculo_id: int) -> HTMLResponse:
+def _imagem_modal(
+    request: Request,
+    session: Session,
+    veiculo_id: int,
+    *,
+    action_oob: bool = False,
+) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     remover_orfaos(session, item.imagens, imagem_veiculo.delete)
     session.refresh(item)
     return templates.TemplateResponse(
-        request, "_modal_imagens_veiculo.html", {"veiculo": item}
+        request,
+        "_modal_imagens_veiculo.html",
+        {"veiculo": item, "action_oob": action_oob},
     )
 
 
@@ -67,7 +75,7 @@ def ui_veiculo_imagens_upload(
         fk_id=veiculo_id,
         arquivos=imagens,
     )
-    return _imagem_modal(request, session, veiculo_id)
+    return _imagem_modal(request, session, veiculo_id, action_oob=True)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/imagens/{img_id}/excluir")
@@ -86,4 +94,4 @@ def ui_veiculo_imagens_excluir(
     path = _uploaded_file_path(img.url or "")
     if path is not None:
         _remover_upload(path)
-    return _imagem_modal(request, session, veiculo_id)
+    return _imagem_modal(request, session, veiculo_id, action_oob=True)

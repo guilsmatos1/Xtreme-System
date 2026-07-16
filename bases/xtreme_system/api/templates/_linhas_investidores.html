@@ -14,9 +14,9 @@
   {% if is_admin(user) %}
   <td class="col-actions">
     <div class="row-actions">
-      <a class="btn btn--ghost btn--sm" href="{{ prefixo }}/{{ item.id }}/lancamentos" aria-label="Lançamentos de {{ item.nome }}">{{ ui.icon("cash") }}</a>
-      <button class="btn btn--ghost btn--sm" hx-get="{{ prefixo }}/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm btn--danger" hx-post="{{ prefixo }}/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
+      <a class="btn btn--ghost btn--sm action-cash" href="{{ prefixo }}/{{ item.id }}/lancamentos" aria-label="Lançamentos de {{ item.nome }}">{{ ui.icon("cash") }}</a>
+      <button class="btn btn--ghost btn--sm action-edit" hx-get="{{ prefixo }}/{{ item.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ item.nome }}">{{ ui.icon("edit") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="{{ prefixo }}/{{ item.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir {{ item.nome }}?" aria-label="Excluir {{ item.nome }}">{{ ui.icon("trash") }}</button>
     </div>
   </td>
   {% endif %}

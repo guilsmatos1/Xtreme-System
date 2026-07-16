@@ -45,6 +45,17 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
     return data
 
 
+def _ctx_lista_compras(
+    session: Session, compras: list[compra.Compra]
+) -> dict[str, Any]:
+    return {
+        "comprovantes_por_compra": {
+            item.id: imagem_comprovante_compra.list_by_compra(session, item.id)
+            for item in compras
+        }
+    }
+
+
 def _remover_arquivos_comprovantes(session: Session, obj: compra.Compra) -> None:
     for comprovante in imagem_comprovante_compra.list_by_compra(session, obj.id):
         path = _uploaded_file_path(comprovante.url or "")
@@ -57,6 +68,8 @@ def _comprovantes_modal(
     session: Session,
     compra_id: int,
     erro: str | None = None,
+    *,
+    action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(compra.get(session, compra_id), "Compra")
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
@@ -65,7 +78,12 @@ def _comprovantes_modal(
     return templates.TemplateResponse(
         request,
         "_modal_comprovantes_compra.html",
-        {"compra": item, "comprovantes": comprovantes, "erro": erro},
+        {
+            "compra": item,
+            "comprovantes": comprovantes,
+            "erro": erro,
+            "action_oob": action_oob,
+        },
         status_code=400 if erro else 200,
     )
 
@@ -103,7 +121,7 @@ def ui_compra_comprovantes_upload(
         fk_id=compra_id,
         arquivos=comprovantes,
     )
-    return _comprovantes_modal(request, session, compra_id)
+    return _comprovantes_modal(request, session, compra_id, action_oob=True)
 
 
 @app.post("/ui/compras/{compra_id}/comprovantes/{comprovante_id}/excluir")
@@ -123,7 +141,7 @@ def ui_compra_comprovantes_excluir(
     path = _uploaded_file_path(comprovante.url or "")
     if path is not None:
         _remover_upload(path)
-    return _comprovantes_modal(request, session, compra_id)
+    return _comprovantes_modal(request, session, compra_id, action_oob=True)
 
 
 register_crud_ui_routes(
@@ -141,6 +159,7 @@ register_crud_ui_routes(
     ok_partial_template="_compras_ok.html",
     form_template="_form_compra.html",
     ctx_form=_ctx_form_compra,
+    ctx_list=_ctx_lista_compras,
     parse_form=_parse_compra_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,

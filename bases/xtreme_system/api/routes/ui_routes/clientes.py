@@ -98,12 +98,16 @@ def _documentos_modal(
     request: Request,
     session: Session,
     cliente_id: int,
+    *,
+    action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(cliente.get(session, cliente_id), "Cliente")
     remover_orfaos(session, item.documentos, imagem_documento_cliente.delete)
     session.refresh(item)
     return templates.TemplateResponse(
-        request, "_modal_documentos_cliente.html", {"cliente": item}
+        request,
+        "_modal_documentos_cliente.html",
+        {"cliente": item, "action_oob": action_oob},
     )
 
 
@@ -144,7 +148,7 @@ def ui_cliente_documentos_upload(
         fk_id=cliente_id,
         arquivos=documentos,
     )
-    return _documentos_modal(request, session, cliente_id)
+    return _documentos_modal(request, session, cliente_id, action_oob=True)
 
 
 @app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
@@ -162,7 +166,7 @@ def ui_cliente_documentos_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _documentos_modal(request, session, cliente_id)
+    return _documentos_modal(request, session, cliente_id, action_oob=True)
 
 
 @app.get("/ui/clientes")
