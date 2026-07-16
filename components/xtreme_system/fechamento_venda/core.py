@@ -139,9 +139,9 @@ def _schema_disponivel(session: Session) -> bool:
     # abriria uma conexão própria cujo rollback descarta escritas ainda não
     # commitadas da sessão (flush sem commit).
     inspector = inspect(session.connection())
-    disponivel = inspector.has_table(FechamentoVenda.__tablename__) and inspector.has_table(
-        ParticipacaoFechamentoVenda.__tablename__
-    )
+    disponivel = inspector.has_table(
+        FechamentoVenda.__tablename__
+    ) and inspector.has_table(ParticipacaoFechamentoVenda.__tablename__)
     _SCHEMA_DISPONIVEL_POR_ENGINE[engine] = disponivel
     return disponivel
 

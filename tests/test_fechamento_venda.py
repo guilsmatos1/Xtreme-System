@@ -176,11 +176,11 @@ def test_schema_disponivel_e_cacheada_por_engine(
             chamadas.append(table_name)
             return True
 
-    fechamento_venda._SCHEMA_DISPONIVEL_POR_ENGINE.clear()
+    fechamento_venda._SCHEMA_DISPONIVEL_POR_ENGINE.clear()  # noqa: SLF001
     monkeypatch.setattr(fechamento_venda, "inspect", lambda _conn: InspectorStub())
 
-    assert fechamento_venda._schema_disponivel(session) is True
-    assert fechamento_venda._schema_disponivel(session) is True
+    assert fechamento_venda._schema_disponivel(session) is True  # noqa: SLF001
+    assert fechamento_venda._schema_disponivel(session) is True  # noqa: SLF001
     assert chamadas == ["fechamento_venda", "participacao_fechamento_venda"]
 
 
