@@ -1,7 +1,8 @@
 {% import "_macros.html" as ui %}
 <tr id="compra-{{ c.id }}">
   <td class="cell-strong">{{ c.cliente.nome }}</td>
-  <td>{{ c.veiculo.modelo }} / {{ c.veiculo.placa }}</td>
+  <td>{{ c.veiculo.modelo }}</td>
+  <td>{{ c.veiculo.placa }}</td>
   <td>{{ c.data_compra.isoformat() }}</td>
   <td class="cell-num cell-strong">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
   <td class="cell-num">{% if c.debitos is not none %}R$ {{ "{:,.2f}".format(c.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
