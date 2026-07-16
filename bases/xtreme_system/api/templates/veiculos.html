@@ -15,11 +15,6 @@
     <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
-    {% if is_admin(user) %}
-    <button class="btn btn--primary" hx-get="/ui/veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
-      {{ ui.icon("plus") }} Novo veículo
-    </button>
-    {% endif %}
   </div>
 </div>
 

@@ -190,4 +190,5 @@ register_crud_ui_routes(
         f"{c.debitos:.2f}" if c.debitos is not None else "",
         c.observacoes or "",
     ],
+    register_create=False,
 )

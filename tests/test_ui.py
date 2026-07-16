@@ -170,8 +170,7 @@ def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
         },
     )
     assert resp.status_code == 200
-    assert "Civic" in resp.text
-    assert "R$ 1.234,56" in resp.text
+    assert resp.headers["HX-Redirect"] == "/ui/compras"
 
     veiculos = client.get("/veiculos", headers=headers).json()
     veiculo_id = next(item["id"] for item in veiculos if item["placa"] == "DOC1A23")
@@ -753,44 +752,36 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
 
-    cliente_resp = client.post(
-        "/clientes",
-        json={
-            "nome": "Carlos Compra",
-            "documento": "45678912300",
-            "tipo": "pessoa_fisica",
-        },
-        headers=headers,
-    )
-    assert cliente_resp.status_code == 201
-    cliente_id = cliente_resp.json()["id"]
-    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
-
     pagina = client.get("/ui/compras")
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
 
-    modal = client.get("/ui/compras/novo")
-    assert modal.status_code == 200
-    assert "Onix" in modal.text
-    assert f'value="{veiculo_id}"' in modal.text
-
+    # Compras são criadas pelo cadastro de veículo (wizard "Nova compra").
     criado = client.post(
-        "/ui/compras",
+        "/ui/veiculos",
         data={
-            "cliente_id": str(cliente_id),
-            "veiculo_id": str(veiculo_id),
-            "data_compra": "",
-            "valor_compra": "84000.00",
+            "tipo": "carro",
+            "tipo_entrada": "compra",
+            "placa": "CMP1A23",
+            "modelo": "Corolla",
+            "cor": "Preto",
+            "ano": "2022",
+            "km": "30000",
+            "preco": "84000.00",
             "debitos": "500.00",
-            "observacoes": "pagamento inicial",
+            "investidor_id": "1",
+            "cli_nome": "Carlos Compra",
+            "cli_documento": "45678912300",
+            "cli_tipo": "pessoa_fisica",
         },
     )
     assert criado.status_code == 200
-    assert "Carlos Compra" in criado.text
-    assert datetime.now(UTC).date().isoformat() in criado.text
+    assert criado.headers["HX-Redirect"] == "/ui/compras"
 
-    compra_id = client.get("/compras", headers=headers).json()[0]["id"]
+    compra = client.get("/compras", headers=headers).json()[0]
+    compra_id = compra["id"]
+    cliente_id = compra["cliente"]["id"]
+    veiculo_id = compra["veiculo"]["id"]
 
     editado = client.post(
         f"/ui/compras/{compra_id}",
