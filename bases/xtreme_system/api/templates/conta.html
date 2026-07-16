@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Minha Conta{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Minha conta</h1>
+    <p class="page-head__subtitle">Dados do usuario logado e alteracao de senha</p>
+  </div>
+</div>
+
+<div class="stack">
+  <section class="card card--pad">
+    <h3 style="margin-bottom:var(--s-4)">Dados de acesso</h3>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field__label">Usuario</span>
+        <input class="input" value="{{ user.username }}" disabled>
+      </label>
+      <label class="field">
+        <span class="field__label">Papel</span>
+        <input class="input" value="{{ user.papel.value }}" disabled>
+      </label>
+      <label class="field field--full">
+        <span class="field__label">Perfil</span>
+        <input class="input" value="{{ user.perfil.nome if user.perfil else 'Nenhum' }}" disabled>
+      </label>
+    </div>
+  </section>
+
+  <section class="card card--pad">
+    <h3 style="margin-bottom:var(--s-4)">Alterar senha</h3>
+    {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
+    {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+    <form method="post" action="/ui/conta/senha">
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">Senha atual</span>
+          <input class="input" name="senha_atual" type="password" required autocomplete="current-password">
+        </label>
+        <label class="field">
+          <span class="field__label">Nova senha</span>
+          <input class="input" name="nova_senha" type="password" required autocomplete="new-password">
+        </label>
+        <label class="field">
+          <span class="field__label">Confirmar nova senha</span>
+          <input class="input" name="confirmar_senha" type="password" required autocomplete="new-password">
+        </label>
+        <div class="field" style="justify-content:flex-end">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Alterar senha</button>
+        </div>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

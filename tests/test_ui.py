@@ -1036,6 +1036,108 @@ def _login_admin(client: TestClient) -> None:
     client.post("/ui/login", data={"username": "admin", "password": "senha"})
 
 
+def test_ui_conta_admin_exibe_pagina(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.get("/ui/conta")
+
+    assert resp.status_code == 200
+    assert "Minha conta" in resp.text
+    assert "admin" in resp.text
+
+
+def test_ui_conta_funcionario_exibe_pagina(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "conta_user", "senha": "abc", "papel": "funcionario"},
+    )
+    client.post("/ui/login", data={"username": "conta_user", "password": "abc"})
+
+    resp = client.get("/ui/conta")
+
+    assert resp.status_code == 200
+    assert "Minha conta" in resp.text
+    assert "conta_user" in resp.text
+
+
+def test_ui_conta_troca_propria_senha(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "senha_user", "senha": "abc", "papel": "funcionario"},
+    )
+    client.post("/ui/login", data={"username": "senha_user", "password": "abc"})
+
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "abc",
+            "nova_senha": "nova123",
+            "confirmar_senha": "nova123",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert "Senha alterada." in resp.text
+
+    login = client.post(
+        "/ui/login",
+        data={"username": "senha_user", "password": "nova123"},
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+
+
+def test_ui_conta_rejeita_senha_atual_invalida(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "senha_invalida", "senha": "abc", "papel": "funcionario"},
+    )
+    client.post("/ui/login", data={"username": "senha_invalida", "password": "abc"})
+
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "errada",
+            "nova_senha": "nova123",
+            "confirmar_senha": "nova123",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "Senha atual invalida." in resp.text
+
+    login = client.post(
+        "/ui/login",
+        data={"username": "senha_invalida", "password": "abc"},
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+
+
+def test_ui_conta_rejeita_confirmacao_diferente(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "senha_conf", "senha": "abc", "papel": "funcionario"},
+    )
+    client.post("/ui/login", data={"username": "senha_conf", "password": "abc"})
+
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "abc",
+            "nova_senha": "nova123",
+            "confirmar_senha": "outra123",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "A confirmacao da senha nao confere." in resp.text
+
+
 def test_ui_admin_exclui_outro_usuario(client: TestClient) -> None:
     """Admin pode excluir outro usuário pela UI."""
     _login_admin(client)
