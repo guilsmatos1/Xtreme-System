@@ -18,8 +18,9 @@ def test_login_admin_abre_veiculos(page: Page, live_server_url: str) -> None:
 @pytest.mark.e2e
 def test_wizard_htmx_cria_veiculo(page: Page, live_server_url: str) -> None:
     _login(page, live_server_url)
+    page.goto(f"{live_server_url}/ui/compras")
 
-    page.get_by_role("button", name="Novo veículo").click()
+    page.get_by_role("button", name="Nova compra").click()
     expect(page.get_by_role("dialog", name="Novo veículo")).to_be_visible()
     expect(page.locator("#wizard-step-atual")).to_have_text("1")
 

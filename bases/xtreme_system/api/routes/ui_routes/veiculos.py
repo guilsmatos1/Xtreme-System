@@ -339,9 +339,4 @@ async def _criar_veiculo(
     except IntegrityError:
         session.rollback()
         return _erro_veiculo(request, session, "Veículo já existe")
-    veiculos = veiculo.list_all(session)
-    return templates.TemplateResponse(
-        request,
-        "_veiculos_ok.html",
-        {"user": user, "veiculos": veiculos, **_ctx_lista_veiculos(session, veiculos)},
-    )
+    return HTMLResponse(headers={"HX-Redirect": "/ui/compras"})
