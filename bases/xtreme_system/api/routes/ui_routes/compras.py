@@ -172,6 +172,7 @@ register_crud_ui_routes(
         "data": "data_compra",
         "valor": "valor_compra",
         "debitos": "debitos",
+        "status": "status",
     },
     csv_filename="compras.csv",
     csv_headers=[
@@ -182,6 +183,7 @@ register_crud_ui_routes(
         "Data",
         "Valor Compra",
         "Debitos",
+        "Status",
         "Observacoes",
     ],
     csv_row=lambda c: [
@@ -192,6 +194,7 @@ register_crud_ui_routes(
         c.data_compra.isoformat(),
         f"{c.valor_compra:.2f}",
         f"{c.debitos:.2f}" if c.debitos is not None else "",
+        c.status.value,
         c.observacoes or "",
     ],
     register_create=False,

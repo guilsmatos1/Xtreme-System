@@ -3,7 +3,7 @@
   {% for c in compras %}
     {% include "_row_compra.html" %}
   {% else %}
-  <tr class="empty-row"><td colspan="8">
+  <tr class="empty-row"><td colspan="9">
     {% call ui.empty("inbox", "Nenhuma compra encontrada", "Cadastre uma compra para começar.") %}{% endcall %}
   </td></tr>
   {% endfor %}

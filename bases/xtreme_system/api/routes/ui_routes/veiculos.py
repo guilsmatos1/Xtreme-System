@@ -44,9 +44,6 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
         "clientes": cliente.list_all(session),
         "tipos_cliente": list(cliente.TipoCliente),
         "compras_por_veiculo": compras_por_veiculo,
-        "comprovantes_por_compra": _comprovantes_por_compra(
-            session, list(compras_por_veiculo.values())
-        ),
     }
 
 
@@ -58,18 +55,6 @@ def _ctx_lista_veiculos(
     )
     return {
         "compras_por_veiculo": compras_por_veiculo,
-        "comprovantes_por_compra": _comprovantes_por_compra(
-            session, list(compras_por_veiculo.values())
-        ),
-    }
-
-
-def _comprovantes_por_compra(
-    session: Session, compras: list[compra.Compra]
-) -> dict[int, list[imagem_comprovante_compra.ImagemComprovanteCompra]]:
-    return {
-        item.id: imagem_comprovante_compra.list_by_compra(session, item.id)
-        for item in compras
     }
 
 
