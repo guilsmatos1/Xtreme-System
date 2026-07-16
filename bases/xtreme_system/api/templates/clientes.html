@@ -35,12 +35,12 @@
   <table class="table--wide">
     <thead>
       <tr>
-        <th>{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("documento", "CPF", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
-        <th>{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", sort_qs) }}</th>
+        <th>{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th>{{ ui.sortable("documento", "CPF", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th>{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th>{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th>{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th>{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

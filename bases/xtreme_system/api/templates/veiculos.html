@@ -61,17 +61,17 @@
   <table class="table--wide">
     {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead><tr>
-      <th>{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", sort_qs) }}</th>
-      <th>{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", sort_qs) }}</th>
+      <th>{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("status", "Status", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
+      <th>{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
       <th>Débitos</th>
       {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
