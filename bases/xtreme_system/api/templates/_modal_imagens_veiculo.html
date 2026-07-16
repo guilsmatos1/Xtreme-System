@@ -2,40 +2,44 @@
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-imagens-title">
   <div class="modal__panel">
     <div class="modal__head">
-      <h2 id="modal-imagens-title">Imagens — {{ veiculo.modelo }} ({{ veiculo.placa }})</h2>
+      <h2 id="modal-imagens-title">
+        Imagens — {{ veiculo.modelo }} ({{ veiculo.placa }})
+        {% if veiculo.imagens %}<span class="mmgr__count">{{ veiculo.imagens | length }}</span>{% endif %}
+      </h2>
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% if erro %}{{ ui.alert(erro) }}{% endif %}
       {% if veiculo.imagens %}
-      <div class="midia-grid">
+      <div class="mmgr__grid">
         {% for img in veiculo.imagens %}
-        <div class="midia-item">
-          <button class="midia-thumb" type="button" onclick="this.nextElementSibling.showModal()" aria-label="Abrir imagem">
-            <img src="{{ img.url }}" alt="Imagem de {{ veiculo.modelo }}">
+        <div class="mmgr__card">
+          <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar imagem">
+            <img src="{{ img.url }}" alt="Imagem de {{ veiculo.modelo }}" loading="lazy">
           </button>
+          <button class="mmgr__del" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/imagens/{{ img.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir esta imagem?" aria-label="Excluir imagem">{{ ui.icon("trash") }}</button>
           <dialog class="image-preview" onclick="if (event.target === this) this.close()">
             <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
             <img src="{{ img.url }}" alt="Imagem de {{ veiculo.modelo }}">
           </dialog>
-          <button class="btn btn--ghost btn--sm btn--danger" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/imagens/{{ img.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir esta imagem?">{{ ui.icon("trash") }}</button>
         </div>
         {% endfor %}
       </div>
       {% else %}
-        <div class="midia-grid midia-grid--placeholder" aria-hidden="true">
-          {% for _ in range(4) %}
-          <div class="midia-item midia-item--placeholder">
-            <div class="midia-placeholder">{{ ui.icon("image") }}</div>
-          </div>
-          {% endfor %}
-        </div>
-        {{ ui.empty("image", "Nenhuma imagem", "Envie fotos deste veículo.") }}
+        {{ ui.empty("image", "Nenhuma imagem", "Envie fotos deste veículo usando a área abaixo.") }}
       {% endif %}
     </div>
-    <form class="modal__foot" hx-post="/ui/veiculos/{{ veiculo.id }}/imagens" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
-      <input class="input" type="file" name="imagens" accept=".jpg,.jpeg,.png,.webp" multiple required>
-      <button class="btn btn--primary" type="submit">Enviar imagens</button>
+    <form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/imagens" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+      <label class="mmgr__drop">
+        <input type="file" name="imagens" accept=".jpg,.jpeg,.png,.webp" multiple required
+               onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste imagens aqui ou clique para selecionar'">
+        <span class="mmgr__drop-icon">{{ ui.icon("image") }}</span>
+        <span class="mmgr__drop-text">Arraste imagens aqui ou clique para selecionar</span>
+        <span class="mmgr__drop-hint">JPG, PNG ou WEBP</span>
+      </label>
+      <div class="mmgr__upload-actions">
+        <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar imagens</button>
+      </div>
     </form>
   </div>
 </div>

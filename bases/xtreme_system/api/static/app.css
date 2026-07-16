@@ -571,3 +571,97 @@ form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
   top: 16px;
   right: 16px;
 }
+
+/* ---- 20. Media manager (modais de imagens/documentos) -------------------- */
+.mmgr__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px; margin-left: var(--s-1);
+  border-radius: var(--r-full); background: var(--accent-soft);
+  color: var(--accent); font-size: .72rem; font-weight: 700; vertical-align: middle;
+}
+
+.mmgr__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: var(--s-2);
+}
+
+.mmgr__card {
+  position: relative; aspect-ratio: 1;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-2); overflow: hidden;
+  transition: border-color .12s, box-shadow .12s;
+}
+.mmgr__card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+
+.mmgr__thumb {
+  position: relative; display: block; width: 100%; height: 100%;
+  padding: 0; border: 0; background: none; cursor: zoom-in;
+}
+.mmgr__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mmgr__thumb::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(10,11,13,.32), transparent 46%);
+  opacity: 0; transition: opacity .12s;
+}
+.mmgr__card:hover .mmgr__thumb::after { opacity: 1; }
+
+.mmgr__doc {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 100%; height: 100%; padding: var(--s-2);
+  text-align: center; text-decoration: none; color: var(--text-secondary);
+  transition: background .12s, color .12s;
+}
+.mmgr__doc:hover { background: var(--surface-hover); color: var(--accent); }
+.mmgr__doc-icon svg { width: 30px; height: 30px; }
+.mmgr__doc-badge {
+  font-size: .6rem; font-weight: 700; letter-spacing: .04em;
+  padding: 1px 5px; border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-tertiary);
+}
+.mmgr__doc-name {
+  max-width: 100%; margin-top: 2px; font-size: .68rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.mmgr__del {
+  position: absolute; top: var(--s-1); right: var(--s-1); z-index: 2;
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r); cursor: pointer;
+  background: rgba(10,11,13,.62); color: #fff;
+  backdrop-filter: blur(2px); transition: background .12s, opacity .12s;
+}
+.mmgr__del:hover { background: var(--danger); }
+.mmgr__del svg { width: 15px; height: 15px; }
+@media (hover: hover) {
+  .mmgr__del { opacity: 0; }
+  .mmgr__card:hover .mmgr__del, .mmgr__card:focus-within .mmgr__del { opacity: 1; }
+}
+
+.mmgr__upload {
+  display: flex; flex-direction: column; gap: var(--s-3);
+  padding: var(--s-4); border-top: 1px solid var(--border);
+  background: var(--surface-2); border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.mmgr__drop {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  padding: var(--s-5) var(--s-4); text-align: center;
+  border: 1.5px dashed var(--border-strong); border-radius: var(--r-md);
+  background: var(--surface); color: var(--text-secondary); cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.mmgr__drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+.mmgr__drop input[type="file"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer;
+}
+.mmgr__drop-icon {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  margin-bottom: var(--s-1); border-radius: var(--r-full);
+  background: var(--surface-2); color: var(--accent);
+}
+.mmgr__drop-icon svg { width: 20px; height: 20px; }
+.mmgr__drop-text { font-size: .86rem; font-weight: 550; color: var(--text); }
+.mmgr__drop-hint { font-size: .72rem; color: var(--text-tertiary); }
+.mmgr__upload-actions { display: flex; justify-content: flex-end; }
