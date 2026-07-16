@@ -166,6 +166,24 @@ def test_confirmar_fechamento_calcula_lucro_e_lancamentos(session: Session) -> N
     assert caixa.saldo(session, participante.id) == Decimal("-7200.00")
 
 
+def test_schema_disponivel_e_cacheada_por_engine(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    chamadas: list[str] = []
+
+    class InspectorStub:
+        def has_table(self, table_name: str) -> bool:
+            chamadas.append(table_name)
+            return True
+
+    fechamento_venda._SCHEMA_DISPONIVEL_POR_ENGINE.clear()
+    monkeypatch.setattr(fechamento_venda, "inspect", lambda _conn: InspectorStub())
+
+    assert fechamento_venda._schema_disponivel(session) is True
+    assert fechamento_venda._schema_disponivel(session) is True
+    assert chamadas == ["fechamento_venda", "participacao_fechamento_venda"]
+
+
 @pytest.mark.parametrize(
     ("status", "pagamento_pendente"),
     [
