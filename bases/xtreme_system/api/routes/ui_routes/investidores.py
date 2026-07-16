@@ -61,8 +61,7 @@ def _ctx_investidores(
     session: Session, sort: str = "", order: str = "asc"
 ) -> dict[str, object]:
     investidores = investidor.list_all(session)
-    saldos = caixa.saldos(session)
-    num_veiculos, valor_veiculos, total_aportado = caixa.agregados_investidores(session)
+    num_veiculos, valor_veiculos, saldos = caixa.agregados_investidores(session)
     return {
         "titulo": "Investidores",
         "prefixo": "/ui/investidores",
@@ -71,14 +70,14 @@ def _ctx_investidores(
             saldos,
             num_veiculos,
             valor_veiculos,
-            total_aportado,
+            saldos,
             sort,
             order,
         ),
         "saldos": saldos,
         "num_veiculos": num_veiculos,
         "valor_veiculos": valor_veiculos,
-        "total_aportado": total_aportado,
+        "total_aportado": saldos,
         "sort": sort,
         "order": order,
     }
@@ -112,8 +111,7 @@ def ui_investidores(
 @app.get("/ui/investidores/exportar")
 def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
     investidores = investidor.list_all(session)
-    saldos = caixa.saldos(session)
-    num_v, val_v, tot_a = caixa.agregados_investidores(session)
+    num_v, val_v, saldos = caixa.agregados_investidores(session)
     return _csv_response(
         "investidores.csv",
         ["Investidor", "Saldo", "N° Veículos", "Valor em Veículos", "Total Investido"],
@@ -123,7 +121,7 @@ def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
                 f"{saldos.get(item.id, Decimal('0')):.2f}",
                 num_v.get(item.id, 0),
                 f"{val_v.get(item.id, Decimal('0')):.2f}",
-                f"{tot_a.get(item.id, Decimal('0')):.2f}",
+                f"{saldos.get(item.id, Decimal('0')):.2f}",
             ]
             for item in investidores
         ],

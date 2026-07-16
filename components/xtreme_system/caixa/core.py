@@ -201,26 +201,24 @@ def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
         crud.delete(session, lancamento)
 
 
-# In-memory aggregations for caixa table. Query-level if row counts grow.
 def agregados_investidores(
     session: Session,
 ) -> tuple[dict[int, int], dict[int, Decimal], dict[int, Decimal]]:
-    """Return (num_veiculos, valor_veiculos, total_aportado) per investidor_id."""
-    veiculos = crud.list_all(session, Veiculo)
-    num: dict[int, int] = {}
-    valor: dict[int, Decimal] = {}
-    for v in veiculos:
-        iid = v.investidor_id
-        num[iid] = num.get(iid, 0) + 1
-        valor[iid] = valor.get(iid, Decimal("0")) + v.preco
-    aportes: dict[int, Decimal] = {}
-    for lanc in list_all(session):
-        aportes[lanc.investidor_id] = aportes.get(lanc.investidor_id, Decimal("0")) + (
-            lanc.valor
-            if lanc.tipo in {TipoLancamento.aporte, TipoLancamento.receita_venda}
-            else -lanc.valor
+    """Return (num_veiculos, valor_veiculos, saldos) per investidor_id."""
+    veiculo_rows = (
+        session.query(
+            Veiculo.investidor_id,
+            func.count(Veiculo.id),
+            func.sum(Veiculo.preco),
         )
-    return num, valor, aportes
+        .group_by(Veiculo.investidor_id)
+        .all()
+    )
+    num = {investidor_id: int(cnt) for investidor_id, cnt, _ in veiculo_rows}
+    valor = {
+        investidor_id: total or Decimal("0") for investidor_id, _, total in veiculo_rows
+    }
+    return num, valor, saldos(session)
 
 
 def criar_lancamento_fechamento(
