@@ -17,6 +17,7 @@ from xtreme_system.veiculo.core import Veiculo, VeiculoRead
 class StatusCompra(StrEnum):
     pendente = "pendente"
     finalizado = "finalizado"
+    cancelado = "cancelado"
 
 
 class Compra(Base):

@@ -3,7 +3,7 @@
   <div class="modal__panel">
     <div class="modal__head">
       <h2 id="modal-comprovantes-title">
-        Comprovantes — compra {{ compra.id }}
+        Comprovantes — Placa {{ compra.veiculo.placa }}
         {% if comprovantes %}<span class="mmgr__count">{{ comprovantes | length }}</span>{% endif %}
       </h2>
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>

@@ -183,7 +183,7 @@ register_crud_ui_routes(
         "Data",
         "Valor Compra",
         "Debitos",
-        "Status",
+        "Estado",
         "Observacoes",
     ],
     csv_row=lambda c: [

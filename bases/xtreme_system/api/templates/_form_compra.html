@@ -37,10 +37,11 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Status</span>
+            <span class="field__label">Estado</span>
             <select class="select" name="status">
               <option value="pendente"{% if compra and compra.status.value == "pendente" %} selected{% endif %}>Pendente</option>
               <option value="finalizado"{% if compra and compra.status.value == "finalizado" %} selected{% endif %}>Finalizado</option>
+              <option value="cancelado"{% if compra and compra.status.value == "cancelado" %} selected{% endif %}>Cancelado</option>
             </select>
           </label>
 
