@@ -233,7 +233,7 @@ def agregados_investidores(
         .group_by(LancamentoInvestimento.investidor_id)
         .all()
     )
-    aportes = {iid: total for iid, total in rows}
+    aportes = dict(rows)
     return num, valor, aportes
 
 
