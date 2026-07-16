@@ -478,3 +478,73 @@ def test_deletar_venda_pendente_mantem_veiculo_disponivel(
 
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
     assert veiculo.json()["status"] == "disponivel"
+
+
+def test_nao_libera_veiculo_se_ha_outra_venda_concluida_ao_alterar_status(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    venda1 = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda1.status_code == 201
+    venda1_id = venda1.json()["id"]
+
+    venda2 = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-02",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "pendente",
+        },
+        headers=headers,
+    )
+    assert venda2.status_code == 201
+    venda2_id = venda2.json()["id"]
+
+    client.patch(
+        f"/vendas/{venda1_id}",
+        json={"status": "concluido"},
+        headers=headers,
+    )
+    client.patch(
+        f"/vendas/{venda2_id}",
+        json={"status": "concluido"},
+        headers=headers,
+    )
+
+    resp = client.patch(
+        f"/vendas/{venda2_id}",
+        json={"status": "pendente"},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "vendido"
+
+    resp = client.patch(
+        f"/vendas/{venda1_id}",
+        json={"status": "pendente"},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+
+    veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
+    assert veiculo.json()["status"] == "disponivel"
