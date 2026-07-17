@@ -423,6 +423,17 @@ def register_create_route(
                 erro=str(exc.detail),
                 status_code=400,
             )
+        except IntegrityError:
+            session.rollback()
+            return conflict_form_response(
+                templates,
+                request,
+                form_template,
+                ctx_form=ctx_form(session),
+                item_key=item_key,
+                item=None,
+                erro=write_conflict_detail(label),
+            )
         try:
             create_with_hook(module, session, data, after_create)
         except IntegrityError:
