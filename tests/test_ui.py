@@ -549,6 +549,72 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_vendas_busca_por_cliente_nao_duplica_resultados(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    base_veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_resp = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Civic",
+            "cor": "Preto",
+            "ano": 2020,
+            "placa": "XYZ9G87",
+            "km": 10000,
+            "preco": "80000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert veiculo_resp.status_code == 201
+    veiculo_id = veiculo_resp.json()["id"]
+
+    ana_id = _criar_cliente(client, headers, "Ana Busca", "11111111111")
+    bia_id = _criar_cliente(client, headers, "Bia Busca", "22222222222")
+
+    assert (
+        client.post(
+            "/vendas",
+            json={
+                "cliente_id": ana_id,
+                "veiculo_id": base_veiculo_id,
+                "data_venda": "2026-07-09",
+                "valor_venda": "85000.00",
+                "forma_pagamento": "pix",
+                "parcelas": 1,
+                "status": "concluido",
+            },
+            headers=headers,
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/vendas",
+            json={
+                "cliente_id": bia_id,
+                "veiculo_id": veiculo_id,
+                "data_venda": "2026-07-10",
+                "valor_venda": "86000.00",
+                "forma_pagamento": "pix",
+                "parcelas": 1,
+                "status": "pendente",
+            },
+            headers=headers,
+        ).status_code
+        == 201
+    )
+
+    busca = client.get("/ui/vendas?q=Ana")
+    assert busca.status_code == 200
+    assert "Ana Busca" in busca.text
+    assert "Bia Busca" not in busca.text
+
+
 def test_ui_vendas_sem_tabela_de_fechamento_nao_quebra(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -693,6 +759,66 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Compra" not in csv_resp.text
+
+
+def test_ui_compras_busca_por_cliente_nao_duplica_resultados(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    base_veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_resp = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Civic",
+            "cor": "Preto",
+            "ano": 2020,
+            "placa": "XYZ9G88",
+            "km": 10000,
+            "preco": "80000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert veiculo_resp.status_code == 201
+    veiculo_id = veiculo_resp.json()["id"]
+
+    ana_id = _criar_cliente(client, headers, "Ana Compra", "33333333333")
+    bia_id = _criar_cliente(client, headers, "Bia Compra", "44444444444")
+
+    assert (
+        client.post(
+            "/compras",
+            json={
+                "cliente_id": ana_id,
+                "veiculo_id": base_veiculo_id,
+                "data_compra": "2026-07-09",
+                "valor_compra": "84000.00",
+            },
+            headers=headers,
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/compras",
+            json={
+                "cliente_id": bia_id,
+                "veiculo_id": veiculo_id,
+                "data_compra": "2026-07-10",
+                "valor_compra": "83000.00",
+            },
+            headers=headers,
+        ).status_code
+        == 201
+    )
+
+    busca = client.get("/ui/compras?q=Ana")
+    assert busca.status_code == 200
+    assert "Ana Compra" in busca.text
+    assert "Bia Compra" not in busca.text
 
 
 def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:

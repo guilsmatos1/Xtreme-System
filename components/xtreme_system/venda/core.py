@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -131,6 +131,27 @@ def get(session: Session, venda_id: int) -> Venda | None:
 
 def list_by_cliente(session: Session, cliente_id: int) -> list[Venda]:
     return list(session.query(Venda).filter_by(cliente_id=cliente_id).all())
+
+
+def search(session: Session, term: str) -> list[Venda]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Venda)
+        .join(Cliente, Venda.cliente_id == Cliente.id)
+        .join(Veiculo, Venda.veiculo_id == Veiculo.id)
+        .where(
+            or_(
+                Cliente.nome.ilike(pattern),
+                Cliente.documento.ilike(pattern),
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Venda.status.ilike(pattern),
+                Venda.observacoes.ilike(pattern),
+            )
+        )
+        .distinct()
+        .all()
+    )
 
 
 def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:

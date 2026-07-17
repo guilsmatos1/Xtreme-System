@@ -94,6 +94,7 @@ register_crud_ui_routes(
     form_template="_form_venda.html",
     ctx_form=_ctx_form_venda,
     ctx_list=_ctx_lista_vendas,
+    searchable=True,
     parse_form=_parse_venda_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,

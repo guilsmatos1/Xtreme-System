@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric
+from sqlalchemy import Date, ForeignKey, Numeric, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -98,6 +98,26 @@ def get(session: Session, compra_id: int) -> Compra | None:
 
 def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
     return list(session.query(Compra).filter_by(cliente_id=cliente_id).all())
+
+
+def search(session: Session, term: str) -> list[Compra]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Compra)
+        .join(Cliente, Compra.cliente_id == Cliente.id)
+        .join(Veiculo, Compra.veiculo_id == Veiculo.id)
+        .where(
+            or_(
+                Cliente.nome.ilike(pattern),
+                Cliente.documento.ilike(pattern),
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Compra.observacoes.ilike(pattern),
+            )
+        )
+        .distinct()
+        .all()
+    )
 
 
 def create(session: Session, data: CompraCreate) -> Compra:

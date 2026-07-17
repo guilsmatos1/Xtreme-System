@@ -141,6 +141,7 @@ register_crud_ui_routes(
     ok_partial_template="_compras_ok.html",
     form_template="_form_compra.html",
     ctx_form=_ctx_form_compra,
+    searchable=True,
     parse_form=_parse_compra_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
