@@ -194,7 +194,7 @@ def pode_ver_campo(user: Any, pagina: str, campo: str) -> bool:
     if is_admin(user):
         return True
     if not user.perfil:
-        return True
+        return False
     ocultos = (user.perfil.restricoes or {}).get(pagina, {}).get("campos_ocultos", [])
     return campo not in ocultos
 

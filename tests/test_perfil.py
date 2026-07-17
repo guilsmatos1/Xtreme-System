@@ -72,9 +72,9 @@ def test_admin_ve_todos_campos_e_operacoes_mesmo_sem_perfil(
     assert perfil.pode_operacao(admin, "veiculos", "excluir")
 
 
-def test_sem_perfil_ve_campos_mas_nao_faz_operacoes(db_session: Session) -> None:
+def test_sem_perfil_campos_e_operacoes_negados(db_session: Session) -> None:
     vendedor = _usuario(db_session, usuario.Papel.funcionario, None)
-    assert perfil.pode_ver_campo(vendedor, "veiculos", "preco")
+    assert not perfil.pode_ver_campo(vendedor, "veiculos", "preco")
     assert not perfil.pode_operacao(vendedor, "veiculos", "excluir")
 
 
