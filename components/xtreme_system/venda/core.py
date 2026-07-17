@@ -133,6 +133,27 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Venda]:
     return list(session.query(Venda).filter_by(cliente_id=cliente_id).all())
 
 
+def search(session: Session, term: str) -> list[Venda]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Venda)
+        .join(Cliente, Venda.cliente_id == Cliente.id)
+        .join(Veiculo, Venda.veiculo_id == Veiculo.id)
+        .where(
+            or_(
+                Cliente.nome.ilike(pattern),
+                Cliente.documento.ilike(pattern),
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Venda.status.ilike(pattern),
+                Venda.observacoes.ilike(pattern),
+            )
+        )
+        .distinct()
+        .all()
+    )
+
+
 def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
     if status == StatusVenda.concluido:
         return StatusVeiculo.vendido

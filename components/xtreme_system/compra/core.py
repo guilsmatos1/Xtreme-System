@@ -111,6 +111,26 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
     return list(session.query(Compra).filter_by(cliente_id=cliente_id).all())
 
 
+def search(session: Session, term: str) -> list[Compra]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Compra)
+        .join(Cliente, Compra.cliente_id == Cliente.id)
+        .join(Veiculo, Compra.veiculo_id == Veiculo.id)
+        .where(
+            or_(
+                Cliente.nome.ilike(pattern),
+                Cliente.documento.ilike(pattern),
+                Veiculo.modelo.ilike(pattern),
+                Veiculo.placa.ilike(pattern),
+                Compra.observacoes.ilike(pattern),
+            )
+        )
+        .distinct()
+        .all()
+    )
+
+
 def create(session: Session, data: CompraCreate) -> Compra:
     return crud.create(session, Compra, data)
 
