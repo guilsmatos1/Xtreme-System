@@ -1,13 +1,16 @@
-"""Auditoria: leitura (query/count/tabelas) e schema, em SQLite in-memory."""
+"""Auditoria: leitura (query/count/tabelas) e snapshot, em SQLite in-memory."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from sqlalchemy.orm import Session
 
 from xtreme_system.auditoria import core as auditoria
+from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
+from xtreme_system.whatsapp import core as whatsapp
 
 
 def _seed_admin(session: Session) -> usuario.Usuario:
@@ -91,3 +94,35 @@ def test_auditar_rejeita_usuario_id_none(db_session: Session) -> None:
                 username="sem_autor", senha="s", papel=usuario.Papel.admin
             ),
         )
+
+
+def test_auditoria_serializa_tipos_e_mascara_campos_sensiveis() -> None:
+    user = usuario.Usuario(
+        id=1,
+        username="admin",
+        senha_hash="segredo",
+        papel=usuario.Papel.admin,
+        ativo=True,
+    )
+    dados_usuario = auditoria.snapshot(user)
+    assert dados_usuario["senha_hash"] == "***"
+    assert dados_usuario["papel"] == "admin"
+
+    custo = custo_veiculo.CustoVeiculo(
+        id=1,
+        veiculo_id=2,
+        categoria="lavagem",
+        descricao=None,
+        valor=Decimal("10.50"),
+        data_custo=date(2026, 7, 17),
+        criado_em=datetime(2026, 7, 17, 10, 11, 12, tzinfo=UTC),
+    )
+    dados_custo = auditoria.snapshot(custo)
+    assert dados_custo["valor"] == "10.50"
+    assert dados_custo["data_custo"] == "2026-07-17"
+    assert dados_custo["criado_em"] == "2026-07-17T10:11:12+00:00"
+
+    config = whatsapp.WhatsappConfig(id=1, evolution_api_key="chave-secreta")
+    dados_config = auditoria.snapshot(config)
+    assert dados_config["evolution_api_key"] == "***"
+    assert "chave-secreta" not in str(dados_config)

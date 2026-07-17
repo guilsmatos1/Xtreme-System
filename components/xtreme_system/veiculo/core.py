@@ -16,7 +16,7 @@ from xtreme_system.investidor.core import Investidor, InvestidorRead
 
 
 class TipoVeiculo(StrEnum):
-    moto = "moto"  # noqa: enum member
+    moto = "moto"
     carro = "carro"
 
 
@@ -35,17 +35,17 @@ class Veiculo(Base):
     __tablename__ = "veiculo"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tipo: Mapped[TipoVeiculo]  # noqa: SQLAlchemy mapped
-    modelo: Mapped[str]  # noqa: SQLAlchemy mapped
-    cor: Mapped[str]  # noqa: SQLAlchemy mapped
-    ano: Mapped[int]  # noqa: SQLAlchemy mapped
-    placa: Mapped[str] = mapped_column(unique=True, index=True)  # noqa: SQLAlchemy mapped
-    km: Mapped[int | None]  # noqa: SQLAlchemy mapped
-    preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))  # noqa: SQLAlchemy mapped
-    procuracao: Mapped[str | None]  # noqa: SQLAlchemy mapped
+    tipo: Mapped[TipoVeiculo]
+    modelo: Mapped[str]
+    cor: Mapped[str]
+    ano: Mapped[int]
+    placa: Mapped[str] = mapped_column(unique=True, index=True)
+    km: Mapped[int | None]
+    preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    procuracao: Mapped[str | None]
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
-    tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)  # noqa: SQLAlchemy mapped
-    revisao: Mapped[bool] = mapped_column(default=False)  # noqa: SQLAlchemy mapped
+    tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)
+    revisao: Mapped[bool] = mapped_column(default=False)
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
 
     investidor: Mapped[Investidor] = relationship(lazy="joined")
@@ -59,51 +59,51 @@ class Veiculo(Base):
 
 
 class VeiculoCreate(BaseModel):
-    tipo: TipoVeiculo  # noqa: Pydantic field
-    modelo: str  # noqa: Pydantic field
-    cor: str  # noqa: Pydantic field
-    ano: int  # noqa: Pydantic field
-    placa: str  # noqa: Pydantic field
-    km: int | None = None  # noqa: Pydantic field
-    preco: Decimal  # noqa: Pydantic field
-    procuracao: str | None = None  # noqa: Pydantic field
+    tipo: TipoVeiculo
+    modelo: str
+    cor: str
+    ano: int
+    placa: str
+    km: int | None = None
+    preco: Decimal
+    procuracao: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
-    tipo_entrada: TipoEntrada = TipoEntrada.compra  # noqa: Pydantic field
-    revisao: bool = False  # noqa: Pydantic field
+    tipo_entrada: TipoEntrada = TipoEntrada.compra
+    revisao: bool = False
     investidor_id: int
 
 
 class VeiculoUpdate(BaseModel):
-    tipo: TipoVeiculo | None = None  # noqa: Pydantic field
-    modelo: str | None = None  # noqa: Pydantic field
-    cor: str | None = None  # noqa: Pydantic field
-    ano: int | None = None  # noqa: Pydantic field
-    placa: str | None = None  # noqa: Pydantic field
-    km: int | None = None  # noqa: Pydantic field
-    preco: Decimal | None = None  # noqa: Pydantic field
-    procuracao: str | None = None  # noqa: Pydantic field
+    tipo: TipoVeiculo | None = None
+    modelo: str | None = None
+    cor: str | None = None
+    ano: int | None = None
+    placa: str | None = None
+    km: int | None = None
+    preco: Decimal | None = None
+    procuracao: str | None = None
     status: StatusVeiculo | None = None
-    tipo_entrada: TipoEntrada | None = None  # noqa: Pydantic field
-    revisao: bool | None = None  # noqa: Pydantic field
+    tipo_entrada: TipoEntrada | None = None
+    revisao: bool | None = None
     investidor_id: int | None = None
 
 
 class VeiculoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int  # noqa: Pydantic field
-    tipo: TipoVeiculo  # noqa: Pydantic field
-    modelo: str  # noqa: Pydantic field
-    cor: str  # noqa: Pydantic field
-    ano: int  # noqa: Pydantic field
-    placa: str  # noqa: Pydantic field
-    km: int | None = None  # noqa: Pydantic field
-    preco: Decimal  # noqa: Pydantic field
-    procuracao: str | None  # noqa: Pydantic field
-    status: StatusVeiculo  # noqa: Pydantic field
-    tipo_entrada: TipoEntrada  # noqa: Pydantic field
-    revisao: bool  # noqa: Pydantic field
-    investidor: InvestidorRead  # noqa: Pydantic field
+    id: int
+    tipo: TipoVeiculo
+    modelo: str
+    cor: str
+    ano: int
+    placa: str
+    km: int | None = None
+    preco: Decimal
+    procuracao: str | None
+    status: StatusVeiculo
+    tipo_entrada: TipoEntrada
+    revisao: bool
+    investidor: InvestidorRead
 
 
 def list_all(session: Session) -> list[Veiculo]:

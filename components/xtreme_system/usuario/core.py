@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
-from xtreme_system.auditoria.core import _snapshot, auditar
+from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.auth.core import hash_password
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
@@ -81,7 +81,7 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
         tabela="usuario",
         tipo_acao="CREATE",
         registro_id=obj.id,
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     crud.flush(session)
     return obj
@@ -114,7 +114,7 @@ def delete(session: Session, obj: Usuario) -> None:
 
 
 def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
-    antes = _snapshot(obj)
+    antes = snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
     session.flush()
     auditar(
@@ -123,13 +123,13 @@ def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
         tipo_acao="UPDATE",
         registro_id=obj.id,
         dados_antes=antes,
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     crud.flush(session)
 
 
 def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
-    antes = _snapshot(obj)
+    antes = snapshot(obj)
     obj.perfil_id = perfil_id
     session.flush()
     auditar(
@@ -138,6 +138,6 @@ def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
         tipo_acao="UPDATE",
         registro_id=obj.id,
         dados_antes=antes,
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     crud.flush(session)

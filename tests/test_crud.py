@@ -162,9 +162,9 @@ def test_senha_hash_masked_in_audit(session: Session) -> None:
     assert "secret" not in str(dados)
 
 
-def test_evolution_api_key_masked_in_snapshot() -> None:
+def test_evolution_api_key_masked_in_audit_data() -> None:
     config = whatsapp.WhatsappConfig(id=1, evolution_api_key="chave-secreta")
-    dados = auditoria._snapshot(config)  # noqa: SLF001 -- exercita o helper de máscara
+    dados = auditoria.snapshot(config)
     assert dados["evolution_api_key"] == "***"
     assert "chave-secreta" not in str(dados)
 

@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from xtreme_system.auditoria.core import _snapshot, auditar
+from xtreme_system.auditoria.core import auditar, snapshot
 
 
 def flush(session: Session) -> None:
@@ -29,14 +29,14 @@ def create[M](session: Session, model_cls: type[M], data: Any) -> M:
         tabela=model_cls.__tablename__,  # type: ignore[attr-defined]
         tipo_acao="CREATE",
         registro_id=obj.id,  # type: ignore[attr-defined]
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     flush(session)
     return obj
 
 
 def update[M](session: Session, obj: M, data: Any) -> M:
-    antes = _snapshot(obj)
+    antes = snapshot(obj)
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(obj, field, value)
     session.flush()
@@ -47,7 +47,7 @@ def update[M](session: Session, obj: M, data: Any) -> M:
         tipo_acao="UPDATE",
         registro_id=obj.id,  # type: ignore[attr-defined]
         dados_antes=antes,
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     flush(session)
     return obj
@@ -56,7 +56,7 @@ def update[M](session: Session, obj: M, data: Any) -> M:
 def delete(session: Session, obj: Any) -> None:
     tabela = obj.__tablename__
     obj_id = obj.id
-    antes = _snapshot(obj)
+    antes = snapshot(obj)
     session.delete(obj)
     auditar(
         session,

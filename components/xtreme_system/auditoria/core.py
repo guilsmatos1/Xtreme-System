@@ -36,8 +36,8 @@ class Auditoria(Base):
     )
 
 
-def _snapshot(obj: Any) -> dict[str, Any]:
-    """Dict from ORM column values, masking sensitive fields.
+def snapshot(obj: Any) -> dict[str, Any]:
+    """Snapshot serializavel de um model ORM para auditoria.
 
     Converts Decimal, datetime, enum values to JSON-serializable types.
     """
