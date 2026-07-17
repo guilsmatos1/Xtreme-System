@@ -114,6 +114,26 @@ def test_ui_perfis_novo_exibe_cadastro_de_clientes_compras_e_vendas(
     assert 'name="op__vendas__cadastrar"' in pagina.text
 
 
+def test_ui_perfis_salva_cadastro_de_compras_e_vendas(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/perfis",
+        data={
+            "nome": "Operador",
+            "paginas": ["compras", "vendas"],
+            "op__compras__cadastrar": "on",
+            "op__vendas__cadastrar": "on",
+        },
+    )
+
+    assert resp.status_code == 200
+    form = client.get("/ui/perfis/1/editar")
+    assert form.status_code == 200
+    assert re.search(r'name="op__compras__cadastrar"\s+checked', form.text)
+    assert re.search(r'name="op__vendas__cadastrar"\s+checked', form.text)
+
+
 def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
     client: TestClient,
 ) -> None:
@@ -1147,6 +1167,34 @@ def test_ui_veiculos_respeita_permissao_de_perfil_de_debitos(
     assert permitido.status_code == 200
     assert "Valor disponível" not in permitido.text
     assert 'data-col-label="Débitos"' not in permitido.text
+
+
+def test_ui_exportacao_respeita_permissao_de_campo(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={
+            "nome": "Sem Preco",
+            "paginas": "veiculos",
+            "oculto__veiculos__preco": "on",
+        },
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "sem_preco",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "sem_preco", "password": "abc"})
+
+    resp = client.get("/ui/veiculos/exportar")
+
+    assert resp.status_code == 200
+    assert "Preco" not in resp.text
+    assert "85000.00" not in resp.text
 
 
 def _login_admin(client: TestClient) -> None:

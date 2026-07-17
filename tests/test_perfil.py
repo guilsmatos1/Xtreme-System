@@ -126,6 +126,26 @@ def test_catalogos_cobrem_as_seis_paginas_do_rollout() -> None:
     }
     assert {"fechar"} <= {chave for chave, _ in perfil.OPERACOES["vendas"]}
     assert {"debitos"} <= {chave for chave, _ in perfil.CAMPOS_PROTEGIDOS["veiculos"]}
+    assert {
+        "modelo",
+        "placa",
+        "tipo",
+        "ano",
+        "km",
+        "status",
+        "tipo_entrada",
+        "procuracao",
+    } <= {chave for chave, _ in perfil.CAMPOS_PROTEGIDOS["veiculos"]}
+    assert {
+        "abrir_cliente_vendedor",
+        "upload_documento",
+        "abrir_imagens",
+        "enviar_imagens",
+        "excluir_imagens",
+        "abrir_procuracao",
+        "enviar_procuracao",
+        "excluir_procuracao",
+    } <= {chave for chave, _ in perfil.OPERACOES["veiculos"]}
     assert {"lucro", "participacao"} <= {
         chave for chave, _ in perfil.CAMPOS_PROTEGIDOS["vendas"]
     }

@@ -13,6 +13,7 @@
 
         {% if venda %}
         <div class="form-grid">
+          {% if pode_ver_campo(user, 'vendas', 'cliente') %}
           <label class="field">
             <span class="field__label">Cliente</span>
             <input class="input" id="cliente-search" name="cliente_id" type="hidden" value="{{ venda.cliente_id }}" required>
@@ -23,6 +24,8 @@
               {% endfor %}
             </datalist>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'veiculo') %}
           <label class="field">
             <span class="field__label">Veículo</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
@@ -33,10 +36,14 @@
               {% endfor %}
             </datalist>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'km') %}
           <label class="field">
             <span class="field__label">KM</span>
             <input class="input" name="km" type="number" min="0" value="{{ venda.km if venda.km is not none else '' }}">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'status') %}
           <label class="field">
             <span class="field__label">Status</span>
             <select class="select" name="status" required>
@@ -45,6 +52,7 @@
               {% endfor %}
             </select>
           </label>
+          {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
@@ -65,15 +73,20 @@
           </label>
           {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
           <label class="field">
             <span class="field__label">Forma de pagamento</span>
             <input class="input" name="forma_pagamento" value="{{ venda.forma_pagamento }}" required>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
           <label class="field">
             <span class="field__label">Parcelas</span>
             <input class="input" name="parcelas" type="number" min="1" value="{{ venda.parcelas }}" required>
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') or pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
@@ -81,6 +94,8 @@
               Houve troca de veículo?
             </label>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
           <label class="field" data-troca>
             <span class="field__label">Veículo da troca</span>
             <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ venda.veiculo_troca_id if venda.veiculo_troca_id is not none else '' }}">
@@ -91,12 +106,14 @@
               {% endfor %}
             </datalist>
           </label>
+          {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
             <input class="input" name="valor_diferenca" type="number" step="0.01" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
             <label>
@@ -104,21 +121,26 @@
               Faltou parte do pagamento?
             </label>
           </label>
+          {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
             <input class="input" name="valor_pendente" type="number" step="0.01" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
           <label class="field field--full">
             <span class="field__label">Datas de pagamento</span>
             <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ venda.datas_pagamento if venda.datas_pagamento is not none else '' }}">
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="4">{{ venda.observacoes or '' }}</textarea>
           </label>
+          {% endif %}
         </div>
         {% else %}
         <div class="stepper">
@@ -144,6 +166,7 @@
         </div>
 
         <fieldset class="wizard-step form-grid is-active" data-step="1">
+          {% if pode_ver_campo(user, 'vendas', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
             <select class="select" id="cliente-select" name="cliente_id" autofocus>
@@ -155,6 +178,7 @@
             <span class="field__label">Nome</span>
             <input class="input" name="cli_nome" data-novo-cliente required>
           </label>
+          {% endif %}
           <label class="field">
             <span class="field__label">CPF</span>
             <input class="input" name="cli_documento" data-novo-cliente required>
@@ -192,6 +216,7 @@
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="2">
+          {% if pode_ver_campo(user, 'vendas', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
@@ -202,10 +227,14 @@
               {% endfor %}
             </datalist>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'km') %}
           <label class="field">
             <span class="field__label">KM</span>
             <input class="input" name="km" type="number" min="0">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'status') %}
           <label class="field">
             <span class="field__label">Status</span>
             <select class="select" name="status" required>
@@ -214,31 +243,43 @@
               {% endfor %}
             </select>
           </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="3">
+          {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda</span>
             <input class="input" name="valor_venda" type="number" step="0.01" required>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
             <input class="input" name="valor_entrada" type="number" step="0.01">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos do veículo</span>
             <input class="input" name="debitos" type="number" step="0.01" min="0">
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
           <label class="field">
             <span class="field__label">Forma de pagamento</span>
             <input class="input" name="forma_pagamento" required>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
           <label class="field">
             <span class="field__label">Parcelas</span>
             <input class="input" name="parcelas" type="number" min="1">
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
             <label>
@@ -246,17 +287,23 @@
               Faltou parte do pagamento?
             </label>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
             <input class="input" name="valor_pendente" type="number" step="0.01">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
           <label class="field field--full">
             <span class="field__label">Datas de pagamento</span>
             <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03">
           </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="4">
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') or pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
@@ -264,6 +311,8 @@
               Houve troca de veículo?
             </label>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
           <label class="field" data-troca>
             <span class="field__label">Veículo da troca</span>
             <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden">
@@ -274,15 +323,20 @@
               {% endfor %}
             </datalist>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
             <input class="input" name="valor_diferenca" type="number" step="0.01">
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="4"></textarea>
           </label>
+          {% endif %}
         </fieldset>
         {% endif %}
       </div>
@@ -371,6 +425,7 @@
       campo.closest('.field').style.display = existente ? 'none' : '';
     });
   }
+  if (!select) return;
   select.addEventListener('change', sincronizarCliente);
   sincronizarCliente();
 })();
@@ -383,6 +438,8 @@
   var hidden = document.getElementById('veiculo-troca-search');
   var input = document.getElementById('veiculo-troca-input');
   var options = document.querySelectorAll('#veiculos-troca-list option');
+
+  if (!checkbox || !hidden || !input) return;
 
   function sincronizarVeiculoTroca() {
     var id = '';

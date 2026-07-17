@@ -82,6 +82,7 @@ def register_crud_ui_routes(
     csv_filename: str,
     csv_headers: list[str],
     csv_row: CsvRow[EntityT],
+    csv_fields: list[str | None] | None = None,
     delete_requires_admin: bool = True,
     register_create: bool = True,
     register_update: bool = True,
@@ -119,6 +120,8 @@ def register_crud_ui_routes(
         csv_filename=csv_filename,
         csv_headers=csv_headers,
         csv_row=csv_row,
+        csv_fields=csv_fields,
+        pagina=pagina,
     )
     register_new_route(
         app,
@@ -273,9 +276,11 @@ def register_export_route(
     csv_filename: str,
     csv_headers: list[str],
     csv_row: CsvRow[EntityT],
+    csv_fields: list[str | None] | None = None,
+    pagina: str | None = None,
 ) -> None:
     @app.get(f"{prefix}/exportar")
-    def _exportar(session: SessionDep, _: UIUser, q: str = "") -> Response:
+    def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
         lista = query_list(
             session,
             module,
@@ -284,7 +289,17 @@ def register_export_route(
             list_func=list_func,
             search_func=search_func,
         )
-        return csv_response(csv_filename, csv_headers, [csv_row(obj) for obj in lista])
+        headers = csv_headers
+        rows = [csv_row(obj) for obj in lista]
+        if pagina and csv_fields:
+            indices = [
+                idx
+                for idx, campo in enumerate(csv_fields)
+                if campo is None or perfil.pode_ver_campo(user, pagina, campo)
+            ]
+            headers = [headers[idx] for idx in indices]
+            rows = [[row[idx] for idx in indices] for row in rows]
+        return csv_response(csv_filename, headers, rows)
 
 
 def register_new_route(
@@ -303,7 +318,7 @@ def register_new_route(
     def _novo(
         request: Request,
         session: SessionDep,
-        _: Annotated[usuario.Usuario, Depends(dep)],
+        user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         return form_response(
             templates,
@@ -312,6 +327,7 @@ def register_new_route(
             ctx_form=ctx_form(session),
             item_key=item_key,
             item=None,
+            user=user,
         )
 
 
@@ -391,6 +407,7 @@ def register_create_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=None,
+                user=user,
                 erro="Dados inválidos",
                 status_code=400,
             )
@@ -402,6 +419,7 @@ def register_create_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=None,
+                user=user,
                 erro=str(exc.detail),
                 status_code=400,
             )
@@ -416,6 +434,7 @@ def register_create_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=None,
+                user=user,
                 erro=write_conflict_detail(label),
             )
         lista = query_list(

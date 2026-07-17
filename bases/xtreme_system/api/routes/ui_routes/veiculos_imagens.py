@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
@@ -16,12 +16,24 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
 from xtreme_system.api.setup import app
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+_AbrirImagensDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "abrir_imagens"))
+]
+_EnviarImagensDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "enviar_imagens"))
+]
+_ExcluirImagensDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "excluir_imagens"))
+]
 
 
 def _imagem_modal(
     request: Request,
     session: Session,
+    user: usuario.Usuario,
     veiculo_id: int,
     *,
     action_oob: bool = False,
@@ -32,7 +44,7 @@ def _imagem_modal(
     return templates.TemplateResponse(
         request,
         "_modal_imagens_veiculo.html",
-        {"veiculo": item, "action_oob": action_oob},
+        {"veiculo": item, "user": user, "action_oob": action_oob},
     )
 
 
@@ -40,18 +52,18 @@ def _imagem_modal(
 def ui_veiculo_imagens(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _AbrirImagensDep,
     veiculo_id: int,
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
-    return _imagem_modal(request, session, veiculo_id)
+    return _imagem_modal(request, session, user, veiculo_id)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/imagens")
 def ui_veiculo_imagens_upload(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _EnviarImagensDep,
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -62,7 +74,7 @@ def ui_veiculo_imagens_upload(
         return templates.TemplateResponse(
             request,
             "_modal_imagens_veiculo.html",
-            {"veiculo": item, "erro": erro},
+            {"veiculo": item, "user": user, "erro": erro},
             status_code=400,
         )
     salvar_arquivos(
@@ -75,14 +87,14 @@ def ui_veiculo_imagens_upload(
         fk_id=veiculo_id,
         arquivos=imagens,
     )
-    return _imagem_modal(request, session, veiculo_id, action_oob=True)
+    return _imagem_modal(request, session, user, veiculo_id, action_oob=True)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/imagens/{img_id}/excluir")
 def ui_veiculo_imagens_excluir(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _ExcluirImagensDep,
     veiculo_id: int,
     img_id: int,
 ) -> HTMLResponse:
@@ -94,4 +106,4 @@ def ui_veiculo_imagens_excluir(
     path = _uploaded_file_path(img.url or "")
     if path is not None:
         _remover_upload(path)
-    return _imagem_modal(request, session, veiculo_id, action_oob=True)
+    return _imagem_modal(request, session, user, veiculo_id, action_oob=True)

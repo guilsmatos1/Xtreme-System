@@ -78,6 +78,7 @@ register_crud_ui_routes(
         "Valor",
         "Descricao",
     ],
+    csv_fields=[None, None, None, None, None, "valor", None],
     csv_row=lambda c: [
         c.id,
         c.veiculo.modelo,

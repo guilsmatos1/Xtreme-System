@@ -4,12 +4,14 @@ from datetime import date
 from typing import Annotated, Any
 
 from fastapi import Depends, Form, HTTPException
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
 from xtreme_system.api.route_factories import register_crud_routes
 from xtreme_system.api.routes.workflows import (
@@ -26,6 +28,7 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -261,19 +264,73 @@ register_crud_routes(
 
 # ---- Compras ----
 
-register_crud_routes(
-    app,
-    compra,
-    "/compras",
-    "Compra",
-    read_schema=compra.CompraRead,
-    create_schema=compra.CompraCreate,
-    update_schema=compra.CompraUpdate,
-    before_create=validate_cliente_veiculo_fks,
-    before_update=lambda session, _obj, data: validate_cliente_veiculo_fks(
-        session, data
-    ),
-)
+
+def _compra_json(obj: compra.Compra, user: usuario.Usuario) -> dict[str, Any]:
+    data: dict[str, Any] = jsonable_encoder(compra.CompraRead.model_validate(obj))
+    for campo in ("valor_compra", "debitos"):
+        if not perfil.pode_ver_campo(user, "compras", campo):
+            data.pop(campo, None)
+    return data
+
+
+def _require_compra_operacao(user: usuario.Usuario, operacao: str) -> None:
+    if not perfil.pode_operacao(user, "compras", operacao):
+        raise HTTPException(status_code=403, detail="Operação não permitida")
+
+
+@app.get("/compras")
+def listar_compras(session: SessionDep, user: CurrentUser) -> list[dict[str, Any]]:
+    return [_compra_json(obj, user) for obj in compra.list_all(session)]
+
+
+@app.get("/compras/{item_id}")
+def obter_compra(
+    item_id: int, session: SessionDep, user: CurrentUser
+) -> dict[str, Any]:
+    return _compra_json(_found(compra.get(session, item_id), "Compra"), user)
+
+
+@app.post("/compras", status_code=201)
+def criar_compra(
+    data: compra.CompraCreate, session: SessionDep, user: CurrentUser
+) -> dict[str, Any]:
+    _require_compra_operacao(user, "cadastrar")
+    session.info["usuario_id"] = user.id
+    validate_cliente_veiculo_fks(session, data)
+    obj = _safe_write(
+        lambda: compra.create(session, data), conflict_msg="Compra já existe"
+    )
+    return _compra_json(obj, user)
+
+
+@app.patch("/compras/{item_id}")
+def atualizar_compra(
+    item_id: int,
+    data: compra.CompraUpdate,
+    session: SessionDep,
+    user: CurrentUser,
+) -> dict[str, Any]:
+    _require_compra_operacao(user, "editar")
+    session.info["usuario_id"] = user.id
+    obj = _found(compra.get(session, item_id), "Compra")
+    validate_cliente_veiculo_fks(session, data)
+    obj = _safe_write(
+        lambda: compra.update(session, obj, data), conflict_msg="Compra já existe"
+    )
+    return _compra_json(obj, user)
+
+
+@app.delete("/compras/{item_id}", status_code=204)
+def excluir_compra(item_id: int, session: SessionDep, user: CurrentUser) -> None:
+    _require_compra_operacao(user, "excluir")
+    session.info["usuario_id"] = user.id
+    obj = _found(compra.get(session, item_id), "Compra")
+    try:
+        compra.delete(session, obj)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409, detail="Compra possui veículos vinculados"
+        ) from None
 
 
 # ---- Auditoria (somente leitura, admin) ----

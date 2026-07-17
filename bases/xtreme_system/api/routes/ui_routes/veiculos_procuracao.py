@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
@@ -16,12 +16,24 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
 from xtreme_system.api.setup import app
 from xtreme_system.documento_procuracao import core as documento_procuracao
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+_AbrirProcuracaoDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "abrir_procuracao"))
+]
+_EnviarProcuracaoDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "enviar_procuracao"))
+]
+_ExcluirProcuracaoDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "excluir_procuracao"))
+]
 
 
 def _procuracao_modal(
     request: Request,
     session: Session,
+    user: usuario.Usuario,
     veiculo_id: int,
     erro: str | None = None,
     *,
@@ -33,7 +45,7 @@ def _procuracao_modal(
     return templates.TemplateResponse(
         request,
         "_modal_procuracao_veiculo.html",
-        {"veiculo": item, "erro": erro, "action_oob": action_oob},
+        {"veiculo": item, "user": user, "erro": erro, "action_oob": action_oob},
         status_code=400 if erro else 200,
     )
 
@@ -42,18 +54,18 @@ def _procuracao_modal(
 def ui_veiculo_procuracao(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _AbrirProcuracaoDep,
     veiculo_id: int,
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
-    return _procuracao_modal(request, session, veiculo_id)
+    return _procuracao_modal(request, session, user, veiculo_id)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/procuracao")
 def ui_veiculo_procuracao_upload(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _EnviarProcuracaoDep,
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -61,7 +73,7 @@ def ui_veiculo_procuracao_upload(
     _found(veiculo.get(session, veiculo_id), "Veículo")
     erro = _validar_uploads(documentos)
     if erro:
-        return _procuracao_modal(request, session, veiculo_id, erro)
+        return _procuracao_modal(request, session, user, veiculo_id, erro)
     salvar_arquivos(
         session,
         upload_dir=_uploads_procuracao_dir(veiculo_id),
@@ -72,14 +84,14 @@ def ui_veiculo_procuracao_upload(
         fk_id=veiculo_id,
         arquivos=documentos,
     )
-    return _procuracao_modal(request, session, veiculo_id, action_oob=True)
+    return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/procuracao/{doc_id}/excluir")
 def ui_veiculo_procuracao_excluir(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _ExcluirProcuracaoDep,
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
@@ -91,4 +103,4 @@ def ui_veiculo_procuracao_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _procuracao_modal(request, session, veiculo_id, action_oob=True)
+    return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)

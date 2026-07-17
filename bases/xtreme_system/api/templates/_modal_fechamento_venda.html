@@ -15,7 +15,7 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
         <div><dt>Receita</dt><dd>{{ money(fechamento.receita) }}</dd></div>
         <div><dt>Custo do veículo</dt><dd>{{ money(fechamento.custo_veiculo) }}</dd></div>
         <div><dt>Custos operacionais</dt><dd>{{ money(fechamento.custos_operacionais) }}</dd></div>
-        <div><dt>Débitos</dt><dd>{{ money(fechamento.debitos) }}</dd></div>
+        {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ money(fechamento.debitos) }}</dd></div>{% endif %}
         {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(fechamento.lucro_liquido) }}</dd></div>{% endif %}
         <div><dt>Data</dt><dd>{{ fechamento.data_fechamento.isoformat() }}</dd></div>
       </dl>
@@ -41,7 +41,7 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
           <div><dt>Receita</dt><dd>{{ money(preview.receita) }}</dd></div>
           <div><dt>Custo do veículo</dt><dd>{{ money(preview.custo_veiculo) }}</dd></div>
           <div><dt>Custos operacionais</dt><dd>{{ money(preview.custos_operacionais) }}</dd></div>
-          <div><dt>Débitos</dt><dd>{{ money(preview.debitos) }}</dd></div>
+          {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ money(preview.debitos) }}</dd></div>{% endif %}
           {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(preview.lucro_liquido) }}</dd></div>{% endif %}
         </dl>
         {% if not preview.elegivel %}

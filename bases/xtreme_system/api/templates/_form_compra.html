@@ -14,6 +14,7 @@
 
         {% if compra %}
         <div class="form-grid">
+          {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field">
             <span class="field__label">Cliente *</span>
             <select class="select" name="cliente_id" required>
@@ -23,6 +24,8 @@
               {% endfor %}
             </select>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field">
             <span class="field__label">Veículo *</span>
             <select class="select" name="veiculo_id" required>
@@ -32,11 +35,15 @@
               {% endfor %}
             </select>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field">
             <span class="field__label">Data da compra</span>
             <input class="input" name="data_compra" type="date" value="{{ compra.data_compra.isoformat() if compra and compra.data_compra else '' }}"{% if compra %} readonly{% endif %}>
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'compras', 'status') %}
           <label class="field">
             <span class="field__label">Estado</span>
             <select class="select" name="status">
@@ -45,6 +52,7 @@
               <option value="cancelado"{% if compra and compra.status.value == "cancelado" %} selected{% endif %}>Cancelado</option>
             </select>
           </label>
+          {% endif %}
 
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
@@ -59,10 +67,12 @@
           </label>
           {% endif %}
 
+          {% if pode_ver_campo(user, 'compras', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="4">{{ compra.observacoes if compra.observacoes else '' }}</textarea>
           </label>
+          {% endif %}
         </div>
         {% else %}
         <div class="stepper">
@@ -83,6 +93,7 @@
         </div>
 
         <fieldset class="wizard-step form-grid is-active" data-step="1">
+          {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
             <select class="select" id="cliente-select" name="cliente_id" autofocus>
@@ -92,6 +103,8 @@
               {% endfor %}
             </select>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-novo-cliente required>
@@ -130,6 +143,8 @@
             <span class="field__label">CEP</span>
             <input class="input" name="cli_cep" data-novo-cliente>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo</span>
             <select class="select" id="veiculo-select" name="veiculo_id">
@@ -182,32 +197,43 @@
               {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="2">
+          {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field field--full">
             <span class="field__label">Data da compra</span>
             <input class="input" name="data_compra" type="date" value="{{ data_atual }}">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
             <span class="field__label">Valor da compra *</span>
             <input class="input" name="valor_compra" type="number" step="0.01" required>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos</span>
             <input class="input" name="debitos" type="number" step="0.01">
           </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="3">
+          {% if pode_ver_campo(user, 'compras', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="5"></textarea>
           </label>
+          {% endif %}
+          {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
           <label class="field field--full">
             <span class="field__label">Comprovante de pagamento</span>
             <input class="input" name="comprovantes_pagamento" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
           </label>
+          {% endif %}
         </fieldset>
         {% endif %}
       </div>
@@ -284,26 +310,28 @@
   var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
 
   function sincronizarCliente() {
+    if (!selectCliente) return;
     var existente = !!selectCliente.value;
     camposNovoCliente.forEach(function (campo) {
       campo.disabled = existente;
       campo.closest('.field').style.display = existente ? 'none' : '';
     });
   }
-  selectCliente.addEventListener('change', sincronizarCliente);
+  if (selectCliente) selectCliente.addEventListener('change', sincronizarCliente);
   sincronizarCliente();
 
   var selectVeiculo = document.getElementById('veiculo-select');
   var camposNovoVeiculo = form.querySelectorAll('[data-novo-veiculo]');
 
   function sincronizarVeiculo() {
+    if (!selectVeiculo) return;
     var existente = !!selectVeiculo.value;
     camposNovoVeiculo.forEach(function (campo) {
       campo.disabled = existente;
       campo.closest('.field').style.display = existente ? 'none' : '';
     });
   }
-  selectVeiculo.addEventListener('change', sincronizarVeiculo);
+  if (selectVeiculo) selectVeiculo.addEventListener('change', sincronizarVeiculo);
   sincronizarVeiculo();
 })();
 </script>

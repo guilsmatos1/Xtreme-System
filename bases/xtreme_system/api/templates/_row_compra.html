@@ -1,20 +1,23 @@
 {% import "_macros.html" as ui %}
 <tr id="compra-{{ c.id }}">
-  <td data-col="data">{{ c.data_compra.isoformat() }}</td>
-  <td class="cell-strong" data-col="cliente">{{ c.cliente.nome }}</td>
-  <td data-col="documento">{{ c.cliente.documento or "-" }}</td>
-  <td data-col="status"><span class="badge {% if c.status.value == 'finalizado' %}badge--success{% elif c.status.value == 'cancelado' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>
-  <td data-col="placa">{{ c.veiculo.placa }}</td>
-  <td data-col="modelo">{{ c.veiculo.modelo }}</td>
+  {% if pode_ver_campo(user, 'compras', 'data_compra') %}<td data-col="data">{{ c.data_compra.isoformat() }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'cliente') %}<td class="cell-strong" data-col="cliente">{{ c.cliente.nome }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<td data-col="documento">{{ c.cliente.documento or "-" }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'status') %}<td data-col="status"><span class="badge {% if c.status.value == 'finalizado' %}badge--success{% elif c.status.value == 'cancelado' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'placa') %}<td data-col="placa">{{ c.veiculo.placa }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'veiculo') %}<td data-col="modelo">{{ c.veiculo.modelo }}</td>{% endif %}
   {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
-  <td data-col="observacoes">{{ c.observacoes or "-" }}</td>
+  {% if pode_ver_campo(user, 'compras', 'observacoes') %}<td data-col="observacoes">{{ c.observacoes or "-" }}</td>{% endif %}
+  {% set pode_abrir_comprovante = pode_operacao(user, 'compras', 'abrir_comprovante') %}
   {% set pode_editar = pode_operacao(user, 'compras', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'compras', 'excluir') %}
-  {% if pode_editar or pode_excluir %}
+  {% if pode_abrir_comprovante or pode_editar or pode_excluir %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
-      {% if pode_editar %}
+      {% if pode_abrir_comprovante %}
       {% include "_action_compra_comprovantes.html" %}
+      {% endif %}
+      {% if pode_editar %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/compras/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar compra {{ c.id }}">{{ ui.icon("edit") }}</button>
       {% endif %}
       {% if pode_excluir %}

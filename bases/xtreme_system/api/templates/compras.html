@@ -11,7 +11,7 @@
     <a class="btn btn--ghost" href="/ui/compras/exportar">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
-    {% if is_admin(user) %}
+    {% if pode_operacao(user, 'compras', 'cadastrar') %}
     <button class="btn btn--primary" hx-get="/ui/compras/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Nova compra
     </button>
@@ -35,15 +35,15 @@
     {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead>
       <tr>
-        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th>{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th>Documento do Cliente</th>
-        <th>{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th>{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>
+        {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'cliente') %}<th>{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th>Documento do Cliente</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'status') %}<th>{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'placa') %}<th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'veiculo') %}<th>{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
-        <th>Observações</th>
-        {% if pode_operacao(user, 'compras', 'editar') or pode_operacao(user, 'compras', 'excluir') %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'observacoes') %}<th>Observações</th>{% endif %}
+        {% if pode_operacao(user, 'compras', 'abrir_comprovante') or pode_operacao(user, 'compras', 'editar') or pode_operacao(user, 'compras', 'excluir') %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_compras.html" %}

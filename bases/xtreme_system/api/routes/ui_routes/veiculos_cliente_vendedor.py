@@ -2,11 +2,17 @@
 
 from typing import Annotated
 
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    UIAdmin,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
@@ -17,11 +23,20 @@ from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_ar
 from xtreme_system.api.setup import app
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+_AbrirClienteVendedorDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "abrir_cliente_vendedor"))
+]
 
 
 def _cliente_vendedor_modal(
-    request: Request, session: Session, veiculo_id: int, erro: str | None = None
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    veiculo_id: int,
+    erro: str | None = None,
 ) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
@@ -38,6 +53,7 @@ def _cliente_vendedor_modal(
         "_modal_cliente_vendedor.html",
         {
             "veiculo": item,
+            "user": user,
             "compra": item_compra,
             "documentos": documentos,
             "erro": erro,
@@ -50,11 +66,11 @@ def _cliente_vendedor_modal(
 def ui_veiculo_cliente_vendedor(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _AbrirClienteVendedorDep,
     veiculo_id: int,
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
-    return _cliente_vendedor_modal(request, session, veiculo_id)
+    return _cliente_vendedor_modal(request, session, user, veiculo_id)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos")
@@ -69,11 +85,11 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _cliente_vendedor_modal(
-            request, session, veiculo_id, "Cliente vendedor não encontrado"
+            request, session, user, veiculo_id, "Cliente vendedor não encontrado"
         )
     erro = _validar_uploads(documentos)
     if erro:
-        return _cliente_vendedor_modal(request, session, veiculo_id, erro)
+        return _cliente_vendedor_modal(request, session, user, veiculo_id, erro)
     salvar_arquivos(
         session,
         upload_dir=_uploads_cliente_dir(item_compra.cliente_id),
@@ -84,7 +100,7 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
         fk_id=item_compra.cliente_id,
         arquivos=documentos,
     )
-    return _cliente_vendedor_modal(request, session, veiculo_id)
+    return _cliente_vendedor_modal(request, session, user, veiculo_id)
 
 
 @app.post("/ui/veiculos/{veiculo_id}/cliente-vendedor/documentos/{doc_id}/excluir")
@@ -99,7 +115,7 @@ def ui_veiculo_cliente_vendedor_documentos_excluir(
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _cliente_vendedor_modal(
-            request, session, veiculo_id, "Cliente vendedor não encontrado"
+            request, session, user, veiculo_id, "Cliente vendedor não encontrado"
         )
     doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
     if doc.cliente_id != item_compra.cliente_id:
@@ -108,4 +124,4 @@ def ui_veiculo_cliente_vendedor_documentos_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _cliente_vendedor_modal(request, session, veiculo_id)
+    return _cliente_vendedor_modal(request, session, user, veiculo_id)

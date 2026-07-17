@@ -1,29 +1,36 @@
 {% import "_macros.html" as ui %}
 {% set compra_v = compras_por_veiculo.get(v.id) if compras_por_veiculo else none %}
 <tr id="veiculo-{{ v.id }}">
-  <td class="cell-strong" data-col="modelo">{{ v.modelo }}</td>
-  <td class="cell-mono" data-col="placa">{{ v.placa }}</td>
-  <td data-col="tipo">{{ ui.tipo_badge(v.tipo) }}</td>
-  <td class="cell-num" data-col="ano">{{ v.ano }}</td>
-  <td class="cell-num" data-col="km">{{ "{:,}".format(v.km) | replace(",", ".") }}</td>
-    <td data-col="status">{{ ui.status_badge(v.status) }}</td>
+  {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<td class="cell-strong" data-col="modelo">{{ v.modelo }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'placa') %}<td class="cell-mono" data-col="placa">{{ v.placa }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<td data-col="tipo">{{ ui.tipo_badge(v.tipo) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'ano') %}<td class="cell-num" data-col="ano">{{ v.ano }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'km') %}<td class="cell-num" data-col="km">{{ "{:,}".format(v.km) | replace(",", ".") }}</td>{% endif %}
+    {% if pode_ver_campo(user, 'veiculos', 'status') %}<td data-col="status">{{ ui.status_badge(v.status) }}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'preco') %}<td class="cell-num cell-strong" data-col="preco">R$ {{ "{:,.2f}".format(v.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
-    <td data-col="tipo_entrada">{{ v.tipo_entrada.value | capitalize }}</td>
+    {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<td data-col="tipo_entrada">{{ v.tipo_entrada.value | capitalize }}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<td class="muted" data-col="investidor">{{ v.investidor.nome }}</td>{% endif %}
-    <td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>
+    {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<td class="cell-center" data-col="revisao">{% if v.revisao %}✓{% else %}-{% endif %}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if compra_v and compra_v.debitos is not none %}R$ {{ "{:,.2f}".format(compra_v.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
-   {% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
+  {% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'veiculos', 'excluir') %}
-  {% if pode_editar or pode_excluir %}
+  {% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}
+  {% set pode_imagens = pode_operacao(user, 'veiculos', 'abrir_imagens') %}
+  {% set pode_procuracao = pode_operacao(user, 'veiculos', 'abrir_procuracao') %}
+  {% if pode_editar or pode_excluir or pode_cliente_vendedor or pode_imagens or pode_procuracao %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       {% if pode_editar %}
       <button class="btn btn--ghost btn--sm btn--focus action-edit" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
       {% endif %}
-      {% if is_admin(user) %}
+      {% if pode_cliente_vendedor %}
       <button class="btn btn--ghost btn--sm action-user" hx-get="/ui/veiculos/{{ v.id }}/cliente-vendedor" hx-target="#modal" hx-swap="innerHTML" aria-label="Cliente vendedor de {{ v.modelo }}">{{ ui.icon("user") }}</button>
+      {% endif %}
+      {% if pode_imagens %}
       {% include "_action_veiculo_imagens.html" %}
+      {% endif %}
+      {% if pode_procuracao %}
       {% include "_action_veiculo_procuracao.html" %}
       {% endif %}
       {% if pode_excluir %}

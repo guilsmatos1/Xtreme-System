@@ -30,7 +30,7 @@
             <span class="mmgr__doc-name">{{ doc.url.split("/") | last }}</span>
           </a>
           {% endif %}
-          <button class="mmgr__del" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao/{{ doc.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este documento?" aria-label="Excluir documento">{{ ui.icon("trash") }}</button>
+          {% if pode_operacao(user, 'veiculos', 'excluir_procuracao') %}<button class="mmgr__del" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao/{{ doc.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este documento?" aria-label="Excluir documento">{{ ui.icon("trash") }}</button>{% endif %}
         </div>
         {% endfor %}
       </div>
@@ -38,7 +38,7 @@
         {{ ui.empty("file", "Nenhum documento", "Envie documentos de procuração deste veículo usando a área abaixo.") }}
       {% endif %}
     </div>
-    <form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+    {% if pode_operacao(user, 'veiculos', 'enviar_procuracao') %}<form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
       <label class="mmgr__drop">
         <input type="file" name="documentos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
                onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste documentos aqui ou clique para selecionar'">
@@ -49,7 +49,7 @@
       <div class="mmgr__upload-actions">
         <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar documentos</button>
       </div>
-    </form>
+    </form>{% endif %}
   </div>
 </div>
 {% if action_oob %}

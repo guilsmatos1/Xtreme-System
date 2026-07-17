@@ -14,40 +14,40 @@
 
         {% if veiculo %}
         <div class="form-grid">
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="tipo" required>
               {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
-          <label class="field">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
             <span class="field__label">Tipo de Entrada</span>
             <select class="select" name="tipo_entrada" required>
               {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
-          <label class="field field--full">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
             <span class="field__label">Modelo</span>
             <input class="input" name="modelo" value="{{ veiculo.modelo }}" required autofocus>
-          </label>
+          </label>{% endif %}
 
           <label class="field">
             <span class="field__label">Cor</span>
             <input class="input" name="cor" value="{{ veiculo.cor }}" required>
           </label>
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
             <span class="field__label">Ano</span>
             <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
-          </label>
+          </label>{% endif %}
 
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
             <span class="field__label">Placa</span>
             <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
-          </label>
-          <label class="field">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem</span>
             <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
-          </label>
+          </label>{% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
@@ -74,10 +74,10 @@
           </label>
           {% endif %}
 
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
             <span class="field__label">Procurador</span>
             <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
-          </label>
+          </label>{% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
           <label class="field">
@@ -88,7 +88,7 @@
           </label>
           {% endif %}
 
-          <label class="field field--full">
+          {% if pode_operacao(user, 'veiculos', 'upload_documento') %}<label class="field field--full">
             <span class="field__label">Documento do veículo</span>
             {% if veiculo.documentos %}
             <ul class="midia-list" style="margin-bottom:var(--s-2)">
@@ -107,48 +107,48 @@
               <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
               <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
             </label>
-          </label>
+          </label>{% endif %}
 
         </div>
         {% else %}
         <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
 
         <fieldset class="wizard-step form-grid is-active" data-step="1">
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="tipo" required autofocus>
               {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
-          <label class="field">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
             <span class="field__label">Tipo de Entrada</span>
             <select class="select" name="tipo_entrada" required>
               {% for t in tipo_entradas %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
+          </label>{% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="2">
-          <label class="field field--full">
+          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
             <span class="field__label">Placa</span>
             <input class="input" name="placa" required style="text-transform:uppercase">
-          </label>
-          <label class="field field--full">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
             <span class="field__label">Modelo</span>
             <input class="input" name="modelo" required>
-          </label>
+          </label>{% endif %}
           <label class="field">
             <span class="field__label">Cor</span>
             <input class="input" name="cor" required>
           </label>
-          <label class="field">
+          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
             <span class="field__label">Ano</span>
             <input class="input" name="ano" type="number" required>
-          </label>
-          <label class="field">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem</span>
             <input class="input" name="km" type="number">
-          </label>
+          </label>{% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid" data-step="3">
@@ -168,7 +168,7 @@
               {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field field--full">
+          {% if pode_operacao(user, 'veiculos', 'upload_documento') %}<label class="field field--full">
             <span class="field__label">Documento do veículo</span>
             <label class="mmgr__drop" style="margin-top:0">
               <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
@@ -177,7 +177,7 @@
               <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
               <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
             </label>
-          </label>
+          </label>{% endif %}
           <label class="field field--full">
             <span class="field__label">Documentos de procuração</span>
             <input class="input" name="documentos_procuracao" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>

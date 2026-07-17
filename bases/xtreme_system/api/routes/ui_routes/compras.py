@@ -30,6 +30,7 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
@@ -43,6 +44,12 @@ _CadastrarCompraDep = Annotated[
 ]
 _ExcluirComprovanteDep = Annotated[
     usuario.Usuario, Depends(require_operacao("compras", "excluir_comprovante"))
+]
+_AbrirComprovanteDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("compras", "abrir_comprovante"))
+]
+_EnviarComprovanteDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("compras", "enviar_comprovante"))
 ]
 
 
@@ -66,6 +73,24 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
         data["observacoes"] = None
     if not data.get("data_compra"):
         data["data_compra"] = str(datetime.now(UTC).date())
+    return data
+
+
+def _filtrar_campos_ocultos_compra(
+    user: usuario.Usuario, data: dict[str, Any]
+) -> dict[str, Any]:
+    campos_form_map = {
+        "data_compra": "data_compra",
+        "cliente": "cliente_id",
+        "status": "status",
+        "veiculo": "veiculo_id",
+        "valor_compra": "valor_compra",
+        "debitos": "debitos",
+        "observacoes": "observacoes",
+    }
+    for campo, campo_form in campos_form_map.items():
+        if not perfil.pode_ver_campo(user, "compras", campo):
+            data.pop(campo_form, None)
     return data
 
 
@@ -118,7 +143,7 @@ def _comprovantes_modal(
 def ui_compra_comprovantes(
     request: Request,
     session: SessionDep,
-    user: _EditarCompraDep,
+    user: _AbrirComprovanteDep,
     compra_id: int,
 ) -> HTMLResponse:
     return _comprovantes_modal(request, session, user, compra_id)
@@ -128,7 +153,7 @@ def ui_compra_comprovantes(
 def ui_compra_comprovantes_upload(
     request: Request,
     session: SessionDep,
-    user: _EditarCompraDep,
+    user: _EnviarComprovanteDep,
     compra_id: int,
     comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -250,11 +275,13 @@ def _resolver_veiculo(
     return None, novo_veiculo_data, None
 
 
-def _erro_compra(request: Request, session: Session, msg: str) -> HTMLResponse:
+def _erro_compra(
+    request: Request, session: Session, user: usuario.Usuario, msg: str
+) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "_form_compra.html",
-        {**_ctx_form_compra(session), "compra": None, "erro": msg},
+        {**_ctx_form_compra(session), "compra": None, "user": user, "erro": msg},
         status_code=400,
     )
 
@@ -283,24 +310,26 @@ async def _criar_compra(  # noqa: PLR0911
             if hasattr(arquivo, "filename") and hasattr(arquivo, "file")
         ],
     )
+    if not perfil.pode_operacao(user, "compras", "enviar_comprovante"):
+        comprovantes = []
     erro = _validar_uploads(comprovantes)
     if erro:
-        return _erro_compra(request, session, erro)
+        return _erro_compra(request, session, user, erro)
 
     cliente_obj, novo_cliente_data, erro = _resolver_cliente(session, form)
     if erro:
-        return _erro_compra(request, session, erro)
+        return _erro_compra(request, session, user, erro)
 
     veiculo_obj, novo_veiculo_data, erro = _resolver_veiculo(session, form)
     if erro:
-        return _erro_compra(request, session, erro)
+        return _erro_compra(request, session, user, erro)
 
     if novo_cliente_data is not None:
         try:
             cliente_obj = cliente.create(session, novo_cliente_data)
         except IntegrityError:
             session.rollback()
-            return _erro_compra(request, session, "Cliente já existe")
+            return _erro_compra(request, session, user, "Cliente já existe")
 
     if novo_veiculo_data is not None:
         try:
@@ -308,25 +337,28 @@ async def _criar_compra(  # noqa: PLR0911
         except IntegrityError:
             if novo_cliente_data is not None:
                 session.rollback()
-            return _erro_compra(request, session, "Veículo já existe")
+            return _erro_compra(request, session, user, "Veículo já existe")
 
     assert cliente_obj is not None  # noqa: S101
     assert veiculo_obj is not None  # noqa: S101
 
     try:
         data = compra.CompraCreate.model_validate(
-            {
-                **_parse_compra_form(form),
-                "cliente_id": cliente_obj.id,
-                "veiculo_id": veiculo_obj.id,
-            }
+            _filtrar_campos_ocultos_compra(
+                user,
+                {
+                    **_parse_compra_form(form),
+                    "cliente_id": cliente_obj.id,
+                    "veiculo_id": veiculo_obj.id,
+                },
+            )
         )
         validate_cliente_veiculo_fks(session, data)
     except (ValidationError, HTTPException) as exc:
         if novo_cliente_data is not None or novo_veiculo_data is not None:
             session.rollback()
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-        return _erro_compra(request, session, msg)
+        return _erro_compra(request, session, user, msg)
 
     try:
         obj = compra.create(session, data)
@@ -342,7 +374,7 @@ async def _criar_compra(  # noqa: PLR0911
         )
     except IntegrityError:
         session.rollback()
-        return _erro_compra(request, session, "Compra já existe")
+        return _erro_compra(request, session, user, "Compra já existe")
     return _ok_compra(request, session, user)
 
 
@@ -389,6 +421,17 @@ register_crud_ui_routes(
         "Valor Compra",
         "Observacoes",
     ],
+    csv_fields=[
+        None,
+        "data_compra",
+        "cliente",
+        "documento_cliente",
+        "status",
+        "placa",
+        "veiculo",
+        "valor_compra",
+        "observacoes",
+    ],
     csv_row=lambda c: [
         c.id,
         c.data_compra.isoformat(),
@@ -403,5 +446,13 @@ register_crud_ui_routes(
     editar_dep=require_operacao("compras", "editar"),
     excluir_dep=require_operacao("compras", "excluir"),
     pagina="compras",
-    campos_form_map={"valor_compra": "valor_compra", "debitos": "debitos"},
+    campos_form_map={
+        "data_compra": "data_compra",
+        "cliente": "cliente_id",
+        "status": "status",
+        "veiculo": "veiculo_id",
+        "valor_compra": "valor_compra",
+        "debitos": "debitos",
+        "observacoes": "observacoes",
+    },
 )

@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import (
     SessionDep,
-    UIUser,
     _found,
     require_operacao,
     templates,
@@ -32,6 +31,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.fechamento_venda import core as fechamento_venda
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -43,6 +43,12 @@ logger = structlog.get_logger(__name__)
 
 _CadastrarVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "cadastrar"))
+]
+_BaixarContratoVendaDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("vendas", "baixar_contrato"))
+]
+_VerFechamentoVendaDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("vendas", "ver_fechamento"))
 ]
 
 
@@ -81,6 +87,33 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     data["pagamento_pendente"] = bool(data.get("pagamento_pendente"))
     if not data.get("data_venda"):
         data["data_venda"] = str(datetime.now(UTC).date())
+    return data
+
+
+def _filtrar_campos_ocultos_venda(
+    user: usuario.Usuario, data: dict[str, Any]
+) -> dict[str, Any]:
+    campos_form_map = {
+        "cliente": "cliente_id",
+        "veiculo": "veiculo_id",
+        "data_venda": "data_venda",
+        "valor_venda": "valor_venda",
+        "valor_entrada": "valor_entrada",
+        "debitos": "debitos",
+        "km": "km",
+        "veiculo_troca": "veiculo_troca_id",
+        "valor_diferenca": "valor_diferenca",
+        "pagamento_pendente": "pagamento_pendente",
+        "valor_pendente": "valor_pendente",
+        "datas_pagamento": "datas_pagamento",
+        "forma_pagamento": "forma_pagamento",
+        "parcelas": "parcelas",
+        "status": "status",
+        "observacoes": "observacoes",
+    }
+    for campo, campo_form in campos_form_map.items():
+        if not perfil.pode_ver_campo(user, "vendas", campo):
+            data.pop(campo_form, None)
     return data
 
 
@@ -142,6 +175,25 @@ register_crud_ui_routes(
         "Status",
         "Observacoes",
     ],
+    csv_fields=[
+        None,
+        "cliente",
+        "veiculo",
+        "data_venda",
+        "valor_venda",
+        "valor_entrada",
+        "debitos",
+        "km",
+        "veiculo_troca",
+        "valor_diferenca",
+        "pagamento_pendente",
+        "valor_pendente",
+        "datas_pagamento",
+        "forma_pagamento",
+        "parcelas",
+        "status",
+        "observacoes",
+    ],
     csv_row=lambda v: [
         v.id,
         v.cliente.nome,
@@ -171,11 +223,22 @@ register_crud_ui_routes(
     excluir_dep=require_operacao("vendas", "excluir"),
     pagina="vendas",
     campos_form_map={
+        "cliente": "cliente_id",
+        "veiculo": "veiculo_id",
+        "data_venda": "data_venda",
         "valor_venda": "valor_venda",
         "valor_entrada": "valor_entrada",
         "debitos": "debitos",
+        "km": "km",
+        "veiculo_troca": "veiculo_troca_id",
         "valor_diferenca": "valor_diferenca",
+        "pagamento_pendente": "pagamento_pendente",
         "valor_pendente": "valor_pendente",
+        "datas_pagamento": "datas_pagamento",
+        "forma_pagamento": "forma_pagamento",
+        "parcelas": "parcelas",
+        "status": "status",
+        "observacoes": "observacoes",
     },
 )
 
@@ -191,11 +254,18 @@ def _ok_venda(
     )
 
 
-def _erro_venda(request: Request, session: Session, msg: str) -> HTMLResponse:
+def _erro_venda(
+    request: Request, session: Session, user: usuario.Usuario, msg: str
+) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "_form_venda.html",
-        {**_ctx_form_venda(session), "venda": None, "erro": msg},
+        {
+            **_ctx_form_venda(session),
+            "venda": None,
+            "user": user,
+            "erro": msg,
+        },
         status_code=400,
     )
 
@@ -270,19 +340,21 @@ async def _criar_venda(
 
     cliente_obj, novo_cliente_data, erro = _resolver_cliente(session, form)
     if erro:
-        return _erro_venda(request, session, erro)
+        return _erro_venda(request, session, user, erro)
 
     if novo_cliente_data is not None:
         try:
             cliente_obj = cliente.create(session, novo_cliente_data)
         except IntegrityError:
             session.rollback()
-            return _erro_venda(request, session, "Cliente já existe")
+            return _erro_venda(request, session, user, "Cliente já existe")
     assert cliente_obj is not None  # noqa: S101 -- invariante interna: erro is None garante cliente_obj definido
 
     try:
         data = venda.VendaCreate.model_validate(
-            {**_parse_venda_form(form), "cliente_id": cliente_obj.id}
+            _filtrar_campos_ocultos_venda(
+                user, {**_parse_venda_form(form), "cliente_id": cliente_obj.id}
+            )
         )
         validate_cliente_veiculo_fks(session, data)
         validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
@@ -290,7 +362,7 @@ async def _criar_venda(
         if novo_cliente_data is not None:
             session.rollback()
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-        return _erro_venda(request, session, msg)
+        return _erro_venda(request, session, user, msg)
 
     try:
         obj = venda.create(session, data)
@@ -298,13 +370,13 @@ async def _criar_venda(
         whatsapp.notificar_venda(session, obj)
     except IntegrityError:
         session.rollback()
-        return _erro_venda(request, session, "Venda já existe")
+        return _erro_venda(request, session, user, "Venda já existe")
     return _ok_venda(request, session, user)
 
 
 @app.get("/ui/vendas/{item_id}/contrato")
 def _baixar_contrato_venda(
-    item_id: int, session: SessionDep, _: UIUser
+    item_id: int, session: SessionDep, _: _BaixarContratoVendaDep
 ) -> RedirectResponse:
     obj = _found(venda.get(session, item_id), "Venda")
     documentos = documento_contrato_venda.list_by_venda(session, obj.id)
@@ -382,7 +454,10 @@ async def _confirmar_fechamento_venda(
 
 @app.get("/ui/fechamentos-vendas/{fechamento_id}")
 def _detalhe_fechamento_venda(
-    fechamento_id: int, request: Request, session: SessionDep, user: UIUser
+    fechamento_id: int,
+    request: Request,
+    session: SessionDep,
+    user: _VerFechamentoVendaDep,
 ) -> HTMLResponse:
     fechamento = _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
     return templates.TemplateResponse(

@@ -40,6 +40,7 @@
         {{ ui.empty("file", "Nenhum comprovante", "Envie comprovantes desta compra usando a área abaixo.") }}
       {% endif %}
     </div>
+    {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
     <form class="mmgr__upload" hx-post="/ui/compras/{{ compra.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
       <label class="mmgr__drop">
         <input type="file" name="comprovantes" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
@@ -52,10 +53,11 @@
         <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar comprovantes</button>
       </div>
     </form>
+    {% endif %}
   </div>
 </div>
 {% if action_oob %}
 {% set c = compra %}
 {% set has_comprovantes = comprovantes %}
-{% include "_action_compra_comprovantes.html" %}
+{% if pode_operacao(user, 'compras', 'abrir_comprovante') %}{% include "_action_compra_comprovantes.html" %}{% endif %}
 {% endif %}

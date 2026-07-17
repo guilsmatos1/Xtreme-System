@@ -3,7 +3,7 @@
   {% for v in vendas %}
     {% include "_row_venda.html" %}
   {% else %}
-  <tr class="empty-row"><td colspan="{{ 10 if is_admin(user) else 9 }}">
+  <tr class="empty-row"><td colspan="{{ 10 if pode_operacao(user, 'vendas', 'baixar_contrato') or pode_operacao(user, 'vendas', 'editar') or pode_operacao(user, 'vendas', 'excluir') or pode_operacao(user, 'vendas', 'fechar') else 9 }}">
     {% call ui.empty("cash", "Nenhuma venda encontrada", "Cadastre uma venda para começar.") %}{% endcall %}
   </td></tr>
   {% endfor %}

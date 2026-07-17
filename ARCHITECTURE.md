@@ -135,7 +135,8 @@ O acesso de usuário comum na UI é controlado por `perfil.pode_acessar`; `admin
 Dentro de uma página, o perfil também pode restringir **campos** e **operações**
 via `Perfil.restricoes` (JSON por página): `perfil.pode_ver_campo` (denylist —
 visível por padrão, o admin marca o que ocultar) controla campos sensíveis na
-UI, e `perfil.pode_operacao` (allowlist — negado por padrão para não-admin)
+UI e na exportação CSV, e `perfil.pode_operacao` (allowlist — negado por padrão
+para não-admin)
 controla ações de escrita. `admin` sempre passa em ambos. Ambos são globals do
 Jinja (`deps.py`) e `require_operacao(pagina, operacao)` é uma dependency
 factory para bloquear no servidor, não só esconder no HTML.

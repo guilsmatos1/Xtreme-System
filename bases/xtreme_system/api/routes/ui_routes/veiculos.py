@@ -26,8 +26,16 @@ from xtreme_system.veiculo import core as veiculo
 
 # Campos do form.html que só devem ser aplicados se o perfil puder vê-los.
 _CAMPO_FORM_MAP = {
+    "modelo": "modelo",
+    "placa": "placa",
+    "tipo": "tipo",
+    "ano": "ano",
+    "km": "km",
+    "status": "status",
     "preco": "preco",
+    "tipo_entrada": "tipo_entrada",
     "investidor": "investidor_id",
+    "procuracao": "procuracao",
     "revisao": "revisao",
     "debitos": "debitos",
 }
@@ -110,6 +118,20 @@ register_crud_ui_routes(
         "Investidor",
         "Procurador",
     ],
+    csv_fields=[
+        None,
+        "modelo",
+        "placa",
+        "tipo",
+        "ano",
+        "km",
+        "preco",
+        "status",
+        "tipo_entrada",
+        "revisao",
+        "investidor",
+        "procuracao",
+    ],
     csv_row=lambda v: [
         v.id,
         v.modelo,
@@ -124,6 +146,7 @@ register_crud_ui_routes(
         v.investidor.nome,
         v.procuracao or "",
     ],
+    pagina="veiculos",
     register_create=False,
     register_update=False,
     register_edit=False,

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.database.core import get_session
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 
@@ -143,6 +144,70 @@ def test_vendedor_nao_cria_compra(client: TestClient) -> None:
         headers=vendedor_headers,
     )
     assert resp.status_code == 403
+
+
+def test_api_compras_respeita_perfil_em_leitura_e_mutacao(
+    client: TestClient,
+) -> None:
+    admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, admin_headers)
+    create_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "35000.00",
+            "debitos": "500.00",
+        },
+        headers=admin_headers,
+    )
+    assert create_resp.status_code == 201
+
+    session = next(app.dependency_overrides[get_session]())
+    p = perfil.create(
+        session,
+        perfil.PerfilCreate(
+            nome="Compras limitado",
+            paginas=["compras"],
+            restricoes={
+                "compras": {
+                    "campos_ocultos": ["valor_compra", "debitos"],
+                    "operacoes": ["cadastrar"],
+                }
+            },
+        ),
+    )
+    vendedor = usuario.get_by_username(session, "vendedor")
+    assert vendedor is not None
+    vendedor.perfil_id = p.id
+    session.flush()
+
+    vendedor_headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
+    list_resp = client.get("/compras", headers=vendedor_headers)
+    assert list_resp.status_code == 200
+    assert "valor_compra" not in list_resp.json()[0]
+    assert "debitos" not in list_resp.json()[0]
+
+    nova_compra = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-02",
+            "valor_compra": "36000.00",
+        },
+        headers=vendedor_headers,
+    )
+    assert nova_compra.status_code == 201
+    assert "valor_compra" not in nova_compra.json()
+
+    update_resp = client.patch(
+        f"/compras/{create_resp.json()['id']}",
+        json={"observacoes": "bloqueado"},
+        headers=vendedor_headers,
+    )
+    assert update_resp.status_code == 403
 
 
 def test_compra_cliente_inexistente_retorna_400(client: TestClient) -> None:
