@@ -9,7 +9,7 @@ from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func, inspec
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
-from xtreme_system.auditoria.core import _snapshot, auditar
+from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.caixa import core as caixa
 from xtreme_system.crud import core as crud
 from xtreme_system.custo_veiculo.core import CustoVeiculo
@@ -215,7 +215,7 @@ def confirmar(
         tabela="fechamento_venda",
         tipo_acao="CREATE",
         registro_id=fechamento.id,
-        dados_depois=_snapshot(fechamento),
+        dados_depois=snapshot(fechamento),
     )
 
     caixa.criar_lancamento_fechamento(
@@ -242,7 +242,7 @@ def confirmar(
                 tabela="participacao_fechamento_venda",
                 tipo_acao="CREATE",
                 registro_id=participacao.id,
-                dados_depois=_snapshot(participacao),
+                dados_depois=snapshot(participacao),
             )
             caixa.criar_lancamento_fechamento(
                 session,
