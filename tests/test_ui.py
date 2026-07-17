@@ -1012,6 +1012,61 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     assert resp.status_code == 303
 
 
+def test_ui_conta_exibe_perfil_do_usuario_logado(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/conta")
+    assert resp.status_code == 200
+    assert "admin" in resp.text
+
+
+def test_ui_conta_troca_a_propria_senha(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "senha",
+            "nova_senha": "nova_senha_admin",
+            "confirmar_senha": "nova_senha_admin",
+        },
+    )
+    assert resp.status_code == 200
+
+    resp = client.post(
+        "/ui/login",
+        data={"username": "admin", "password": "nova_senha_admin"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+
+def test_ui_conta_rejeita_senha_atual_incorreta(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "errada",
+            "nova_senha": "qualquer",
+            "confirmar_senha": "qualquer",
+        },
+    )
+    assert resp.status_code == 400
+    assert "senha atual incorreta" in resp.text.lower()
+
+
+def test_ui_conta_rejeita_confirmacao_divergente(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.post(
+        "/ui/conta/senha",
+        data={
+            "senha_atual": "senha",
+            "nova_senha": "abc123",
+            "confirmar_senha": "outra",
+        },
+    )
+    assert resp.status_code == 400
+    assert "não coincide" in resp.text.lower()
+
+
 def _admin_headers(client: TestClient) -> dict[str, str]:
     token = client.post(
         "/login", data={"username": "admin", "password": "senha"}

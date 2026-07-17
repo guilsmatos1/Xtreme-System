@@ -2,108 +2,71 @@
 {% import "_macros.html" as ui %}
 {% block titulo %}Usuários{% endblock %}
 {% block content %}
+{% set admins = usuarios | selectattr("papel.value", "equalto", "admin") | list %}
+{% set ativos = usuarios | selectattr("ativo") | list %}
+
 <div class="page-head">
   <div class="page-head__title">
     <h1>Usuários</h1>
     <p class="page-head__subtitle">Controle de acesso e papéis da equipe</p>
   </div>
-  <a class="btn btn--ghost" href="/ui/usuarios/exportar">
-    {{ ui.icon("inbox") }} Exportar dados
-  </a>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost" href="/ui/usuarios/exportar">
+      {{ ui.icon("inbox") }} Exportar dados
+    </a>
+    <button class="btn btn--primary" hx-get="/ui/usuarios/novo" hx-target="#modal" hx-swap="innerHTML">
+      {{ ui.icon("plus") }} Novo usuário
+    </button>
+  </div>
 </div>
 
-<div class="stack">
-  <section class="card card--pad">
-    <h3 style="margin-bottom:var(--s-4)">Novo usuário</h3>
-    {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
-    <form method="post" action="/ui/usuarios">
-      <div class="form-grid">
-        <label class="field">
-          <span class="field__label">Usuário</span>
-          <input class="input" name="username" placeholder="nome.sobrenome" required autocomplete="off">
-        </label>
-        <label class="field">
-          <span class="field__label">Senha</span>
-          <input class="input" name="senha" type="password" placeholder="••••••••" required autocomplete="new-password">
-        </label>
-        <label class="field">
-          <span class="field__label">Papel</span>
-          <select class="select" name="papel">
-            <option value="funcionario">Funcionário</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field__label">Perfil</span>
-          <select class="select" name="perfil_id">
-            <option value="">Nenhum</option>
-            {% for p in perfis %}
-            <option value="{{ p.id }}">{{ p.nome }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <div class="field" style="justify-content:flex-end">
-          <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }} Criar usuário</button>
-        </div>
-      </div>
-    </form>
-  </section>
+<section class="stats" aria-label="Resumo de usuários">
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("users") }} Total</div>
+    <div class="stat__value cell-num">{{ usuarios | length }}</div>
+    <div class="stat__hint">usuários cadastrados</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("check") }} Ativos</div>
+    <div class="stat__value cell-num">{{ ativos | length }}</div>
+    <div class="stat__hint">com acesso liberado</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("tag") }} Admins</div>
+    <div class="stat__value cell-num">{{ admins | length }}</div>
+    <div class="stat__hint">com acesso total</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("user") }} Funcionários</div>
+    <div class="stat__value cell-num">{{ (usuarios | length) - (admins | length) }}</div>
+    <div class="stat__hint">acesso conforme perfil</div>
+  </article>
+</section>
 
-  <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
-        <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
-        <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
-        <th>Perfil</th>
-        <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
-        <th style="width:1%"></th>
-      </tr></thead>
-      <tbody>
-        {% for u in usuarios %}
-        <tr>
-          <td class="cell-mono">{{ u.id }}</td>
-          <td class="cell-strong">
-            <span style="display:inline-flex;align-items:center;gap:var(--s-2)">
-              <span class="avatar" style="width:24px;height:24px;font-size:.7rem">{{ u.username[0] | upper }}</span>
-              {{ u.username }}
-            </span>
-          </td>
-          <td>{{ ui.papel_badge(u.papel) }}</td>
-          <td>{{ u.perfil.nome if u.perfil else '-' }}</td>
-          <td>
-            {% if u.ativo %}<span class="badge badge--success">Ativo</span>
-            {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
-          </td>
-          <td>
-            <div style="display:flex;gap:var(--s-2)">
-              <button class="btn btn--ghost" style="padding:var(--s-2)"
-                      hx-get="/ui/usuarios/{{ u.id }}/perfil"
-                      hx-target="#perfil-form-{{ u.id }}"
-                      title="Alterar perfil">
-                {{ ui.icon("tag") }}
-              </button>
-              <button class="btn btn--ghost" style="padding:var(--s-2)"
-                      hx-get="/ui/usuarios/{{ u.id }}/senha"
-                      hx-target="#senha-form-{{ u.id }}"
-                      title="Alterar senha">
-                {{ ui.icon("edit") }}
-              </button>
-              <button class="btn btn--ghost" style="padding:var(--s-2);color:var(--danger)"
-                      hx-post="/ui/usuarios/{{ u.id }}/excluir"
-                      hx-confirm="Excluir {{ u.username }}?"
-                      hx-target="body"
-                      title="Excluir usuário">
-                {{ ui.icon("trash") }}
-              </button>
-            </div>
-            <div id="perfil-form-{{ u.id }}"></div>
-            <div id="senha-form-{{ u.id }}"></div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/usuarios" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por usuário…" value="{{ q or '' }}" aria-label="Buscar usuários">
   </div>
+</div>
+
+<div class="table-wrap">
+  {% set sort_qs = "&q=" ~ (q | urlencode) %}
+  <table>
+    <thead><tr>
+      <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios", sort_qs) }}</th>
+      <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios", sort_qs) }}</th>
+      <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios", sort_qs) }}</th>
+      <th>Perfil</th>
+      <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios", sort_qs) }}</th>
+      <th class="col-actions"><span class="sr-only">Ações</span></th>
+    </tr></thead>
+    {% include "_linhas_usuarios.html" %}
+  </table>
 </div>
 {% endblock %}

@@ -103,6 +103,9 @@
         <button class="btn btn--ghost btn--sm" type="button" onclick="toggleTheme()" aria-label="Alternar tema">
           {{ ui.icon("sun") }} <span>Tema</span>
         </button>
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/conta') }}" href="/ui/conta">
+          {{ ui.icon("user") }} Minha conta
+        </a>
         <div class="sidebar__user">
           <span class="avatar">{{ (user.username[0] | upper) if user else '?' }}</span>
           <div class="sidebar__user-meta">

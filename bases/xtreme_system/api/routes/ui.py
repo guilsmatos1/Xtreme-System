@@ -20,6 +20,7 @@ for _module_name in (
     "auth",
     "clientes",
     "compras",
+    "conta",
     "custos_veiculos",
     "configuracoes",
     "dashboard",
