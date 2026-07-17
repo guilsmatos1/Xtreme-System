@@ -1,7 +1,7 @@
 """Fechamento financeiro de vendas: cálculo, participações e lançamentos."""
 
 from datetime import date
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from weakref import WeakKeyDictionary
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -227,8 +227,8 @@ def confirmar(
         descricao=f"Receita da venda #{venda_obj.id}",
     )
     if lucro > 0:
-        for item in data.participacoes:
-            valor = _quantizar(lucro * item.percentual / PERCENTUAL_TOTAL)
+        valores = _distribuir_lucro(lucro, data.participacoes)
+        for item, valor in zip(data.participacoes, valores, strict=True):
             participacao = ParticipacaoFechamentoVenda(
                 fechamento_venda_id=fechamento.id,
                 investidor_id=item.investidor_id,
@@ -316,3 +316,23 @@ def _validar_participacoes(
 
 def _quantizar(valor: Decimal) -> Decimal:
     return Decimal(valor).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+
+
+def _distribuir_lucro(
+    lucro: Decimal, participacoes: list[ParticipacaoFechamentoVendaCreate]
+) -> list[Decimal]:
+    valores: list[Decimal] = []
+    restos: list[tuple[Decimal, int]] = []
+    for indice, item in enumerate(participacoes):
+        valor_exato = lucro * item.percentual / PERCENTUAL_TOTAL
+        valor = valor_exato.quantize(CENTAVO, rounding=ROUND_DOWN)
+        valores.append(valor)
+        restos.append((valor_exato - valor, indice))
+
+    centavos_restantes = int((lucro - sum(valores, Decimal("0"))) / CENTAVO)
+    for indice in sorted(
+        range(len(restos)), key=lambda idx: restos[idx][0], reverse=True
+    )[:centavos_restantes]:
+        valores[indice] += CENTAVO
+
+    return valores
