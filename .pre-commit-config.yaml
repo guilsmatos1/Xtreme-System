@@ -40,6 +40,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: alembic-check
+        name: alembic check & migrate
+        entry: bash -c 'uv run alembic check || (uv run alembic revision --autogenerate -m "auto_migration" && uv run alembic upgrade head && echo "Migration applied. Stage the new migration file before committing.")'
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: vulture
         name: vulture
         entry: uv run vulture

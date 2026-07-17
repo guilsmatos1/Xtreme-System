@@ -11,7 +11,7 @@
     <a class="btn btn--ghost" href="{{ route_prefix or '/ui/clientes' }}/exportar?q={{ q | urlencode }}">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
-    {% if is_admin(user) and show_new_cliente|default(false) %}
+    {% if is_admin(user) %}
     <button class="btn btn--primary" hx-get="{{ route_prefix or '/ui/clientes' }}/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Novo cliente
     </button>

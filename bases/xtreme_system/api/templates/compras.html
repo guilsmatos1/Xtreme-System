@@ -25,25 +25,23 @@
     <input class="input" type="search" name="q"
            hx-get="/ui/compras" hx-trigger="keyup changed delay:300ms, search"
            hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar por cliente, veículo, placa ou observações…"
+           placeholder="Buscar por cliente, placa ou modelo…"
            value="{{ q or '' }}" aria-label="Buscar compras">
   </div>
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide" data-table="compras">
+  <table class="table--wide">
     {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead>
       <tr>
-        <th data-col="cliente" data-col-label="Cliente">{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="status" data-col-label="Estado">{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th data-col="observacoes" data-col-label="Observações">Observações</th>
-        {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+        <th>{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>Observações</th>
+        {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_compras.html" %}

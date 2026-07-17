@@ -325,7 +325,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     compradores = client.get("/ui/clientes/compradores")
     assert compradores.status_code == 200
     assert "Clientes Compradores" in compradores.text
-    assert "Novo cliente" not in compradores.text
+    assert "Novo cliente" in compradores.text
     assert "Ana Compradora" in compradores.text
     assert "Caio Ambos" in compradores.text
     assert "Bia Vendedora" not in compradores.text
@@ -421,15 +421,11 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
 
     pagina_veiculos = client.get("/ui/veiculos").text
-    assert "action-edit" in pagina_veiculos
-    assert "action-user" in pagina_veiculos
-    assert "action-delete" in pagina_veiculos
-    assert "action-image" not in _classes_do_botao(
-        pagina_veiculos, f"action-veiculo-{veiculo_id}-imagens"
-    )
-    assert "action-file" not in _classes_do_botao(
-        pagina_veiculos, f"action-veiculo-{veiculo_id}-procuracao"
-    )
+    assert "btn--focus" in pagina_veiculos
+    assert "var(--success)" in pagina_veiculos
+    assert "btn--danger" in pagina_veiculos
+    assert f'hx-get="/ui/veiculos/{veiculo_id}/imagens"' in pagina_veiculos
+    assert f'hx-get="/ui/veiculos/{veiculo_id}/procuracao"' in pagina_veiculos
 
     upload_img = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
