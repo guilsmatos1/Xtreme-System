@@ -85,3 +85,15 @@ def pode_acessar(user: Any, pagina: str) -> bool:
     if is_admin(user):
         return True
     return bool(user.perfil and pagina in user.perfil.paginas)
+
+
+def pode_operacao(user: Any, _pagina: str) -> bool:
+    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
+
+    return is_admin(user)
+
+
+def pode_ver_campo(user: Any, _pagina: str, _campo: str) -> bool:
+    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
+
+    return is_admin(user)

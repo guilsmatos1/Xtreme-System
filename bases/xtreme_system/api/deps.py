@@ -16,6 +16,8 @@ from xtreme_system.usuario import core as usuario
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["pode_acessar"] = perfil.pode_acessar
+templates.env.globals["pode_operacao"] = perfil.pode_operacao
+templates.env.globals["pode_ver_campo"] = perfil.pode_ver_campo
 templates.env.globals["paginas_labels"] = dict(perfil.PAGINAS)
 templates.env.globals["is_admin"] = usuario.is_admin
 templates.env.globals["Papel"] = usuario.Papel

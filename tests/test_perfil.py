@@ -64,6 +64,30 @@ def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
     assert perfil.list_all(db_session) == []
 
 
+def test_pode_operacao_negado_por_padrao(db_session: Session) -> None:
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, None)
+    assert not perfil.pode_operacao(vendedor, "veiculos")
+    assert not perfil.pode_operacao(vendedor, "vendas")
+
+
+def test_pode_operacao_admin_sempre_permite(db_session: Session) -> None:
+    admin = _usuario(db_session, usuario.Papel.admin, None)
+    assert perfil.pode_operacao(admin, "veiculos")
+    assert perfil.pode_operacao(admin, "vendas")
+
+
+def test_pode_ver_campo_negado_por_padrao(db_session: Session) -> None:
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, None)
+    assert not perfil.pode_ver_campo(vendedor, "veiculos", "preco")
+    assert not perfil.pode_ver_campo(vendedor, "vendas", "lucro")
+
+
+def test_pode_ver_campo_admin_sempre_permite(db_session: Session) -> None:
+    admin = _usuario(db_session, usuario.Papel.admin, None)
+    assert perfil.pode_ver_campo(admin, "veiculos", "preco")
+    assert perfil.pode_ver_campo(admin, "vendas", "lucro")
+
+
 def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil.pagina_da_rota("/ui/veiculos") == "veiculos"
     assert perfil.pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"
