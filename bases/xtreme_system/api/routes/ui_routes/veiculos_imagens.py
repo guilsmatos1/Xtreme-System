@@ -16,6 +16,7 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
 from xtreme_system.api.setup import app
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
@@ -44,7 +45,16 @@ def _imagem_modal(
     return templates.TemplateResponse(
         request,
         "_modal_imagens_veiculo.html",
-        {"veiculo": item, "user": user, "action_oob": action_oob},
+        {
+            "veiculo": item,
+            "action_oob": action_oob,
+            "pode_enviar_imagens": perfil.pode_operacao(
+                user, "veiculos", "enviar_imagens"
+            ),
+            "pode_excluir_imagens": perfil.pode_operacao(
+                user, "veiculos", "excluir_imagens"
+            ),
+        },
     )
 
 
@@ -74,7 +84,17 @@ def ui_veiculo_imagens_upload(
         return templates.TemplateResponse(
             request,
             "_modal_imagens_veiculo.html",
-            {"veiculo": item, "user": user, "erro": erro},
+            {
+                "veiculo": item,
+                "erro": erro,
+                "action_oob": False,
+                "pode_enviar_imagens": perfil.pode_operacao(
+                    user, "veiculos", "enviar_imagens"
+                ),
+                "pode_excluir_imagens": perfil.pode_operacao(
+                    user, "veiculos", "excluir_imagens"
+                ),
+            },
             status_code=400,
         )
     salvar_arquivos(

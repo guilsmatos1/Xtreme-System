@@ -182,6 +182,26 @@ def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> No
     assert url not in resp.text
 
 
+def test_modal_imagens_veiculo_get_renderiza_acoes_com_imagem_existente(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    upload = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("foto.jpg", b"\xff\xd8\xffconteudo-da-foto", "image/jpeg")},
+    )
+    assert upload.status_code == 200
+
+    resp = client.get(f"/ui/veiculos/{veiculo_id}/imagens")
+
+    assert resp.status_code == 200
+    assert 'hx-post="/ui/veiculos/' in resp.text
+    assert 'name="imagens"' in resp.text
+
+
 def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0915
     client: TestClient,
 ) -> None:
