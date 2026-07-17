@@ -20,7 +20,10 @@ from xtreme_system.api.route_factories import (
     register_crud_ui_routes,
     register_ui_simples,
 )
-from xtreme_system.api.routes.ui_routes.investidores import ordenar_investidores
+from xtreme_system.api.routes.ui_routes.investidores import (
+    MetricasInvestidor,
+    ordenar_investidores,
+)
 from xtreme_system.database.core import get_session
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
@@ -220,17 +223,13 @@ def test_ordenar_investidores_por_nome() -> None:
         investidor.Investidor(id=3, nome="Bruno"),
     ]
 
-    ordenados = ordenar_investidores(
-        investidores,
-        {},
-        {},
-        {},
-        {},
-        "nome",
-        "asc",
-    )
+    ordenados = ordenar_investidores(investidores, {}, "nome", "asc")
 
     assert [item.nome for item in ordenados] == ["ana", "Bruno", "Carla"]
+
+    ordenados_desc = ordenar_investidores(investidores, {}, "nome", "desc")
+
+    assert [item.nome for item in ordenados_desc] == ["Carla", "Bruno", "ana"]
 
 
 def test_ordenar_investidores_por_metricas() -> None:
@@ -239,48 +238,84 @@ def test_ordenar_investidores_por_metricas() -> None:
         investidor.Investidor(id=2, nome="Bruno"),
         investidor.Investidor(id=3, nome="Carla"),
     ]
+    metricas = {
+        1: MetricasInvestidor(
+            saldo=Decimal("10.00"),
+            num_veiculos=2,
+            valor_veiculos=Decimal("5000.00"),
+            total_aportado=Decimal("200.00"),
+        ),
+        2: MetricasInvestidor(
+            saldo=Decimal("30.00"),
+            num_veiculos=1,
+            valor_veiculos=Decimal("1000.00"),
+            total_aportado=Decimal("700.00"),
+        ),
+        3: MetricasInvestidor(
+            saldo=Decimal("20.00"),
+            num_veiculos=3,
+            valor_veiculos=Decimal("3000.00"),
+            total_aportado=Decimal("400.00"),
+        ),
+    }
 
-    por_saldo = ordenar_investidores(
-        investidores,
-        {1: Decimal("10.00"), 2: Decimal("30.00"), 3: Decimal("20.00")},
-        {},
-        {},
-        {},
-        "saldo",
-        "desc",
-    )
-    por_num_veiculos = ordenar_investidores(
-        investidores,
-        {},
-        {1: 2, 2: 1, 3: 3},
-        {},
-        {},
-        "num_veiculos",
-        "asc",
-    )
-    por_valor_veiculos = ordenar_investidores(
-        investidores,
-        {},
-        {},
-        {1: Decimal("5000.00"), 2: Decimal("1000.00"), 3: Decimal("3000.00")},
-        {},
-        "valor_veiculos",
-        "desc",
-    )
-    por_total_investido = ordenar_investidores(
-        investidores,
-        {},
-        {},
-        {},
-        {1: Decimal("200.00"), 2: Decimal("700.00"), 3: Decimal("400.00")},
-        "total_investido",
-        "asc",
-    )
+    assert [
+        item.id for item in ordenar_investidores(investidores, metricas, "saldo", "asc")
+    ] == [1, 3, 2]
+    assert [
+        item.id
+        for item in ordenar_investidores(investidores, metricas, "saldo", "desc")
+    ] == [2, 3, 1]
+    assert [
+        item.id
+        for item in ordenar_investidores(investidores, metricas, "num_veiculos", "asc")
+    ] == [2, 1, 3]
+    assert [
+        item.id
+        for item in ordenar_investidores(investidores, metricas, "num_veiculos", "desc")
+    ] == [3, 1, 2]
+    assert [
+        item.id
+        for item in ordenar_investidores(
+            investidores, metricas, "valor_veiculos", "asc"
+        )
+    ] == [2, 3, 1]
+    assert [
+        item.id
+        for item in ordenar_investidores(
+            investidores, metricas, "valor_veiculos", "desc"
+        )
+    ] == [1, 3, 2]
+    assert [
+        item.id
+        for item in ordenar_investidores(
+            investidores, metricas, "total_investido", "asc"
+        )
+    ] == [1, 3, 2]
+    assert [
+        item.id
+        for item in ordenar_investidores(
+            investidores, metricas, "total_investido", "desc"
+        )
+    ] == [2, 3, 1]
 
-    assert [item.id for item in por_saldo] == [2, 3, 1]
-    assert [item.id for item in por_num_veiculos] == [2, 1, 3]
-    assert [item.id for item in por_valor_veiculos] == [1, 3, 2]
-    assert [item.id for item in por_total_investido] == [1, 3, 2]
+
+def test_ordenar_investidores_usa_metricas_padrao_quando_ausentes() -> None:
+    investidores = [
+        investidor.Investidor(id=1, nome="Ana"),
+        investidor.Investidor(id=2, nome="Bruno"),
+        investidor.Investidor(id=3, nome="Carla"),
+    ]
+    metricas = {
+        1: MetricasInvestidor(saldo=Decimal("10.00")),
+        3: MetricasInvestidor(saldo=Decimal("5.00")),
+    }
+
+    ordenados_asc = ordenar_investidores(investidores, metricas, "saldo", "asc")
+    ordenados_desc = ordenar_investidores(investidores, metricas, "saldo", "desc")
+
+    assert [item.id for item in ordenados_asc] == [2, 3, 1]
+    assert [item.id for item in ordenados_desc] == [1, 3, 2]
 
 
 class _StubSchema(BaseModel):

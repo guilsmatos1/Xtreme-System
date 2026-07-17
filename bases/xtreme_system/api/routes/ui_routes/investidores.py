@@ -1,5 +1,6 @@
 """HTMX routes for investidores."""
 
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 import structlog
@@ -18,12 +19,20 @@ from xtreme_system.investidor import core as investidor
 logger = structlog.get_logger(__name__)
 
 
+@dataclass(frozen=True)
+class MetricasInvestidor:
+    saldo: Decimal = Decimal("0")
+    num_veiculos: int = 0
+    valor_veiculos: Decimal = Decimal("0")
+    total_aportado: Decimal = Decimal("0")
+
+
+_METRICAS_INVESTIDOR_PADRAO = MetricasInvestidor()
+
+
 def ordenar_investidores(
     investidores: list[investidor.Investidor],
-    saldos: dict[int, Decimal],
-    num_veiculos: dict[int, int],
-    valor_veiculos: dict[int, Decimal],
-    total_aportado: dict[int, Decimal],
+    metricas: dict[int, MetricasInvestidor],
     sort: str,
     order: str,
 ) -> list[investidor.Investidor]:
@@ -34,24 +43,32 @@ def ordenar_investidores(
         )
     if sort == "saldo":
         return sorted(
-            investidores, key=lambda item: saldos.get(item.id, 0), reverse=reverse
+            investidores,
+            key=lambda item: metricas.get(item.id, _METRICAS_INVESTIDOR_PADRAO).saldo,
+            reverse=reverse,
         )
     if sort == "num_veiculos":
         return sorted(
             investidores,
-            key=lambda item: num_veiculos.get(item.id, 0),
+            key=lambda item: (
+                metricas.get(item.id, _METRICAS_INVESTIDOR_PADRAO).num_veiculos
+            ),
             reverse=reverse,
         )
     if sort == "valor_veiculos":
         return sorted(
             investidores,
-            key=lambda item: valor_veiculos.get(item.id, Decimal("0")),
+            key=lambda item: (
+                metricas.get(item.id, _METRICAS_INVESTIDOR_PADRAO).valor_veiculos
+            ),
             reverse=reverse,
         )
     if sort == "total_investido":
         return sorted(
             investidores,
-            key=lambda item: total_aportado.get(item.id, Decimal("0")),
+            key=lambda item: (
+                metricas.get(item.id, _METRICAS_INVESTIDOR_PADRAO).total_aportado
+            ),
             reverse=reverse,
         )
     return investidores
@@ -63,18 +80,19 @@ def _ctx_investidores(
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
     num_veiculos, valor_veiculos, total_aportado = caixa.agregados_investidores(session)
+    metricas = {
+        item.id: MetricasInvestidor(
+            saldo=saldos.get(item.id, Decimal("0")),
+            num_veiculos=num_veiculos.get(item.id, 0),
+            valor_veiculos=valor_veiculos.get(item.id, Decimal("0")),
+            total_aportado=total_aportado.get(item.id, Decimal("0")),
+        )
+        for item in investidores
+    }
     return {
         "titulo": "Investidores",
         "prefixo": "/ui/investidores",
-        "itens": ordenar_investidores(
-            investidores,
-            saldos,
-            num_veiculos,
-            valor_veiculos,
-            total_aportado,
-            sort,
-            order,
-        ),
+        "itens": ordenar_investidores(investidores, metricas, sort, order),
         "saldos": saldos,
         "num_veiculos": num_veiculos,
         "valor_veiculos": valor_veiculos,
