@@ -7,6 +7,7 @@
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
+          hx-encoding="multipart/form-data" enctype="multipart/form-data"
           {% if not compra %}id="form-nova-compra"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
@@ -117,6 +118,10 @@
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="5"></textarea>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Comprovante de pagamento</span>
+            <input class="input" name="comprovantes_pagamento" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
           </label>
         </fieldset>
         {% endif %}
