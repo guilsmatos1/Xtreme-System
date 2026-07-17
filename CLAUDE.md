@@ -84,13 +84,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.
 
-## 6. Merge in a Worktree
-
-Before merging into `master`, confirm with `git worktree list` that it is not
-checked out in another worktree. If Git says `master` is already in use, do the
-merge in the main worktree instead of trying to switch branches here.
-
-## 7. Others
+## 6. Others
 
 - Changing transaction boundaries, commits, or rollbacks → read `bases/xtreme_system/api/crud_writes.py` (safe_write) and `components/xtreme_system/database/core.py` (get_session). Find all callers of `session.rollback()` with `rg "session\.rollback\(\)" --include "*.py"` before editing. Rollback is centralized in `get_session()`. If a handler re-raises an `IntegrityError` as `HTTPException`, `get_session` will rollback on its own — do not call `session.rollback()` in that path. When a handler catches `IntegrityError` internally and returns a response directly, the handler must call `session.rollback()` to reset the session state before `get_session` attempts its commit.
 

@@ -9,6 +9,7 @@ from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
@@ -19,13 +20,15 @@ from xtreme_system.api.routes.ui_routes.common import resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
-from xtreme_system.database.core import get_session
+from xtreme_system.compra import core as compra
+from xtreme_system.database.core import _invoke_post_commit, get_session
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.venda import core as venda
 
 
 @pytest.fixture
@@ -61,6 +64,7 @@ def client() -> Iterator[TestClient]:
 
         def override() -> Iterator[Session]:
             yield session
+            _invoke_post_commit(session)
 
         app.dependency_overrides[get_session] = override
         yield TestClient(app)
@@ -1564,6 +1568,63 @@ def _admin_headers(client: TestClient) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+@contextlib.contextmanager
+def _client_with_failing_final_commit() -> Iterator[
+    tuple[TestClient, Session, dict[str, bool]]
+]:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor A")
+        )
+        veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Onix",
+                cor="Prata",
+                ano=2024,
+                placa="ABC1234",
+                km=12000,
+                preco=85000,
+                investidor_id=inv.id,
+            ),
+        )
+        fail_commit = {"enabled": False}
+
+        def _raise_commit_error() -> None:
+            raise IntegrityError("", {}, Exception("commit falhou"))
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                if fail_commit["enabled"]:
+                    _raise_commit_error()
+                session.commit()
+                _invoke_post_commit(session)
+            except Exception:
+                session.rollback()
+                raise
+
+        app.dependency_overrides[get_session] = override
+        try:
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                yield test_client, session, fail_commit
+        finally:
+            app.dependency_overrides.clear()
+    engine.dispose()
+
+
 def _criar_cliente(
     client: TestClient, headers: dict[str, str], nome: str, documento: str
 ) -> int:
@@ -1617,6 +1678,92 @@ def _seed_compra(client: TestClient, documento: str) -> int:
     )
     assert compra_resp.status_code == 201
     return int(compra_resp.json()["id"])
+
+
+def test_ui_vendas_nao_grava_contrato_se_commit_final_falhar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.vendas._uploads_contrato_venda_dir",
+        lambda _id: tmp_path,
+    )
+
+    with _client_with_failing_final_commit() as (client, session, fail_commit):
+        _login_admin(client)
+        headers = _admin_headers(client)
+        cliente_id = _criar_cliente(client, headers, "Carlos Lima", "98765432100")
+        veiculo_id = veiculo.list_all(session)[0].id
+
+        fail_commit["enabled"] = True
+        resp = client.post(
+            "/ui/vendas",
+            data={
+                "cliente_id": str(cliente_id),
+                "veiculo_id": str(veiculo_id),
+                "data_venda": "2026-07-09",
+                "valor_venda": "85000.00",
+                "valor_entrada": "10000.00",
+                "forma_pagamento": "financiamento",
+                "parcelas": "36",
+                "status": "pendente",
+            },
+        )
+
+        assert venda.list_all(session) == []
+
+    assert resp.status_code == 200
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+def test_ui_compras_nao_grava_comprovante_se_commit_final_falhar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(ui_routes, "_uploads_compra_dir", lambda _id: tmp_path)
+
+    with _client_with_failing_final_commit() as (client, session, fail_commit):
+        _login_admin(client)
+        headers = _admin_headers(client)
+        investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+        veiculo_resp = client.post(
+            "/veiculos",
+            json={
+                "tipo": "carro",
+                "tipo_entrada": "compra",
+                "placa": "CMP1A23",
+                "modelo": "Corolla",
+                "cor": "Preto",
+                "ano": 2022,
+                "km": 30000,
+                "preco": "84000.00",
+                "investidor_id": investidor_id,
+            },
+            headers=headers,
+        )
+        assert veiculo_resp.status_code == 201
+        cliente_id = _criar_cliente(client, headers, "Carlos Compra", "45678912300")
+
+        fail_commit["enabled"] = True
+        resp = client.post(
+            "/ui/compras",
+            data={
+                "cliente_id": str(cliente_id),
+                "veiculo_id": str(veiculo_resp.json()["id"]),
+                "data_compra": "2026-07-09",
+                "valor_compra": "84000.00",
+            },
+            files={
+                "comprovantes_pagamento": (
+                    "comprovante.pdf",
+                    b"%PDF-conteudo-pagto",
+                    "application/pdf",
+                )
+            },
+        )
+
+        assert compra.list_all(session) == []
+
+    assert resp.status_code == 200
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
 
 def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(

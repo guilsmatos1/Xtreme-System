@@ -1,6 +1,7 @@
 """HTMX routes for vendas."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -19,7 +20,6 @@ from xtreme_system.api.deps import (
 )
 from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
-    _remover_upload,
     _uploads_contrato_venda_dir,
     resolver_cliente,
 )
@@ -30,6 +30,7 @@ from xtreme_system.api.routes.workflows import (
 )
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
+from xtreme_system.database.core import register_post_commit
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.perfil import core as perfil
@@ -273,21 +274,27 @@ def _erro_venda(
 
 def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
-    path.write_bytes(documento_contrato_venda.gerar_pdf(obj))
-    try:
-        documento_contrato_venda.create(
-            session,
-            documento_contrato_venda.DocumentoContratoVendaCreate(
-                venda_id=obj.id,
-                url=f"/static/uploads/vendas/{obj.id}/contrato/{filename}",
-            ),
-        )
-    except Exception:
-        _remover_upload(path)
-        raise
+    pdf = documento_contrato_venda.gerar_pdf(obj)
+    documento_contrato_venda.create(
+        session,
+        documento_contrato_venda.DocumentoContratoVendaCreate(
+            venda_id=obj.id,
+            url=f"/static/uploads/vendas/{obj.id}/contrato/{filename}",
+        ),
+    )
+
+    def _write_contract_after_commit(
+        *, path: Path = path, pdf: bytes = pdf, upload_dir: Path = upload_dir
+    ) -> None:
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(pdf)
+
+    register_post_commit(
+        session,
+        _write_contract_after_commit,
+    )
 
 
 @app.post("/ui/vendas")

@@ -18,6 +18,7 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     remover_orfaos,
     salvar_arquivos,
 )
+from xtreme_system.database.core import _invoke_post_commit
 
 
 class _FakeFile:
@@ -51,6 +52,11 @@ class _FakeDoc:
         self.url = url
 
 
+class _FakeSession:
+    def __init__(self) -> None:
+        self.info: dict[str, Any] = {}
+
+
 class _FakeSchema(BaseModel):
     veiculo_id: int
     url: str
@@ -58,12 +64,13 @@ class _FakeSchema(BaseModel):
 
 def test_salvar_arquivos_happy_path(tmp_path: Path) -> None:
     calls: list[Any] = []
+    session = _FakeSession()
 
     def create_fn(_session: Session, data: Any) -> Any:
         calls.append(data)
 
     salvar_arquivos(
-        cast(Session, object()),
+        cast(Session, session),
         upload_dir=tmp_path,
         url_prefix="/static/uploads/veiculos/1",
         create_fn=create_fn,
@@ -81,6 +88,9 @@ def test_salvar_arquivos_happy_path(tmp_path: Path) -> None:
     assert calls[0].url.startswith("/static/uploads/veiculos/1/")
     assert calls[0].url.endswith(".jpg")
     assert calls[1].url.endswith(".pdf")
+    assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
+
+    _invoke_post_commit(cast(Session, session))
 
     files_on_disk = sorted(tmp_path.iterdir(), key=lambda p: p.suffix)
     assert len(files_on_disk) == 2
@@ -90,12 +100,13 @@ def test_salvar_arquivos_happy_path(tmp_path: Path) -> None:
 
 def test_salvar_arquivos_ignora_arquivo_sem_filename(tmp_path: Path) -> None:
     calls: list[Any] = []
+    session = _FakeSession()
 
     def create_fn(_session: Session, data: Any) -> Any:
         calls.append(data)
 
     salvar_arquivos(
-        cast(Session, object()),
+        cast(Session, session),
         upload_dir=tmp_path,
         url_prefix="/static/uploads/veiculos/1",
         create_fn=create_fn,
@@ -115,7 +126,7 @@ def test_salvar_arquivos_falha_create_remove_arquivo(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="db indisponivel"):
         salvar_arquivos(
-            cast(Session, object()),
+            cast(Session, _FakeSession()),
             upload_dir=tmp_path,
             url_prefix="/static/uploads/veiculos/1",
             create_fn=cast(Callable[[Session, Any], Any], falha_create),

@@ -3,12 +3,13 @@
 # Edit freely. Regenerate with: ai-jail --clean --init
 
 command = ["claude"]
-deny_paths = [
-    ".pylintrc",
-    ".env",
-    ".pre-commit-config.yaml",
-    ".github/workflows",
-    ".claude/settings*.json",
-    "CLAUDE.md",
-    "AGENTS.md",
+ro_maps = [
+    "~/orca/projects/xtreme-system/.claude/settings.json",
+    "~/orca/projects/xtreme-system/.claude/settings.local.json",
+    "~/orca/projects/xtreme-system/.pylintrc",
+    "~/orca/projects/xtreme-system/.env",
+    "~/orca/projects/xtreme-system/.pre-commit-config.yaml",
+    "~/orca/projects/xtreme-system/.github/workflows",
+    "~/orca/projects/xtreme-system/CLAUDE.md",
+    "~/orca/projects/xtreme-system/AGENTS.md",
 ]
