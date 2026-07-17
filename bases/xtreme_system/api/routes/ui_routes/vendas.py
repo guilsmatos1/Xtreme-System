@@ -16,6 +16,7 @@ from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploads_contrato_venda_dir,
+    resolver_cliente,
 )
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
@@ -175,48 +176,6 @@ def _erro_venda(request: Request, session: Session, msg: str) -> HTMLResponse:
     )
 
 
-def _resolver_cliente(
-    session: Session, form: Any
-) -> tuple[cliente.Cliente | None, cliente.ClienteCreate | None, str | None]:
-    """Retorna (cliente_existente, dados_novo_cliente, erro)."""
-    cliente_sel = str(form.get("cliente_id") or "").strip()
-    if cliente_sel:
-        try:
-            existente = cliente.get(session, int(cliente_sel))
-        except ValueError:
-            existente = None
-        if existente is None:
-            return None, None, "Cliente inválido ou inexistente"
-        return existente, None, None
-
-    nome = str(form.get("cli_nome") or "").strip()
-    documento = str(form.get("cli_documento") or "").strip()
-    erro: str | None = None
-    if not nome or not documento:
-        erro = "Informe os dados do cliente"
-    elif cliente.get_by_documento(session, documento):
-        erro = "CPF já cadastrado — selecione o cliente na lista"
-    if erro:
-        return None, None, erro
-    try:
-        novo_cliente_data = cliente.ClienteCreate.model_validate(
-            {
-                "nome": nome,
-                "documento": documento,
-                "tipo": form.get("cli_tipo") or "pessoa_fisica",
-                "telefone": str(form.get("cli_telefone") or "").strip() or None,
-                "email": str(form.get("cli_email") or "").strip() or None,
-                "endereco": str(form.get("cli_endereco") or "").strip() or None,
-                "cidade": str(form.get("cli_cidade") or "").strip() or None,
-                "estado": str(form.get("cli_estado") or "").strip() or None,
-                "cep": str(form.get("cli_cep") or "").strip() or None,
-            }
-        )
-    except ValidationError:
-        return None, None, "Dados do cliente inválidos"
-    return None, novo_cliente_data, None
-
-
 def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -243,7 +202,7 @@ async def _criar_venda(
     session.info["usuario_id"] = user.id
     form = await request.form()
 
-    cliente_obj, novo_cliente_data, erro = _resolver_cliente(session, form)
+    cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
     if erro:
         return _erro_venda(request, session, erro)
 

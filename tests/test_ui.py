@@ -15,6 +15,7 @@ from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
+from xtreme_system.api.routes.ui_routes.common import resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
@@ -621,6 +622,67 @@ def test_venda_inline_cliente_nao_persiste_quando_validacao_falha() -> None:
 
         assert resp.status_code == 400
         assert cliente.get_by_documento(session, "00011122233") is None
+    engine.dispose()
+
+
+def test_resolver_cliente_compartilhado_cobre_ramos_principais() -> None:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        existente = cliente.create(
+            session,
+            cliente.ClienteCreate(
+                nome="Cliente Existente",
+                documento="12345678901",
+                tipo=cliente.TipoCliente.pessoa_fisica,
+            ),
+        )
+
+        cliente_obj, novo_cliente_data, erro = resolver_cliente(
+            session, {"cliente_id": str(existente.id)}
+        )
+        assert cliente_obj is not None
+        assert cliente_obj.id == existente.id
+        assert novo_cliente_data is None
+        assert erro is None
+
+        cliente_obj, novo_cliente_data, erro = resolver_cliente(
+            session, {"cliente_id": "99999"}
+        )
+        assert cliente_obj is None
+        assert novo_cliente_data is None
+        assert erro == "Cliente inválido ou inexistente"
+
+        cliente_obj, novo_cliente_data, erro = resolver_cliente(
+            session,
+            {
+                "cli_nome": "Duplicado",
+                "cli_documento": existente.documento,
+                "cli_tipo": "pessoa_fisica",
+            },
+        )
+        assert cliente_obj is None
+        assert novo_cliente_data is None
+        assert erro == "CPF já cadastrado — selecione o cliente na lista"
+
+        cliente_obj, novo_cliente_data, erro = resolver_cliente(
+            session,
+            {
+                "cli_nome": "Cliente Novo",
+                "cli_documento": "10987654321",
+                "cli_tipo": "pessoa_fisica",
+                "cli_email": "novo@example.com",
+            },
+        )
+        assert cliente_obj is None
+        assert novo_cliente_data is not None
+        assert novo_cliente_data.nome == "Cliente Novo"
+        assert novo_cliente_data.documento == "10987654321"
+        assert novo_cliente_data.email == "novo@example.com"
+        assert erro is None
     engine.dispose()
 
 
