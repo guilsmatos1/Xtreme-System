@@ -41,7 +41,7 @@
         <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         <th data-col="cidade" data-col-label="Cidade">{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         <th data-col="estado" data-col-label="Estado">{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+        {% if pode_operacao(user, 'clientes', 'editar') or pode_operacao(user, 'clientes', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_clientes.html" %}

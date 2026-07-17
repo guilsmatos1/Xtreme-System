@@ -1,17 +1,23 @@
 """HTMX routes for vendas."""
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import uuid4
 
 import structlog
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    UIUser,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
@@ -26,6 +32,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.fechamento_venda import core as fechamento_venda
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
@@ -33,6 +40,10 @@ from xtreme_system.whatsapp import core as whatsapp
 logger = structlog.get_logger(__name__)
 
 # ---- Vendas (UI) ----
+
+_CadastrarVendaDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("vendas", "cadastrar"))
+]
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
@@ -155,10 +166,23 @@ register_crud_ui_routes(
         v.observacoes or "",
     ],
     register_create=False,
+    cadastrar_dep=require_operacao("vendas", "cadastrar"),
+    editar_dep=require_operacao("vendas", "editar"),
+    excluir_dep=require_operacao("vendas", "excluir"),
+    pagina="vendas",
+    campos_form_map={
+        "valor_venda": "valor_venda",
+        "valor_entrada": "valor_entrada",
+        "debitos": "debitos",
+        "valor_diferenca": "valor_diferenca",
+        "valor_pendente": "valor_pendente",
+    },
 )
 
 
-def _ok_venda(request: Request, session: Session, user: UIAdmin) -> HTMLResponse:
+def _ok_venda(
+    request: Request, session: Session, user: usuario.Usuario
+) -> HTMLResponse:
     vendas = venda.list_all(session)
     return templates.TemplateResponse(
         request,
@@ -239,7 +263,7 @@ def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
 
 @app.post("/ui/vendas")
 async def _criar_venda(
-    request: Request, session: SessionDep, user: UIAdmin
+    request: Request, session: SessionDep, user: _CadastrarVendaDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     form = await request.form()
@@ -289,22 +313,33 @@ def _baixar_contrato_venda(
     return RedirectResponse(documentos[-1].url)
 
 
+_FecharVendaDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("vendas", "fechar"))
+]
+
+
 @app.get("/ui/vendas/{item_id}/fechamento")
 def _form_fechamento_venda(
-    item_id: int, request: Request, session: SessionDep, _: UIAdmin
+    item_id: int, request: Request, session: SessionDep, user: _FecharVendaDep
 ) -> HTMLResponse:
     obj = _found(venda.get(session, item_id), "Venda")
     preview = fechamento_venda.preview(session, obj)
     return templates.TemplateResponse(
         request,
         "_modal_fechamento_venda.html",
-        {"venda": obj, "preview": preview, "fechamento": None, "erro": None},
+        {
+            "venda": obj,
+            "preview": preview,
+            "fechamento": None,
+            "user": user,
+            "erro": None,
+        },
     )
 
 
 @app.post("/ui/vendas/{item_id}/fechamento")
 async def _confirmar_fechamento_venda(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+    item_id: int, request: Request, session: SessionDep, user: _FecharVendaDep
 ) -> HTMLResponse:
     obj = _found(venda.get(session, item_id), "Venda")
     form = await request.form()
@@ -332,6 +367,7 @@ async def _confirmar_fechamento_venda(
                 "venda": obj,
                 "preview": fechamento_venda.preview(session, obj),
                 "fechamento": None,
+                "user": user,
                 "erro": msg,
             },
             status_code=400,
@@ -346,7 +382,7 @@ async def _confirmar_fechamento_venda(
 
 @app.get("/ui/fechamentos-vendas/{fechamento_id}")
 def _detalhe_fechamento_venda(
-    fechamento_id: int, request: Request, session: SessionDep, _: UIUser
+    fechamento_id: int, request: Request, session: SessionDep, user: UIUser
 ) -> HTMLResponse:
     fechamento = _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
     return templates.TemplateResponse(
@@ -356,6 +392,7 @@ def _detalhe_fechamento_venda(
             "venda": fechamento.venda,
             "preview": None,
             "fechamento": fechamento,
+            "user": user,
             "erro": None,
         },
     )

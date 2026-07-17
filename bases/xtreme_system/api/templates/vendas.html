@@ -38,13 +38,13 @@
         <th data-col="cliente" data-col-label="Cliente">{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/vendas", sort_qs) }}</th>
         <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/vendas", sort_qs) }}</th>
         <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/vendas", sort_qs) }}</th>
-        <th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/vendas", sort_qs) }}</th>
-        <th data-col="entrada" data-col-label="Entrada">{{ ui.sortable("entrada", "Entrada", sort, order, "/ui/vendas", sort_qs) }}</th>
-        <th data-col="divida" data-col-label="Dívida">{{ ui.sortable("divida", "Dívida", sort, order, "/ui/vendas", sort_qs) }}</th>
+        {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}<th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/vendas", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}<th data-col="entrada" data-col-label="Entrada">{{ ui.sortable("entrada", "Entrada", sort, order, "/ui/vendas", sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}<th data-col="divida" data-col-label="Dívida">{{ ui.sortable("divida", "Dívida", sort, order, "/ui/vendas", sort_qs) }}</th>{% endif %}
         <th data-col="pagamento" data-col-label="Pagamento">{{ ui.sortable("pagamento", "Pagamento", sort, order, "/ui/vendas", sort_qs) }}</th>
         <th data-col="parcelas" data-col-label="Parcelas">{{ ui.sortable("parcelas", "Parcelas", sort, order, "/ui/vendas", sort_qs) }}</th>
         <th data-col="status" data-col-label="Status">{{ ui.sortable("status", "Status", sort, order, "/ui/vendas", sort_qs) }}</th>
-        {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+        {% if pode_operacao(user, 'vendas', 'editar') or pode_operacao(user, 'vendas', 'excluir') or pode_operacao(user, 'vendas', 'fechar') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_vendas.html" %}

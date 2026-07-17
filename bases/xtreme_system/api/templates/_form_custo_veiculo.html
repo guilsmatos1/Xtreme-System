@@ -27,10 +27,12 @@
             <span class="field__label">Data</span>
             <input class="input" name="data_custo" type="date" value="{{ custo.data_custo.isoformat() if custo and custo.data_custo else hoje.isoformat() }}" required>
           </label>
+          {% if not custo or pode_ver_campo(user, 'custos-veiculos', 'valor') %}
           <label class="field">
             <span class="field__label">Valor</span>
             <input class="input" name="valor" type="number" step="0.01" min="0.01" value="{{ custo.valor if custo else '' }}" required>
           </label>
+          {% endif %}
           <label class="field field--full">
             <span class="field__label">Descrição</span>
             <textarea class="input" name="descricao" rows="4">{{ custo.descricao if custo and custo.descricao else '' }}</textarea>

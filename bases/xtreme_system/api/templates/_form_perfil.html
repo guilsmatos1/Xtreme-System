@@ -27,6 +27,36 @@
             {% endfor %}
           </div>
         </div>
+
+        {% for pagina, campos in campos_protegidos.items() %}
+        <div class="field field--full" style="margin-top:var(--s-4)">
+          <span class="field__label">{{ paginas_labels[pagina] }} — Campos a ocultar</span>
+          <div class="stack" style="gap:var(--s-2);margin-top:var(--s-2)">
+            {% for chave, label in campos %}
+            <label style="display:flex;align-items:center;gap:var(--s-2)">
+              <input type="checkbox" name="oculto__{{ pagina }}__{{ chave }}"
+                     {% if perfil and chave in perfil.restricoes.get(pagina, {}).get("campos_ocultos", []) %}checked{% endif %}>
+              {{ label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% for pagina, operacoes in operacoes_disponiveis.items() %}
+        <div class="field field--full" style="margin-top:var(--s-4)">
+          <span class="field__label">{{ paginas_labels[pagina] }} — Operações permitidas</span>
+          <div class="stack" style="gap:var(--s-2);margin-top:var(--s-2)">
+            {% for chave, label in operacoes %}
+            <label style="display:flex;align-items:center;gap:var(--s-2)">
+              <input type="checkbox" name="op__{{ pagina }}__{{ chave }}"
+                     {% if perfil and chave in perfil.restricoes.get(pagina, {}).get("operacoes", []) %}checked{% endif %}>
+              {{ label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>

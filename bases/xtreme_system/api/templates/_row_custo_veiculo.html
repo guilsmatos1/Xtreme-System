@@ -4,13 +4,19 @@
   <td data-col="placa">{{ c.veiculo.placa }}</td>
   <td data-col="categoria">{{ c.categoria }}</td>
   <td data-col="data">{{ c.data_custo.isoformat() }}</td>
-  <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}<td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
   <td data-col="descricao">{{ c.descricao or "-" }}</td>
-  {% if is_admin(user) %}
+  {% set pode_editar = pode_operacao(user, 'custos-veiculos', 'editar') %}
+  {% set pode_excluir = pode_operacao(user, 'custos-veiculos', 'excluir') %}
+  {% if pode_editar or pode_excluir %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
+      {% if pode_editar %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/custos-veiculos/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar custo {{ c.id }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
+      {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/custos-veiculos/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este custo?" aria-label="Excluir custo {{ c.id }}">{{ ui.icon("trash") }}</button>
+      {% endif %}
     </div>
   </td>
   {% endif %}

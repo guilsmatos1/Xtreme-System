@@ -86,6 +86,32 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
     assert "Exportar dados" in pagina.text
+    assert "Valor disponível" not in pagina.text
+
+
+def test_ui_perfis_novo_exibe_campo_debitos_de_veiculos(client: TestClient) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/perfis/novo")
+
+    assert pagina.status_code == 200
+    assert "Veículos — Campos a ocultar" in pagina.text
+    assert "Débitos" in pagina.text
+
+
+def test_ui_perfis_novo_exibe_cadastro_de_clientes_compras_e_vendas(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/perfis/novo")
+
+    assert pagina.status_code == 200
+    for modulo in ("Clientes", "Compras", "Vendas"):
+        assert f"{modulo} — Operações permitidas" in pagina.text
+    assert 'name="op__clientes__cadastrar"' in pagina.text
+    assert 'name="op__compras__cadastrar"' in pagina.text
+    assert 'name="op__vendas__cadastrar"' in pagina.text
 
 
 def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
@@ -1092,6 +1118,35 @@ def test_ui_custos_veiculos_respeita_permissao_de_perfil(
 
     bloqueado = client.get("/ui/veiculos")
     assert bloqueado.status_code == 403
+
+
+def test_ui_veiculos_respeita_permissao_de_perfil_de_debitos(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={
+            "nome": "Veiculos",
+            "paginas": "veiculos",
+            "oculto__veiculos__debitos": "on",
+        },
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "veiculos_user",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "veiculos_user", "password": "abc"})
+
+    permitido = client.get("/ui/veiculos")
+    assert permitido.status_code == 200
+    assert "Valor disponível" not in permitido.text
+    assert 'data-col-label="Débitos"' not in permitido.text
 
 
 def _login_admin(client: TestClient) -> None:

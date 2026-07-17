@@ -92,13 +92,13 @@ Request:
 ```json
 {
   "username": "string",
-  "senha_hash": "string",
+  "senha": "string",
   "papel": "admin|funcionario",
-  "ativo": boolean
+  "perfil_id": 1
 }
 ```
 
-Response: User object (201 Created)
+Response: User object (201 Created, inclui `perfil_id`)
 
 **Status Codes**:
 
@@ -111,7 +111,7 @@ Response: User object (201 Created)
 
 **Endpoint**: `GET /usuarios`
 
-Response: Array of user objects
+Response: Array of user objects (inclui `perfil_id`)
 
 **Status Codes**:
 
@@ -356,6 +356,20 @@ Side effects:
 - `GET /fechamentos-vendas`
 - `GET /fechamentos-vendas/{id}`
 
+### Compras (Purchases)
+
+**Validation**:
+
+- `cliente_id` (if provided) must reference an existing client
+- `veiculo_id` (if provided) must reference an existing vehicle
+- `status` defaults to `pendente`
+
+### Auditoria
+
+**Endpoint**: `GET /auditoria`
+
+**Permissions**: Requires admin role
+
 ---
 
 ## Response Format
@@ -398,8 +412,8 @@ Error responses:
 
 **Roles**:
 
-- `admin` - Full access to all endpoints
-- `funcionario` (employee) - Read-only access to most resources, can create sales
+- `admin` - Full access to JSON write endpoints and admin-only queries
+- `funcionario` (employee) - Read-only access to JSON endpoints; access to the UI depends on the assigned `perfil`
 
 **Header**:
 
@@ -413,4 +427,4 @@ Authorization: Bearer {access_token}
 
 In addition to the JSON API, the application provides a server-rendered HTML UI with HTMX for dynamic interactions. The UI is accessible at the root path (`/`) and authenticated via HTTP-only cookies.
 
-**Note**: The UI authentication is independent of the JSON API token authentication and uses a separate session mechanism.
+**Note**: The UI reuses the same JWT in an HTTP-only cookie and applies page access rules based on the user's `perfil`. Beyond pages, a `perfil` can also restrict specific fields (hidden in the UI, denylist — visible by default) and write operations (allowlist — denied by default for non-admins) on a per-page basis via `Perfil.restricoes`. Applied across all 6 pages (`veiculos`, `investidores`, `clientes`, `compras`, `custos-veiculos`, `vendas`), including page-specific operations like `excluir_comprovante`, `excluir_documento`, and `fechar` (venda closing, which also hides profit/investor-payout fields). In `veiculos`, the restricted field catalog includes `preco`, `investidor`, `revisao`, and `debitos`.

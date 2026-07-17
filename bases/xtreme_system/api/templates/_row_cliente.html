@@ -6,13 +6,21 @@
   <td data-col="tipo"><span class="badge badge--plain">{{ c.tipo.value | replace("_", " ") | title }}</span></td>
   <td data-col="cidade">{{ c.cidade or "-" }}</td>
   <td data-col="estado">{{ c.estado or "-" }}</td>
-  {% if is_admin(user) %}
+  {% set pode_editar = pode_operacao(user, 'clientes', 'editar') %}
+  {% set pode_excluir = pode_operacao(user, 'clientes', 'excluir') %}
+  {% if pode_editar or pode_excluir or is_admin(user) %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
+      {% if is_admin(user) %}
       <button class="btn btn--ghost btn--sm action-user" hx-get="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/veiculos" hx-target="#modal" hx-swap="innerHTML" aria-label="{{ vehicles_label or 'Veículos' }} de {{ c.nome }}">{{ ui.icon("vehicles") }}</button>
+      {% endif %}
+      {% if pode_editar %}
       {% include "_action_cliente_documentos.html" %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ c.nome }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
+      {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o cliente {{ c.nome }}?" aria-label="Excluir {{ c.nome }}">{{ ui.icon("trash") }}</button>
+      {% endif %}
     </div>
   </td>
   {% endif %}

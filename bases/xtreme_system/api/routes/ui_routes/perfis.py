@@ -20,6 +20,22 @@ logger = structlog.get_logger(__name__)
 # ---- Perfis (UI, admin) ----
 
 
+def _parse_restricoes(form: Any) -> dict[str, dict[str, list[str]]]:
+    restricoes: dict[str, dict[str, list[str]]] = {}
+    for chave in form:
+        if chave.startswith("oculto__"):
+            _, pagina, campo = chave.split("__", 2)
+            restricoes.setdefault(pagina, {}).setdefault("campos_ocultos", []).append(
+                campo
+            )
+        elif chave.startswith("op__"):
+            _, pagina, operacao = chave.split("__", 2)
+            restricoes.setdefault(pagina, {}).setdefault("operacoes", []).append(
+                operacao
+            )
+    return restricoes
+
+
 def _perfis_ctx(
     session: Session, user: usuario.Usuario, **extra: Any
 ) -> dict[str, Any]:
@@ -81,7 +97,9 @@ async def ui_perfil_criar(
     form = await request.form()
     try:
         data = perfil.PerfilCreate(
-            nome=str(form.get("nome", "")), paginas=form.getlist("paginas")
+            nome=str(form.get("nome", "")),
+            paginas=form.getlist("paginas"),
+            restricoes=_parse_restricoes(form),
         )
     except ValidationError:
         return templates.TemplateResponse(
@@ -121,7 +139,9 @@ async def ui_perfil_atualizar(
     obj = _found(perfil.get(session, item_id), "Perfil")
     form = await request.form()
     data = perfil.PerfilUpdate(
-        nome=str(form.get("nome", "")), paginas=form.getlist("paginas")
+        nome=str(form.get("nome", "")),
+        paginas=form.getlist("paginas"),
+        restricoes=_parse_restricoes(form),
     )
     try:
         perfil.update(session, obj, data)

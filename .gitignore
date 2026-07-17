@@ -27,3 +27,6 @@ bases/xtreme_system/api/static/uploads/
 
 # Local notes
 docs/new-improvements.md
+
+# Session logs
+logs/

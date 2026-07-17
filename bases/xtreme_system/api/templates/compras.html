@@ -41,9 +41,9 @@
         <th>{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", sort_qs) }}</th>
         <th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", sort_qs) }}</th>
         <th>{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>
-        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
+        {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         <th>Observações</th>
-        {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
+        {% if pode_operacao(user, 'compras', 'editar') or pode_operacao(user, 'compras', 'excluir') %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>
     {% include "_linhas_compras.html" %}

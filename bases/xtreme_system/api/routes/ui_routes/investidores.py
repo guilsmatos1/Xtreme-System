@@ -1,19 +1,28 @@
 """HTMX routes for investidores."""
 
 from decimal import Decimal, InvalidOperation
+from typing import Annotated
 
 import structlog
-from fastapi import Request, Response
+from fastapi import Depends, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    UIAdmin,
+    UIUser,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.route_factories import _csv_response, _sort_key
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
+from xtreme_system.usuario import core as usuario
 
 logger = structlog.get_logger(__name__)
 
@@ -137,9 +146,17 @@ def ui_investidor_novo(request: Request, _: UIAdmin) -> HTMLResponse:
     )
 
 
+_EditarInvestidorDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("investidores", "editar"))
+]
+_ExcluirInvestidorDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("investidores", "excluir"))
+]
+
+
 @app.get("/ui/investidores/{item_id}/editar")
 def ui_investidor_editar(
-    item_id: int, request: Request, session: SessionDep, _: UIAdmin
+    item_id: int, request: Request, session: SessionDep, _: _EditarInvestidorDep
 ) -> HTMLResponse:
     obj = _found(investidor.get(session, item_id), "Investidores")
     return templates.TemplateResponse(
@@ -199,7 +216,7 @@ async def ui_investidor_criar(
 
 @app.post("/ui/investidores/{item_id}")
 async def ui_investidor_atualizar(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+    item_id: int, request: Request, session: SessionDep, user: _EditarInvestidorDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(investidor.get(session, item_id), "Investidores")
@@ -228,7 +245,7 @@ async def ui_investidor_atualizar(
 
 @app.post("/ui/investidores/{item_id}/excluir")
 def ui_investidor_excluir(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+    item_id: int, request: Request, session: SessionDep, user: _ExcluirInvestidorDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(investidor.get(session, item_id), "Investidores")

@@ -13,9 +13,11 @@ O banco utiliza SQLAlchemy + Alembic (migrations em `alembic/versions/`). Abaixo
 | Nome | Valores | Uso |
 |------|---------|-----|
 | `tipoveiculo` | `moto`, `carro` | `veiculo.tipo` |
+| `tipoentrada` | `compra`, `consignacao` | `veiculo.tipo_entrada` |
 | `statusveiculo` | `disponivel`, `vendido`, `reservado` | `veiculo.status` |
 | `tipocliente` | `pessoa_fisica`, `pessoa_juridica` | `cliente.tipo` |
 | `statusvenda` | `pendente`, `aprovado`, `cancelado`, `concluido` | `venda.status` |
+| `statuscompra` | `pendente`, `finalizado`, `cancelado` | `compra.status` |
 | `papel` | `admin`, `funcionario` | `usuario.papel` |
 | `tipolancamento` | `aporte`, `custo`, `receita_venda`, `distribuicao_lucro` | `lancamento_investimento.tipo` |
 | `origemlancamento` | `manual`, `veiculo`, `fechamento_venda` | `lancamento_investimento.origem` |
@@ -45,10 +47,12 @@ Veículos disponíveis para venda.
 | `cor` | `VARCHAR` | Não | - | |
 | `ano` | `INTEGER` | Não | - | |
 | `placa` | `VARCHAR` | Não | - | Único, indexado |
-| `km` | `INTEGER` | Não | - | |
+| `km` | `INTEGER` | Sim | - | |
 | `preco` | `NUMERIC(12,2)` | Não | - | |
 | `procuracao` | `VARCHAR` | Sim | - | |
 | `status` | `statusveiculo` | Não | `disponivel` | `disponivel`, `vendido`, `reservado` |
+| `tipo_entrada` | `tipoentrada` | Não | `compra` | `compra` ou `consignacao` |
+| `revisao` | `BOOLEAN` | Não | `false` | |
 | `investidor_id` | `INTEGER` | Não | - | FK → `investidor.id` (CASCADE) |
 
 ### `cliente`
@@ -79,6 +83,18 @@ Usuários do sistema para autenticação e controle de acesso.
 | `senha_hash` | `VARCHAR` | Não | - | Hash da senha |
 | `papel` | `papel` | Não | `funcionario` | `admin` ou `funcionario` |
 | `ativo` | `BOOLEAN` | Não | `true` | |
+| `perfil_id` | `INTEGER` | Sim | - | FK → `perfil.id`, indexado |
+
+### `perfil`
+
+Perfis de acesso da UI.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `nome` | `VARCHAR` | Não | - | Único, indexado |
+| `paginas` | `JSON` | Não | `[]` | Lista de páginas liberadas para o usuário |
+| `restricoes` | `JSON` | Não | `{}` | Por página: `campos_ocultos` (denylist — campo some da UI e é ignorado em updates) e `operacoes` (allowlist — operação negada por padrão). Ex.: `{"veiculos": {"campos_ocultos": ["preco", "debitos"], "operacoes": ["editar"]}}`. Ver `perfil.CAMPOS_PROTEGIDOS`/`perfil.OPERACOES` para o catálogo. |
 
 ### `venda`
 
@@ -148,6 +164,7 @@ Registro de compras de veículos.
 | `valor_compra` | `NUMERIC(12,2)` | Não | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
 | `observacoes` | `VARCHAR` | Sim | - | |
+| `status` | `statuscompra` | Não | `pendente` | `pendente`, `finalizado`, `cancelado` |
 
 ### `custo_veiculo`
 
@@ -166,6 +183,16 @@ Custos operacionais associados a veículos. Esses registros não alteram saldo d
 ### `documento_veiculo`
 
 Documentos associados a um veículo.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
+| `url` | `VARCHAR` | Não | - | URL do documento |
+
+### `documento_procuracao`
+
+Documentos de procuração associados a um veículo.
 
 | Coluna | Tipo | Nullable | Default | Observações |
 |--------|------|----------|---------|-------------|
@@ -255,7 +282,10 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 ## Relacionamentos
 
 - Um **investidor** pode ter vários **veículos**.
+- Um **perfil** pode ter vários **usuários**.
+- Um **usuário** pode ter um **perfil** opcional.
 - Um **veículo** pode ter várias **imagens** e **documentos**.
+- Um **veículo** pode ter vários **documentos de procuração**.
 - Um **veículo** pode ter no máximo um **lancamento_investimento** (`veiculo_id` é único).
 - Um **cliente** pode ter várias **vendas**.
 - Um **cliente** pode ter várias **compras**.
@@ -282,13 +312,16 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `veiculo` | `ix_veiculo_investidor_id` | `investidor_id` | Não |
 | `cliente` | `ix_cliente_documento` | `documento` | Sim |
 | `cliente` | `ix_cliente_nome` | `nome` | Não |
+| `perfil` | `ix_perfil_nome` | `nome` | Sim |
 | `usuario` | `ix_usuario_username` | `username` | Sim |
+| `usuario` | `ix_usuario_perfil_id` | `perfil_id` | Não |
 | `venda` | `ix_venda_cliente_id` | `cliente_id` | Não |
 | `venda` | `ix_venda_veiculo_id` | `veiculo_id` | Não |
 | `venda` | `ix_venda_vendedor_id` | `vendedor_id` | Não |
 | `venda` | `ix_venda_veiculo_troca_id` | `veiculo_troca_id` | Não |
 | `imagem_veiculo` | `ix_imagem_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `documento_veiculo` | `ix_documento_veiculo_veiculo_id` | `veiculo_id` | Não |
+| `documento_procuracao` | `ix_documento_procuracao_veiculo_id` | `veiculo_id` | Não |
 | `imagem_comprovante_venda` | `ix_imagem_comprovante_venda_venda_id` | `venda_id` | Não |
 | `documento_contrato_venda` | `ix_documento_contrato_venda_venda_id` | `venda_id` | Não |
 | `compra` | `ix_compra_cliente_id` | `cliente_id` | Não |

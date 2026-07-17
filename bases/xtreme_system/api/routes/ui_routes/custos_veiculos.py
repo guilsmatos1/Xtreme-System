@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import templates
+from xtreme_system.api.deps import require_operacao, templates
 from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.setup import app
 from xtreme_system.custo_veiculo import core as custo_veiculo
@@ -87,4 +87,8 @@ register_crud_ui_routes(
         f"{c.valor:.2f}",
         c.descricao or "",
     ],
+    editar_dep=require_operacao("custos-veiculos", "editar"),
+    excluir_dep=require_operacao("custos-veiculos", "excluir"),
+    pagina="custos-veiculos",
+    campos_form_map={"valor": "valor"},
 )

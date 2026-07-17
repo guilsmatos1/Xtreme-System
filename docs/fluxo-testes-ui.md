@@ -144,7 +144,7 @@
 | # | Passo | Resultado Esperado |
 |---|-------|-------------------|
 | 1 | Acessar `/ui/veiculos` | Título "Veículos · Xtreme" |
-| 2 | Verificar cards de resumo | Total no estoque, Valor disponível, etc. |
+| 2 | Verificar cards de resumo | Total no estoque, Disponíveis e Vendidos |
 | 3 | Verificar tabela | Colunas: Modelo, Placa, Tipo, Ano, KM, Status, Preço, etc. |
 | 4 | Verificar colunas ordenáveis | Clique no header ordena a tabela |
 

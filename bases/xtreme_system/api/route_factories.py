@@ -1,5 +1,7 @@
 """Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
 
+from collections.abc import Callable
+
 from fastapi import FastAPI, HTTPException
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
@@ -34,9 +36,11 @@ from xtreme_system.api.crud_ui.simple import (
 )
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
+from xtreme_system.usuario import core as usuario
 
 _sort_key = sort_key
 _csv_response = csv_response
+DepFactory = Callable[..., usuario.Usuario]
 
 
 def register_crud_routes(
@@ -178,6 +182,13 @@ def register_crud_ui_routes(
     delete_requires_admin: bool = True,
     register_create: bool = True,
     register_update: bool = True,
+    register_edit: bool = True,
+    register_delete: bool = True,
+    editar_dep: DepFactory | None = None,
+    excluir_dep: DepFactory | None = None,
+    cadastrar_dep: DepFactory | None = None,
+    pagina: str | None = None,
+    campos_form_map: dict[str, str] | None = None,
     list_func: ListFunc[EntityT] | None = None,
     search_func: SearchFunc[EntityT] | None = None,
 ) -> None:
@@ -211,6 +222,13 @@ def register_crud_ui_routes(
         delete_requires_admin=delete_requires_admin,
         register_create=register_create,
         register_update=register_update,
+        register_edit=register_edit,
+        register_delete=register_delete,
+        editar_dep=editar_dep,
+        excluir_dep=excluir_dep,
+        cadastrar_dep=cadastrar_dep,
+        pagina=pagina,
+        campos_form_map=campos_form_map,
         list_func=list_func,
         search_func=search_func,
     )

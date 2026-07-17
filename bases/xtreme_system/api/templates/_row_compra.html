@@ -6,14 +6,20 @@
   <td data-col="status"><span class="badge {% if c.status.value == 'finalizado' %}badge--success{% elif c.status.value == 'cancelado' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>
   <td data-col="placa">{{ c.veiculo.placa }}</td>
   <td data-col="modelo">{{ c.veiculo.modelo }}</td>
-  <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(c.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
   <td data-col="observacoes">{{ c.observacoes or "-" }}</td>
-  {% if is_admin(user) %}
+  {% set pode_editar = pode_operacao(user, 'compras', 'editar') %}
+  {% set pode_excluir = pode_operacao(user, 'compras', 'excluir') %}
+  {% if pode_editar or pode_excluir %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
+      {% if pode_editar %}
       {% include "_action_compra_comprovantes.html" %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/compras/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar compra {{ c.id }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
+      {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/compras/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta compra?" aria-label="Excluir compra {{ c.id }}">{{ ui.icon("trash") }}</button>
+      {% endif %}
     </div>
   </td>
   {% endif %}

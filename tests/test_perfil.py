@@ -64,6 +64,73 @@ def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
     assert perfil.list_all(db_session) == []
 
 
+def test_admin_ve_todos_campos_e_operacoes_mesmo_sem_perfil(
+    db_session: Session,
+) -> None:
+    admin = _usuario(db_session, usuario.Papel.admin, None)
+    assert perfil.pode_ver_campo(admin, "veiculos", "preco")
+    assert perfil.pode_operacao(admin, "veiculos", "excluir")
+
+
+def test_sem_perfil_ve_campos_mas_nao_faz_operacoes(db_session: Session) -> None:
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, None)
+    assert perfil.pode_ver_campo(vendedor, "veiculos", "preco")
+    assert not perfil.pode_operacao(vendedor, "veiculos", "excluir")
+
+
+def test_campos_ocultos_sao_negados_e_o_resto_permanece_visivel(
+    db_session: Session,
+) -> None:
+    vendedores = perfil.Perfil(
+        nome="Vendedores",
+        paginas=["veiculos"],
+        restricoes={"veiculos": {"campos_ocultos": ["preco", "investidor"]}},
+    )
+    db_session.add(vendedores)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
+    assert not perfil.pode_ver_campo(vendedor, "veiculos", "preco")
+    assert not perfil.pode_ver_campo(vendedor, "veiculos", "investidor")
+    assert perfil.pode_ver_campo(vendedor, "veiculos", "revisao")
+
+
+def test_operacoes_sao_opt_in(db_session: Session) -> None:
+    vendedores = perfil.Perfil(
+        nome="Vendedores",
+        paginas=["veiculos"],
+        restricoes={"veiculos": {"operacoes": ["editar"]}},
+    )
+    db_session.add(vendedores)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
+    assert perfil.pode_operacao(vendedor, "veiculos", "editar")
+    assert not perfil.pode_operacao(vendedor, "veiculos", "excluir")
+
+
+def test_catalogos_cobrem_as_seis_paginas_do_rollout() -> None:
+    for pagina in (
+        "veiculos",
+        "investidores",
+        "clientes",
+        "compras",
+        "custos-veiculos",
+        "vendas",
+    ):
+        chaves = {chave for chave, _ in perfil.OPERACOES.get(pagina, [])}
+        assert {"editar", "excluir"} <= chaves
+    for pagina in ("clientes", "compras", "vendas"):
+        assert {"cadastrar"} <= {chave for chave, _ in perfil.OPERACOES[pagina]}
+    assert {"excluir_documento"} <= {chave for chave, _ in perfil.OPERACOES["clientes"]}
+    assert {"excluir_comprovante"} <= {
+        chave for chave, _ in perfil.OPERACOES["compras"]
+    }
+    assert {"fechar"} <= {chave for chave, _ in perfil.OPERACOES["vendas"]}
+    assert {"debitos"} <= {chave for chave, _ in perfil.CAMPOS_PROTEGIDOS["veiculos"]}
+    assert {"lucro", "participacao"} <= {
+        chave for chave, _ in perfil.CAMPOS_PROTEGIDOS["vendas"]
+    }
+
+
 def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil.pagina_da_rota("/ui/veiculos") == "veiculos"
     assert perfil.pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"

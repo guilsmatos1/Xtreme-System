@@ -20,6 +20,64 @@ PAGINAS: list[tuple[str, str]] = [
 ]
 PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}
 
+# Campos sensíveis e operações que podem ser restringidos por perfil, por página.
+CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
+    "veiculos": [
+        ("preco", "Preço de Custo"),
+        ("investidor", "Investidor"),
+        ("revisao", "Revisão"),
+        ("debitos", "Débitos"),
+    ],
+    "compras": [
+        ("valor_compra", "Valor da Compra"),
+        ("debitos", "Débitos"),
+    ],
+    "custos-veiculos": [
+        ("valor", "Valor"),
+    ],
+    "vendas": [
+        ("valor_venda", "Valor da Venda"),
+        ("valor_entrada", "Entrada"),
+        ("debitos", "Débitos"),
+        ("valor_diferenca", "Valor da Diferença"),
+        ("valor_pendente", "Valor Pendente"),
+        ("lucro", "Lucro Líquido (fechamento)"),
+        ("participacao", "Participação por Investidor (fechamento)"),
+    ],
+}
+OPERACOES: dict[str, list[tuple[str, str]]] = {
+    "veiculos": [
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+    ],
+    "investidores": [
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+    ],
+    "clientes": [
+        ("cadastrar", "Cadastrar"),
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+        ("excluir_documento", "Excluir documento"),
+    ],
+    "compras": [
+        ("cadastrar", "Cadastrar"),
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+        ("excluir_comprovante", "Excluir comprovante"),
+    ],
+    "custos-veiculos": [
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+    ],
+    "vendas": [
+        ("cadastrar", "Cadastrar"),
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+        ("fechar", "Fechar venda"),
+    ],
+}
+
 
 class Perfil(Base):
     __tablename__ = "perfil"
@@ -27,16 +85,20 @@ class Perfil(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nome: Mapped[str] = mapped_column(unique=True, index=True)
     paginas: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Por página: campos_ocultos (denylist) e operacoes (allowlist) permitidas.
+    restricoes: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
 
 class PerfilCreate(BaseModel):
     nome: str
     paginas: list[str] = []
+    restricoes: dict[str, Any] = {}
 
 
 class PerfilUpdate(BaseModel):
     nome: str | None = None
     paginas: list[str] | None = None
+    restricoes: dict[str, Any] | None = None
 
 
 class PerfilRead(BaseModel):
@@ -45,6 +107,7 @@ class PerfilRead(BaseModel):
     id: int
     nome: str
     paginas: list[str]
+    restricoes: dict[str, Any]
 
 
 def list_all(session: Session) -> list[Perfil]:
@@ -85,3 +148,25 @@ def pode_acessar(user: Any, pagina: str) -> bool:
     if is_admin(user):
         return True
     return bool(user.perfil and pagina in user.perfil.paginas)
+
+
+def pode_ver_campo(user: Any, pagina: str, campo: str) -> bool:
+    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
+
+    if is_admin(user):
+        return True
+    if not user.perfil:
+        return True
+    ocultos = (user.perfil.restricoes or {}).get(pagina, {}).get("campos_ocultos", [])
+    return campo not in ocultos
+
+
+def pode_operacao(user: Any, pagina: str, operacao: str) -> bool:
+    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
+
+    if is_admin(user):
+        return True
+    if not user.perfil:
+        return False
+    permitidas = (user.perfil.restricoes or {}).get(pagina, {}).get("operacoes", [])
+    return operacao in permitidas

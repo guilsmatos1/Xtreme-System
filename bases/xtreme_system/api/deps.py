@@ -1,5 +1,6 @@
 """Dependências compartilhadas: sessão, autenticação (Bearer/cookie) e templates."""
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated
 
@@ -16,7 +17,11 @@ from xtreme_system.usuario import core as usuario
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["pode_acessar"] = perfil.pode_acessar
+templates.env.globals["pode_ver_campo"] = perfil.pode_ver_campo
+templates.env.globals["pode_operacao"] = perfil.pode_operacao
 templates.env.globals["paginas_labels"] = dict(perfil.PAGINAS)
+templates.env.globals["campos_protegidos"] = perfil.CAMPOS_PROTEGIDOS
+templates.env.globals["operacoes_disponiveis"] = perfil.OPERACOES
 templates.env.globals["is_admin"] = usuario.is_admin
 templates.env.globals["Papel"] = usuario.Papel
 
@@ -108,3 +113,15 @@ def require_ui_admin(user: UIUser) -> usuario.Usuario:
 
 
 UIAdmin = Annotated[usuario.Usuario, Depends(require_ui_admin)]
+
+
+DepFilter = Callable[[usuario.Usuario], usuario.Usuario]
+
+
+def require_operacao(pagina: str, operacao: str) -> DepFilter:
+    def _dep(user: UIUser) -> usuario.Usuario:
+        if not perfil.pode_operacao(user, pagina, operacao):
+            raise _NaoAutorizadoError
+        return user
+
+    return _dep

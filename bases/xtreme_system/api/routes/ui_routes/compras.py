@@ -4,13 +4,18 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 
 import structlog
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
@@ -25,9 +30,20 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
 from xtreme_system.investidor import core as investidor
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
 logger = structlog.get_logger(__name__)
+
+_EditarCompraDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("compras", "editar"))
+]
+_CadastrarCompraDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("compras", "cadastrar"))
+]
+_ExcluirComprovanteDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("compras", "excluir_comprovante"))
+]
 
 
 def _ctx_form_compra(session: Session) -> dict[str, Any]:
@@ -74,6 +90,7 @@ def _remover_arquivos_comprovantes(session: Session, obj: compra.Compra) -> None
 def _comprovantes_modal(
     request: Request,
     session: Session,
+    user: usuario.Usuario,
     compra_id: int,
     erro: str | None = None,
     *,
@@ -89,6 +106,7 @@ def _comprovantes_modal(
         {
             "compra": item,
             "comprovantes": comprovantes,
+            "user": user,
             "erro": erro,
             "action_oob": action_oob,
         },
@@ -100,24 +118,24 @@ def _comprovantes_modal(
 def ui_compra_comprovantes(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: _EditarCompraDep,
     compra_id: int,
 ) -> HTMLResponse:
-    return _comprovantes_modal(request, session, compra_id)
+    return _comprovantes_modal(request, session, user, compra_id)
 
 
 @app.post("/ui/compras/{compra_id}/comprovantes")
 def ui_compra_comprovantes_upload(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _EditarCompraDep,
     compra_id: int,
     comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
     _found(compra.get(session, compra_id), "Compra")
     erro = _validar_uploads(comprovantes)
     if erro:
-        return _comprovantes_modal(request, session, compra_id, erro)
+        return _comprovantes_modal(request, session, user, compra_id, erro)
 
     session.info["usuario_id"] = user.id
     salvar_arquivos(
@@ -130,14 +148,14 @@ def ui_compra_comprovantes_upload(
         fk_id=compra_id,
         arquivos=comprovantes,
     )
-    return _comprovantes_modal(request, session, compra_id, action_oob=True)
+    return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
 
 @app.post("/ui/compras/{compra_id}/comprovantes/{comprovante_id}/excluir")
 def ui_compra_comprovantes_excluir(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _ExcluirComprovanteDep,
     compra_id: int,
     comprovante_id: int,
 ) -> HTMLResponse:
@@ -151,7 +169,7 @@ def ui_compra_comprovantes_excluir(
     path = _uploaded_file_path(comprovante.url or "")
     if path is not None:
         _remover_upload(path)
-    return _comprovantes_modal(request, session, compra_id, action_oob=True)
+    return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
 
 def _resolver_cliente(
@@ -252,7 +270,7 @@ def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
 
 @app.post("/ui/compras")
 async def _criar_compra(  # noqa: PLR0911
-    request: Request, session: SessionDep, user: UIAdmin
+    request: Request, session: SessionDep, user: _CadastrarCompraDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     form = await request.form()
@@ -350,6 +368,7 @@ register_crud_ui_routes(
     before_update=validate_cliente_veiculo_fks,
     before_delete=_remover_arquivos_comprovantes,
     register_create=False,
+    cadastrar_dep=require_operacao("compras", "cadastrar"),
     sort_fields={
         "cliente": lambda c: _sort_key(c.cliente.nome),
         "modelo": lambda c: _sort_key(c.veiculo.modelo),
@@ -381,4 +400,8 @@ register_crud_ui_routes(
         f"{c.valor_compra:.2f}",
         c.observacoes or "",
     ],
+    editar_dep=require_operacao("compras", "editar"),
+    excluir_dep=require_operacao("compras", "excluir"),
+    pagina="compras",
+    campos_form_map={"valor_compra": "valor_compra", "debitos": "debitos"},
 )

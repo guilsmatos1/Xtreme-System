@@ -46,18 +46,24 @@
             </select>
           </label>
 
+          {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda</span>
             <input class="input" name="valor_venda" type="number" step="0.01" value="{{ venda.valor_venda }}" required>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
             <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda.valor_entrada is not none else '' }}">
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos do veículo</span>
             <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ venda.debitos if venda.debitos is not none else '' }}">
           </label>
+          {% endif %}
 
           <label class="field">
             <span class="field__label">Forma de pagamento</span>
@@ -85,10 +91,12 @@
               {% endfor %}
             </datalist>
           </label>
+          {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
             <input class="input" name="valor_diferenca" type="number" step="0.01" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
           </label>
+          {% endif %}
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
             <label>
@@ -96,10 +104,12 @@
               Faltou parte do pagamento?
             </label>
           </label>
+          {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
             <input class="input" name="valor_pendente" type="number" step="0.01" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
           </label>
+          {% endif %}
           <label class="field field--full">
             <span class="field__label">Datas de pagamento</span>
             <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ venda.datas_pagamento if venda.datas_pagamento is not none else '' }}">

@@ -49,11 +49,14 @@
             <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
           </label>
 
+          {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
             <span class="field__label">Preço de Compra (R$)</span>
             <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco }}" required>
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'revisao') %}
           <label class="field">
             <span class="field__label">Revisão</span>
             <select class="select" name="revisao" required>
@@ -61,24 +64,29 @@
               <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
             </select>
           </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
           {% set compra_veiculo = compras_por_veiculo.get(veiculo.id) if compras_por_veiculo else none %}
           <label class="field">
             <span class="field__label">Débito (R$)</span>
             <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ compra_veiculo.debitos if compra_veiculo and compra_veiculo.debitos is not none else '' }}">
           </label>
+          {% endif %}
 
           <label class="field">
             <span class="field__label">Procurador</span>
             <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
           </label>
 
+          {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
           <label class="field">
             <span class="field__label">Investidor</span>
             <select class="select" name="investidor_id" required>
               {% for i in investidores %}<option value="{{ i.id }}"{% if veiculo.investidor_id == i.id %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
+          {% endif %}
 
           <label class="field field--full">
             <span class="field__label">Documento do veículo</span>
@@ -148,10 +156,12 @@
             <span class="field__label">Preço de Compra (R$)</span>
             <input class="input" name="preco" type="number" step="0.01" required>
           </label>
+          {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos (R$)</span>
             <input class="input" name="debitos" type="number" step="0.01" min="0">
           </label>
+          {% endif %}
           <label class="field">
             <span class="field__label">Investidor</span>
             <select class="select" name="investidor_id" required>

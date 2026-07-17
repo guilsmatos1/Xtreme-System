@@ -3,11 +3,18 @@
 from typing import Annotated, Any
 
 import structlog
-from fastapi import File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    UIAdmin,
+    UIUser,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.route_factories import register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
@@ -20,9 +27,17 @@ from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
+from xtreme_system.usuario import core as usuario
 from xtreme_system.venda import core as venda
 
 logger = structlog.get_logger(__name__)
+
+_EditarClienteDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("clientes", "editar"))
+]
+_ExcluirDocumentoDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("clientes", "excluir_documento"))
+]
 
 # ---- Clientes (UI) ----
 
@@ -97,6 +112,7 @@ def _veiculos_vendedor_modal(
 def _documentos_modal(
     request: Request,
     session: Session,
+    user: usuario.Usuario,
     cliente_id: int,
     *,
     action_oob: bool = False,
@@ -107,7 +123,7 @@ def _documentos_modal(
     return templates.TemplateResponse(
         request,
         "_modal_documentos_cliente.html",
-        {"cliente": item, "action_oob": action_oob},
+        {"cliente": item, "user": user, "action_oob": action_oob},
     )
 
 
@@ -115,17 +131,17 @@ def _documentos_modal(
 def ui_cliente_documentos(
     request: Request,
     session: SessionDep,
-    _: UIAdmin,
+    user: _EditarClienteDep,
     cliente_id: int,
 ) -> HTMLResponse:
-    return _documentos_modal(request, session, cliente_id)
+    return _documentos_modal(request, session, user, cliente_id)
 
 
 @app.post("/ui/clientes/{cliente_id}/documentos")
 def ui_cliente_documentos_upload(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _EditarClienteDep,
     cliente_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
@@ -135,7 +151,7 @@ def ui_cliente_documentos_upload(
         return templates.TemplateResponse(
             request,
             "_modal_documentos_cliente.html",
-            {"cliente": item, "erro": erro},
+            {"cliente": item, "user": user, "erro": erro},
             status_code=400,
         )
     session.info["usuario_id"] = user.id
@@ -149,14 +165,14 @@ def ui_cliente_documentos_upload(
         fk_id=cliente_id,
         arquivos=documentos,
     )
-    return _documentos_modal(request, session, cliente_id, action_oob=True)
+    return _documentos_modal(request, session, user, cliente_id, action_oob=True)
 
 
 @app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
 def ui_cliente_documentos_excluir(
     request: Request,
     session: SessionDep,
-    user: UIAdmin,
+    user: _ExcluirDocumentoDep,
     cliente_id: int,
     doc_id: int,
 ) -> HTMLResponse:
@@ -168,7 +184,7 @@ def ui_cliente_documentos_excluir(
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)
-    return _documentos_modal(request, session, cliente_id, action_oob=True)
+    return _documentos_modal(request, session, user, cliente_id, action_oob=True)
 
 
 @app.get("/ui/clientes")
@@ -252,6 +268,9 @@ def _register_clientes_page(
             c.estado or "",
         ],
         register_create=True,
+        cadastrar_dep=require_operacao("clientes", "cadastrar"),
+        editar_dep=require_operacao("clientes", "editar"),
+        excluir_dep=require_operacao("clientes", "excluir"),
         list_func=list_func,
         search_func=search_func,
     )

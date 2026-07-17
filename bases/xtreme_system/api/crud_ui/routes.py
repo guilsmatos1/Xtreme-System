@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -42,13 +43,15 @@ from xtreme_system.api.crud_writes import (
 )
 from xtreme_system.api.deps import (
     SessionDep,
-    UIAdmin,
     UIUser,
     _found,
     get_ui_user,
     require_ui_admin,
 )
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
+
+DepFactory = Callable[..., usuario.Usuario]
 
 
 def register_crud_ui_routes(
@@ -82,6 +85,13 @@ def register_crud_ui_routes(
     delete_requires_admin: bool = True,
     register_create: bool = True,
     register_update: bool = True,
+    register_edit: bool = True,
+    register_delete: bool = True,
+    editar_dep: DepFactory | None = None,
+    excluir_dep: DepFactory | None = None,
+    cadastrar_dep: DepFactory | None = None,
+    pagina: str | None = None,
+    campos_form_map: dict[str, str] | None = None,
     list_func: ListFunc[EntityT] | None = None,
     search_func: SearchFunc[EntityT] | None = None,
 ) -> None:
@@ -117,17 +127,20 @@ def register_crud_ui_routes(
         form_template=form_template,
         ctx_form=ctx_form,
         item_key=item_key,
+        cadastrar_dep=cadastrar_dep,
     )
-    register_edit_route(
-        app,
-        templates,
-        module,
-        prefix,
-        label,
-        form_template=form_template,
-        ctx_form=ctx_form,
-        item_key=item_key,
-    )
+    if register_edit:
+        register_edit_route(
+            app,
+            templates,
+            module,
+            prefix,
+            label,
+            form_template=form_template,
+            ctx_form=ctx_form,
+            item_key=item_key,
+            editar_dep=editar_dep,
+        )
     if register_create:
         register_create_route(
             app,
@@ -148,6 +161,7 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            cadastrar_dep=cadastrar_dep,
         )
     if register_update:
         register_update_route(
@@ -169,22 +183,27 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            editar_dep=editar_dep,
+            pagina=pagina,
+            campos_form_map=campos_form_map,
         )
-    register_delete_route(
-        app,
-        templates,
-        module,
-        prefix,
-        label,
-        list_key=list_key,
-        list_partial_template=list_partial_template,
-        ctx_list=ctx_list,
-        before_delete=before_delete,
-        delete_requires_admin=delete_requires_admin,
-        searchable=searchable,
-        list_func=list_func,
-        search_func=search_func,
-    )
+    if register_delete:
+        register_delete_route(
+            app,
+            templates,
+            module,
+            prefix,
+            label,
+            list_key=list_key,
+            list_partial_template=list_partial_template,
+            ctx_list=ctx_list,
+            before_delete=before_delete,
+            delete_requires_admin=delete_requires_admin,
+            searchable=searchable,
+            list_func=list_func,
+            search_func=search_func,
+            excluir_dep=excluir_dep,
+        )
 
 
 def register_list_route(
@@ -276,9 +295,16 @@ def register_new_route(
     form_template: str,
     ctx_form: CtxForm,
     item_key: str,
+    cadastrar_dep: DepFactory | None = None,
 ) -> None:
+    dep = cadastrar_dep or require_ui_admin
+
     @app.get(f"{prefix}/novo")
-    def _novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
+    def _novo(
+        request: Request,
+        session: SessionDep,
+        _: Annotated[usuario.Usuario, Depends(dep)],
+    ) -> HTMLResponse:
         return form_response(
             templates,
             request,
@@ -299,10 +325,16 @@ def register_edit_route(
     form_template: str,
     ctx_form: CtxForm,
     item_key: str,
+    editar_dep: DepFactory | None = None,
 ) -> None:
+    dep = editar_dep or require_ui_admin
+
     @app.get(f"{prefix}/{{item_id}}/editar")
     def _editar(
-        item_id: int, request: Request, session: SessionDep, _: UIAdmin
+        item_id: int,
+        request: Request,
+        session: SessionDep,
+        user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         obj = _found(module.get(session, item_id), label)
         return form_response(
@@ -312,6 +344,7 @@ def register_edit_route(
             ctx_form=ctx_form(session),
             item_key=item_key,
             item=obj,
+            user=user,
         )
 
 
@@ -335,10 +368,15 @@ def register_create_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    cadastrar_dep: DepFactory | None = None,
 ) -> None:
+    dep = cadastrar_dep or require_ui_admin
+
     @app.post(prefix)
     async def _criar(
-        request: Request, session: SessionDep, user: UIAdmin
+        request: Request,
+        session: SessionDep,
+        user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         session.info["usuario_id"] = user.id
         form = await request.form()
@@ -419,16 +457,29 @@ def register_update_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    editar_dep: DepFactory | None = None,
+    pagina: str | None = None,
+    campos_form_map: dict[str, str] | None = None,
 ) -> None:
+    dep = editar_dep or require_ui_admin
+
     @app.post(f"{prefix}/{{item_id}}")
     async def _atualizar(
-        item_id: int, request: Request, session: SessionDep, user: UIAdmin
+        item_id: int,
+        request: Request,
+        session: SessionDep,
+        user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         form = await request.form()
+        dados_form = parse_form(form)
+        if pagina and campos_form_map:
+            for campo, campo_form in campos_form_map.items():
+                if not perfil.pode_ver_campo(user, pagina, campo):
+                    dados_form.pop(campo_form, None)
         try:
-            data = update_schema.model_validate(parse_form(form))
+            data = update_schema.model_validate(dados_form)
             run_hook(before_update, session, data)
         except ValidationError:
             return error_response(
@@ -438,6 +489,7 @@ def register_update_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=obj,
+                user=user,
                 erro="Dados inválidos",
                 status_code=400,
             )
@@ -449,6 +501,7 @@ def register_update_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=obj,
+                user=user,
                 erro=str(exc.detail),
                 status_code=400,
             )
@@ -463,6 +516,7 @@ def register_update_route(
                 ctx_form=ctx_form(session),
                 item_key=item_key,
                 item=obj,
+                user=user,
                 erro=write_conflict_detail(label),
             )
         lista = query_list(
@@ -499,15 +553,16 @@ def register_delete_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    excluir_dep: DepFactory | None = None,
 ) -> None:
-    excluir_dep = require_ui_admin if delete_requires_admin else get_ui_user
+    dep = excluir_dep or (require_ui_admin if delete_requires_admin else get_ui_user)
 
     @app.post(f"{prefix}/{{item_id}}/excluir")
     def _excluir(
         item_id: int,
         request: Request,
         session: SessionDep,
-        user: Annotated[usuario.Usuario, Depends(excluir_dep)],
+        user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)

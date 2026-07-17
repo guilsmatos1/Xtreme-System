@@ -36,7 +36,7 @@ from xtreme_system.veiculo import core as veiculo
 
 Não há acoplamento direto entre componentes — cada um define seus próprios
 modelos SQLAlchemy, schemas Pydantic e funções CRUD. O arquivo `core.py` da
-base orquestra as rotas e injeta dependências (sessão, auth) nos componentes.
+base orquestra as rotas e injeta dependências (sessão, auth e autorização) nos componentes.
 
 ## Camada API (`bases/xtreme_system/api/core.py`)
 
@@ -77,6 +77,7 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `/clientes` | GET, POST, PATCH, DELETE | idem |
 | `/compras` | GET, POST, PATCH, DELETE | idem |
 | `/vendas` | GET, POST, PATCH, DELETE | idem |
+| `/auditoria` | GET | Admin |
 | `/vendas/{id}/fechamento/preview` | GET | CurrentUser |
 | `/vendas/{id}/fechamento` | POST | Admin |
 | `/fechamentos-vendas` | GET | CurrentUser |
@@ -104,25 +105,60 @@ terem regras próprias (troca de senha, proteção contra auto-exclusão, etc.).
 ### Interface HTMX
 
 Rotas sob `/ui/` servem HTML parcial com Jinja2, usando cookie `access_token`
-para autenticação (httpOnly, mesmo segredo JWT):
+para autenticação (httpOnly, mesmo segredo JWT) e `perfil` para autorização de páginas:
 
 | Rota | Descrição |
 |------|-----------|
 | `/ui/login` | GET exibe formulário; POST autentica e seta cookie |
 | `/ui/logout` | Limpa o cookie e redireciona |
-| `/ui/veiculos` | Listagem de veículos |
+| `/ui/veiculos` | Listagem e edição de veículos |
 | `/ui/clientes` | Redireciona para `/ui/clientes/compradores` |
 | `/ui/clientes/compradores` | Listagem de clientes com vendas registradas |
 | `/ui/clientes/vendedores` | Listagem de clientes com compras registradas |
+| `/ui/compras` | Gestão de compras e comprovantes |
 | `/ui/custos-veiculos` | Custos operacionais de veículos |
 | `/ui/vendas` | Listagem de vendas |
 | `/ui/vendas/{id}/fechamento` | Modal HTMX de fechamento financeiro |
 | `/ui/fechamentos-vendas/{id}` | Modal HTMX de detalhe do fechamento |
+| `/ui/perfis` | Gestão de perfis de acesso |
 | `/ui/usuarios` | Gestão de usuários |
+| `/ui/usuarios/{id}/editar` | Edição de usuário e vínculo com perfil |
+| `/ui/usuarios/{id}/perfil` | Alteração rápida do perfil do usuário |
 | `/ui/conta` | Perfil do usuário logado + troca da própria senha |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
 
 Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
+
+O acesso de usuário comum na UI é controlado por `perfil.pode_acessar`; `admin`
+é exceção e pode entrar em qualquer página.
+
+Dentro de uma página, o perfil também pode restringir **campos** e **operações**
+via `Perfil.restricoes` (JSON por página): `perfil.pode_ver_campo` (denylist —
+visível por padrão, o admin marca o que ocultar) controla campos sensíveis na
+UI, e `perfil.pode_operacao` (allowlist — negado por padrão para não-admin)
+controla ações de escrita. `admin` sempre passa em ambos. Ambos são globals do
+Jinja (`deps.py`) e `require_operacao(pagina, operacao)` é uma dependency
+factory para bloquear no servidor, não só esconder no HTML.
+
+Aplicado nas 6 páginas (`veiculos`, `investidores`, `clientes`, `compras`,
+`custos-veiculos`, `vendas`). Dois caminhos de implementação:
+- **Rotas geradas pela fábrica CRUD** (`crud_ui/routes.py`): passe
+   `editar_dep`/`excluir_dep` (dependencies que substituem `UIAdmin`),
+   `pagina` e `campos_form_map` (campo interno → nome do input HTML) para
+   `register_crud_ui_routes`. A fábrica injeta `user` no contexto do form e
+   remove do payload, antes da validação, os campos que o perfil não pode ver
+   — ver `custos_veiculos.py`, `compras.py`, `vendas.py`, `clientes.py`.
+- **Rotas manuais** (sem fábrica): trocar a dependency `UIAdmin` por
+  `Depends(require_operacao(pagina, operacao))` diretamente — ver
+  `investidores.py` e as rotas de editar/excluir de `veiculos.py` (que
+  também precisou de `register_edit=False`/`register_delete=False` na
+  fábrica por já ter overrides próprios de create/update).
+
+Operações específicas fora do CRUD padrão também usam `require_operacao`:
+`excluir_comprovante` (compras), `excluir_documento` (clientes) e `fechar`
+(fechamento de venda, que também oculta Lucro Líquido/Participação por
+investidor via `pode_ver_campo` quando o perfil não tem esses campos
+liberados).
 
 ## Componentes de domínio (`components/xtreme_system/`)
 
@@ -130,17 +166,19 @@ Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 |------------|-------------|-----------|
 | `auth/` | — (JWT, argon2) | `create_access_token`, `decode_token`, `verify_password`, `hash_password`, `Settings` (`AUTH_SECRET_KEY`) |
 | `database/` | — (SQLAlchemy) | Engine + session factory configurados via `DATABASE_URL`, dependency `get_session` |
-| `usuario/` | `Usuario` | `id`, `username`, `senha_hash`, `papel` (admin/funcionario), `ativo` |
+| `perfil/` | `Perfil` | Permissões por página da UI, listas permitidas e checagem de acesso; `restricoes` para campos ocultos e operações permitidas por página, incluindo `debitos` em veículos |
+| `usuario/` | `Usuario` | `id`, `username`, `senha_hash`, `papel` (admin/funcionario), `ativo`, `perfil_id` |
 | `investidor/` | `Investidor` | `id`, `nome` |
 | `veiculo/` | `Veiculo` | `modelo`, `placa`, `tipo` (carro/moto), `ano`, `km`, `preco`, `status`, `tipo_entrada`, `revisao`, FK para `investidor` |
 | `cliente/` | `Cliente` | `nome`, `documento`, `tipo` (PF/PJ), `cidade`, `estado` |
 | `venda/` | `Venda` | `cliente_id`, `veiculo_id`, `data_venda`, `valor_venda`, `valor_entrada`, `forma_pagamento`, `parcelas`, `status`, `observacoes` |
 | `caixa/` | `LancamentoCaixa` | `investidor_id`, `tipo` (aporte/retirada), `valor`, `descricao`, `origem` (manual/veiculo) |
-| `compra/` | — | Componente de compras (não montado nas rotas atuais) |
+| `compra/` | `Compra` | Compras de veículos, status e comprovantes |
 | `custo_veiculo/` | `CustoVeiculo` | Custos operacionais por veículo, sem impacto em saldo de investidor |
 | `fechamento_venda/` | `FechamentoVenda`, `ParticipacaoFechamentoVenda` | Fecha financeiramente vendas concluídas, calcula lucro líquido, persiste snapshots e gera lançamentos automáticos no caixa |
 | `crud/` | — | Helpers CRUD compartilhados |
 | `documento_veiculo/` | — | Documentos de veículos (arquivos/imagens) |
+| `documento_procuracao/` | — | Documentos de procuração de veículos |
 | `imagem_veiculo/` | — | Imagens de veículos |
 | `imagem_comprovante_venda/` | — | Comprovantes de venda |
 | `imagem_comprovante_compra/` | — | Comprovantes de compra |
@@ -155,7 +193,7 @@ públicas (CRUD e helpers), `models.py` define os modelos SQLAlchemy, e
 - **SQLAlchemy 2.0** com engine síncrono (`psycopg`)
 - `DATABASE_URL` configurada via `.env` (ex: `postgresql+psycopg://postgres:postgres@localhost:5432/xtreme`)
 - Sessão por request via `get_session` dependency
-- **Alembic** para migrations — 17 revisões em `alembic/versions/`
+- **Alembic** para migrations em `alembic/versions/`
   - `make migrate` → `alembic upgrade head`
   - `make revision m="msg"` → autogenerate
 - Testes usam **SQLite in-memory** (`sqlite://`) via fixture `db_session`, sem dependência de Postgres

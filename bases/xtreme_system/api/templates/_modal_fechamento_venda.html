@@ -16,10 +16,10 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
         <div><dt>Custo do veículo</dt><dd>{{ money(fechamento.custo_veiculo) }}</dd></div>
         <div><dt>Custos operacionais</dt><dd>{{ money(fechamento.custos_operacionais) }}</dd></div>
         <div><dt>Débitos</dt><dd>{{ money(fechamento.debitos) }}</dd></div>
-        <div><dt>Lucro líquido</dt><dd>{{ money(fechamento.lucro_liquido) }}</dd></div>
+        {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(fechamento.lucro_liquido) }}</dd></div>{% endif %}
         <div><dt>Data</dt><dd>{{ fechamento.data_fechamento.isoformat() }}</dd></div>
       </dl>
-      {% if fechamento.participacoes %}
+      {% if fechamento.participacoes and pode_ver_campo(user, 'vendas', 'participacao') %}
       <div class="modal-section">
         <h4>Distribuição</h4>
         {% for p in fechamento.participacoes %}
@@ -42,11 +42,11 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
           <div><dt>Custo do veículo</dt><dd>{{ money(preview.custo_veiculo) }}</dd></div>
           <div><dt>Custos operacionais</dt><dd>{{ money(preview.custos_operacionais) }}</dd></div>
           <div><dt>Débitos</dt><dd>{{ money(preview.debitos) }}</dd></div>
-          <div><dt>Lucro líquido</dt><dd>{{ money(preview.lucro_liquido) }}</dd></div>
+          {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(preview.lucro_liquido) }}</dd></div>{% endif %}
         </dl>
         {% if not preview.elegivel %}
           {{ ui.alert(preview.motivo) }}
-        {% elif preview.lucro_liquido > 0 %}
+        {% elif preview.lucro_liquido > 0 and pode_ver_campo(user, 'vendas', 'participacao') %}
         <div class="modal-section">
           <h4>Rateio do lucro</h4>
           {% for investidor in preview.investidores %}

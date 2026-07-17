@@ -27,7 +27,7 @@
       <th data-col="total_investido" data-col-label="Total Investido">{{ ui.sortable("total_investido", "Total Investido", sort, order, prefixo) }}</th>
       <th data-col="valor_veiculos" data-col-label="Valor em Veículos">{{ ui.sortable("valor_veiculos", "Valor em Veículos", sort, order, prefixo) }}</th>
       <th data-col="pendente" data-col-label="Pendente">Pendente</th>
-      {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+      {% if pode_operacao(user, 'investidores', 'editar') or pode_operacao(user, 'investidores', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_investidores.html" %}
   </table>

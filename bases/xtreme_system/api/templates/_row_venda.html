@@ -3,9 +3,9 @@
   <td class="cell-strong" data-col="cliente">{{ v.cliente.nome }}</td>
   <td data-col="veiculo">{{ v.veiculo.modelo }} / {{ v.veiculo.placa }}</td>
   <td data-col="data">{{ v.data_venda.isoformat() }}</td>
-  <td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(v.valor_venda) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
-  <td class="cell-num" data-col="entrada">{% if v.valor_entrada is not none %}R$ {{ "{:,.2f}".format(v.valor_entrada) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
-  <td class="cell-num" data-col="divida">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}R$ {{ "{:,.2f}".format(v.valor_pendente) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>
+  {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">R$ {{ "{:,.2f}".format(v.valor_venda) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}<td class="cell-num" data-col="entrada">{% if v.valor_entrada is not none %}R$ {{ "{:,.2f}".format(v.valor_entrada) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}<td class="cell-num" data-col="divida">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}R$ {{ "{:,.2f}".format(v.valor_pendente) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
   <td data-col="pagamento">{{ v.forma_pagamento }}</td>
   <td class="cell-num" data-col="parcelas">{{ v.parcelas }}</td>
   <td data-col="status">
@@ -16,15 +16,22 @@
       <span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span>
     {% endif %}
   </td>
-  {% if is_admin(user) %}
+  {% set pode_editar = pode_operacao(user, 'vendas', 'editar') %}
+  {% set pode_excluir = pode_operacao(user, 'vendas', 'excluir') %}
+  {% set pode_fechar = pode_operacao(user, 'vendas', 'fechar') %}
+  {% if pode_editar or pode_excluir or pode_fechar %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       <a class="btn btn--ghost btn--sm action-file" href="/ui/vendas/{{ v.id }}/contrato" target="_blank" rel="noopener" aria-label="Baixar contrato da venda {{ v.id }}">{{ ui.icon("file") }}</a>
-      {% if not fechamento and v.status.value == 'concluido' and not v.pagamento_pendente %}
+      {% if pode_fechar and not fechamento and v.status.value == 'concluido' and not v.pagamento_pendente %}
       <button class="btn btn--ghost btn--sm action-cash" hx-get="/ui/vendas/{{ v.id }}/fechamento" hx-target="#modal" hx-swap="innerHTML" aria-label="Fechar venda {{ v.id }}">{{ ui.icon("cash") }}</button>
       {% endif %}
+      {% if pode_editar %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/vendas/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar venda {{ v.id }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
+      {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/vendas/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta venda?" aria-label="Excluir venda {{ v.id }}">{{ ui.icon("trash") }}</button>
+      {% endif %}
     </div>
   </td>
   {% endif %}

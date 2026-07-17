@@ -1,15 +1,18 @@
 """HTMX routes for veículos — CRUD override (create/update transacionais)."""
 
 from decimal import Decimal
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.crud_ui.query import query_list
+from xtreme_system.api.crud_ui.responses import delete_conflict_detail, list_response
+from xtreme_system.api.crud_writes import delete_with_hook
+from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.route_factories import register_crud_ui_routes
 from xtreme_system.api.routes.workflows import validate_veiculo_fks
 from xtreme_system.api.setup import app
@@ -17,7 +20,17 @@ from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+# Campos do form.html que só devem ser aplicados se o perfil puder vê-los.
+_CAMPO_FORM_MAP = {
+    "preco": "preco",
+    "investidor": "investidor_id",
+    "revisao": "revisao",
+    "debitos": "debitos",
+}
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
@@ -113,10 +126,61 @@ register_crud_ui_routes(
     ],
     register_create=False,
     register_update=False,
+    register_edit=False,
+    register_delete=False,
 )
 
+_EditarDep = Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))]
+_ExcluirDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "excluir"))
+]
 
-def _ok_veiculo(request: Request, session: Session, user: UIAdmin) -> HTMLResponse:
+
+@app.get("/ui/veiculos/{item_id}/editar")
+def _editar_veiculo(
+    item_id: int, request: Request, session: SessionDep, user: _EditarDep
+) -> HTMLResponse:
+    obj = _found(veiculo.get(session, item_id), "Veículo")
+    return templates.TemplateResponse(
+        request,
+        "_form_veiculo.html",
+        {**_ctx_form_veiculo(session), "veiculo": obj, "user": user},
+    )
+
+
+@app.post("/ui/veiculos/{item_id}/excluir")
+def _excluir_veiculo(
+    item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(veiculo.get(session, item_id), "Veículo")
+    erro = None
+    status_code = 200
+    try:
+        delete_with_hook(veiculo, session, obj, caixa.deletar_lancamento_veiculo)
+    except IntegrityError:
+        session.rollback()
+        erro = delete_conflict_detail("Veículo")
+        status_code = 409
+    lista = query_list(
+        session, veiculo, q="", searchable=True, list_func=None, search_func=None
+    )
+    return list_response(
+        templates,
+        request,
+        "_linhas_veiculos.html",
+        user=user,
+        list_key="veiculos",
+        lista=lista,
+        ctx_list=_ctx_lista_veiculos(session, lista),
+        erro=erro,
+        status_code=status_code,
+    )
+
+
+def _ok_veiculo(
+    request: Request, session: Session, user: usuario.Usuario
+) -> HTMLResponse:
     veiculos = veiculo.list_all(session)
     return templates.TemplateResponse(
         request,
@@ -125,50 +189,59 @@ def _ok_veiculo(request: Request, session: Session, user: UIAdmin) -> HTMLRespon
     )
 
 
-def _erro_veiculo(request: Request, session: Session, msg: str) -> HTMLResponse:
+def _erro_veiculo(
+    request: Request, session: Session, user: usuario.Usuario, msg: str
+) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "_form_veiculo.html",
-        {**_ctx_form_veiculo(session), "veiculo": None, "erro": msg},
+        {**_ctx_form_veiculo(session), "veiculo": None, "user": user, "erro": msg},
         status_code=400,
     )
 
 
 @app.post("/ui/veiculos/{item_id}")
 async def _atualizar_veiculo(
-    item_id: int, request: Request, session: SessionDep, user: UIAdmin
+    item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
+    dados_form = dict(form)
+    for campo, campo_form in _CAMPO_FORM_MAP.items():
+        if not perfil.pode_ver_campo(user, "veiculos", campo):
+            dados_form.pop(campo_form, None)
 
     try:
-        data = veiculo.VeiculoUpdate.model_validate(dict(form))
+        data = veiculo.VeiculoUpdate.model_validate(dados_form)
         validate_veiculo_fks(session, data, update=True)
     except (ValidationError, HTTPException) as exc:
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return templates.TemplateResponse(
             request,
             "_form_veiculo.html",
-            {**_ctx_form_veiculo(session), "veiculo": obj, "erro": msg},
+            {**_ctx_form_veiculo(session), "veiculo": obj, "user": user, "erro": msg},
             status_code=400,
         )
 
-    debitos_raw = str(form.get("debitos") or "").strip()
     debitos = None
-    if debitos_raw:
-        try:
-            debitos = Decimal(debitos_raw.replace(",", "."))
-        except Exception:
-            return _erro_veiculo(request, session, "Débitos inválidos")
+    if perfil.pode_ver_campo(user, "veiculos", "debitos"):
+        debitos_raw = str(form.get("debitos") or "").strip()
+        if debitos_raw:
+            try:
+                debitos = Decimal(debitos_raw.replace(",", "."))
+            except Exception:
+                return _erro_veiculo(request, session, user, "Débitos inválidos")
 
     try:
         atualizado = veiculo.update(session, obj, data)
         compra_atual = compra.get_latest_by_veiculo(session, atualizado.id)
-        if compra_atual is not None:
+        if compra_atual is not None and perfil.pode_ver_campo(
+            user, "veiculos", "debitos"
+        ):
             compra.update(session, compra_atual, compra.CompraUpdate(debitos=debitos))
         caixa.sincronizar_lancamento_veiculo(session, atualizado)
     except IntegrityError:
         session.rollback()
-        return _erro_veiculo(request, session, "Veículo já existe")
+        return _erro_veiculo(request, session, user, "Veículo já existe")
     return _ok_veiculo(request, session, user)
