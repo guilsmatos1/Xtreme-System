@@ -1,11 +1,13 @@
 """HTMX routes for compras."""
 
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import structlog
 from fastapi import File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
@@ -126,6 +128,68 @@ def ui_compra_comprovantes_excluir(
     return _comprovantes_modal(request, session, compra_id)
 
 
+def _erro_compra(request: Request, session: Session, msg: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "_form_compra.html",
+        {**_ctx_form_compra(session), "compra": None, "erro": msg},
+        status_code=400,
+    )
+
+
+def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
+    compras = compra.list_all(session)
+    return templates.TemplateResponse(
+        request,
+        "_compras_ok.html",
+        {"user": user, "compras": compras},
+    )
+
+
+@app.post("/ui/compras")
+async def _criar_compra(
+    request: Request, session: SessionDep, user: UIAdmin
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    form = await request.form()
+
+    try:
+        data = compra.CompraCreate.model_validate(_parse_compra_form(form))
+        validate_cliente_veiculo_fks(session, data)
+    except (ValidationError, HTTPException) as exc:
+        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        return _erro_compra(request, session, msg)
+
+    comprovantes = cast(
+        list[UploadFile],
+        [
+            arquivo
+            for arquivo in form.getlist("comprovantes_pagamento")
+            if hasattr(arquivo, "filename") and hasattr(arquivo, "file")
+        ],
+    )
+    erro = _validar_uploads(comprovantes)
+    if erro:
+        return _erro_compra(request, session, erro)
+
+    try:
+        obj = compra.create(session, data)
+        salvar_arquivos(
+            session,
+            upload_dir=_uploads_compra_dir(obj.id),
+            url_prefix=f"/static/uploads/compras/{obj.id}/comprovantes",
+            create_fn=imagem_comprovante_compra.create,
+            schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
+            fk_field="compra_id",
+            fk_id=obj.id,
+            arquivos=comprovantes,
+        )
+    except IntegrityError:
+        session.rollback()
+        return _erro_compra(request, session, "Compra já existe")
+    return _ok_compra(request, session, user)
+
+
 register_crud_ui_routes(
     app,
     templates,
@@ -145,6 +209,7 @@ register_crud_ui_routes(
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
     before_delete=_remover_arquivos_comprovantes,
+    register_create=False,
     sort_fields={
         "cliente": lambda c: _sort_key(c.cliente.nome),
         "veiculo": lambda c: _sort_key(c.veiculo.modelo),

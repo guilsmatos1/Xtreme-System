@@ -10,8 +10,9 @@
           {% if not venda %}id="form-nova-venda"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
+
+        {% if venda %}
         <div class="form-grid">
-          {% if venda %}
           <label class="field">
             <span class="field__label">Cliente</span>
             <input class="input" id="cliente-search" name="cliente_id" type="hidden" value="{{ venda.cliente_id }}" required>
@@ -22,10 +23,100 @@
               {% endfor %}
             </datalist>
           </label>
-          {% else %}
+          <label class="field">
+            <span class="field__label">Veículo</span>
+            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
+            <input class="input" placeholder="Buscar por placa ou modelo" list="veiculos-list" onchange="document.getElementById('veiculo-search').value = this.selectedOptions[0]?.dataset.id || ''">
+            <datalist id="veiculos-list">
+              {% for veic in veiculos %}
+              <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
+              {% endfor %}
+            </datalist>
+          </label>
+          <label class="field">
+            <span class="field__label">KM</span>
+            <input class="input" name="km" type="number" min="0" value="{{ venda.km if venda.km is not none else '' }}">
+          </label>
+          <label class="field">
+            <span class="field__label">Status</span>
+            <select class="select" name="status" required>
+              {% for s in status %}
+              <option value="{{ s.value }}"{% if venda.status == s %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Valor da venda</span>
+            <input class="input" name="valor_venda" type="number" step="0.01" value="{{ venda.valor_venda }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Entrada</span>
+            <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda.valor_entrada is not none else '' }}">
+          </label>
+          <label class="field">
+            <span class="field__label">Débitos do veículo</span>
+            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ venda.debitos if venda.debitos is not none else '' }}">
+          </label>
+
+          <label class="field">
+            <span class="field__label">Forma de pagamento</span>
+            <input class="input" name="forma_pagamento" value="{{ venda.forma_pagamento }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Parcelas</span>
+            <input class="input" name="parcelas" type="number" min="1" value="{{ venda.parcelas }}" required>
+          </label>
+
+          <label class="field field--full">
+            <span class="field__label">Troca</span>
+            <label>
+              <input id="houve-troca" type="checkbox"{% if venda.veiculo_troca_id %} checked{% endif %}>
+              Houve troca de veículo?
+            </label>
+          </label>
+          <label class="field" data-troca>
+            <span class="field__label">Veículo da troca</span>
+            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ venda.veiculo_troca_id if venda.veiculo_troca_id is not none else '' }}">
+            <input class="input" id="veiculo-troca-input" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list" value="{{ venda.veiculo_troca.placa if venda.veiculo_troca else '' }}">
+            <datalist id="veiculos-troca-list">
+              {% for veic in veiculos_troca %}
+              <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
+              {% endfor %}
+            </datalist>
+          </label>
+          <label class="field" data-troca>
+            <span class="field__label">Valor da diferença</span>
+            <input class="input" name="valor_diferenca" type="number" step="0.01" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
+          </label>
+          <label class="field">
+            <span class="field__label">Pagamento pendente</span>
+            <label>
+              <input name="pagamento_pendente" type="checkbox"{% if venda.pagamento_pendente %} checked{% endif %}>
+              Faltou parte do pagamento?
+            </label>
+          </label>
+          <label class="field">
+            <span class="field__label">Valor pendente</span>
+            <input class="input" name="valor_pendente" type="number" step="0.01" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Datas de pagamento</span>
+            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ venda.datas_pagamento if venda.datas_pagamento is not none else '' }}">
+          </label>
+
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4">{{ venda.observacoes or '' }}</textarea>
+          </label>
+        </div>
+        {% else %}
+        <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
+
+        <fieldset class="wizard-step form-grid is-active" data-step="1">
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <select class="select" id="cliente-select" name="cliente_id">
+            <select class="select" id="cliente-select" name="cliente_id" autofocus>
               <option value="">➕ Cadastrar novo cliente</option>
               {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }} ({{ c.documento }})</option>{% endfor %}
             </select>
@@ -68,8 +159,10 @@
             <span class="field__label">CEP</span>
             <input class="input" name="cli_cep" data-novo-cliente>
           </label>
-          {% endif %}
-          <label class="field">
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="2">
+          <label class="field field--full">
             <span class="field__label">Veículo</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
             <input class="input" placeholder="Buscar por placa ou modelo" list="veiculos-list" onchange="document.getElementById('veiculo-search').value = this.selectedOptions[0]?.dataset.id || ''">
@@ -81,50 +174,70 @@
           </label>
           <label class="field">
             <span class="field__label">KM</span>
-            <input class="input" name="km" type="number" min="0" value="{{ venda.km if venda and venda.km is not none else '' }}">
+            <input class="input" name="km" type="number" min="0">
           </label>
           <label class="field">
             <span class="field__label">Status</span>
             <select class="select" name="status" required>
               {% for s in status %}
-              <option value="{{ s.value }}"{% if venda and venda.status == s %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
+              <option value="{{ s.value }}">{{ s.value | replace("_", " ") | title }}</option>
               {% endfor %}
             </select>
           </label>
+        </fieldset>
 
+        <fieldset class="wizard-step form-grid" data-step="3">
           <label class="field">
             <span class="field__label">Valor da venda</span>
-            <input class="input" name="valor_venda" type="number" step="0.01" value="{{ venda.valor_venda if venda else '' }}" required>
+            <input class="input" name="valor_venda" type="number" step="0.01" required>
           </label>
           <label class="field">
             <span class="field__label">Entrada</span>
-            <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda and venda.valor_entrada is not none else '' }}">
+            <input class="input" name="valor_entrada" type="number" step="0.01">
           </label>
           <label class="field">
             <span class="field__label">Débitos do veículo</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ venda.debitos if venda and venda.debitos is not none else '' }}">
+            <input class="input" name="debitos" type="number" step="0.01" min="0">
           </label>
 
           <label class="field">
             <span class="field__label">Forma de pagamento</span>
-            <input class="input" name="forma_pagamento" value="{{ venda.forma_pagamento if venda else '' }}" required>
+            <input class="input" name="forma_pagamento" required>
           </label>
           <label class="field">
             <span class="field__label">Parcelas</span>
-            <input class="input" name="parcelas" type="number" min="1" value="{{ venda.parcelas if venda else '' }}" required>
+            <input class="input" name="parcelas" type="number" min="1">
           </label>
 
+          <label class="field">
+            <span class="field__label">Pagamento pendente</span>
+            <label>
+              <input name="pagamento_pendente" type="checkbox">
+              Faltou parte do pagamento?
+            </label>
+          </label>
+          <label class="field">
+            <span class="field__label">Valor pendente</span>
+            <input class="input" name="valor_pendente" type="number" step="0.01">
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Datas de pagamento</span>
+            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03">
+          </label>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="4">
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
-              <input id="houve-troca" type="checkbox"{% if venda and venda.veiculo_troca_id %} checked{% endif %}>
+              <input id="houve-troca" type="checkbox">
               Houve troca de veículo?
             </label>
           </label>
           <label class="field" data-troca>
             <span class="field__label">Veículo da troca</span>
-            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ venda.veiculo_troca_id if venda and venda.veiculo_troca_id is not none else '' }}">
-            <input class="input" id="veiculo-troca-input" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list" value="{{ venda.veiculo_troca.placa if venda and venda.veiculo_troca else '' }}">
+            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden">
+            <input class="input" id="veiculo-troca-input" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list">
             <datalist id="veiculos-troca-list">
               {% for veic in veiculos_troca %}
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
@@ -133,37 +246,79 @@
           </label>
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
-            <input class="input" name="valor_diferenca" type="number" step="0.01" value="{{ venda.valor_diferenca if venda and venda.valor_diferenca is not none else '' }}">
-          </label>
-          <label class="field">
-            <span class="field__label">Pagamento pendente</span>
-            <label>
-              <input name="pagamento_pendente" type="checkbox"{% if venda and venda.pagamento_pendente %} checked{% endif %}>
-              Faltou parte do pagamento?
-            </label>
-          </label>
-          <label class="field">
-            <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="number" step="0.01" value="{{ venda.valor_pendente if venda and venda.valor_pendente is not none else '' }}">
-          </label>
-          <label class="field field--full">
-            <span class="field__label">Datas de pagamento</span>
-            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ venda.datas_pagamento if venda and venda.datas_pagamento is not none else '' }}">
+            <input class="input" name="valor_diferenca" type="number" step="0.01">
           </label>
 
           <label class="field field--full">
             <span class="field__label">Observações</span>
-            <textarea class="input" name="observacoes" rows="4">{{ venda.observacoes if venda and venda.observacoes else '' }}</textarea>
+            <textarea class="input" name="observacoes" rows="4"></textarea>
           </label>
-        </div>
+        </fieldset>
+        {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        {% if venda %}
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        {% else %}
+        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
+        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>
+        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        {% endif %}
       </div>
     </form>
   </div>
 </div>
+{% if not venda %}
+<script>
+(function () {
+  var form = document.getElementById('form-nova-venda');
+  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
+  var total = steps.length;
+  var current = 1;
+
+  var btnVoltar = document.getElementById('wizard-voltar');
+  var btnProximo = document.getElementById('wizard-proximo');
+  var btnSalvar = document.getElementById('wizard-salvar');
+  var stepAtual = document.getElementById('wizard-step-atual');
+
+  function stepEl(n) {
+    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
+  }
+
+  function show(n) {
+    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
+    stepAtual.textContent = n;
+    btnVoltar.style.display = n > 1 ? '' : 'none';
+    btnProximo.style.display = n < total ? '' : 'none';
+    btnSalvar.style.display = n === total ? '' : 'none';
+  }
+
+  function validStep(n) {
+    var controls = stepEl(n).querySelectorAll('input, select');
+    for (var i = 0; i < controls.length; i++) {
+      var el = controls[i];
+      if (el.disabled) continue;
+      if (!el.checkValidity()) { el.reportValidity(); return false; }
+    }
+    return true;
+  }
+
+  btnProximo.addEventListener('click', function () {
+    if (!validStep(current)) return;
+    current = Math.min(current + 1, total);
+    show(current);
+  });
+
+  btnVoltar.addEventListener('click', function () {
+    current = Math.max(current - 1, 1);
+    show(current);
+  });
+
+  show(current);
+})();
+</script>
+{% endif %}
 {% if not venda %}
 <script>
 (function () {

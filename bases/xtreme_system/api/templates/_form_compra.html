@@ -6,16 +6,20 @@
       <button class="icon-btn" type="button" aria-label="Fechar"
               onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
     </div>
-    <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
+    <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
+          hx-encoding="multipart/form-data" enctype="multipart/form-data"
+          {% if not compra %}id="form-nova-compra"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
+
+        {% if compra %}
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Cliente</span>
             <select class="select" name="cliente_id" required>
               <option value="">Selecione</option>
               {% for c in clientes %}
-              <option value="{{ c.id }}"{% if compra and compra.cliente_id == c.id %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
+              <option value="{{ c.id }}"{% if compra.cliente_id == c.id %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
               {% endfor %}
             </select>
           </label>
@@ -24,34 +28,140 @@
             <select class="select" name="veiculo_id" required>
               <option value="">Selecione</option>
               {% for veic in veiculos %}
-              <option value="{{ veic.id }}"{% if compra and compra.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
+              <option value="{{ veic.id }}"{% if compra.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
               {% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Data da compra</span>
-            <input class="input" name="data_compra" type="date" value="{{ compra.data_compra.isoformat() if compra and compra.data_compra else '' }}">
+            <input class="input" name="data_compra" type="date" value="{{ compra.data_compra.isoformat() if compra.data_compra else '' }}">
           </label>
 
           <label class="field">
             <span class="field__label">Valor da compra</span>
-            <input class="input" name="valor_compra" type="number" step="0.01" value="{{ compra.valor_compra if compra else '' }}" required>
+            <input class="input" name="valor_compra" type="number" step="0.01" value="{{ compra.valor_compra }}" required>
           </label>
           <label class="field">
             <span class="field__label">Débitos</span>
-            <input class="input" name="debitos" type="number" step="0.01" value="{{ compra.debitos if compra and compra.debitos is not none else '' }}">
+            <input class="input" name="debitos" type="number" step="0.01" value="{{ compra.debitos if compra.debitos is not none else '' }}">
           </label>
 
           <label class="field field--full">
             <span class="field__label">Observações</span>
-            <textarea class="input" name="observacoes" rows="4">{{ compra.observacoes if compra and compra.observacoes else '' }}</textarea>
+            <textarea class="input" name="observacoes" rows="4">{{ compra.observacoes or '' }}</textarea>
           </label>
         </div>
+        {% else %}
+        <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 3</div>
+
+        <fieldset class="wizard-step form-grid is-active" data-step="1">
+          <label class="field">
+            <span class="field__label">Cliente</span>
+            <select class="select" name="cliente_id" required autofocus>
+              <option value="">Selecione</option>
+              {% for c in clientes %}
+              <option value="{{ c.id }}">{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Veículo</span>
+            <select class="select" name="veiculo_id" required>
+              <option value="">Selecione</option>
+              {% for veic in veiculos %}
+              <option value="{{ veic.id }}">{{ veic.placa }} · {{ veic.modelo }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="2">
+          <label class="field">
+            <span class="field__label">Data da compra</span>
+            <input class="input" name="data_compra" type="date">
+          </label>
+          <label class="field">
+            <span class="field__label">Valor da compra</span>
+            <input class="input" name="valor_compra" type="number" step="0.01" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Débitos</span>
+            <input class="input" name="debitos" type="number" step="0.01">
+          </label>
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="3">
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4"></textarea>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Comprovante de pagamento</span>
+            <input class="input" name="comprovantes_pagamento" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
+          </label>
+        </fieldset>
+        {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        {% if compra %}
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        {% else %}
+        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
+        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>
+        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        {% endif %}
       </div>
     </form>
   </div>
 </div>
+{% if not compra %}
+<script>
+(function () {
+  var form = document.getElementById('form-nova-compra');
+  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
+  var total = steps.length;
+  var current = 1;
+
+  var btnVoltar = document.getElementById('wizard-voltar');
+  var btnProximo = document.getElementById('wizard-proximo');
+  var btnSalvar = document.getElementById('wizard-salvar');
+  var stepAtual = document.getElementById('wizard-step-atual');
+
+  function stepEl(n) {
+    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
+  }
+
+  function show(n) {
+    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
+    stepAtual.textContent = n;
+    btnVoltar.style.display = n > 1 ? '' : 'none';
+    btnProximo.style.display = n < total ? '' : 'none';
+    btnSalvar.style.display = n === total ? '' : 'none';
+  }
+
+  function validStep(n) {
+    var controls = stepEl(n).querySelectorAll('input, select');
+    for (var i = 0; i < controls.length; i++) {
+      var el = controls[i];
+      if (el.disabled) continue;
+      if (!el.checkValidity()) { el.reportValidity(); return false; }
+    }
+    return true;
+  }
+
+  btnProximo.addEventListener('click', function () {
+    if (!validStep(current)) return;
+    current = Math.min(current + 1, total);
+    show(current);
+  });
+
+  btnVoltar.addEventListener('click', function () {
+    current = Math.max(current - 1, 1);
+    show(current);
+  });
+
+  show(current);
+})();
+</script>
+{% endif %}
