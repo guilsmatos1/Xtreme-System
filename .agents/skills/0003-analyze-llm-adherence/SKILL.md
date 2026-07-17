@@ -105,36 +105,36 @@ Avoid proposing abstractions for single-use code unless they isolate a risky bou
 
 ## Output
 
-Ao final da análise, salve os resultados em `docs/0003-analyze-llm-adherence.md` usando o formato abaixo.
+Save results as separate files under `docs/0003-analyze-llm-adherence/` — one summary file `resumo.md` plus one file per opportunity (e.g. `oportunidade-1.md`). Use the format below.
 
 ## Output Format
 
-Use this format for each finding:
+Use this format for each finding and save it as a separate file:
 
 ```text
-## Oportunidade N: <short title>
+## Opportunity N: <short title>
 
-Arquivo: path/to/file.py
+File: path/to/file.py
 
-Problema:
+Problem:
 <what responsibility/boundary/contract problem exists>
 
-Risco para LLM:
+LLM Risk:
 <why AI edits become broad, ambiguous, or fragile>
 
-Ação:
+Action:
 <smallest useful extraction/reorganization>
 
-Interface sugerida:
+Suggested Interface:
 <function/class/protocol signature or public API>
 
-Nova estrutura:
+New Structure:
 <optional tree, only if structure matters>
 
-Testes:
+Tests:
 <test files/cases>
 
-Métrica de sucesso:
+Success Metric:
 <observable improvement>
 ```
 
@@ -145,22 +145,22 @@ If no strong opportunities exist, say so and list only low-confidence candidates
 Use this checklist while analyzing:
 
 ```text
-[ ] Arquivos Python grandes demais?
-[ ] Funções com múltiplas responsabilidades?
-[ ] Classes que fazem coisas demais?
-[ ] utils.py/helpers.py/common.py grandes ou sem coesão?
-[ ] Muitos dicts sem contrato claro?
-[ ] Uso excessivo de Any?
-[ ] Imports circulares?
-[ ] Acesso externo a atributos/métodos _privados?
-[ ] Regra de negócio misturada com FastAPI/Flask/Django/CLI/UI?
-[ ] Banco/persistência misturados com cálculo de domínio?
-[ ] Dependências globais difíceis de testar?
-[ ] Módulos importantes sem testes?
-[ ] Funções difíceis de mockar?
-[ ] Nomes genéricos demais?
-[ ] Duplicação de lógica entre módulos?
-[ ] Contratos públicos claros?
+[ ] Overly large Python files?
+[ ] Functions with multiple responsibilities?
+[ ] Classes doing too many things?
+[ ] Large or low-cohesion utils.py/helpers.py/common.py?
+[ ] Many dicts without clear contracts?
+[ ] Excessive use of Any?
+[ ] Circular imports?
+[ ] External access to _private attributes/methods?
+[ ] Business logic mixed with FastAPI/Flask/Django/CLI/UI?
+[ ] Database/persistence mixed with domain computation?
+[ ] Global dependencies hard to test?
+[ ] Important modules without tests?
+[ ] Functions hard to mock?
+[ ] Overly generic names?
+[ ] Logic duplication across modules?
+[ ] Clear public contracts?
 ```
 
 ## Recommended Tone

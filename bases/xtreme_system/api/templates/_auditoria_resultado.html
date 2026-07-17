@@ -7,22 +7,22 @@
 {% set sep = '&' if filtros_qs else '' %}
 
 <section class="stats" aria-label="Resumo da auditoria">
-  <article class="card stat">
+  <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("file") }} Registros filtrados</div>
     <div class="stat__value cell-num">{{ total }}</div>
     <div class="stat__hint">de acordo com os filtros atuais</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("inbox") }} Nesta página</div>
     <div class="stat__value cell-num">{{ registros | length }}</div>
     <div class="stat__hint">exibidos abaixo</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("users") }} Usuários monitorados</div>
     <div class="stat__value cell-num">{{ usuarios | length }}</div>
     <div class="stat__hint">com ações registradas</div>
   </article>
-  <article class="card stat">
+  <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("tag") }} Tabelas monitoradas</div>
     <div class="stat__value cell-num">{{ tabelas | length }}</div>
     <div class="stat__hint">com auditoria ativa</div>

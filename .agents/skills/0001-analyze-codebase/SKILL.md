@@ -17,7 +17,6 @@ For each opportunity, evaluate the relevant dimensions below:
   - duplication
   - complexity
   - readability
-  - naming
 2. Architecture and design
   - coupling
   - separation of concerns
