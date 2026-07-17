@@ -1,6 +1,7 @@
 """Prova que register_ui_simples recebe Jinja2Templates como parâmetro (não mais
 o singleton global de deps.py) — permite registrar rotas com templates de stub."""
 
+from collections.abc import Callable
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -319,7 +320,12 @@ class _ConflictModule:
             raise IntegrityError("", {}, Exception())
 
 
-def _stub_crud_client(tmp_path: Path, module: _ConflictModule) -> TestClient:
+def _stub_crud_client(
+    tmp_path: Path,
+    module: _ConflictModule,
+    *,
+    before_create: Callable[[Session, Any], None] | None = None,
+) -> TestClient:
     for nome, conteudo in {
         "lista.html": "<div id='linhas'>{% include 'linhas.html' %}</div>",
         "linhas.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
@@ -359,6 +365,7 @@ def _stub_crud_client(tmp_path: Path, module: _ConflictModule) -> TestClient:
         ok_partial_template="ok.html",
         form_template="form.html",
         sort_fields={},
+        before_create=before_create,
         csv_filename="stubs.csv",
         csv_headers=["ID", "Nome"],
         csv_row=lambda item: [item.id, item.nome],
@@ -375,6 +382,25 @@ def test_crud_ui_create_integrity_error_retorna_409(tmp_path: Path) -> None:
 
     assert resp.status_code == 409
     assert "Stub já existe" in resp.text
+
+
+def test_crud_ui_create_integrity_error_before_create_maintains_session(
+    tmp_path: Path,
+) -> None:
+    def fail_before_create(_session: Session, _data: _StubSchema) -> None:
+        raise IntegrityError("", {}, Exception())
+
+    client = _stub_crud_client(
+        tmp_path,
+        _ConflictModule(fail_on="none"),
+        before_create=fail_before_create,
+    )
+
+    resp = client.post("/ui/stubs", data={"nome": "Duplicado"})
+
+    assert resp.status_code == 409
+    assert "Stub já existe" in resp.text
+    assert client.get("/ui/stubs").status_code == 200
 
 
 def test_crud_ui_update_integrity_error_retorna_409(tmp_path: Path) -> None:
