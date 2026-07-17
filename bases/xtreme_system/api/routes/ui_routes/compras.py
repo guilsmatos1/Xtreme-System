@@ -145,6 +145,7 @@ register_crud_ui_routes(
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
     before_delete=_remover_arquivos_comprovantes,
+    searchable=True,
     sort_fields={
         "cliente": lambda c: _sort_key(c.cliente.nome),
         "veiculo": lambda c: _sort_key(c.veiculo.modelo),

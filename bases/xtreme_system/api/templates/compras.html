@@ -19,15 +19,27 @@
   </div>
 </div>
 
+<div class="toolbar">
+  <div class="search">
+    {{ ui.icon("search") }}
+    <input class="input" type="search" name="q"
+           hx-get="/ui/compras" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#linhas" hx-swap="outerHTML"
+           placeholder="Buscar por cliente, placa ou modelo…"
+           value="{{ q or '' }}" aria-label="Buscar compras">
+  </div>
+</div>
+
 <div class="table-wrap">
   <table class="table--wide">
+    {% set sort_qs = "&q=" ~ (q | urlencode) %}
     <thead>
       <tr>
-        <th>{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras") }}</th>
-        <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras") }}</th>
+        <th>{{ ui.sortable("cliente", "Cliente", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", sort_qs) }}</th>
+        <th>{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/compras", sort_qs) }}</th>
         <th>Observações</th>
         {% if is_admin(user) %}<th class="col-actions"><span class="sr-only">Ações</span></th>{% endif %}
       </tr>

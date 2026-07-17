@@ -30,6 +30,7 @@
   --success:           #167c48; --success-soft: #e2f3e9;
   --danger:            #d32f2f; --danger-hover: #b71c1c; --danger-soft: #fdecec;
   --warning:           #a86a00; --warning-soft: #fbefd9;
+  --info:              #1a73e8; --info-soft: #e0edff;
 
   /* Sidebar (escura mesmo no tema claro — cara de ERP) */
   --sidebar-bg:        #17181b;
@@ -89,6 +90,7 @@
     --success:         #3dd68c; --success-soft: #10231a;
     --danger:          #f0685a; --danger-hover: #f27f72; --danger-soft: #2a1613;
     --warning:         #e0a832; --warning-soft: #251d0f;
+    --info:             #8ab4f8; --info-soft: #1a2335;
 
     --sidebar-bg:        #101113;
     --sidebar-fg:        #eef0f3;
@@ -114,6 +116,7 @@
   --success:#3dd68c; --success-soft:#10231a;
   --danger:#f0685a; --danger-hover:#f27f72; --danger-soft:#2a1613;
   --warning:#e0a832; --warning-soft:#251d0f;
+  --info:#8ab4f8; --info-soft:#1a2335;
   --sidebar-bg:#101113; --sidebar-fg:#eef0f3; --sidebar-fg-muted:#7f858e;
   --sidebar-border:#24262b; --sidebar-hover:#1c1e22;
   --sidebar-active-bg:rgba(240,85,69,.16); --sidebar-active-fg:#ff8579;
@@ -345,7 +348,7 @@ th.col-actions, td.col-actions { text-align: right; width: 1%; white-space: nowr
 .badge--danger  { background: var(--danger-soft);  color: var(--danger);  border-color: transparent; }
 .badge--neutral { background: var(--surface-2); color: var(--text-secondary); }
 .badge--accent  { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.badge--info    { background: #e0edff; color: #1a73e8; border-color: transparent; }
+.badge--info    { background: var(--info-soft); color: var(--info); border-color: transparent; }
 .badge--warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
 .badge--plain::before { display: none; }
 

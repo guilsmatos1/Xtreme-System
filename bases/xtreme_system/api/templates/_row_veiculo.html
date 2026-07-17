@@ -17,7 +17,7 @@
   <td class="col-actions">
     <div class="row-actions">
       <button class="btn btn--ghost btn--sm btn--focus" hx-get="/ui/veiculos/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ v.modelo }}">{{ ui.icon("edit") }}</button>
-      <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/cliente-vendedor" hx-target="#modal" hx-swap="innerHTML" aria-label="Cliente vendedor de {{ v.modelo }}">{{ ui.icon("user") }}</button>
+      <button class="btn btn--ghost btn--sm" style="color: var(--success)" hx-get="/ui/veiculos/{{ v.id }}/cliente-vendedor" hx-target="#modal" hx-swap="innerHTML" aria-label="Cliente vendedor de {{ v.modelo }}">{{ ui.icon("user") }}</button>
       <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/imagens" hx-target="#modal" hx-swap="innerHTML" aria-label="Imagens de {{ v.modelo }}">{{ ui.icon("image") }}</button>
       <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/procuracao" hx-target="#modal" hx-swap="innerHTML" aria-label="Procuração de {{ v.modelo }}">{{ ui.icon("file") }}</button>
       <button class="btn btn--ghost btn--sm" hx-get="/ui/veiculos/{{ v.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" aria-label="Comprovante de pagamento de {{ v.modelo }}">{{ ui.icon("cash") }}</button>

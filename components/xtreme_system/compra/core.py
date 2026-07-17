@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric
+from sqlalchemy import Date, ForeignKey, Numeric, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -64,6 +64,21 @@ class CompraRead(BaseModel):
 
 def list_all(session: Session) -> list[Compra]:
     return crud.list_all(session, Compra)
+
+
+def search(session: Session, term: str) -> list[Compra]:
+    pattern = f"%{term}%"
+    return list(
+        session.query(Compra)
+        .where(
+            or_(
+                Compra.cliente.has(Cliente.nome.ilike(pattern)),
+                Compra.veiculo.has(Veiculo.placa.ilike(pattern)),
+                Compra.veiculo.has(Veiculo.modelo.ilike(pattern)),
+            )
+        )
+        .all()
+    )
 
 
 def get_latest_by_veiculo(session: Session, veiculo_id: int) -> Compra | None:

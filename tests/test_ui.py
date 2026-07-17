@@ -326,7 +326,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     compradores = client.get("/ui/clientes/compradores")
     assert compradores.status_code == 200
     assert "Clientes Compradores" in compradores.text
-    assert "Novo cliente" not in compradores.text
+    assert "Novo cliente" in compradores.text
     assert "Ana Compradora" in compradores.text
     assert "Caio Ambos" in compradores.text
     assert "Bia Vendedora" not in compradores.text

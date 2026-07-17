@@ -245,7 +245,7 @@ def _register_clientes_page(
             c.cidade or "",
             c.estado or "",
         ],
-        register_create=False,
+        register_create=True,
         list_func=list_func,
         search_func=search_func,
     )
