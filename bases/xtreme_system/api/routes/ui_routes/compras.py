@@ -24,6 +24,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
+from xtreme_system.investidor import core as investidor
 from xtreme_system.veiculo import core as veiculo
 
 logger = structlog.get_logger(__name__)
@@ -33,6 +34,11 @@ def _ctx_form_compra(session: Session) -> dict[str, Any]:
     return {
         "clientes": cliente.list_all(session),
         "veiculos": veiculo.list_all(session),
+        "data_atual": datetime.now(UTC).date().isoformat(),
+        "tipos_cliente": list(cliente.TipoCliente),
+        "tipos": list(veiculo.TipoVeiculo),
+        "tipo_entradas": list(veiculo.TipoEntrada),
+        "investidores": investidor.list_all(session),
     }
 
 
@@ -148,6 +154,84 @@ def ui_compra_comprovantes_excluir(
     return _comprovantes_modal(request, session, compra_id, action_oob=True)
 
 
+def _resolver_cliente(
+    session: Session, form: Any
+) -> tuple[cliente.Cliente | None, cliente.ClienteCreate | None, str | None]:
+    cliente_sel = str(form.get("cliente_id") or "").strip()
+    if cliente_sel:
+        try:
+            existente = cliente.get(session, int(cliente_sel))
+        except ValueError:
+            existente = None
+        if existente is None:
+            return None, None, "Cliente inválido ou inexistente"
+        return existente, None, None
+
+    nome = str(form.get("cli_nome") or "").strip()
+    documento = str(form.get("cli_documento") or "").strip()
+    erro: str | None = None
+    if not nome or not documento:
+        erro = "Informe os dados do cliente"
+    elif cliente.get_by_documento(session, documento):
+        erro = "CPF já cadastrado — selecione o cliente na lista"
+    if erro:
+        return None, None, erro
+    try:
+        novo_cliente_data = cliente.ClienteCreate.model_validate(
+            {
+                "nome": nome,
+                "documento": documento,
+                "tipo": form.get("cli_tipo") or "pessoa_fisica",
+                "telefone": str(form.get("cli_telefone") or "").strip() or None,
+                "email": str(form.get("cli_email") or "").strip() or None,
+                "endereco": str(form.get("cli_endereco") or "").strip() or None,
+                "cidade": str(form.get("cli_cidade") or "").strip() or None,
+                "estado": str(form.get("cli_estado") or "").strip() or None,
+                "cep": str(form.get("cli_cep") or "").strip() or None,
+            }
+        )
+    except ValidationError:
+        return None, None, "Dados do cliente inválidos"
+    return None, novo_cliente_data, None
+
+
+def _resolver_veiculo(
+    session: Session, form: Any
+) -> tuple[veiculo.Veiculo | None, veiculo.VeiculoCreate | None, str | None]:
+    veiculo_sel = str(form.get("veiculo_id") or "").strip()
+    if veiculo_sel:
+        try:
+            existente = veiculo.get(session, int(veiculo_sel))
+        except ValueError:
+            existente = None
+        if existente is None:
+            return None, None, "Veículo inválido ou inexistente"
+        return existente, None, None
+
+    placa = str(form.get("vei_placa") or "").strip().upper()
+    if not placa:
+        return None, None, "Informe a placa do veículo"
+    if veiculo.get_by_placa(session, placa):
+        return None, None, "Placa já cadastrada — selecione o veículo na lista"
+    try:
+        novo_veiculo_data = veiculo.VeiculoCreate.model_validate(
+            {
+                "tipo": form.get("vei_tipo"),
+                "tipo_entrada": form.get("vei_tipo_entrada"),
+                "placa": placa,
+                "modelo": str(form.get("vei_modelo") or "").strip(),
+                "cor": str(form.get("vei_cor") or "").strip(),
+                "ano": int(form.get("vei_ano") or 0),
+                "km": str(form.get("vei_km") or "").strip() or None,
+                "preco": str(form.get("vei_preco") or "").strip(),
+                "investidor_id": int(form.get("vei_investidor_id") or 0),
+            }
+        )
+    except (ValidationError, ValueError):
+        return None, None, "Dados do veículo inválidos"
+    return None, novo_veiculo_data, None
+
+
 def _erro_compra(request: Request, session: Session, msg: str) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
@@ -167,18 +251,11 @@ def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
 
 
 @app.post("/ui/compras")
-async def _criar_compra(
+async def _criar_compra(  # noqa: PLR0911
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     form = await request.form()
-
-    try:
-        data = compra.CompraCreate.model_validate(_parse_compra_form(form))
-        validate_cliente_veiculo_fks(session, data)
-    except (ValidationError, HTTPException) as exc:
-        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-        return _erro_compra(request, session, msg)
 
     comprovantes = cast(
         list[UploadFile],
@@ -191,6 +268,47 @@ async def _criar_compra(
     erro = _validar_uploads(comprovantes)
     if erro:
         return _erro_compra(request, session, erro)
+
+    cliente_obj, novo_cliente_data, erro = _resolver_cliente(session, form)
+    if erro:
+        return _erro_compra(request, session, erro)
+
+    veiculo_obj, novo_veiculo_data, erro = _resolver_veiculo(session, form)
+    if erro:
+        return _erro_compra(request, session, erro)
+
+    if novo_cliente_data is not None:
+        try:
+            cliente_obj = cliente.create(session, novo_cliente_data)
+        except IntegrityError:
+            session.rollback()
+            return _erro_compra(request, session, "Cliente já existe")
+
+    if novo_veiculo_data is not None:
+        try:
+            veiculo_obj = veiculo.create(session, novo_veiculo_data)
+        except IntegrityError:
+            if novo_cliente_data is not None:
+                session.rollback()
+            return _erro_compra(request, session, "Veículo já existe")
+
+    assert cliente_obj is not None  # noqa: S101
+    assert veiculo_obj is not None  # noqa: S101
+
+    try:
+        data = compra.CompraCreate.model_validate(
+            {
+                **_parse_compra_form(form),
+                "cliente_id": cliente_obj.id,
+                "veiculo_id": veiculo_obj.id,
+            }
+        )
+        validate_cliente_veiculo_fks(session, data)
+    except (ValidationError, HTTPException) as exc:
+        if novo_cliente_data is not None or novo_veiculo_data is not None:
+            session.rollback()
+        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        return _erro_compra(request, session, msg)
 
     try:
         obj = compra.create(session, data)
@@ -238,30 +356,29 @@ register_crud_ui_routes(
         "placa": lambda c: _sort_key(c.veiculo.placa),
         "data": "data_compra",
         "valor": "valor_compra",
-        "debitos": "debitos",
         "status": "status",
     },
     csv_filename="compras.csv",
     csv_headers=[
         "ID",
-        "Cliente",
-        "Modelo",
-        "Placa",
         "Data",
-        "Valor Compra",
-        "Debitos",
+        "Nome do Cliente",
+        "Documento do Cliente",
         "Estado",
+        "Placa",
+        "Veiculo",
+        "Valor Compra",
         "Observacoes",
     ],
     csv_row=lambda c: [
         c.id,
-        c.cliente.nome,
-        c.veiculo.modelo,
-        c.veiculo.placa,
         c.data_compra.isoformat(),
-        f"{c.valor_compra:.2f}",
-        f"{c.debitos:.2f}" if c.debitos is not None else "",
+        c.cliente.nome,
+        c.cliente.documento or "",
         c.status.value,
+        c.veiculo.placa,
+        c.veiculo.modelo,
+        f"{c.valor_compra:.2f}",
         c.observacoes or "",
     ],
 )

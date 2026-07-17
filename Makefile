@@ -7,7 +7,7 @@ help:
 		'Targets:' \
 		'  make hooks       Install pre-commit hooks' \
 		'  make format      Format Python files with ruff' \
-		'  make lint        Run ruff, xenon, vulture, and mypy' \
+		'  make lint        Run ruff, pylint, xenon, vulture, and mypy' \
 		'  make test        Run pytest' \
 		'  make test-postgres  Run pytest against migrated Postgres' \
 		'  make test-e2e    Run Playwright browser tests (headed)' \
@@ -30,6 +30,7 @@ format:
 lint:
 	uv run ruff check .
 	uv run ruff format . --check
+	uv run pylint bases components development projects
 	uv run xenon src bases components development projects
 	uv run vulture
 	uv run mypy

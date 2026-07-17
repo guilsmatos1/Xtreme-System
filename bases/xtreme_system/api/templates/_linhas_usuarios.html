@@ -17,20 +17,14 @@
   </td>
   <td class="col-actions">
     <div class="row-actions">
-      <button class="btn btn--ghost btn--sm"
-              hx-get="/ui/usuarios/{{ u.id }}/perfil"
-              hx-target="#perfil-form-{{ u.id }}"
-              title="Alterar perfil" aria-label="Alterar perfil de {{ u.username }}">
-        {{ ui.icon("tag") }}
-      </button>
-      <button class="btn btn--ghost btn--sm"
-              hx-get="/ui/usuarios/{{ u.id }}/senha"
-              hx-target="#senha-form-{{ u.id }}"
-              title="Alterar senha" aria-label="Alterar senha de {{ u.username }}">
+      <button class="btn btn--ghost btn--sm action-edit"
+              hx-get="/ui/usuarios/{{ u.id }}/editar"
+              hx-target="#modal" hx-swap="innerHTML"
+              title="Editar" aria-label="Editar {{ u.username }}">
         {{ ui.icon("edit") }}
       </button>
       {% if u.id != user.id %}
-      <button class="btn btn--ghost btn--sm btn--danger"
+      <button class="btn btn--ghost btn--sm btn--danger action-delete"
               hx-post="/ui/usuarios/{{ u.id }}/excluir"
               hx-confirm="Excluir {{ u.username }}?"
               hx-target="#linhas" hx-swap="outerHTML"
@@ -39,8 +33,6 @@
       </button>
       {% endif %}
     </div>
-    <div id="perfil-form-{{ u.id }}"></div>
-    <div id="senha-form-{{ u.id }}"></div>
   </td>
 </tr>
 {% else %}

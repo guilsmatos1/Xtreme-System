@@ -111,6 +111,18 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
     return list(session.query(Compra).filter_by(cliente_id=cliente_id).all())
 
 
+def create(session: Session, data: CompraCreate) -> Compra:
+    return crud.create(session, Compra, data)
+
+
+def update(session: Session, obj: Compra, data: CompraUpdate) -> Compra:
+    return crud.update(session, obj, data)
+
+
+def delete(session: Session, obj: Compra) -> None:
+    crud.delete(session, obj)
+
+
 def search(session: Session, term: str) -> list[Compra]:
     pattern = f"%{term}%"
     return list(
@@ -127,33 +139,5 @@ def search(session: Session, term: str) -> list[Compra]:
             )
         )
         .distinct()
-        .all()
-    )
-
-
-def create(session: Session, data: CompraCreate) -> Compra:
-    return crud.create(session, Compra, data)
-
-
-def update(session: Session, obj: Compra, data: CompraUpdate) -> Compra:
-    return crud.update(session, obj, data)
-
-
-def delete(session: Session, obj: Compra) -> None:
-    crud.delete(session, obj)
-
-
-def search(session: Session, term: str) -> list[Compra]:
-    pattern = f"%{term}%"
-    return (
-        session.query(Compra)
-        .where(
-            or_(
-                Cliente.nome.ilike(pattern),
-                Veiculo.modelo.ilike(pattern),
-                Veiculo.placa.ilike(pattern),
-                Compra.observacoes.ilike(pattern),
-            )
-        )
         .all()
     )

@@ -15,7 +15,7 @@
         {% if compra %}
         <div class="form-grid">
           <label class="field">
-            <span class="field__label">Cliente</span>
+            <span class="field__label">Cliente *</span>
             <select class="select" name="cliente_id" required>
               <option value="">Selecione</option>
               {% for c in clientes %}
@@ -24,7 +24,7 @@
             </select>
           </label>
           <label class="field">
-            <span class="field__label">Veículo</span>
+            <span class="field__label">Veículo *</span>
             <select class="select" name="veiculo_id" required>
               <option value="">Selecione</option>
               {% for veic in veiculos %}
@@ -47,7 +47,7 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Valor da compra</span>
+            <span class="field__label">Valor da compra *</span>
             <input class="input" name="valor_compra" type="number" step="0.01" value="{{ compra.valor_compra }}" required>
           </label>
           <label class="field">
@@ -81,20 +81,101 @@
         <fieldset class="wizard-step form-grid is-active" data-step="1">
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <select class="select" name="cliente_id" required autofocus>
-              <option value="">Selecione</option>
+            <select class="select" id="cliente-select" name="cliente_id" autofocus>
+              <option value="">➕ Cadastrar novo cliente</option>
               {% for c in clientes %}
               <option value="{{ c.id }}">{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
               {% endfor %}
             </select>
           </label>
           <label class="field field--full">
+            <span class="field__label">Nome *</span>
+            <input class="input" name="cli_nome" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">CPF *</span>
+            <input class="input" name="cli_documento" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo</span>
+            <select class="select" name="cli_tipo" data-novo-cliente>
+              {% for t in tipos_cliente %}<option value="{{ t.value }}">{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Telefone *</span>
+            <input class="input" name="cli_telefone" data-novo-cliente required>
+          </label>
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="cli_email" type="email" data-novo-cliente>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Endereço</span>
+            <input class="input" name="cli_endereco" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Cidade</span>
+            <input class="input" name="cli_cidade" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">Estado</span>
+            <input class="input" name="cli_estado" data-novo-cliente>
+          </label>
+          <label class="field">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cli_cep" data-novo-cliente>
+          </label>
+          <label class="field field--full">
             <span class="field__label">Veículo</span>
-            <select class="select" name="veiculo_id" required>
-              <option value="">Selecione</option>
+            <select class="select" id="veiculo-select" name="veiculo_id">
+              <option value="">➕ Cadastrar novo veículo</option>
               {% for veic in veiculos %}
               <option value="{{ veic.id }}">{{ veic.placa }} · {{ veic.modelo }}</option>
               {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo *</span>
+            <select class="select" name="vei_tipo" data-novo-veiculo required>
+              {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo de Entrada *</span>
+            <select class="select" name="vei_tipo_entrada" data-novo-veiculo required>
+              {% for t in tipo_entradas %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Placa *</span>
+            <input class="input" name="vei_placa" data-novo-veiculo required style="text-transform:uppercase">
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Modelo *</span>
+            <input class="input" name="vei_modelo" data-novo-veiculo required>
+          </label>
+          <label class="field">
+            <span class="field__label">Cor *</span>
+            <input class="input" name="vei_cor" data-novo-veiculo required>
+          </label>
+          <label class="field">
+            <span class="field__label">Ano *</span>
+            <input class="input" name="vei_ano" type="number" data-novo-veiculo required>
+          </label>
+          <label class="field">
+            <span class="field__label">Quilometragem</span>
+            <input class="input" name="vei_km" type="number" data-novo-veiculo>
+          </label>
+          <label class="field">
+            <span class="field__label">Preço de Compra (R$) *</span>
+            <input class="input" name="vei_preco" type="number" step="0.01" data-novo-veiculo required>
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Investidor *</span>
+            <select class="select" name="vei_investidor_id" data-novo-veiculo required>
+              <option value="">Selecione</option>
+              {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
             </select>
           </label>
         </fieldset>
@@ -102,10 +183,10 @@
         <fieldset class="wizard-step form-grid" data-step="2">
           <label class="field field--full">
             <span class="field__label">Data da compra</span>
-            <input class="input" name="data_compra" type="date">
+            <input class="input" name="data_compra" type="date" value="{{ data_atual }}">
           </label>
           <label class="field">
-            <span class="field__label">Valor da compra</span>
+            <span class="field__label">Valor da compra *</span>
             <input class="input" name="valor_compra" type="number" step="0.01" required>
           </label>
           <label class="field">
@@ -194,6 +275,32 @@
   });
 
   show(current);
+
+  var selectCliente = document.getElementById('cliente-select');
+  var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
+
+  function sincronizarCliente() {
+    var existente = !!selectCliente.value;
+    camposNovoCliente.forEach(function (campo) {
+      campo.disabled = existente;
+      campo.closest('.field').style.display = existente ? 'none' : '';
+    });
+  }
+  selectCliente.addEventListener('change', sincronizarCliente);
+  sincronizarCliente();
+
+  var selectVeiculo = document.getElementById('veiculo-select');
+  var camposNovoVeiculo = form.querySelectorAll('[data-novo-veiculo]');
+
+  function sincronizarVeiculo() {
+    var existente = !!selectVeiculo.value;
+    camposNovoVeiculo.forEach(function (campo) {
+      campo.disabled = existente;
+      campo.closest('.field').style.display = existente ? 'none' : '';
+    });
+  }
+  selectVeiculo.addEventListener('change', sincronizarVeiculo);
+  sincronizarVeiculo();
 })();
 </script>
 {% endif %}

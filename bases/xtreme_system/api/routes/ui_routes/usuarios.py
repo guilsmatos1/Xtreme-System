@@ -190,3 +190,57 @@ def ui_usuario_perfil_alterar(
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
+
+
+@app.get("/ui/usuarios/{user_id}/editar")
+def ui_usuario_editar_form(
+    user_id: int, request: Request, session: SessionDep, _: UIAdmin
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    return templates.TemplateResponse(
+        request,
+        "_form_usuario_editar.html",
+        {"usuario": obj, "perfis": perfil.list_all(session)},
+    )
+
+
+@app.post("/ui/usuarios/{user_id}/editar")
+def ui_usuario_editar(
+    user_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    username: Annotated[str, Form()],
+    senha: Annotated[str | None, Form()] = None,
+    papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
+    ativo: Annotated[bool, Form()] = True,
+    perfil_id: Annotated[int | None, Form()] = None,
+) -> HTMLResponse:
+    obj = _found(usuario.get(session, user_id), "Usuário")
+    if (
+        username != obj.username
+        and usuario.get_by_username(session, username) is not None
+    ):
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario_editar.html",
+            {
+                "usuario": obj,
+                "perfis": perfil.list_all(session),
+                "erro": "username já existe",
+            },
+            status_code=400,
+        )
+    session.info["usuario_id"] = user.id
+    usuario.update(
+        session,
+        obj,
+        usuario.UsuarioUpdate(
+            username=username, papel=papel, ativo=ativo, perfil_id=perfil_id
+        ),
+    )
+    if senha:
+        usuario.change_password(session, obj, senha)
+    return templates.TemplateResponse(
+        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    )

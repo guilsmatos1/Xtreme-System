@@ -33,6 +33,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: pylint
+        name: pylint
+        entry: uv run pylint bases components development projects
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: xenon
         name: xenon
         entry: uv run xenon src bases components development projects

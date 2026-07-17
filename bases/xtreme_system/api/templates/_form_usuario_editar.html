@@ -1,0 +1,52 @@
+{% import "_macros.html" as ui %}
+<div class="modal" onclick="if(event.target===this)this.remove()">
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mue-title">
+    <div class="modal__head">
+      <h3 id="mue-title">Editar usuário</h3>
+      <button class="icon-btn" type="button" aria-label="Fechar"
+              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+    </div>
+    <form hx-post="/ui/usuarios/{{ usuario.id }}/editar" hx-target="#modal" hx-swap="innerHTML">
+      <div class="modal__body">
+        {% if erro %}{{ ui.alert(erro) }}{% endif %}
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Usuário</span>
+            <input class="input" name="username" value="{{ usuario.username }}" required autocomplete="off" autofocus>
+          </label>
+          <label class="field">
+            <span class="field__label">Nova senha</span>
+            <input class="input" name="senha" type="password" autocomplete="new-password" placeholder="Deixe em branco para manter">
+          </label>
+          <label class="field">
+            <span class="field__label">Papel</span>
+            <select class="select" name="papel">
+              <option value="funcionario" {{ 'selected' if usuario.papel.value == 'funcionario' }}>Funcionário</option>
+              <option value="admin" {{ 'selected' if usuario.papel.value == 'admin' }}>Admin</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Ativo</span>
+            <select class="select" name="ativo">
+              <option value="true" {{ 'selected' if usuario.ativo }}>Sim</option>
+              <option value="false" {{ 'selected' if not usuario.ativo }}>Não</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Perfil</span>
+            <select class="select" name="perfil_id">
+              <option value="">Nenhum</option>
+              {% for p in perfis %}
+              <option value="{{ p.id }}" {{ 'selected' if usuario.perfil_id == p.id }}>{{ p.nome }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -41,6 +41,13 @@ class UsuarioCreate(BaseModel):
     perfil_id: int | None = None
 
 
+class UsuarioUpdate(BaseModel):
+    username: str
+    papel: Papel = Papel.funcionario
+    ativo: bool = True
+    perfil_id: int | None = None
+
+
 class UsuarioRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -78,6 +85,24 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
     )
     crud.flush(session)
     return obj
+
+
+def update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
+    antes = _snapshot(obj)
+    obj.username = data.username
+    obj.papel = data.papel
+    obj.ativo = data.ativo
+    obj.perfil_id = data.perfil_id
+    session.flush()
+    auditar(
+        session,
+        tabela="usuario",
+        tipo_acao="UPDATE",
+        registro_id=obj.id,
+        dados_antes=antes,
+        dados_depois=_snapshot(obj),
+    )
+    crud.flush(session)
 
 
 def get(session: Session, usuario_id: int) -> Usuario | None:

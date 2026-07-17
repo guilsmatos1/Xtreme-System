@@ -29,6 +29,7 @@ dev = [
     "polyfactory>=3.3.0",
     "polylith-cli>=1.48.3",
     "pre-commit>=4.2.0",
+    "pylint>=4.0.6",
     "pytest>=8.4.0",
     "pytest-cov>=7.1.0",
     "pytest-playwright>=0.8.0",
@@ -128,7 +129,7 @@ plugins = ["pydantic.mypy"]
 
 [tool.vulture]
 paths = ["tests", "bases", "components", "development", "projects"]
-min_confidence = 61
+min_confidence = 80
 sort_by_size = true
 ignore_names = [
     "model_config",

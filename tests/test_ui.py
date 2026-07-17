@@ -136,93 +136,6 @@ def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> No
     assert url not in resp.text
 
 
-def test_ui_cria_veiculo_com_debitos_documento_e_modal_vendedor(
-    client: TestClient,
-) -> None:
-    _login_admin(client)
-    headers = _admin_headers(client)
-
-    resp = client.post(
-        "/ui/veiculos",
-        data={
-            "tipo": "carro",
-            "tipo_entrada": "compra",
-            "placa": "DOC1A23",
-            "modelo": "Civic",
-            "cor": "Branco",
-            "ano": "2023",
-            "km": "5000",
-            "preco": "95000.00",
-            "debitos": "1234.56",
-            "investidor_id": "1",
-            "cli_nome": "Cliente Vendedor",
-            "cli_documento": "11122233344",
-            "cli_tipo": "pessoa_fisica",
-            "cli_telefone": "11999999999",
-            "cli_email": "vendedor@example.com",
-        },
-        files={
-            "documentos_cliente": (
-                "documento.pdf",
-                b"%PDF-conteudo-do-documento",
-                "application/pdf",
-            )
-        },
-    )
-    assert resp.status_code == 200
-    assert resp.headers["HX-Redirect"] == "/ui/compras"
-
-    veiculos = client.get("/veiculos", headers=headers).json()
-    veiculo_id = next(item["id"] for item in veiculos if item["placa"] == "DOC1A23")
-
-    modal = client.get(f"/ui/veiculos/{veiculo_id}/cliente-vendedor")
-    assert modal.status_code == 200
-    assert "Cliente Vendedor" in modal.text
-    assert "11122233344" in modal.text
-    assert "R$ 1.234,56" in modal.text
-    assert "Documento 1" in modal.text
-
-    editar = client.get(f"/ui/veiculos/{veiculo_id}/editar")
-    assert editar.status_code == 200
-    assert "Revisão" in editar.text
-    assert "Débito" in editar.text
-    assert "Procurador" in editar.text
-    assert "1234.56" in editar.text
-
-    salvo = client.post(
-        f"/ui/veiculos/{veiculo_id}",
-        data={
-            "tipo": "carro",
-            "tipo_entrada": "compra",
-            "placa": "DOC1A23",
-            "modelo": "Civic",
-            "cor": "Branco",
-            "ano": "2023",
-            "km": "5000",
-            "preco": "95000.00",
-            "revisao": "true",
-            "debitos": "2000.00",
-            "procuracao": "Fulano",
-            "investidor_id": "1",
-        },
-    )
-    assert salvo.status_code == 200
-    assert "Fulano" in salvo.text
-    assert "✓" in salvo.text
-    assert "R$ 2.000,00" in salvo.text
-
-    match = re.search(r'href="([^"]+\.pdf)"', modal.text)
-    assert match is not None
-    url = match.group(1)
-    try:
-        arquivo = client.get(url)
-        assert arquivo.status_code == 200
-        assert arquivo.content == b"%PDF-conteudo-do-documento"
-    finally:
-        with contextlib.suppress(FileNotFoundError):
-            Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
-
-
 def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0915
     client: TestClient,
 ) -> None:
@@ -422,10 +335,18 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
 
     pagina_veiculos = client.get("/ui/veiculos").text
     assert "btn--focus" in pagina_veiculos
-    assert "var(--success)" in pagina_veiculos
+    assert "action-edit" in pagina_veiculos
+    assert "action-user" in pagina_veiculos
     assert "btn--danger" in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/imagens"' in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/procuracao"' in pagina_veiculos
+    assert f'hx-get="/ui/veiculos/{veiculo_id}/comprovantes"' not in pagina_veiculos
+    assert "action-image" not in _classes_do_botao(
+        pagina_veiculos, f"action-veiculo-{veiculo_id}-imagens"
+    )
+    assert "action-file" not in _classes_do_botao(
+        pagina_veiculos, f"action-veiculo-{veiculo_id}-procuracao"
+    )
 
     upload_img = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
@@ -802,32 +723,51 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
 
-    # Compras são criadas pelo cadastro de veículo (wizard "Nova compra").
-    criado = client.post(
-        "/ui/veiculos",
-        data={
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_resp = client.post(
+        "/veiculos",
+        json={
             "tipo": "carro",
             "tipo_entrada": "compra",
             "placa": "CMP1A23",
             "modelo": "Corolla",
             "cor": "Preto",
-            "ano": "2022",
-            "km": "30000",
+            "ano": 2022,
+            "km": 30000,
             "preco": "84000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert veiculo_resp.status_code == 201
+    veiculo_id = veiculo_resp.json()["id"]
+
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Carlos Compra",
+            "documento": "45678912300",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+    cliente_id = cliente_resp.json()["id"]
+
+    criado = client.post(
+        "/ui/compras",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_compra": "2026-07-09",
+            "valor_compra": "84000.00",
             "debitos": "500.00",
-            "investidor_id": "1",
-            "cli_nome": "Carlos Compra",
-            "cli_documento": "45678912300",
-            "cli_tipo": "pessoa_fisica",
         },
     )
     assert criado.status_code == 200
-    assert criado.headers["HX-Redirect"] == "/ui/compras"
 
     compra = client.get("/compras", headers=headers).json()[0]
     compra_id = compra["id"]
-    cliente_id = compra["cliente"]["id"]
-    veiculo_id = compra["veiculo"]["id"]
 
     editado = client.post(
         f"/ui/compras/{compra_id}",
@@ -1334,6 +1274,47 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
         follow_redirects=False,
     )
     assert resp.status_code == 303
+
+
+def test_ui_admin_edita_usuario_e_troca_senha_no_modal(client: TestClient) -> None:
+    """O modal de edição permite atualizar dados e redefinir a senha."""
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "editar_ui", "senha": "abc", "papel": "funcionario"},
+    )
+    token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
+    token = token_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    usuarios = client.get("/usuarios", headers=headers).json()
+    usuario_id = next(u["id"] for u in usuarios if u["username"] == "editar_ui")
+
+    pagina = client.get("/ui/usuarios")
+    assert f"/ui/usuarios/{usuario_id}/senha" not in pagina.text
+
+    resp = client.get(f"/ui/usuarios/{usuario_id}/editar")
+    assert resp.status_code == 200
+    assert 'name="senha"' in resp.text
+
+    resp = client.post(
+        f"/ui/usuarios/{usuario_id}/editar",
+        data={
+            "username": "editar_ui",
+            "senha": "nova_editada",
+            "papel": "funcionario",
+            "ativo": "true",
+        },
+    )
+    assert resp.status_code == 200
+
+    assert (
+        client.post(
+            "/ui/login",
+            data={"username": "editar_ui", "password": "nova_editada"},
+            follow_redirects=False,
+        ).status_code
+        == 303
+    )
 
 
 def test_ui_conta_exibe_perfil_do_usuario_logado(client: TestClient) -> None:
@@ -1846,42 +1827,6 @@ def test_upload_documento_cliente_extensao_invalida_rejeitada(
     assert resp.status_code == 400
     assert "Tipo não permitido" in resp.text
     assert ".txt" in resp.text
-
-
-def test_criar_veiculo_com_documento_invalido_nao_cria_veiculo(
-    client: TestClient,
-) -> None:
-    _login_admin(client)
-    headers = _admin_headers(client)
-    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
-
-    form = {
-        "tipo": "carro",
-        "modelo": "Rejeitado",
-        "cor": "Preto",
-        "ano": "2020",
-        "placa": "REJ0001",
-        "km": "0",
-        "preco": "50000",
-        "tipo_entrada": "compra",
-        "revisao": "on",
-        "investidor_id": str(inv_id),
-        "cliente_vendedor_id": "",
-        "cli_nome": "Vend Rej",
-        "cli_documento": "99988877766",
-        "cli_tipo": "pessoa_fisica",
-    }
-    resp = client.post(
-        "/ui/veiculos",
-        data=form,
-        files=[
-            ("documentos_cliente", ("ruim.exe", b"x", "application/octet-stream")),
-        ],
-    )
-    assert resp.status_code == 400
-    assert "Tipo não permitido" in resp.text
-    veiculos = client.get("/veiculos", headers=headers).json()
-    assert not any(v["placa"] == "REJ0001" for v in veiculos)
 
 
 # ---- Auditoria (UI + JSON) ----

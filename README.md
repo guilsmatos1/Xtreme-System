@@ -79,7 +79,7 @@ Use `make help` para a lista completa. Atalhos:
 
 ```bash
 make format      # ruff format .
-make lint        # ruff check + format --check, xenon, vulture, mypy
+make lint        # ruff check + format --check, pylint, xenon, vulture, mypy
 make test        # pytest
 make test-postgres  # pytest usando TEST_DATABASE_URL e migrations Alembic
 make watch       # rerun pytest on file change
@@ -98,6 +98,7 @@ Comandos crus equivalentes:
 ```bash
 uv run ruff format . --check    # ou `uv run ruff format .` para auto-fix
 uv run ruff check .             # ou `uv run ruff check --fix .` para auto-fix
+uv run pylint bases components development projects
 uv run mypy                     # strict mode, package xtreme_system
 uv run xenon src bases components development projects  # complexidade
 uv run vulture                  # detecção de código morto

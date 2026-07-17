@@ -144,7 +144,7 @@ def saldos(session: Session) -> dict[int, Decimal]:
         .group_by(LancamentoInvestimento.investidor_id)
         .all()
     )
-    return {investidor_id: total for investidor_id, total in rows}  # noqa: C416
+    return dict(rows)  # type: ignore[arg-type]
 
 
 def _descricao_veiculo(veiculo_obj: Veiculo) -> str:
