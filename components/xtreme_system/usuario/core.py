@@ -88,7 +88,7 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
 
 
 def update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
-    antes = _snapshot(obj)
+    antes = snapshot(obj)
     obj.username = data.username
     obj.papel = data.papel
     obj.ativo = data.ativo
@@ -100,7 +100,7 @@ def update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
         tipo_acao="UPDATE",
         registro_id=obj.id,
         dados_antes=antes,
-        dados_depois=_snapshot(obj),
+        dados_depois=snapshot(obj),
     )
     crud.flush(session)
 
