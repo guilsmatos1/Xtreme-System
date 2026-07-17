@@ -166,6 +166,44 @@ def test_confirmar_fechamento_calcula_lucro_e_lancamentos(session: Session) -> N
     assert caixa.saldo(session, participante.id) == Decimal("-7200.00")
 
 
+def test_confirmar_fechamento_distribui_residuo_de_arredondamento(
+    session: Session,
+) -> None:
+    principal, participante, venda_obj = _seed_venda(
+        session, valor_venda=Decimal("42001.00")
+    )
+    terceiro = investidor.create(session, investidor.InvestidorCreate(nome="Caio"))
+
+    fechamento = fechamento_venda.confirmar(
+        session,
+        venda_obj,
+        fechamento_venda.FechamentoVendaCreate(
+            participacoes=[
+                fechamento_venda.ParticipacaoFechamentoVendaCreate(
+                    investidor_id=principal.id, percentual=Decimal("33.33")
+                ),
+                fechamento_venda.ParticipacaoFechamentoVendaCreate(
+                    investidor_id=participante.id, percentual=Decimal("33.33")
+                ),
+                fechamento_venda.ParticipacaoFechamentoVendaCreate(
+                    investidor_id=terceiro.id, percentual=Decimal("33.34")
+                ),
+            ]
+        ),
+        usuario_id=None,
+    )
+
+    assert fechamento.lucro_liquido == Decimal("1.00")
+    assert [p.valor for p in fechamento.participacoes] == [
+        Decimal("0.33"),
+        Decimal("0.33"),
+        Decimal("0.34"),
+    ]
+    assert sum((p.valor for p in fechamento.participacoes), Decimal("0")) == Decimal(
+        "1.00"
+    )
+
+
 def test_schema_disponivel_e_cacheada_por_engine(
     session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
