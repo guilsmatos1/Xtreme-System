@@ -2,17 +2,28 @@
 {% import "_macros.html" as ui %}
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
+{% set configurado = config.evolution_api_url and config.evolution_instance %}
+
 <div class="page-head">
   <div class="page-head__title">
     <h1>Configurações</h1>
-    <p class="page-head__subtitle">Integração com WhatsApp (Evolution API)</p>
+    <p class="page-head__subtitle">Integrações do sistema</p>
   </div>
 </div>
 
 <div class="stack">
   <section class="card card--pad">
-    <h3 style="margin-bottom:var(--s-4)">Notificação de vendas</h3>
-    <p style="margin-bottom:var(--s-4);color:var(--muted)">
+    <div class="toolbar" style="margin-bottom:var(--s-3)">
+      <h3 style="display:flex;align-items:center;gap:var(--s-2)">
+        {{ ui.icon("megaphone") }} Notificação de vendas via WhatsApp
+      </h3>
+      {% if configurado %}
+      <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
+      {% else %}
+      <span class="badge badge--neutral">Não configurado</span>
+      {% endif %}
+    </div>
+    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
       Quando uma venda é criada, uma mensagem é enviada para o grupo do WhatsApp
       configurado abaixo, via uma instância do
       <a href="https://github.com/EvolutionAPI/evolution-api" target="_blank" rel="noopener">Evolution API</a>.
@@ -20,40 +31,46 @@
     {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
     {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
     <form method="post" action="/ui/configuracoes">
-      <div class="form-grid">
-        <label class="field">
-          <span class="field__label">URL do servidor</span>
-          <input class="input" name="evolution_api_url" placeholder="http://localhost:8080"
-                 value="{{ config.evolution_api_url }}" autocomplete="off">
-        </label>
-        <label class="field">
-          <span class="field__label">API key</span>
-          <input class="input" name="evolution_api_key" type="password"
-                 placeholder="•••••••• (deixe vazio para manter a chave atual)"
-                 autocomplete="off">
-        </label>
-        <label class="field">
-          <span class="field__label">Instância</span>
-          <input class="input" name="evolution_instance" placeholder="xtreme-motors"
-                 value="{{ config.evolution_instance }}" autocomplete="off">
-        </label>
-        <label class="field">
-          <span class="field__label">ID do grupo</span>
-          <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
-                 value="{{ config.evolution_group_id }}" autocomplete="off">
-        </label>
+      <div class="modal-section" style="margin-bottom:var(--s-5)">
+        <h4>Conexão</h4>
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">URL do servidor</span>
+            <input class="input" name="evolution_api_url" placeholder="http://localhost:8080"
+                   value="{{ config.evolution_api_url }}" autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field__label">API key</span>
+            <input class="input" name="evolution_api_key" type="password"
+                   placeholder="•••••••• (deixe vazio para manter a chave atual)"
+                   autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field__label">Instância</span>
+            <input class="input" name="evolution_instance" placeholder="xtreme-motors"
+                   value="{{ config.evolution_instance }}" autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field__label">ID do grupo</span>
+            <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
+                   value="{{ config.evolution_group_id }}" autocomplete="off">
+          </label>
+        </div>
+      </div>
+      <div class="modal-section">
+        <h4>Mensagem</h4>
         <label class="field field--full">
           <span class="field__label">Template da mensagem</span>
           <textarea class="input" name="mensagem_template" rows="6">{{ config.mensagem_template }}</textarea>
-          <p style="margin-top:var(--s-2);color:var(--muted)">
+          <p style="margin-top:var(--s-2);color:var(--text-secondary)">
             Placeholders disponíveis: <code>{cliente}</code>, <code>{veiculo}</code>,
             <code>{valor}</code>, <code>{forma_pagamento}</code>, <code>{parcelas}</code>,
             <code>{vendedor}</code>.
           </p>
         </label>
-        <div class="field" style="justify-content:flex-end">
-          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
-        </div>
+      </div>
+      <div class="field" style="justify-content:flex-end;flex-direction:row;margin-top:var(--s-5)">
+        <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </section>

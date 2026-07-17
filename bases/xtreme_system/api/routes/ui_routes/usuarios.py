@@ -1,10 +1,11 @@
 """HTMX routes for usuarios."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import structlog
 from fastapi import Form, Request, Response
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.route_factories import _csv_response, _sort_key
@@ -25,15 +26,32 @@ _USUARIO_SORT_FIELDS: dict[str, str] = {
 }
 
 
+def _usuarios_ctx(
+    session: Session, user: usuario.Usuario, **extra: Any
+) -> dict[str, Any]:
+    return {
+        "user": user,
+        "usuarios": usuario.list_all(session),
+        "perfis": perfil.list_all(session),
+        "sort": "",
+        "order": "asc",
+        **extra,
+    }
+
+
 @app.get("/ui/usuarios")
 def ui_usuarios(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
+    q: str = "",
     sort: str = "",
     order: str = "asc",
 ) -> HTMLResponse:
     usuarios = usuario.list_all(session)
+    if q:
+        termo = q.lower()
+        usuarios = [u for u in usuarios if termo in u.username.lower()]
     field = _USUARIO_SORT_FIELDS.get(sort)
     if field:
         usuarios = sorted(
@@ -41,17 +59,17 @@ def ui_usuarios(
             key=lambda u: _sort_key(getattr(u, field)),
             reverse=order == "desc",
         )
-    return templates.TemplateResponse(
-        request,
-        "usuarios.html",
-        {
-            "user": user,
-            "usuarios": usuarios,
-            "perfis": perfil.list_all(session),
-            "sort": sort,
-            "order": order,
-        },
-    )
+    ctx = {
+        "user": user,
+        "usuarios": usuarios,
+        "perfis": perfil.list_all(session),
+        "sort": sort,
+        "order": order,
+        "q": q,
+    }
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request, "_linhas_usuarios.html", ctx)
+    return templates.TemplateResponse(request, "usuarios.html", ctx)
 
 
 @app.get("/ui/usuarios/exportar")
@@ -67,6 +85,13 @@ def ui_usuarios_exportar(session: SessionDep, _: UIAdmin) -> Response:
     )
 
 
+@app.get("/ui/usuarios/novo")
+def ui_usuario_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request, "_form_usuario.html", {"perfis": perfil.list_all(session)}
+    )
+
+
 @app.post("/ui/usuarios")
 def ui_usuario_criar(
     request: Request,
@@ -77,27 +102,22 @@ def ui_usuario_criar(
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
-    erro = None
     if usuario.get_by_username(session, username) is not None:
-        erro = "username já existe"
-    else:
-        session.info["usuario_id"] = user.id
-        usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username=username, senha=senha, papel=papel, perfil_id=perfil_id
-            ),
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario.html",
+            {"perfis": perfil.list_all(session), "erro": "username já existe"},
+            status_code=400,
         )
+    session.info["usuario_id"] = user.id
+    usuario.create(
+        session,
+        usuario.UsuarioCreate(
+            username=username, senha=senha, papel=papel, perfil_id=perfil_id
+        ),
+    )
     return templates.TemplateResponse(
-        request,
-        "usuarios.html",
-        {
-            "user": user,
-            "usuarios": usuario.list_all(session),
-            "perfis": perfil.list_all(session),
-            "erro": erro,
-        },
-        status_code=400 if erro else 200,
+        request, "_usuarios_ok.html", _usuarios_ctx(session, user)
     )
 
 
@@ -109,27 +129,14 @@ def ui_usuario_excluir(
         return templates.TemplateResponse(
             request,
             "usuarios.html",
-            {
-                "user": user,
-                "usuarios": usuario.list_all(session),
-                "perfis": perfil.list_all(session),
-                "erro": "não pode excluir a si mesmo",
-            },
+            _usuarios_ctx(session, user, erro="não pode excluir a si mesmo"),
             status_code=400,
         )
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = user.id
     usuario.delete(session, obj)
     return templates.TemplateResponse(
-        request,
-        "usuarios.html",
-        {
-            "user": user,
-            "usuarios": usuario.list_all(session),
-            "perfis": perfil.list_all(session),
-            "sort": "",
-            "order": "asc",
-        },
+        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
 
 
@@ -153,15 +160,7 @@ def ui_usuario_senha_alterar(
     session.info["usuario_id"] = user.id
     usuario.change_password(session, obj, nova_senha)
     return templates.TemplateResponse(
-        request,
-        "usuarios.html",
-        {
-            "user": user,
-            "usuarios": usuario.list_all(session),
-            "perfis": perfil.list_all(session),
-            "sort": "",
-            "order": "asc",
-        },
+        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
 
 
@@ -189,13 +188,5 @@ def ui_usuario_perfil_alterar(
     session.info["usuario_id"] = user.id
     usuario.set_perfil(session, obj, perfil_id)
     return templates.TemplateResponse(
-        request,
-        "usuarios.html",
-        {
-            "user": user,
-            "usuarios": usuario.list_all(session),
-            "perfis": perfil.list_all(session),
-            "sort": "",
-            "order": "asc",
-        },
+        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )

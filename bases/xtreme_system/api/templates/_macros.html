@@ -66,6 +66,18 @@
    class="sort-link{% if is_active %} sort-link--active{% endif %}">{{ label }}{{ arrow }}</a>
 {%- endmacro %}
 
+{% macro acao_badge(tipo_acao) -%}
+{%- if tipo_acao == "CREATE" -%}
+  <span class="badge badge--success">Criação</span>
+{%- elif tipo_acao == "UPDATE" -%}
+  <span class="badge badge--warning">Alteração</span>
+{%- elif tipo_acao == "DELETE" -%}
+  <span class="badge badge--danger">Exclusão</span>
+{%- else -%}
+  <span class="badge">{{ tipo_acao }}</span>
+{%- endif -%}
+{%- endmacro %}
+
 {% macro papel_badge(papel) -%}
 {%- if papel == Papel.admin -%}
   <span class="badge badge--accent badge--plain">Admin</span>

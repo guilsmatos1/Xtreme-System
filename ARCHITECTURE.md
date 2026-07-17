@@ -119,6 +119,7 @@ para autenticação (httpOnly, mesmo segredo JWT):
 | `/ui/vendas/{id}/fechamento` | Modal HTMX de fechamento financeiro |
 | `/ui/fechamentos-vendas/{id}` | Modal HTMX de detalhe do fechamento |
 | `/ui/usuarios` | Gestão de usuários |
+| `/ui/conta` | Perfil do usuário logado + troca da própria senha |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
 
 Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.

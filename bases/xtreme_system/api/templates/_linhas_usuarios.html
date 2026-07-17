@@ -1,0 +1,51 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+{% for u in usuarios %}
+<tr id="usuario-{{ u.id }}">
+  <td class="cell-mono">{{ u.id }}</td>
+  <td class="cell-strong">
+    <span style="display:inline-flex;align-items:center;gap:var(--s-2)">
+      <span class="avatar" style="width:24px;height:24px;font-size:.7rem">{{ u.username[0] | upper }}</span>
+      {{ u.username }}
+    </span>
+  </td>
+  <td>{{ ui.papel_badge(u.papel) }}</td>
+  <td>{{ u.perfil.nome if u.perfil else '-' }}</td>
+  <td>
+    {% if u.ativo %}<span class="badge badge--success">Ativo</span>
+    {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
+  </td>
+  <td class="col-actions">
+    <div class="row-actions">
+      <button class="btn btn--ghost btn--sm"
+              hx-get="/ui/usuarios/{{ u.id }}/perfil"
+              hx-target="#perfil-form-{{ u.id }}"
+              title="Alterar perfil" aria-label="Alterar perfil de {{ u.username }}">
+        {{ ui.icon("tag") }}
+      </button>
+      <button class="btn btn--ghost btn--sm"
+              hx-get="/ui/usuarios/{{ u.id }}/senha"
+              hx-target="#senha-form-{{ u.id }}"
+              title="Alterar senha" aria-label="Alterar senha de {{ u.username }}">
+        {{ ui.icon("edit") }}
+      </button>
+      {% if u.id != user.id %}
+      <button class="btn btn--ghost btn--sm btn--danger"
+              hx-post="/ui/usuarios/{{ u.id }}/excluir"
+              hx-confirm="Excluir {{ u.username }}?"
+              hx-target="#linhas" hx-swap="outerHTML"
+              title="Excluir usuário" aria-label="Excluir {{ u.username }}">
+        {{ ui.icon("trash") }}
+      </button>
+      {% endif %}
+    </div>
+    <div id="perfil-form-{{ u.id }}"></div>
+    <div id="senha-form-{{ u.id }}"></div>
+  </td>
+</tr>
+{% else %}
+<tr class="empty-row"><td colspan="6">
+  {% call ui.empty("users", "Nenhum usuário encontrado", "Ajuste a busca ou cadastre um novo usuário para começar.") %}{% endcall %}
+</td></tr>
+{% endfor %}
+</tbody>

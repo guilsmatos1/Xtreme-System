@@ -1,7 +1,8 @@
-"""HTMX routes for conta do usuario logado."""
+"""HTMX routes for conta (perfil do usuário logado)."""
 
 from typing import Annotated
 
+import structlog
 from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 
@@ -10,6 +11,10 @@ from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.usuario import core as usuario
 
+logger = structlog.get_logger(__name__)
+
+# ---- Conta (autoatendimento, qualquer usuário autenticado) ----
+
 
 @app.get("/ui/conta")
 def ui_conta(request: Request, user: UIUser) -> HTMLResponse:
@@ -17,7 +22,7 @@ def ui_conta(request: Request, user: UIUser) -> HTMLResponse:
 
 
 @app.post("/ui/conta/senha")
-def ui_conta_alterar_senha(
+def ui_conta_senha_alterar(
     request: Request,
     session: SessionDep,
     user: UIUser,
@@ -25,24 +30,22 @@ def ui_conta_alterar_senha(
     nova_senha: Annotated[str, Form()],
     confirmar_senha: Annotated[str, Form()],
 ) -> HTMLResponse:
-    erro = None
     if not auth.verify_password(senha_atual, user.senha_hash):
-        erro = "Senha atual invalida."
-    elif not nova_senha:
-        erro = "Nova senha obrigatoria."
-    elif nova_senha != confirmar_senha:
-        erro = "A confirmacao da senha nao confere."
-    else:
-        session.info["usuario_id"] = user.id
-        usuario.change_password(session, user, nova_senha)
-
+        return templates.TemplateResponse(
+            request,
+            "conta.html",
+            {"user": user, "erro": "Senha atual incorreta"},
+            status_code=400,
+        )
+    if nova_senha != confirmar_senha:
+        return templates.TemplateResponse(
+            request,
+            "conta.html",
+            {"user": user, "erro": "A confirmação não coincide com a nova senha"},
+            status_code=400,
+        )
+    session.info["usuario_id"] = user.id
+    usuario.change_password(session, user, nova_senha)
     return templates.TemplateResponse(
-        request,
-        "conta.html",
-        {
-            "user": user,
-            "erro": erro,
-            "sucesso": None if erro else "Senha alterada.",
-        },
-        status_code=400 if erro else 200,
+        request, "conta.html", {"user": user, "sucesso": "Senha alterada com sucesso."}
     )

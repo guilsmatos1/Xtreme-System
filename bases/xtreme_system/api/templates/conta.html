@@ -1,31 +1,43 @@
 {% extends "base.html" %}
 {% import "_macros.html" as ui %}
-{% block titulo %}Minha Conta{% endblock %}
+{% block titulo %}Minha conta{% endblock %}
 {% block content %}
 <div class="page-head">
   <div class="page-head__title">
     <h1>Minha conta</h1>
-    <p class="page-head__subtitle">Dados do usuario logado e alteracao de senha</p>
+    <p class="page-head__subtitle">Seus dados de acesso ao sistema</p>
   </div>
 </div>
 
 <div class="stack">
   <section class="card card--pad">
-    <h3 style="margin-bottom:var(--s-4)">Dados de acesso</h3>
-    <div class="form-grid">
-      <label class="field">
-        <span class="field__label">Usuario</span>
-        <input class="input" value="{{ user.username }}" disabled>
-      </label>
-      <label class="field">
-        <span class="field__label">Papel</span>
-        <input class="input" value="{{ user.papel.value }}" disabled>
-      </label>
-      <label class="field field--full">
-        <span class="field__label">Perfil</span>
-        <input class="input" value="{{ user.perfil.nome if user.perfil else 'Nenhum' }}" disabled>
-      </label>
+    <div style="display:flex;align-items:center;gap:var(--s-4)">
+      <span class="avatar" style="width:48px;height:48px;font-size:1.1rem">{{ user.username[0] | upper }}</span>
+      <div>
+        <h3 style="margin-bottom:2px">{{ user.username }}</h3>
+        <div style="display:flex;align-items:center;gap:var(--s-2)">
+          {{ ui.papel_badge(user.papel) }}
+          {% if user.perfil %}<span class="badge badge--plain">{{ user.perfil.nome }}</span>{% endif %}
+        </div>
+      </div>
     </div>
+    {% if user.perfil %}
+    <div class="modal-section" style="margin-top:var(--s-5)">
+      <h4>Páginas com acesso</h4>
+      <div style="display:flex;gap:var(--s-2);flex-wrap:wrap">
+        {% for chave in user.perfil.paginas %}
+        <span class="badge badge--plain">{{ paginas_labels.get(chave, chave) }}</span>
+        {% else %}
+        <span class="page-head__subtitle">Nenhuma página liberada</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% elif not is_admin(user) %}
+    <div class="modal-section" style="margin-top:var(--s-5)">
+      <h4>Páginas com acesso</h4>
+      <span class="page-head__subtitle">Nenhum perfil de acesso atribuído</span>
+    </div>
+    {% endif %}
   </section>
 
   <section class="card card--pad">
@@ -34,20 +46,20 @@
     {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
     <form method="post" action="/ui/conta/senha">
       <div class="form-grid">
-        <label class="field">
+        <label class="field field--full">
           <span class="field__label">Senha atual</span>
-          <input class="input" name="senha_atual" type="password" required autocomplete="current-password">
+          <input class="input" name="senha_atual" type="password" placeholder="••••••••" required autocomplete="current-password">
         </label>
         <label class="field">
           <span class="field__label">Nova senha</span>
-          <input class="input" name="nova_senha" type="password" required autocomplete="new-password">
+          <input class="input" name="nova_senha" type="password" placeholder="••••••••" required autocomplete="new-password">
         </label>
         <label class="field">
           <span class="field__label">Confirmar nova senha</span>
-          <input class="input" name="confirmar_senha" type="password" required autocomplete="new-password">
+          <input class="input" name="confirmar_senha" type="password" placeholder="••••••••" required autocomplete="new-password">
         </label>
         <div class="field" style="justify-content:flex-end">
-          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Alterar senha</button>
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
         </div>
       </div>
     </form>

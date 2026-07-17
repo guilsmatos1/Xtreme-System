@@ -5,6 +5,30 @@
 {% set tem_anterior = offset > 0 %}
 {% set tem_proximo = proximo_offset < total %}
 {% set sep = '&' if filtros_qs else '' %}
+
+<section class="stats" aria-label="Resumo da auditoria">
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("file") }} Registros filtrados</div>
+    <div class="stat__value cell-num">{{ total }}</div>
+    <div class="stat__hint">de acordo com os filtros atuais</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("inbox") }} Nesta página</div>
+    <div class="stat__value cell-num">{{ registros | length }}</div>
+    <div class="stat__hint">exibidos abaixo</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("users") }} Usuários monitorados</div>
+    <div class="stat__value cell-num">{{ usuarios | length }}</div>
+    <div class="stat__hint">com ações registradas</div>
+  </article>
+  <article class="card stat">
+    <div class="stat__label">{{ ui.icon("tag") }} Tabelas monitoradas</div>
+    <div class="stat__value cell-num">{{ tabelas | length }}</div>
+    <div class="stat__hint">com auditoria ativa</div>
+  </article>
+</section>
+
 <div class="table-wrap">
   <table>
     <thead><tr>
@@ -14,7 +38,7 @@
       <th>Tabela</th>
       <th>Ação</th>
       <th>Registro</th>
-      <th style="width:1%"></th>
+      <th class="col-actions"><span class="sr-only">Ações</span></th>
     </tr></thead>
     <tbody>
       {% for r in registros %}
@@ -23,11 +47,12 @@
         <td class="cell-mono">{{ r.criado_em.strftime('%d/%m/%Y %H:%M') if r.criado_em else '-' }}</td>
         <td>{{ nomes_usuarios.get(r.usuario_id, '—') if r.usuario_id else '—' }}</td>
         <td class="cell-strong">{{ r.tabela }}</td>
-        <td>{{ r.tipo_acao }}</td>
+        <td>{{ ui.acao_badge(r.tipo_acao) }}</td>
         <td class="cell-mono">{{ r.registro_id if r.registro_id is not none else '—' }}</td>
-        <td>
-          <button class="btn btn--ghost" style="padding:var(--s-2)"
-                  hx-get="/ui/auditoria/{{ r.id }}/detalhe" hx-target="#modal" title="Ver detalhes">
+        <td class="col-actions">
+          <button class="btn btn--ghost btn--sm"
+                  hx-get="/ui/auditoria/{{ r.id }}/detalhe" hx-target="#modal" hx-swap="innerHTML"
+                  title="Ver detalhes" aria-label="Ver detalhes do registro {{ r.id }}">
             {{ ui.icon("file") }}
           </button>
         </td>
