@@ -1,6 +1,6 @@
 """Health check: GET /health sem auth, pingando o banco."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, cast
 from unittest.mock import MagicMock
 
@@ -9,22 +9,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.database.core import get_session
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
-    engine = create_test_engine()
-    with Session(engine) as session:
-
-        def override() -> Iterator[Session]:
-            yield session
-
-        app.dependency_overrides[get_session] = override
-        yield TestClient(app)
-        app.dependency_overrides.clear()
+def client(make_client: Callable[..., TestClient]) -> TestClient:
+    return make_client()
 
 
 def test_health_retorna_ok_sem_auth(client: TestClient) -> None:

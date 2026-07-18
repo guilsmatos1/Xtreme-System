@@ -31,44 +31,30 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
 
+def _seed_investidor_e_veiculo(session: Session) -> None:
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor A"))
+    veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Onix",
+            cor="Prata",
+            ano=2024,
+            placa="ABC1234",
+            km=12000,
+            preco=85000,
+            investidor_id=inv.id,
+        ),
+    )
+
+
 @pytest.fixture
-def client() -> Iterator[TestClient]:
-    engine = create_test_engine()
-    with Session(engine) as session:
-        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
-        session.add(u)
-        session.flush()
-        session.info["usuario_id"] = u.id
-        usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username="admin", senha="senha", papel=usuario.Papel.admin
-            ),
-        )
-        inv = investidor.create(
-            session, investidor.InvestidorCreate(nome="Investidor A")
-        )
-        veiculo.create(
-            session,
-            veiculo.VeiculoCreate(
-                tipo=veiculo.TipoVeiculo.carro,
-                modelo="Onix",
-                cor="Prata",
-                ano=2024,
-                placa="ABC1234",
-                km=12000,
-                preco=85000,
-                investidor_id=inv.id,
-            ),
-        )
-
-        def override() -> Iterator[Session]:
-            yield session
-            _invoke_post_commit(session)
-
-        app.dependency_overrides[get_session] = override
-        yield TestClient(app)
-        app.dependency_overrides.clear()
+def client(make_client: Callable[..., TestClient]) -> TestClient:
+    return make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=_seed_investidor_e_veiculo,
+    )
 
 
 def test_ui_veiculos_sem_cookie_redireciona_login() -> None:

@@ -1,44 +1,21 @@
 """API vendas: CRUD via TestClient."""
 
-from collections.abc import Iterator
+from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
-from tests.database import create_test_engine
-from xtreme_system.api.core import app
-from xtreme_system.database.core import get_session
 from xtreme_system.usuario import core as usuario
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
-    engine = create_test_engine()
-    with Session(engine) as session:
-        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
-        session.add(u)
-        session.flush()
-        session.info["usuario_id"] = u.id
-        usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username="admin", senha="senha", papel=usuario.Papel.admin
-            ),
-        )
-        usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username="vendedor", senha="senha", papel=usuario.Papel.funcionario
-            ),
-        )
-
-        def override() -> Iterator[Session]:
-            yield session
-
-        app.dependency_overrides[get_session] = override
-        yield TestClient(app)
-        app.dependency_overrides.clear()
+def client(make_client: Callable[..., TestClient]) -> TestClient:
+    return make_client(
+        usuarios=[
+            ("admin", usuario.Papel.admin),
+            ("vendedor", usuario.Papel.funcionario),
+        ]
+    )
 
 
 def _token(client: TestClient, username: str) -> str:

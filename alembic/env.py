@@ -37,7 +37,12 @@ from xtreme_system.venda import core as _venda  # noqa: F401
 from xtreme_system.whatsapp import core as _whatsapp  # noqa: F401
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# ConfigParser (usado por Config.set_main_option) trata "%" como início de
+# interpolação; URLs com querystring percent-encoded (ex.: "options=-c%20...")
+# quebram sem escapar.
+config.set_main_option(
+    "sqlalchemy.url", get_settings().database_url.replace("%", "%%")
+)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

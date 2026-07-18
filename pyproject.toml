@@ -35,6 +35,7 @@ dev = [
     "pytest-playwright>=0.8.0",
     "pytest-randomly>=3.16.0",
     "pytest-watch>=4.2.0",
+    "pytest-xdist>=3.8.0",
     "result>=0.17",
     "ruff>=0.12.0",
     "vulture>=2.14",

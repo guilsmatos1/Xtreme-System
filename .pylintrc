@@ -5,11 +5,15 @@ persistent=no
 
 [MESSAGES CONTROL]
 disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
     assignment-from-no-return,
     broad-exception-caught,
     cyclic-import,
     import-outside-toplevel,
     invalid-name,
+    line-too-long,
     not-callable,
     unsubscriptable-object,
     too-many-arguments,

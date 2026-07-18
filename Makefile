@@ -37,10 +37,10 @@ lint:
 	uv run lint-imports
 
 test:
-	$(PYTHON) -m pytest tests/ -q
+	$(PYTHON) -m pytest tests/ -q -n auto
 
 test-postgres:
-	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/ -q
+	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/ -q -n auto
 
 test-e2e:
 	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium --headed -p pytest_playwright
@@ -52,7 +52,7 @@ watch:
 	uv run ptw --runner "python -m pytest tests/ -q"
 
 coverage:
-	$(PYTHON) -m pytest tests/ -q --cov=xtreme_system --cov-report=term-missing --cov-fail-under=75
+	$(PYTHON) -m pytest tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing --cov-fail-under=75
 
 ci: lint coverage
 

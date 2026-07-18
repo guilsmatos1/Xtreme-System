@@ -6,6 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from fastapi.testclient import TestClient
@@ -32,7 +33,9 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 
 
-def test_register_ui_simples_aceita_templates_injetado(tmp_path: Path) -> None:
+def test_register_ui_simples_aceita_templates_injetado(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     for nome, conteudo in {
         "simples.html": "<p>{{ itens | length }} itens</p>",
         "_linhas_simples.html": "<p>linhas</p>",
@@ -43,7 +46,9 @@ def test_register_ui_simples_aceita_templates_injetado(tmp_path: Path) -> None:
     stub_templates = Jinja2Templates(directory=tmp_path)
 
     engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
     session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
     u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
     session.add(u)
     session.flush()
@@ -103,7 +108,7 @@ class _FailAfterWriteModule:
 
 
 def test_register_ui_simples_rolls_back_when_write_fails_late(
-    tmp_path: Path,
+    tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
     for nome, conteudo in {
         "simples.html": "<p>{{ itens | length }} itens</p>",
@@ -115,7 +120,9 @@ def test_register_ui_simples_rolls_back_when_write_fails_late(
     stub_templates = Jinja2Templates(directory=tmp_path)
 
     engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
     session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
     u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
     session.add(u)
     session.flush()
@@ -358,6 +365,7 @@ class _ConflictModule:
 def _stub_crud_client(
     tmp_path: Path,
     module: _ConflictModule,
+    request: pytest.FixtureRequest,
     *,
     before_create: Callable[[Session, Any], None] | None = None,
 ) -> TestClient:
@@ -372,7 +380,9 @@ def _stub_crud_client(
 
     templates = Jinja2Templates(directory=tmp_path)
     engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
     session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
     u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
     session.add(u)
     session.flush()
@@ -410,8 +420,10 @@ def _stub_crud_client(
     return TestClient(app)
 
 
-def test_crud_ui_create_integrity_error_retorna_409(tmp_path: Path) -> None:
-    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="create"))
+def test_crud_ui_create_integrity_error_retorna_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="create"), request)
 
     resp = client.post("/ui/stubs", data={"nome": "Duplicado"})
 
@@ -420,7 +432,7 @@ def test_crud_ui_create_integrity_error_retorna_409(tmp_path: Path) -> None:
 
 
 def test_crud_ui_create_integrity_error_before_create_maintains_session(
-    tmp_path: Path,
+    tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
     def fail_before_create(_session: Session, _data: _StubSchema) -> None:
         raise IntegrityError("", {}, Exception())
@@ -428,6 +440,7 @@ def test_crud_ui_create_integrity_error_before_create_maintains_session(
     client = _stub_crud_client(
         tmp_path,
         _ConflictModule(fail_on="none"),
+        request,
         before_create=fail_before_create,
     )
 
@@ -438,8 +451,10 @@ def test_crud_ui_create_integrity_error_before_create_maintains_session(
     assert client.get("/ui/stubs").status_code == 200
 
 
-def test_crud_ui_update_integrity_error_retorna_409(tmp_path: Path) -> None:
-    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="update"))
+def test_crud_ui_update_integrity_error_retorna_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="update"), request)
 
     resp = client.post("/ui/stubs/1", data={"nome": "Duplicado"})
 
@@ -447,8 +462,10 @@ def test_crud_ui_update_integrity_error_retorna_409(tmp_path: Path) -> None:
     assert "Stub já existe" in resp.text
 
 
-def test_crud_ui_delete_integrity_error_retorna_409(tmp_path: Path) -> None:
-    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="delete"))
+def test_crud_ui_delete_integrity_error_retorna_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="delete"), request)
 
     resp = client.post("/ui/stubs/1/excluir")
 
