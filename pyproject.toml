@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.5",
-    "fastapi>=0.139.0",
+    "fastapi>=0.139.2",
     "fpdf2>=2.8.5",
     "jinja2>=3.1.6",
     "psycopg[binary]>=3.3.4",
@@ -17,7 +17,7 @@ dependencies = [
     "python-multipart>=0.0.32",
     "sqlalchemy>=2.0",
     "structlog>=26.1.0",
-    "uvicorn[standard]>=0.50.2",
+    "uvicorn[standard]>=0.51.0",
 ]
 
 [dependency-groups]
@@ -25,7 +25,7 @@ dev = [
     "deptry>=0.25.1",
     "httpx>=0.28.1",
     "import-linter>=2.3",
-    "mypy>=1.17.0",
+    "mypy>=2.3.0",
     "polyfactory>=3.3.0",
     "polylith-cli>=1.48.3",
     "pre-commit>=4.2.0",
@@ -37,7 +37,7 @@ dev = [
     "pytest-watch>=4.2.0",
     "pytest-xdist>=3.8.0",
     "result>=0.17",
-    "ruff>=0.12.0",
+    "ruff>=0.15.22",
     "vulture>=2.14",
     "xenon>=0.9.3",
 ]
