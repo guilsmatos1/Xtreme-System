@@ -75,6 +75,20 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: polylith-check
+        name: polylith check (warn on orphan bricks)
+        entry: bash -c 'uv run poly check --no-verbose 2>&1 | grep -E "^(✔|🤔)" || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: polylith-diff
+        name: polylith diff (show impact)
+        entry: bash -c 'uv run poly diff 2>&1 | grep -v "^fatal:" || echo "✔ No changes or fresh repo"'
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: pytest
         name: pytest
         entry: uv run python -m pytest tests/ -q
