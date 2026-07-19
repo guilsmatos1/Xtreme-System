@@ -62,3 +62,18 @@ def test_requests_gerais_bloqueiam_apos_limite(client: TestClient) -> None:
     resp = client.get("/investidores")
     assert resp.status_code == 429
     assert "Retry-After" in resp.headers
+
+
+def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
+    ip_a = {"X-Forwarded-For": "203.0.113.10"}
+    ip_b = {"X-Forwarded-For": "203.0.113.11"}
+
+    for _ in range(_GERAL_LIMIT):
+        resp = client.get("/investidores", headers=ip_a)
+        assert resp.status_code == 401
+
+    resp = client.get("/investidores", headers=ip_a)
+    assert resp.status_code == 429
+
+    resp = client.get("/investidores", headers=ip_b)
+    assert resp.status_code == 401
