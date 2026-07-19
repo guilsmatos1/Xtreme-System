@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import Depends, Form, HTTPException
+from fastapi import Depends, Form, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -20,9 +20,10 @@ from xtreme_system.api.routes.workflows import (
     validate_veiculo_disponivel_para_venda,
     validate_veiculo_fks,
 )
-from xtreme_system.api.setup import app
+from xtreme_system.api.setup import _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS, app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
+from xtreme_system.auth.rate_limit import allow_login_attempt
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -54,8 +55,20 @@ def health(session: SessionDep) -> JSONResponse:
 
 @app.post("/login", response_model=auth.Token)
 def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep
+    request: Request,
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: SessionDep,
 ) -> auth.Token:
+    client_ip = request.client.host if request.client else "desconhecido"
+    retry_after = allow_login_attempt(
+        session, client_ip, _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
+    )
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas tentativas de login. Tente novamente em instantes.",
+            headers={"Retry-After": str(int(retry_after))},
+        )
     user = usuario.get_by_username(session, form.username)
     if (
         user is None

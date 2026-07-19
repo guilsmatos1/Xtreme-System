@@ -1,0 +1,90 @@
+"""Rate limiting helpers for login attempts."""
+
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import Column, DateTime, Integer, String, Table, and_, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.orm import Session
+
+from xtreme_system.database.core import Base
+
+login_attempt_rate_limit = Table(
+    "login_attempt_rate_limit",
+    Base.metadata,
+    Column("scope", String(32), primary_key=True),
+    Column("bucket", String(255), primary_key=True),
+    Column("window_started_at", DateTime(), nullable=False),
+    Column("hit_count", Integer, nullable=False),
+)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def allow_login_attempt(
+    session: Session,
+    bucket: str,
+    limit: int,
+    window_seconds: float,
+) -> float | None:
+    now = _utcnow()
+    window = timedelta(seconds=window_seconds)
+    cutoff = now - window
+    table = login_attempt_rate_limit
+    predicate = and_(table.c.scope == "login", table.c.bucket == bucket)
+
+    bind = session.get_bind()
+    if bind is None:
+        msg = "Session sem bind para rate limit"
+        raise RuntimeError(msg)
+    insert_stmt = (
+        sqlite_insert(table) if bind.dialect.name == "sqlite" else pg_insert(table)
+    )
+
+    for _ in range(2):
+        with bind.begin() as connection:
+            updated = connection.execute(
+                update(table)
+                .where(predicate)
+                .where(table.c.window_started_at > cutoff)
+                .where(table.c.hit_count < limit)
+                .values(hit_count=table.c.hit_count + 1)
+            ).rowcount
+            if updated:
+                return None
+
+            reset = connection.execute(
+                update(table)
+                .where(predicate)
+                .where(table.c.window_started_at <= cutoff)
+                .values(window_started_at=now, hit_count=1)
+            ).rowcount
+            if reset:
+                return None
+
+            inserted = connection.execute(
+                insert_stmt.values(
+                    scope="login",
+                    bucket=bucket,
+                    window_started_at=now,
+                    hit_count=1,
+                ).on_conflict_do_nothing(index_elements=["scope", "bucket"])
+            ).rowcount
+            if inserted:
+                return None
+
+    with bind.begin() as connection:
+        row = (
+            connection.execute(
+                select(table.c.window_started_at, table.c.hit_count).where(predicate)
+            )
+            .mappings()
+            .one_or_none()
+        )
+    if row is None:
+        return 0.0
+
+    retry_after = (row["window_started_at"] + window - now).total_seconds()
+    return max(retry_after, 0.0)

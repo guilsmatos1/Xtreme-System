@@ -23,6 +23,22 @@ def test_login_bloqueia_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
+def test_login_rate_limit_nao_vaza_entre_clients(
+    make_client: Callable[..., TestClient],
+) -> None:
+    with make_client() as client1:
+        for _ in range(_LOGIN_LIMIT):
+            resp = client1.post("/login", data={"username": "x", "password": "x"})
+            assert resp.status_code == 401
+
+        resp = client1.post("/login", data={"username": "x", "password": "x"})
+        assert resp.status_code == 429
+
+    with make_client() as client2:
+        resp = client2.post("/login", data={"username": "x", "password": "x"})
+        assert resp.status_code == 401
+
+
 def test_ui_login_bloqueia_apos_limite_e_retorna_html(client: TestClient) -> None:
     for _ in range(_LOGIN_LIMIT):
         client.post("/ui/login", data={"username": "x", "password": "x"})
