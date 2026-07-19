@@ -180,7 +180,13 @@ def _excluir_veiculo(
     erro = None
     status_code = 200
     try:
-        delete_with_hook(veiculo, session, obj, caixa.deletar_lancamento_veiculo)
+        delete_with_hook(
+            veiculo,
+            session,
+            obj,
+            caixa.deletar_lancamento_veiculo,
+            user.id,
+        )
     except IntegrityError:
         session.rollback()
         erro = delete_conflict_detail("Veículo")
@@ -257,12 +263,17 @@ async def _atualizar_veiculo(
                 return _erro_veiculo(request, session, user, "Débitos inválidos")
 
     try:
-        atualizado = veiculo.update(session, obj, data)
+        atualizado = veiculo.update(session, obj, data, user.id)
         compra_atual = compra.get_latest_by_veiculo(session, atualizado.id)
         if compra_atual is not None and perfil.pode_ver_campo(
             user, "veiculos", "debitos"
         ):
-            compra.update(session, compra_atual, compra.CompraUpdate(debitos=debitos))
+            compra.update(
+                session,
+                compra_atual,
+                compra.CompraUpdate(debitos=debitos),
+                user.id,
+            )
         caixa.sincronizar_lancamento_veiculo(session, atualizado)
     except IntegrityError:
         session.rollback()

@@ -47,15 +47,22 @@ def get(session: Session, documento_id: int) -> DocumentoVeiculo | None:
     return crud.get(session, DocumentoVeiculo, documento_id)
 
 
-def create(session: Session, data: DocumentoVeiculoCreate) -> DocumentoVeiculo:
-    return crud.create(session, DocumentoVeiculo, data)
+def create(
+    session: Session, data: DocumentoVeiculoCreate, actor_id: int | None = None
+) -> DocumentoVeiculo:
+    return crud.create(session, DocumentoVeiculo, data, actor_id)
 
 
 def update(
-    session: Session, obj: DocumentoVeiculo, data: DocumentoVeiculoUpdate
+    session: Session,
+    obj: DocumentoVeiculo,
+    data: DocumentoVeiculoUpdate,
+    actor_id: int | None = None,
 ) -> DocumentoVeiculo:
-    return crud.update(session, obj, data)
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: DocumentoVeiculo) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: DocumentoVeiculo, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)

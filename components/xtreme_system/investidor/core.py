@@ -37,13 +37,20 @@ def get(session: Session, investidor_id: int) -> Investidor | None:
     return crud.get(session, Investidor, investidor_id)
 
 
-def create(session: Session, data: InvestidorCreate) -> Investidor:
-    return crud.create(session, Investidor, data)
+def create(
+    session: Session, data: InvestidorCreate, actor_id: int | None = None
+) -> Investidor:
+    return crud.create(session, Investidor, data, actor_id)
 
 
-def update(session: Session, obj: Investidor, data: InvestidorUpdate) -> Investidor:
-    return crud.update(session, obj, data)
+def update(
+    session: Session,
+    obj: Investidor,
+    data: InvestidorUpdate,
+    actor_id: int | None = None,
+) -> Investidor:
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: Investidor) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Investidor, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)

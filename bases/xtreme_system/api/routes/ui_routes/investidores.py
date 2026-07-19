@@ -197,7 +197,9 @@ async def ui_investidor_criar(
             status_code=400,
         )
     try:
-        obj = investidor.create(session, investidor.InvestidorCreate(nome=nome))
+        obj = investidor.create(
+            session, investidor.InvestidorCreate(nome=nome), user.id
+        )
     except IntegrityError:
         session.rollback()
         return templates.TemplateResponse(
@@ -226,7 +228,7 @@ async def ui_investidor_criar(
             )
         else:
             if aporte is not None:
-                caixa.create(session, aporte)
+                caixa.create(session, aporte, user.id)
     return templates.TemplateResponse(
         request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
     )
@@ -247,7 +249,7 @@ async def ui_investidor_atualizar(
             status_code=400,
         )
     try:
-        investidor.update(session, obj, investidor.InvestidorUpdate(nome=nome))
+        investidor.update(session, obj, investidor.InvestidorUpdate(nome=nome), user.id)
     except IntegrityError:
         session.rollback()
         return templates.TemplateResponse(
@@ -278,7 +280,7 @@ def ui_investidor_excluir(
             },
             status_code=409,
         )
-    investidor.delete(session, obj)
+    investidor.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request,
         "_linhas_investidores.html",

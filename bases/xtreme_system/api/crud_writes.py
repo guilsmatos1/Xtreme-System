@@ -37,9 +37,11 @@ def create_with_hook(
     session: Session,
     data: CreateSchemaT,
     after_create: AfterWriteHook[EntityT] | None,
+    actor_id: int | None,
 ) -> EntityT:
-    obj = module.create(session, data)
-    run_hook(after_create, session, obj)
+    obj = module.create(session, data, actor_id)
+    if after_create:
+        after_create(session, obj, actor_id)
     return obj
 
 
@@ -49,9 +51,11 @@ def update_with_hook(
     obj: EntityT,
     data: UpdateSchemaT,
     after_update: AfterWriteHook[EntityT] | None,
+    actor_id: int | None,
 ) -> EntityT:
-    updated = module.update(session, obj, data)
-    run_hook(after_update, session, updated)
+    updated = module.update(session, obj, data, actor_id)
+    if after_update:
+        after_update(session, updated, actor_id)
     return updated
 
 
@@ -60,6 +64,8 @@ def delete_with_hook(
     session: Session,
     obj: EntityT,
     before_delete: BeforeDeleteHook[EntityT] | None,
+    actor_id: int | None,
 ) -> None:
-    run_hook(before_delete, session, obj)
-    module.delete(session, obj)
+    if before_delete:
+        before_delete(session, obj, actor_id)
+    module.delete(session, obj, actor_id)

@@ -45,9 +45,13 @@ def get(session: Session, documento_id: int) -> DocumentoProcuracao | None:
     return crud.get(session, DocumentoProcuracao, documento_id)
 
 
-def create(session: Session, data: DocumentoProcuracaoCreate) -> DocumentoProcuracao:
-    return crud.create(session, DocumentoProcuracao, data)
+def create(
+    session: Session, data: DocumentoProcuracaoCreate, actor_id: int | None = None
+) -> DocumentoProcuracao:
+    return crud.create(session, DocumentoProcuracao, data, actor_id)
 
 
-def delete(session: Session, obj: DocumentoProcuracao) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: DocumentoProcuracao, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)

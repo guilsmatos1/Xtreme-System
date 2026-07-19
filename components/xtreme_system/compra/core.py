@@ -111,16 +111,18 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
     return list(session.query(Compra).filter_by(cliente_id=cliente_id).all())
 
 
-def create(session: Session, data: CompraCreate) -> Compra:
-    return crud.create(session, Compra, data)
+def create(session: Session, data: CompraCreate, actor_id: int | None = None) -> Compra:
+    return crud.create(session, Compra, data, actor_id)
 
 
-def update(session: Session, obj: Compra, data: CompraUpdate) -> Compra:
-    return crud.update(session, obj, data)
+def update(
+    session: Session, obj: Compra, data: CompraUpdate, actor_id: int | None = None
+) -> Compra:
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: Compra) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Compra, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def search(session: Session, term: str) -> list[Compra]:

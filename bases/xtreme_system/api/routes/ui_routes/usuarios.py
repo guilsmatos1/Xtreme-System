@@ -115,6 +115,7 @@ def ui_usuario_criar(
         usuario.UsuarioCreate(
             username=username, senha=senha, papel=papel, perfil_id=perfil_id
         ),
+        user.id,
     )
     return templates.TemplateResponse(
         request, "_usuarios_ok.html", _usuarios_ctx(session, user)
@@ -134,7 +135,7 @@ def ui_usuario_excluir(
         )
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = user.id
-    usuario.delete(session, obj)
+    usuario.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
@@ -158,7 +159,7 @@ def ui_usuario_senha_alterar(
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = user.id
-    usuario.change_password(session, obj, nova_senha)
+    usuario.change_password(session, obj, nova_senha, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
@@ -186,7 +187,7 @@ def ui_usuario_perfil_alterar(
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = user.id
-    usuario.set_perfil(session, obj, perfil_id)
+    usuario.set_perfil(session, obj, perfil_id, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
@@ -238,9 +239,10 @@ def ui_usuario_editar(
         usuario.UsuarioUpdate(
             username=username, papel=papel, ativo=ativo, perfil_id=perfil_id
         ),
+        user.id,
     )
     if senha:
-        usuario.change_password(session, obj, senha)
+        usuario.change_password(session, obj, senha, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )

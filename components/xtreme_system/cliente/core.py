@@ -89,16 +89,20 @@ def get_by_documento(session: Session, documento: str) -> Cliente | None:
     return session.query(Cliente).filter_by(documento=documento).one_or_none()
 
 
-def create(session: Session, data: ClienteCreate) -> Cliente:
-    return crud.create(session, Cliente, data)
+def create(
+    session: Session, data: ClienteCreate, actor_id: int | None = None
+) -> Cliente:
+    return crud.create(session, Cliente, data, actor_id)
 
 
-def update(session: Session, obj: Cliente, data: ClienteUpdate) -> Cliente:
-    return crud.update(session, obj, data)
+def update(
+    session: Session, obj: Cliente, data: ClienteUpdate, actor_id: int | None = None
+) -> Cliente:
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: Cliente) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Cliente, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def search(session: Session, term: str) -> list[Cliente]:

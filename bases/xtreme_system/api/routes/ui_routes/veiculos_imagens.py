@@ -106,6 +106,7 @@ def ui_veiculo_imagens_upload(
         fk_field="veiculo_id",
         fk_id=veiculo_id,
         arquivos=imagens,
+        actor_id=user.id,
     )
     return _imagem_modal(request, session, user, veiculo_id, action_oob=True)
 
@@ -122,7 +123,7 @@ def ui_veiculo_imagens_excluir(
     img = _found(imagem_veiculo.get(session, img_id), "Imagem")
     if img.veiculo_id != veiculo_id:
         raise HTTPException(status_code=404, detail="Imagem não encontrada")
-    imagem_veiculo.delete(session, img)
+    imagem_veiculo.delete(session, img, user.id)
     path = _uploaded_file_path(img.url or "")
     if path is not None:
         _remover_upload(path)

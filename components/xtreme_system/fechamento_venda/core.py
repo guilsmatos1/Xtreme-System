@@ -212,6 +212,7 @@ def confirmar(
     session.refresh(fechamento)
     auditar(
         session,
+        actor_id=usuario_id,
         tabela="fechamento_venda",
         tipo_acao="CREATE",
         registro_id=fechamento.id,
@@ -225,6 +226,7 @@ def confirmar(
         tipo=caixa.TipoLancamento.receita_venda,
         valor=receita,
         descricao=f"Receita da venda #{venda_obj.id}",
+        actor_id=usuario_id,
     )
     if lucro > 0:
         valores = _distribuir_lucro(lucro, data.participacoes)
@@ -239,6 +241,7 @@ def confirmar(
             session.flush()
             auditar(
                 session,
+                actor_id=usuario_id,
                 tabela="participacao_fechamento_venda",
                 tipo_acao="CREATE",
                 registro_id=participacao.id,
@@ -251,6 +254,7 @@ def confirmar(
                 tipo=caixa.TipoLancamento.distribuicao_lucro,
                 valor=valor,
                 descricao=f"Distribuição de lucro da venda #{venda_obj.id}",
+                actor_id=usuario_id,
             )
     crud.flush(session)
     session.refresh(fechamento)

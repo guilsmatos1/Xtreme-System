@@ -183,15 +183,17 @@ def _sincronizar_status_veiculo(
     return obj
 
 
-def create(session: Session, data: VendaCreate) -> Venda:
-    obj = crud.create(session, Venda, data)
+def create(session: Session, data: VendaCreate, actor_id: int | None = None) -> Venda:
+    obj = crud.create(session, Venda, data, actor_id)
     return _sincronizar_status_veiculo(session, obj)
 
 
-def update(session: Session, obj: Venda, data: VendaUpdate) -> Venda:
+def update(
+    session: Session, obj: Venda, data: VendaUpdate, actor_id: int | None = None
+) -> Venda:
     veiculo_anterior_id = obj.veiculo_id
     status_anterior = obj.status
-    obj = crud.update(session, obj, data)
+    obj = crud.update(session, obj, data, actor_id)
     return _sincronizar_status_veiculo(
         session,
         obj,
@@ -200,8 +202,8 @@ def update(session: Session, obj: Venda, data: VendaUpdate) -> Venda:
     )
 
 
-def delete(session: Session, obj: Venda) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Venda, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def search(session: Session, term: str) -> list[Venda]:

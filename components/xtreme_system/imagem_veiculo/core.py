@@ -47,15 +47,20 @@ def get(session: Session, imagem_id: int) -> ImagemVeiculo | None:
     return crud.get(session, ImagemVeiculo, imagem_id)
 
 
-def create(session: Session, data: ImagemVeiculoCreate) -> ImagemVeiculo:
-    return crud.create(session, ImagemVeiculo, data)
+def create(
+    session: Session, data: ImagemVeiculoCreate, actor_id: int | None = None
+) -> ImagemVeiculo:
+    return crud.create(session, ImagemVeiculo, data, actor_id)
 
 
 def update(
-    session: Session, obj: ImagemVeiculo, data: ImagemVeiculoUpdate
+    session: Session,
+    obj: ImagemVeiculo,
+    data: ImagemVeiculoUpdate,
+    actor_id: int | None = None,
 ) -> ImagemVeiculo:
-    return crud.update(session, obj, data)
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: ImagemVeiculo) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: ImagemVeiculo, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)

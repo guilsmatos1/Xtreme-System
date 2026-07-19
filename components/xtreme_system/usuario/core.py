@@ -66,7 +66,9 @@ def get_by_username(session: Session, username: str) -> Usuario | None:
     return session.query(Usuario).filter_by(username=username).one_or_none()
 
 
-def create(session: Session, data: UsuarioCreate) -> Usuario:
+def create(
+    session: Session, data: UsuarioCreate, actor_id: int | None = None
+) -> Usuario:
     obj = Usuario(
         username=data.username,
         senha_hash=hash_password(data.senha),
@@ -78,6 +80,7 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
     session.refresh(obj)
     auditar(
         session,
+        actor_id=actor_id,
         tabela="usuario",
         tipo_acao="CREATE",
         registro_id=obj.id,
@@ -87,7 +90,9 @@ def create(session: Session, data: UsuarioCreate) -> Usuario:
     return obj
 
 
-def update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
+def update(
+    session: Session, obj: Usuario, data: UsuarioUpdate, actor_id: int | None = None
+) -> None:
     antes = snapshot(obj)
     obj.username = data.username
     obj.papel = data.papel
@@ -96,6 +101,7 @@ def update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
     session.flush()
     auditar(
         session,
+        actor_id=actor_id,
         tabela="usuario",
         tipo_acao="UPDATE",
         registro_id=obj.id,
@@ -109,16 +115,19 @@ def get(session: Session, usuario_id: int) -> Usuario | None:
     return crud.get(session, Usuario, usuario_id)
 
 
-def delete(session: Session, obj: Usuario) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Usuario, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
-def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
+def change_password(
+    session: Session, obj: Usuario, nova_senha: str, actor_id: int | None = None
+) -> None:
     antes = snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
     session.flush()
     auditar(
         session,
+        actor_id=actor_id,
         tabela="usuario",
         tipo_acao="UPDATE",
         registro_id=obj.id,
@@ -128,12 +137,18 @@ def change_password(session: Session, obj: Usuario, nova_senha: str) -> None:
     crud.flush(session)
 
 
-def set_perfil(session: Session, obj: Usuario, perfil_id: int | None) -> None:
+def set_perfil(
+    session: Session,
+    obj: Usuario,
+    perfil_id: int | None,
+    actor_id: int | None = None,
+) -> None:
     antes = snapshot(obj)
     obj.perfil_id = perfil_id
     session.flush()
     auditar(
         session,
+        actor_id=actor_id,
         tabela="usuario",
         tipo_acao="UPDATE",
         registro_id=obj.id,

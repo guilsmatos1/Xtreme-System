@@ -83,6 +83,7 @@ def ui_veiculo_procuracao_upload(
         fk_field="veiculo_id",
         fk_id=veiculo_id,
         arquivos=documentos,
+        actor_id=user.id,
     )
     return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)
 
@@ -99,7 +100,7 @@ def ui_veiculo_procuracao_excluir(
     doc = _found(documento_procuracao.get(session, doc_id), "Documento")
     if doc.veiculo_id != veiculo_id:
         raise HTTPException(status_code=404, detail="Documento não encontrado")
-    documento_procuracao.delete(session, doc)
+    documento_procuracao.delete(session, doc, user.id)
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)

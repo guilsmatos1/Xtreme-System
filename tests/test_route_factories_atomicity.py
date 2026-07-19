@@ -52,7 +52,9 @@ def test_json_create_rolls_back_when_after_create_fails(
 ) -> None:
     client, app, session = atomic_client
 
-    def fail_after_create(_session: Session, _obj: object) -> None:
+    def fail_after_create(
+        _session: Session, _obj: object, _actor_id: int | None = None
+    ) -> None:
         raise RuntimeError("hook failed")
 
     register_crud_routes(
@@ -79,7 +81,9 @@ def test_json_update_rolls_back_when_after_update_fails(
     existing = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
     session.commit()
 
-    def fail_after_update(_session: Session, _obj: object) -> None:
+    def fail_after_update(
+        _session: Session, _obj: object, _actor_id: int | None = None
+    ) -> None:
         raise RuntimeError("hook failed")
 
     register_crud_routes(
@@ -108,7 +112,9 @@ def test_json_delete_rolls_back_when_before_delete_fails_after_writes(
     existing = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
     session.commit()
 
-    def fail_before_delete(session: Session, _obj: object) -> None:
+    def fail_before_delete(
+        session: Session, _obj: object, _actor_id: int | None = None
+    ) -> None:
         investidor.create(session, investidor.InvestidorCreate(nome="Bia"))
         raise RuntimeError("hook failed")
 

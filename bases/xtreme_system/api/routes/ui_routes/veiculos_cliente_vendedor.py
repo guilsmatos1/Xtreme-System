@@ -99,6 +99,7 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
         fk_field="cliente_id",
         fk_id=item_compra.cliente_id,
         arquivos=documentos,
+        actor_id=user.id,
     )
     return _cliente_vendedor_modal(request, session, user, veiculo_id)
 
@@ -120,7 +121,7 @@ def ui_veiculo_cliente_vendedor_documentos_excluir(
     doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
     if doc.cliente_id != item_compra.cliente_id:
         raise HTTPException(status_code=404, detail="Documento não encontrado")
-    imagem_documento_cliente.delete(session, doc)
+    imagem_documento_cliente.delete(session, doc, user.id)
     path = _uploaded_file_path(doc.url or "")
     if path is not None:
         _remover_upload(path)

@@ -50,10 +50,10 @@ def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) ->
         raise HTTPException(status_code=409, detail="veículo indisponível")
 
 
-def recompute_vehicle_status_on_delete(session: Session, venda_obj: Any) -> None:
-
+def recompute_vehicle_status_on_delete(
+    session: Session, venda_obj: Any, _actor_id: int | None = None
+) -> None:
     veiculo_id = venda_obj.veiculo_id
-
     v = veiculo.get(session, veiculo_id)
     if v is not None:
         if veiculo_tem_outra_venda_concluida(

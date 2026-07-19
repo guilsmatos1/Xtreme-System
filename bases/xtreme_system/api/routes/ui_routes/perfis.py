@@ -113,7 +113,7 @@ async def ui_perfil_criar(
             status_code=400,
         )
     try:
-        perfil.create(session, data)
+        perfil.create(session, data, user.id)
     except IntegrityError:
         session.rollback()
         return templates.TemplateResponse(
@@ -144,7 +144,7 @@ async def ui_perfil_atualizar(
         restricoes=_parse_restricoes(form),
     )
     try:
-        perfil.update(session, obj, data)
+        perfil.update(session, obj, data, user.id)
     except IntegrityError:
         session.rollback()
         return templates.TemplateResponse(
@@ -169,7 +169,7 @@ def ui_perfil_excluir(
     session.info["usuario_id"] = user.id
     obj = _found(perfil.get(session, item_id), "Perfil")
     try:
-        perfil.delete(session, obj)
+        perfil.delete(session, obj, user.id)
     except IntegrityError:
         session.rollback()
         return templates.TemplateResponse(

@@ -272,7 +272,9 @@ def _erro_venda(
     )
 
 
-def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
+def _persistir_contrato_venda(
+    session: Session, obj: venda.Venda, actor_id: int | None = None
+) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
@@ -283,6 +285,7 @@ def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
             venda_id=obj.id,
             url=f"/static/uploads/vendas/{obj.id}/contrato/{filename}",
         ),
+        actor_id,
     )
 
     def _write_contract_after_commit(
@@ -310,7 +313,7 @@ async def _criar_venda(
 
     if novo_cliente_data is not None:
         try:
-            cliente_obj = cliente.create(session, novo_cliente_data)
+            cliente_obj = cliente.create(session, novo_cliente_data, user.id)
         except IntegrityError:
             session.rollback()
             return _erro_venda(request, session, user, "Cliente já existe")
@@ -331,8 +334,8 @@ async def _criar_venda(
         return _erro_venda(request, session, user, msg)
 
     try:
-        obj = venda.create(session, data)
-        _persistir_contrato_venda(session, obj)
+        obj = venda.create(session, data, user.id)
+        _persistir_contrato_venda(session, obj, user.id)
         whatsapp.notificar_venda(session, obj)
     except IntegrityError:
         session.rollback()

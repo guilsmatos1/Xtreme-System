@@ -73,18 +73,19 @@ def register_crud_routes(
         session: SessionDep,
         user: AdminUser,
     ) -> EntityT:
-        session.info["usuario_id"] = user.id
-        return _create_atomic(data, session)
+        return _create_atomic(data, session, user.id)
 
-    def _create_atomic(data: CreateSchemaT, session: Session) -> EntityT:
+    def _create_atomic(
+        data: CreateSchemaT, session: Session, actor_id: int | None
+    ) -> EntityT:
         if before_create:
             before_create(session, data)
         obj = _safe_write(
-            lambda: module.create(session, data),
+            lambda: module.create(session, data, actor_id),
             conflict_msg=f"{label} já existe",
         )
         if after_create:
-            after_create(session, obj)
+            after_create(session, obj, actor_id)
         return obj
 
     @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
@@ -94,39 +95,39 @@ def register_crud_routes(
         session: SessionDep,
         user: AdminUser,
     ) -> EntityT:
-        session.info["usuario_id"] = user.id
-        return _update_atomic(item_id, data, session)
+        return _update_atomic(item_id, data, session, user.id)
 
-    def _update_atomic(item_id: int, data: UpdateSchemaT, session: Session) -> EntityT:
+    def _update_atomic(
+        item_id: int, data: UpdateSchemaT, session: Session, actor_id: int | None
+    ) -> EntityT:
         obj = _found(module.get(session, item_id), label)
         if before_update:
             before_update(session, obj, data)
         obj = _safe_write(
-            lambda: module.update(session, obj, data),
+            lambda: module.update(session, obj, data, actor_id),
             conflict_msg=f"{label} já existe",
         )
         if after_update:
-            after_update(session, obj)
+            after_update(session, obj, actor_id)
         return obj
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
-        session.info["usuario_id"] = user.id
-        _delete_atomic(item_id, session)
+        _delete_atomic(item_id, session, user.id)
 
-    def _delete_atomic(item_id: int, session: Session) -> None:
+    def _delete_atomic(item_id: int, session: Session, actor_id: int | None) -> None:
         obj = _found(module.get(session, item_id), label)
         if before_delete:
-            before_delete(session, obj)
+            before_delete(session, obj, actor_id)
         if handle_delete_error:
             try:
-                module.delete(session, obj)
+                module.delete(session, obj, actor_id)
             except IntegrityError:
                 raise HTTPException(
                     status_code=409, detail=f"{label} possui veículos vinculados"
                 ) from None
         else:
-            module.delete(session, obj)
+            module.delete(session, obj, actor_id)
 
 
 def register_ui_simples(

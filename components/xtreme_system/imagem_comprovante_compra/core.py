@@ -46,10 +46,14 @@ def get(session: Session, imagem_id: int) -> ImagemComprovanteCompra | None:
 
 
 def create(
-    session: Session, data: ImagemComprovanteCompraCreate
+    session: Session,
+    data: ImagemComprovanteCompraCreate,
+    actor_id: int | None = None,
 ) -> ImagemComprovanteCompra:
-    return crud.create(session, ImagemComprovanteCompra, data)
+    return crud.create(session, ImagemComprovanteCompra, data, actor_id)
 
 
-def delete(session: Session, obj: ImagemComprovanteCompra) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: ImagemComprovanteCompra, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)

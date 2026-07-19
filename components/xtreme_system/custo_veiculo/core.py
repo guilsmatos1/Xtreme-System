@@ -64,18 +64,23 @@ def get(session: Session, custo_id: int) -> CustoVeiculo | None:
     return crud.get(session, CustoVeiculo, custo_id)
 
 
-def create(session: Session, data: CustoVeiculoCreate) -> CustoVeiculo:
-    return crud.create(session, CustoVeiculo, data)
+def create(
+    session: Session, data: CustoVeiculoCreate, actor_id: int | None = None
+) -> CustoVeiculo:
+    return crud.create(session, CustoVeiculo, data, actor_id)
 
 
 def update(
-    session: Session, obj: CustoVeiculo, data: CustoVeiculoUpdate
+    session: Session,
+    obj: CustoVeiculo,
+    data: CustoVeiculoUpdate,
+    actor_id: int | None = None,
 ) -> CustoVeiculo:
-    return crud.update(session, obj, data)
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: CustoVeiculo) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: CustoVeiculo, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def search(session: Session, term: str) -> list[CustoVeiculo]:
