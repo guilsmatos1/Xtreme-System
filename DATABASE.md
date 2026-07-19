@@ -96,6 +96,15 @@ Perfis de acesso da UI.
 | `paginas` | `JSON` | Não | `[]` | Lista de páginas liberadas para o usuário |
 | `restricoes` | `JSON` | Não | `{}` | Por página: `campos_ocultos` (denylist — campo some da UI e é ignorado em updates) e `operacoes` (allowlist — operação negada por padrão). Ex.: `{"veiculos": {"campos_ocultos": ["preco", "debitos"], "operacoes": ["editar"]}}`. Ver `perfil.CAMPOS_PROTEGIDOS`/`perfil.OPERACOES` para o catálogo. |
 
+### `rate_limit_state`
+
+Estado compartilhado do rate limiter da API.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `bucket` | `VARCHAR(255)` | Não | - | PK; chave do limiter, ex.: `login:203.0.113.10` |
+| `hits` | `JSON` | Não | - | Lista de timestamps Unix dos hits na janela |
+
 ### `venda`
 
 Registro de vendas de veículos.

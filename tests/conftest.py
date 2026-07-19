@@ -17,6 +17,7 @@ def pytest_configure() -> None:
     # Garante segredo JWT em ambientes sem .env (ex.: pre-commit, CI) antes
     # do lru_cache de get_settings() ser populado por qualquer rota de login.
     os.environ.setdefault("AUTH_SECRET_KEY", "test-secret-key")
+    os.environ.setdefault("RATE_LIMIT_STORE", "memory")
 
 
 @pytest.fixture(autouse=True)
