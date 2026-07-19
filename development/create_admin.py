@@ -2,8 +2,33 @@
 
 import sys
 
+from xtreme_system.auditoria.core import auditar, snapshot
+from xtreme_system.auth.core import hash_password
 from xtreme_system.database.core import SessionLocal
 from xtreme_system.usuario import core as usuario
+
+
+def create_first_admin(session, username: str, senha: str) -> usuario.Usuario:
+    if usuario.get_by_username(session, username) is not None:
+        sys.exit(f"usuário '{username}' já existe")
+
+    user = usuario.Usuario(
+        username=username,
+        senha_hash=hash_password(senha),
+        papel=usuario.Papel.admin,
+    )
+    session.add(user)
+    session.flush()
+    session.refresh(user)
+    session.info["usuario_id"] = user.id
+    auditar(
+        session,
+        tabela="usuario",
+        tipo_acao="CREATE",
+        registro_id=user.id,
+        dados_depois=snapshot(user),
+    )
+    return user
 
 
 def main() -> None:
@@ -12,14 +37,8 @@ def main() -> None:
     except ValueError:
         sys.exit("uso: create_admin.py <username> <senha>")
     with SessionLocal() as session:
-        if usuario.get_by_username(session, username) is not None:
-            sys.exit(f"usuário '{username}' já existe")
-        user = usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username=username, senha=senha, papel=usuario.Papel.admin
-            ),
-        )
+        user = create_first_admin(session, username, senha)
+        session.commit()
         print(f"admin criado: id={user.id} username={user.username}")
 
 
