@@ -335,8 +335,7 @@ async def _criar_compra(  # noqa: PLR0911
         try:
             veiculo_obj = veiculo.create(session, novo_veiculo_data)
         except IntegrityError:
-            if novo_cliente_data is not None:
-                session.rollback()
+            session.rollback()
             return _erro_compra(request, session, user, "Veículo já existe")
 
     assert cliente_obj is not None  # noqa: S101

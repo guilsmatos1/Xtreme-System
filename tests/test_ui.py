@@ -915,6 +915,77 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert "Carlos Compra" not in csv_resp.text
 
 
+def test_ui_compras_rollback_em_integrityerror_de_veiculo(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor A")
+        )
+        cliente_existente = cliente.create(
+            session,
+            cliente.ClienteCreate(
+                nome="Cliente Existente",
+                documento="12345678901",
+                tipo=cliente.TipoCliente.pessoa_fisica,
+            ),
+        )
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
+        def fail_create(
+            _session: Session, _data: veiculo.VeiculoCreate
+        ) -> veiculo.Veiculo:
+            raise IntegrityError("", {}, Exception("veiculo duplicado"))
+
+        app.dependency_overrides[get_session] = override
+        monkeypatch.setattr(veiculo, "create", fail_create)
+        try:
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                _login_admin(test_client)
+                resp = test_client.post(
+                    "/ui/compras",
+                    data={
+                        "cliente_id": str(cliente_existente.id),
+                        "vei_tipo": "carro",
+                        "vei_tipo_entrada": "compra",
+                        "vei_placa": "NEW1234",
+                        "vei_modelo": "Civic",
+                        "vei_cor": "Preto",
+                        "vei_ano": "2024",
+                        "vei_km": "12000",
+                        "vei_preco": "85000.00",
+                        "vei_investidor_id": str(inv.id),
+                        "data_compra": "2026-07-09",
+                        "valor_compra": "85000.00",
+                    },
+                )
+        finally:
+            app.dependency_overrides.clear()
+
+        assert resp.status_code == 400
+        assert "Veículo já existe" in resp.text
+        assert compra.list_all(session) == []
+    engine.dispose()
+
+
 def test_ui_compras_busca_por_cliente_nao_duplica_resultados(
     client: TestClient,
 ) -> None:
