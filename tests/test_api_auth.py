@@ -5,7 +5,10 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 
+from xtreme_system.api import deps
+from xtreme_system.auth import core as auth
 from xtreme_system.usuario import core as usuario
 
 
@@ -32,6 +35,51 @@ def test_login_senha_errada(client: TestClient) -> None:
 
 def test_get_sem_token(client: TestClient) -> None:
     assert client.get("/investidores").status_code == 401
+
+
+def test_get_current_user_binda_sessao_com_usuario_id(db_session) -> None:
+    admin = usuario.Usuario(
+        username="admin",
+        senha_hash=auth.hash_password("senha"),
+        papel=usuario.Papel.admin,
+    )
+    db_session.add(admin)
+    db_session.flush()
+
+    token = auth.create_access_token(admin.username, admin.papel)
+
+    user = deps.get_current_user(token, db_session)
+
+    assert user.id == admin.id
+    assert db_session.info["usuario_id"] == admin.id
+
+
+def test_get_ui_user_binda_sessao_com_usuario_id(db_session) -> None:
+    admin = usuario.Usuario(
+        username="admin",
+        senha_hash=auth.hash_password("senha"),
+        papel=usuario.Papel.admin,
+    )
+    db_session.add(admin)
+    db_session.flush()
+
+    token = auth.create_access_token(admin.username, admin.papel)
+    request = Request(
+        {
+            "type": "http",
+            "path": "/ui/investidores",
+            "root_path": "",
+            "scheme": "http",
+            "server": ("testserver", 80),
+            "query_string": b"",
+            "headers": [],
+        }
+    )
+
+    user = deps.get_ui_user(request, db_session, access_token=token)
+
+    assert user.id == admin.id
+    assert db_session.info["usuario_id"] == admin.id
 
 
 def test_vendedor_pode_ler(client: TestClient) -> None:

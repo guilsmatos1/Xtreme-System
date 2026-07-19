@@ -29,6 +29,11 @@ SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
+def _bind_usuario(session: Session, user: usuario.Usuario) -> usuario.Usuario:
+    session.info["usuario_id"] = user.id
+    return user
+
+
 def _found[T](obj: T | None, nome: str) -> T:
     if obj is None:
         raise HTTPException(status_code=404, detail=f"{nome} não encontrado")
@@ -53,7 +58,7 @@ def get_current_user(
     user = usuario.get_by_username(session, dados.username)
     if user is None or not user.ativo:
         raise credenciais_invalidas
-    return user
+    return _bind_usuario(session, user)
 
 
 CurrentUser = Annotated[usuario.Usuario, Depends(get_current_user)]
@@ -100,7 +105,7 @@ def get_ui_user(
     pagina = perfil.pagina_da_rota(request.url.path)
     if pagina and not perfil.pode_acessar(user, pagina):
         raise _NaoAutorizadoError
-    return user
+    return _bind_usuario(session, user)
 
 
 UIUser = Annotated[usuario.Usuario, Depends(get_ui_user)]
