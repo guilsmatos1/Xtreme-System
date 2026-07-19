@@ -11,6 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 logger = structlog.get_logger(__name__)
 
 _POST_COMMIT_KEY = "_post_commit_callbacks"
+_POST_ROLLBACK_KEY = "_post_rollback_callbacks"
 
 
 class Settings(BaseSettings):
@@ -37,10 +38,21 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 @event.listens_for(Session, "after_rollback")
 def _drop_post_commit_on_rollback(session: Session) -> None:
     session.info.pop(_POST_COMMIT_KEY, None)
+    callbacks: list[Callable[[], None]] = session.info.pop(_POST_ROLLBACK_KEY, [])
+    for cb in callbacks:
+        try:
+            cb()
+        except Exception:
+            logger.warning("post_rollback_callback_failed", exc_info=True)
 
 
 def register_post_commit(session: Session, callback: Callable[[], None]) -> None:
     callbacks = session.info.setdefault(_POST_COMMIT_KEY, [])
+    callbacks.append(callback)
+
+
+def register_post_rollback(session: Session, callback: Callable[[], None]) -> None:
+    callbacks = session.info.setdefault(_POST_ROLLBACK_KEY, [])
     callbacks.append(callback)
 
 

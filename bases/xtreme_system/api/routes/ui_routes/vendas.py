@@ -1,5 +1,6 @@
 """HTMX routes for vendas."""
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -30,7 +31,7 @@ from xtreme_system.api.routes.workflows import (
 )
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
-from xtreme_system.database.core import register_post_commit
+from xtreme_system.database.core import register_post_rollback
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.perfil import core as perfil
@@ -276,24 +277,31 @@ def _persistir_contrato_venda(session: Session, obj: venda.Venda) -> None:
     upload_dir = _uploads_contrato_venda_dir(obj.id)
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
+    tmp_path = upload_dir / f".{filename}.tmp"
     pdf = documento_contrato_venda.gerar_pdf(obj)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        tmp_path.write_bytes(pdf)
+        with tmp_path.open("rb") as arquivo:
+            os.fsync(arquivo.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+    def _cleanup_contract_on_rollback(
+        *, path: Path = path, tmp_path: Path = tmp_path
+    ) -> None:
+        path.unlink(missing_ok=True)
+        tmp_path.unlink(missing_ok=True)
+
+    register_post_rollback(session, _cleanup_contract_on_rollback)
     documento_contrato_venda.create(
         session,
         documento_contrato_venda.DocumentoContratoVendaCreate(
             venda_id=obj.id,
             url=f"/static/uploads/vendas/{obj.id}/contrato/{filename}",
         ),
-    )
-
-    def _write_contract_after_commit(
-        *, path: Path = path, pdf: bytes = pdf, upload_dir: Path = upload_dir
-    ) -> None:
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(pdf)
-
-    register_post_commit(
-        session,
-        _write_contract_after_commit,
     )
 
 

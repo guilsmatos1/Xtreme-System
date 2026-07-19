@@ -22,6 +22,7 @@ from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.database.core import _invoke_post_commit, get_session
+from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
@@ -1611,6 +1612,54 @@ def _client_with_failing_final_commit() -> Iterator[
     engine.dispose()
 
 
+@contextlib.contextmanager
+def _client_with_contract_write_failure() -> Iterator[tuple[TestClient, Session]]:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor A")
+        )
+        veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Onix",
+                cor="Prata",
+                ano=2024,
+                placa="ABC1234",
+                km=12000,
+                preco=85000,
+                investidor_id=inv.id,
+            ),
+        )
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
+        app.dependency_overrides[get_session] = override
+        try:
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                yield test_client, session
+        finally:
+            app.dependency_overrides.clear()
+    engine.dispose()
+
+
 def _criar_cliente(
     client: TestClient, headers: dict[str, str], nome: str, documento: str
 ) -> int:
@@ -1699,6 +1748,44 @@ def test_ui_vendas_nao_grava_contrato_se_commit_final_falhar(
 
     assert resp.status_code == 200
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.vendas._uploads_contrato_venda_dir",
+        lambda _id: tmp_path,
+    )
+
+    def fail_write_bytes(_self: Path, _data: bytes) -> int:
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(Path, "write_bytes", fail_write_bytes)
+
+    with _client_with_contract_write_failure() as (client, session):
+        _login_admin(client)
+        headers = _admin_headers(client)
+        cliente_id = _criar_cliente(client, headers, "Carlos Lima", "98765432100")
+        veiculo_id = veiculo.list_all(session)[0].id
+
+        resp = client.post(
+            "/ui/vendas",
+            data={
+                "cliente_id": str(cliente_id),
+                "veiculo_id": str(veiculo_id),
+                "data_venda": "2026-07-09",
+                "valor_venda": "85000.00",
+                "valor_entrada": "10000.00",
+                "forma_pagamento": "financiamento",
+                "parcelas": "36",
+                "status": "pendente",
+            },
+        )
+
+        assert resp.status_code == 500
+        assert venda.list_all(session) == []
+        assert documento_contrato_venda.list_all(session) == []
 
 
 def test_ui_compras_nao_grava_comprovante_se_commit_final_falhar(
