@@ -2,7 +2,17 @@
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import Column, DateTime, Integer, String, Table, and_, select, update
+from sqlalchemy import (
+    Column,
+    Connection,
+    DateTime,
+    Integer,
+    String,
+    Table,
+    and_,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
@@ -36,55 +46,72 @@ def allow_login_attempt(
     predicate = and_(table.c.scope == "login", table.c.bucket == bucket)
 
     bind = session.get_bind()
-    if bind is None:
-        msg = "Session sem bind para rate limit"
-        raise RuntimeError(msg)
     insert_stmt = (
         sqlite_insert(table) if bind.dialect.name == "sqlite" else pg_insert(table)
     )
 
+    def _try_claim(connection: Connection) -> bool:
+        updated = connection.execute(
+            update(table)
+            .where(predicate)
+            .where(table.c.window_started_at > cutoff)
+            .where(table.c.hit_count < limit)
+            .values(hit_count=table.c.hit_count + 1)
+        ).rowcount
+        if updated:
+            return True
+
+        reset = connection.execute(
+            update(table)
+            .where(predicate)
+            .where(table.c.window_started_at <= cutoff)
+            .values(window_started_at=now, hit_count=1)
+        ).rowcount
+        if reset:
+            return True
+
+        inserted = connection.execute(
+            insert_stmt.values(
+                scope="login",
+                bucket=bucket,
+                window_started_at=now,
+                hit_count=1,
+            ).on_conflict_do_nothing(index_elements=["scope", "bucket"])
+        ).rowcount
+        return bool(inserted)
+
     for _ in range(2):
-        with bind.begin() as connection:
-            updated = connection.execute(
-                update(table)
-                .where(predicate)
-                .where(table.c.window_started_at > cutoff)
-                .where(table.c.hit_count < limit)
-                .values(hit_count=table.c.hit_count + 1)
-            ).rowcount
-            if updated:
-                return None
+        if isinstance(bind, Connection):
+            with bind.begin():
+                claimed = _try_claim(bind)
+        else:
+            with bind.begin() as connection:
+                claimed = _try_claim(connection)
+        if claimed:
+            return None
 
-            reset = connection.execute(
-                update(table)
-                .where(predicate)
-                .where(table.c.window_started_at <= cutoff)
-                .values(window_started_at=now, hit_count=1)
-            ).rowcount
-            if reset:
-                return None
-
-            inserted = connection.execute(
-                insert_stmt.values(
-                    scope="login",
-                    bucket=bucket,
-                    window_started_at=now,
-                    hit_count=1,
-                ).on_conflict_do_nothing(index_elements=["scope", "bucket"])
-            ).rowcount
-            if inserted:
-                return None
-
-    with bind.begin() as connection:
+    if isinstance(bind, Connection):
         row = (
-            connection.execute(
+            bind.execute(
                 select(table.c.window_started_at, table.c.hit_count).where(predicate)
             )
             .mappings()
             .one_or_none()
         )
+    else:
+        with bind.begin() as connection:
+            row = (
+                connection.execute(
+                    select(table.c.window_started_at, table.c.hit_count).where(
+                        predicate
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
     if row is None:
         return 0.0
 
-    retry_after = (row["window_started_at"] + window - now).total_seconds()
+    window_started_at: datetime = row["window_started_at"]
+    retry_after = (window_started_at + window - now).total_seconds()
     return max(retry_after, 0.0)

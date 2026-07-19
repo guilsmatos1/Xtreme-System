@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 from xtreme_system.api import deps
@@ -37,7 +38,7 @@ def test_get_sem_token(client: TestClient) -> None:
     assert client.get("/investidores").status_code == 401
 
 
-def test_get_current_user_binda_sessao_com_usuario_id(db_session) -> None:
+def test_get_current_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
     admin = usuario.Usuario(
         username="admin",
         senha_hash=auth.hash_password("senha"),
@@ -54,7 +55,7 @@ def test_get_current_user_binda_sessao_com_usuario_id(db_session) -> None:
     assert db_session.info["usuario_id"] == admin.id
 
 
-def test_get_ui_user_binda_sessao_com_usuario_id(db_session) -> None:
+def test_get_ui_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
     admin = usuario.Usuario(
         username="admin",
         senha_hash=auth.hash_password("senha"),

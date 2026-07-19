@@ -2,6 +2,7 @@
 
 import sys
 
+import pytest
 from development import create_admin
 from sqlalchemy.orm import sessionmaker
 
@@ -10,7 +11,9 @@ from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
 
 
-def test_main_cria_admin_inicial_e_comita(monkeypatch, capsys) -> None:
+def test_main_cria_admin_inicial_e_comita(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     engine = create_test_engine()
     session_factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     monkeypatch.setattr(create_admin, "SessionLocal", session_factory)

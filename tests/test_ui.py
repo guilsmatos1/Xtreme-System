@@ -952,7 +952,9 @@ def test_ui_compras_rollback_em_integrityerror_de_veiculo(
                 raise
 
         def fail_create(
-            _session: Session, _data: veiculo.VeiculoCreate
+            _session: Session,
+            _data: veiculo.VeiculoCreate,
+            _actor_id: int | None = None,
         ) -> veiculo.Veiculo:
             raise IntegrityError("", {}, Exception("veiculo duplicado"))
 

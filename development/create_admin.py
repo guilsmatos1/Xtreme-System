@@ -2,13 +2,15 @@
 
 import sys
 
+from sqlalchemy.orm import Session
+
 from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.auth.core import hash_password
 from xtreme_system.database.core import SessionLocal
 from xtreme_system.usuario import core as usuario
 
 
-def create_first_admin(session, username: str, senha: str) -> usuario.Usuario:
+def create_first_admin(session: Session, username: str, senha: str) -> usuario.Usuario:
     if usuario.get_by_username(session, username) is not None:
         sys.exit(f"usuário '{username}' já existe")
 
@@ -20,9 +22,9 @@ def create_first_admin(session, username: str, senha: str) -> usuario.Usuario:
     session.add(user)
     session.flush()
     session.refresh(user)
-    session.info["usuario_id"] = user.id
     auditar(
         session,
+        actor_id=user.id,
         tabela="usuario",
         tipo_acao="CREATE",
         registro_id=user.id,
