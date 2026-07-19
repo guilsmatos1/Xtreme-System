@@ -30,3 +30,6 @@ docs/new-improvements.md
 
 # Session logs
 logs/
+
+# Graphify output
+graphify-out/
