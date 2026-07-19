@@ -21,11 +21,28 @@ ArgT = TypeVar("ArgT")
 class CrudModule(Protocol[EntityT, CreateSchemaT_contra, UpdateSchemaT_contra]):
     def list_all(self, session: Session, /) -> list[EntityT]: ...
     def get(self, session: Session, item_id: int, /) -> EntityT | None: ...
-    def create(self, session: Session, data: CreateSchemaT_contra, /) -> EntityT: ...
-    def update(
-        self, session: Session, obj: EntityT, data: UpdateSchemaT_contra, /
+    def create(
+        self,
+        session: Session,
+        data: CreateSchemaT_contra,
+        actor_id: int | None = None,
+        /,
     ) -> EntityT: ...
-    def delete(self, session: Session, obj: EntityT, /) -> None: ...
+    def update(
+        self,
+        session: Session,
+        obj: EntityT,
+        data: UpdateSchemaT_contra,
+        actor_id: int | None = None,
+        /,
+    ) -> EntityT: ...
+    def delete(
+        self,
+        session: Session,
+        obj: EntityT,
+        actor_id: int | None = None,
+        /,
+    ) -> None: ...
 
 
 class SearchableCrudModule(
@@ -45,5 +62,5 @@ CsvRow = Callable[[EntityT], list[Any]]
 BeforeCreateHook = Callable[[Session, CreateSchemaT], None]
 BeforeUpdateHook = Callable[[Session, UpdateSchemaT], None]
 BeforeUpdateEntityHook = Callable[[Session, EntityT, UpdateSchemaT], None]
-BeforeDeleteHook = Callable[[Session, EntityT], None]
-AfterWriteHook = Callable[[Session, EntityT], Any]
+BeforeDeleteHook = Callable[[Session, EntityT, int | None], None]
+AfterWriteHook = Callable[[Session, EntityT, int | None], Any]

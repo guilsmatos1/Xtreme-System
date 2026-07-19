@@ -22,11 +22,12 @@ def salvar_arquivos(
     *,
     upload_dir: Path,
     url_prefix: str,
-    create_fn: Callable[[Session, Any], Any],
+    create_fn: Callable[..., Any],
     schema: type[BaseModel],
     fk_field: str,
     fk_id: int,
     arquivos: list[UploadFile],
+    actor_id: int | None = None,
 ) -> None:
     """Cria cada registro no DB e grava o arquivo em disco só após o commit.
 
@@ -40,10 +41,13 @@ def salvar_arquivos(
         filename = f"{uuid4().hex}{suffix}"
         path = upload_dir / filename
         content = arquivo.file.read()
-        create_fn(
-            session,
-            schema.model_validate({fk_field: fk_id, "url": f"{url_prefix}/{filename}"}),
+        data = schema.model_validate(
+            {fk_field: fk_id, "url": f"{url_prefix}/{filename}"}
         )
+        if actor_id is None:
+            create_fn(session, data)
+        else:
+            create_fn(session, data, actor_id)
         pending_paths = session.info.setdefault(_PENDING_UPLOAD_PATHS_KEY, set())
         pending_paths.add(str(path))
 

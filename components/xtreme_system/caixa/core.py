@@ -82,19 +82,26 @@ def get(session: Session, lancamento_id: int) -> LancamentoInvestimento | None:
 
 
 def create(
-    session: Session, data: LancamentoInvestimentoCreate
+    session: Session,
+    data: LancamentoInvestimentoCreate,
+    actor_id: int | None = None,
 ) -> LancamentoInvestimento:
-    return crud.create(session, LancamentoInvestimento, data)
+    return crud.create(session, LancamentoInvestimento, data, actor_id)
 
 
 def update(
-    session: Session, obj: LancamentoInvestimento, data: LancamentoInvestimentoUpdate
+    session: Session,
+    obj: LancamentoInvestimento,
+    data: LancamentoInvestimentoUpdate,
+    actor_id: int | None = None,
 ) -> LancamentoInvestimento:
-    return crud.update(session, obj, data)
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: LancamentoInvestimento) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: LancamentoInvestimento, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def list_by_investidor(
@@ -152,7 +159,7 @@ def _descricao_veiculo(veiculo_obj: Veiculo) -> str:
 
 
 def criar_lancamento_veiculo(
-    session: Session, veiculo_obj: Veiculo
+    session: Session, veiculo_obj: Veiculo, actor_id: int | None = None
 ) -> LancamentoInvestimento:
     obj = LancamentoInvestimento(
         investidor_id=veiculo_obj.investidor_id,
@@ -168,6 +175,7 @@ def criar_lancamento_veiculo(
     session.refresh(obj)
     auditar(
         session,
+        actor_id=actor_id,
         tabela="lancamento_investimento",
         tipo_acao="CREATE",
         registro_id=obj.id,
@@ -177,7 +185,9 @@ def criar_lancamento_veiculo(
     return obj
 
 
-def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
+def sincronizar_lancamento_veiculo(
+    session: Session, veiculo_obj: Veiculo, actor_id: int | None = None
+) -> None:
     lancamento = (
         session.query(LancamentoInvestimento)
         .filter_by(veiculo_id=veiculo_obj.id)
@@ -192,6 +202,7 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
     session.flush()
     auditar(
         session,
+        actor_id=actor_id,
         tabela="lancamento_investimento",
         tipo_acao="UPDATE",
         registro_id=lancamento.id,
@@ -201,7 +212,9 @@ def sincronizar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> No
     crud.flush(session)
 
 
-def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
+def deletar_lancamento_veiculo(
+    session: Session, veiculo_obj: Veiculo, actor_id: int | None = None
+) -> None:
     """Delete o lançamento do veículo via ORM antes do DB cascatear a FK, p/ auditar."""
     lancamento = (
         session.query(LancamentoInvestimento)
@@ -209,7 +222,7 @@ def deletar_lancamento_veiculo(session: Session, veiculo_obj: Veiculo) -> None:
         .one_or_none()
     )
     if lancamento is not None:
-        crud.delete(session, lancamento)
+        crud.delete(session, lancamento, actor_id)
 
 
 def agregados_investidores(
@@ -246,6 +259,7 @@ def criar_lancamento_fechamento(
     tipo: TipoLancamento,
     valor: Decimal,
     descricao: str,
+    actor_id: int | None = None,
 ) -> LancamentoInvestimento:
     obj = LancamentoInvestimento(
         investidor_id=investidor_id,
@@ -261,6 +275,7 @@ def criar_lancamento_fechamento(
     session.refresh(obj)
     auditar(
         session,
+        actor_id=actor_id,
         tabela="lancamento_investimento",
         tipo_acao="CREATE",
         registro_id=obj.id,

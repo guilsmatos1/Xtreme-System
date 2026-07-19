@@ -40,9 +40,10 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
         usuario.UsuarioCreate(
             username="auditor", senha="123", papel=usuario.Papel.admin
         ),
+        session.info["usuario_id"],
     )
-    session.info["usuario_id"] = u.id
-    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    actor_id = u.id
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"), actor_id)
 
     criado = veiculo.create(
         session,
@@ -56,20 +57,24 @@ def test_veiculo_ciclo_completo(session: Session) -> None:
             preco=Decimal("32000.00"),
             investidor_id=inv.id,
         ),
+        actor_id,
     )
     assert criado.id is not None
     assert criado.status is veiculo.StatusVeiculo.disponivel
     assert criado.investidor.nome == "Ana"
 
     veiculo.update(
-        session, criado, veiculo.VeiculoUpdate(status=veiculo.StatusVeiculo.vendido)
+        session,
+        criado,
+        veiculo.VeiculoUpdate(status=veiculo.StatusVeiculo.vendido),
+        actor_id,
     )
     atualizado = veiculo.get(session, criado.id)
     assert atualizado is not None
     assert atualizado.status is veiculo.StatusVeiculo.vendido
     assert len(veiculo.list_all(session)) == 1
 
-    veiculo.delete(session, criado)
+    veiculo.delete(session, criado, actor_id)
     assert veiculo.get(session, criado.id) is None
 
     # Audit assertions
@@ -149,6 +154,7 @@ def test_senha_hash_masked_in_audit(session: Session) -> None:
         usuario.UsuarioCreate(
             username="mask", senha="secret", papel=usuario.Papel.admin
         ),
+        1,
     )
     rows = (
         session.query(auditoria.Auditoria)
@@ -176,9 +182,10 @@ def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
         usuario.UsuarioCreate(
             username="caixa_audit", senha="123", papel=usuario.Papel.admin
         ),
+        session.info["usuario_id"],
     )
-    session.info["usuario_id"] = u.id
-    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    actor_id = u.id
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"), actor_id)
     v = veiculo.create(
         session,
         veiculo.VeiculoCreate(
@@ -191,8 +198,9 @@ def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
             preco=Decimal("32000.00"),
             investidor_id=inv.id,
         ),
+        actor_id,
     )
-    lanc = caixa.criar_lancamento_veiculo(session, v)
+    lanc = caixa.criar_lancamento_veiculo(session, v, actor_id)
     rows = (
         session.query(auditoria.Auditoria)
         .filter_by(
@@ -210,8 +218,8 @@ def test_caixa_lancamento_veiculo_audit(session: Session) -> None:
 
     # Deletar o veículo deve auditar o DELETE do lançamento vinculado
     # (a FK tem ondelete=CASCADE, mas isso ignoraria o ORM/auditoria).
-    caixa.deletar_lancamento_veiculo(session, v)
-    veiculo.delete(session, v)
+    caixa.deletar_lancamento_veiculo(session, v, actor_id)
+    veiculo.delete(session, v, actor_id)
     delete_rows = (
         session.query(auditoria.Auditoria)
         .filter_by(
@@ -230,7 +238,8 @@ def _investidor_e_veiculo(
 ) -> tuple[investidor.Investidor, veiculo.Veiculo]:
     if "usuario_id" not in session.info:
         _seed_usuario(session)
-    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    actor_id = int(session.info["usuario_id"])
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"), actor_id)
     v = veiculo.create(
         session,
         veiculo.VeiculoCreate(
@@ -243,13 +252,14 @@ def _investidor_e_veiculo(
             preco=Decimal("32000.00"),
             investidor_id=inv.id,
         ),
+        actor_id,
     )
     return inv, v
 
 
 def test_criar_veiculo_gera_lancamento_de_custo_e_reduz_saldo(session: Session) -> None:
     inv, v = _investidor_e_veiculo(session)
-    lanc = caixa.criar_lancamento_veiculo(session, v)
+    lanc = caixa.criar_lancamento_veiculo(session, v, session.info["usuario_id"])
     assert lanc.tipo is caixa.TipoLancamento.custo
     assert lanc.origem is caixa.OrigemLancamento.veiculo
     assert caixa.saldo(session, inv.id) == Decimal("-32000.00")
@@ -258,14 +268,21 @@ def test_criar_veiculo_gera_lancamento_de_custo_e_reduz_saldo(session: Session) 
 def test_atualizar_preco_ou_investidor_sincroniza_lancamento(session: Session) -> None:
     inv, v = _investidor_e_veiculo(session)
     caixa.criar_lancamento_veiculo(session, v)
-    outro = investidor.create(session, investidor.InvestidorCreate(nome="Bia"))
+    outro = investidor.create(
+        session,
+        investidor.InvestidorCreate(nome="Bia"),
+        session.info["usuario_id"],
+    )
 
     atualizado = veiculo.update(
         session,
         v,
         veiculo.VeiculoUpdate(preco=Decimal("40000.00"), investidor_id=outro.id),
+        session.info["usuario_id"],
     )
-    caixa.sincronizar_lancamento_veiculo(session, atualizado)
+    caixa.sincronizar_lancamento_veiculo(
+        session, atualizado, session.info["usuario_id"]
+    )
 
     assert caixa.saldo(session, inv.id) == Decimal("0")
     assert caixa.saldo(session, outro.id) == Decimal("-40000.00")
@@ -275,7 +292,7 @@ def test_excluir_veiculo_apaga_lancamento_em_cascata(session: Session) -> None:
     inv, v = _investidor_e_veiculo(session)
     lanc_id = caixa.criar_lancamento_veiculo(session, v).id
 
-    veiculo.delete(session, v)
+    veiculo.delete(session, v, session.info["usuario_id"])
     session.expire_all()
 
     assert caixa.get(session, lanc_id) is None
@@ -293,6 +310,7 @@ def test_lancamento_manual_ciclo_completo(session: Session) -> None:
             valor=Decimal("1000.00"),
             descricao="Aporte inicial",
         ),
+        session.info["usuario_id"],
     )
     assert aporte.origem is caixa.OrigemLancamento.manual
 
@@ -300,8 +318,9 @@ def test_lancamento_manual_ciclo_completo(session: Session) -> None:
         session,
         aporte,
         caixa.LancamentoInvestimentoUpdate(valor=Decimal("1500.00")),
+        session.info["usuario_id"],
     )
     assert caixa.get(session, aporte.id).valor == Decimal("1500.00")  # type: ignore[union-attr]
 
-    caixa.delete(session, aporte)
+    caixa.delete(session, aporte, session.info["usuario_id"])
     assert caixa.get(session, aporte.id) is None

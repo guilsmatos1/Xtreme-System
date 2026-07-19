@@ -156,21 +156,23 @@ def get(session: Session, perfil_id: int) -> Perfil | None:
     return crud.get(session, Perfil, perfil_id)
 
 
-def create(session: Session, data: PerfilCreate) -> Perfil:
-    return crud.create(session, Perfil, data)
+def create(session: Session, data: PerfilCreate, actor_id: int | None = None) -> Perfil:
+    return crud.create(session, Perfil, data, actor_id)
 
 
-def update(session: Session, obj: Perfil, data: PerfilUpdate) -> Perfil:
-    return crud.update(session, obj, data)
+def update(
+    session: Session, obj: Perfil, data: PerfilUpdate, actor_id: int | None = None
+) -> Perfil:
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: Perfil) -> None:
+def delete(session: Session, obj: Perfil, actor_id: int | None = None) -> None:
     from xtreme_system.usuario.core import Usuario  # noqa: PLC0415 (import circular)
 
     for user in session.query(Usuario).filter_by(perfil_id=obj.id):
         user.perfil_id = None
     session.flush()
-    crud.delete(session, obj)
+    crud.delete(session, obj, actor_id)
 
 
 def pagina_da_rota(path: str) -> str | None:

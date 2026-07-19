@@ -90,7 +90,6 @@ def register_ui_simples(
     async def _criar(
         request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         nome = await _nome(request)
         if not nome:
             return templates.TemplateResponse(
@@ -100,7 +99,7 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            module.create(session, create_schema(nome=nome))
+            module.create(session, create_schema(nome=nome), user.id)
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -117,7 +116,6 @@ def register_ui_simples(
     async def _atualizar(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), titulo)
         nome = await _nome(request)
         if not nome:
@@ -128,7 +126,7 @@ def register_ui_simples(
                 status_code=400,
             )
         try:
-            module.update(session, obj, update_schema(nome=nome))
+            module.update(session, obj, update_schema(nome=nome), user.id)
         except IntegrityError:
             session.rollback()
             return templates.TemplateResponse(
@@ -145,11 +143,10 @@ def register_ui_simples(
     def _excluir(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), titulo)
         msg = None
         try:
-            module.delete(session, obj)
+            module.delete(session, obj, user.id)
         except IntegrityError:
             session.rollback()
             msg = f"{titulo} possui veículos vinculados"

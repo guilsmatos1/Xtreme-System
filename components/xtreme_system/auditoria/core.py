@@ -60,23 +60,21 @@ def snapshot(obj: Any) -> dict[str, Any]:
 def auditar(
     session: Session,
     *,
+    actor_id: int | None = None,
     tabela: str,
     tipo_acao: str,
     registro_id: int | None = None,
     dados_antes: dict[str, Any] | None = None,
     dados_depois: dict[str, Any] | None = None,
 ) -> None:
-    """Write one audit row. usuario_id comes from session.info."""
+    """Write one audit row."""
     if tabela in AUDIT_SKIP:
         return
-    usuario_id = session.info.get("usuario_id")
-    if usuario_id is None:
-        raise AuditError
     row = Auditoria(
         tabela=tabela,
         tipo_acao=tipo_acao,
         registro_id=registro_id,
-        usuario_id=usuario_id,
+        usuario_id=actor_id,
         dados_antes=dados_antes,
         dados_depois=dados_depois,
     )

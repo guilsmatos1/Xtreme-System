@@ -87,7 +87,7 @@ def criar_usuario(
     if usuario.get_by_username(session, data.username) is not None:
         raise HTTPException(status_code=400, detail="username já existe")
     session.info["usuario_id"] = admin.id
-    return usuario.create(session, data)
+    return usuario.create(session, data, admin.id)
 
 
 @app.get("/usuarios", response_model=list[usuario.UsuarioRead])
@@ -103,7 +103,7 @@ def deletar_usuario(
         raise HTTPException(status_code=400, detail="não pode excluir a si mesmo")
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = current.id
-    usuario.delete(session, obj)
+    usuario.delete(session, obj, current.id)
 
 
 @app.post("/usuarios/{user_id}/senha", status_code=204)
@@ -115,7 +115,7 @@ def trocar_senha_usuario(
 ) -> None:
     obj = _found(usuario.get(session, user_id), "Usuário")
     session.info["usuario_id"] = admin.id
-    usuario.change_password(session, obj, nova_senha)
+    usuario.change_password(session, obj, nova_senha, admin.id)
 
 
 # ---- Investidores ----
@@ -311,7 +311,7 @@ def criar_compra(
     session.info["usuario_id"] = user.id
     validate_cliente_veiculo_fks(session, data)
     obj = _safe_write(
-        lambda: compra.create(session, data), conflict_msg="Compra já existe"
+        lambda: compra.create(session, data, user.id), conflict_msg="Compra já existe"
     )
     return _compra_json(obj, user)
 
@@ -328,7 +328,8 @@ def atualizar_compra(
     obj = _found(compra.get(session, item_id), "Compra")
     validate_cliente_veiculo_fks(session, data)
     obj = _safe_write(
-        lambda: compra.update(session, obj, data), conflict_msg="Compra já existe"
+        lambda: compra.update(session, obj, data, user.id),
+        conflict_msg="Compra já existe",
     )
     return _compra_json(obj, user)
 
@@ -339,7 +340,7 @@ def excluir_compra(item_id: int, session: SessionDep, user: CurrentUser) -> None
     session.info["usuario_id"] = user.id
     obj = _found(compra.get(session, item_id), "Compra")
     try:
-        compra.delete(session, obj)
+        compra.delete(session, obj, user.id)
     except IntegrityError:
         raise HTTPException(
             status_code=409, detail="Compra possui veículos vinculados"

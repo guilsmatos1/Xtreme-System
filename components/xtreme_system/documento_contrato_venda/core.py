@@ -52,13 +52,17 @@ def get(session: Session, documento_id: int) -> DocumentoContratoVenda | None:
 
 
 def create(
-    session: Session, data: DocumentoContratoVendaCreate
+    session: Session,
+    data: DocumentoContratoVendaCreate,
+    actor_id: int | None = None,
 ) -> DocumentoContratoVenda:
-    return crud.create(session, DocumentoContratoVenda, data)
+    return crud.create(session, DocumentoContratoVenda, data, actor_id)
 
 
-def delete(session: Session, obj: DocumentoContratoVenda) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: DocumentoContratoVenda, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def gerar_pdf(venda_obj: "Venda") -> bytes:

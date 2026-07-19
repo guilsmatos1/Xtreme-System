@@ -394,7 +394,6 @@ def register_create_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         form = await request.form()
         try:
             data = create_schema.model_validate(parse_form(form))
@@ -435,7 +434,7 @@ def register_create_route(
                 erro=write_conflict_detail(label),
             )
         try:
-            create_with_hook(module, session, data, after_create)
+            create_with_hook(module, session, data, after_create, user.id)
         except IntegrityError:
             session.rollback()
             return conflict_form_response(
@@ -500,7 +499,6 @@ def register_update_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         form = await request.form()
         dados_form = parse_form(form)
@@ -536,7 +534,7 @@ def register_update_route(
                 status_code=400,
             )
         try:
-            update_with_hook(module, session, obj, data, after_update)
+            update_with_hook(module, session, obj, data, after_update, user.id)
         except IntegrityError:
             session.rollback()
             return conflict_form_response(
@@ -594,12 +592,11 @@ def register_delete_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        session.info["usuario_id"] = user.id
         obj = _found(module.get(session, item_id), label)
         erro = None
         status_code = 200
         try:
-            delete_with_hook(module, session, obj, before_delete)
+            delete_with_hook(module, session, obj, before_delete, user.id)
         except IntegrityError:
             session.rollback()
             erro = delete_conflict_detail(label)

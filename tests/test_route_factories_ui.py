@@ -88,9 +88,12 @@ class _FailAfterWriteModule:
         return investidor.get(session, item_id)
 
     def create(
-        self, session: Session, data: investidor.InvestidorCreate
+        self,
+        session: Session,
+        data: investidor.InvestidorCreate,
+        actor_id: int | None = None,
     ) -> investidor.Investidor:
-        investidor.create(session, data)
+        investidor.create(session, data, actor_id)
         raise IntegrityError("", {}, Exception())
 
     def update(
@@ -98,12 +101,15 @@ class _FailAfterWriteModule:
         session: Session,
         obj: investidor.Investidor,
         data: investidor.InvestidorUpdate,
+        actor_id: int | None = None,
     ) -> investidor.Investidor:
-        investidor.update(session, obj, data)
+        investidor.update(session, obj, data, actor_id)
         raise IntegrityError("", {}, Exception())
 
-    def delete(self, session: Session, obj: investidor.Investidor) -> None:
-        investidor.delete(session, obj)
+    def delete(
+        self, session: Session, obj: investidor.Investidor, actor_id: int | None = None
+    ) -> None:
+        investidor.delete(session, obj, actor_id)
         raise IntegrityError("", {}, Exception())
 
 
@@ -347,17 +353,27 @@ class _ConflictModule:
     def get(self, _session: Session, item_id: int) -> _StubItem | None:
         return self.item if item_id == self.item.id else None
 
-    def create(self, _session: Session, _data: Any) -> _StubItem:
+    def create(
+        self, _session: Session, _data: Any, _actor_id: int | None = None
+    ) -> _StubItem:
         if self.fail_on == "create":
             raise IntegrityError("", {}, Exception())
         return self.item
 
-    def update(self, _session: Session, obj: _StubItem, _data: Any) -> _StubItem:
+    def update(
+        self,
+        _session: Session,
+        obj: _StubItem,
+        _data: Any,
+        _actor_id: int | None = None,
+    ) -> _StubItem:
         if self.fail_on == "update":
             raise IntegrityError("", {}, Exception())
         return obj
 
-    def delete(self, _session: Session, _obj: _StubItem) -> None:
+    def delete(
+        self, _session: Session, _obj: _StubItem, _actor_id: int | None = None
+    ) -> None:
         if self.fail_on == "delete":
             raise IntegrityError("", {}, Exception())
 

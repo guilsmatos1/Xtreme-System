@@ -165,7 +165,7 @@ async def ui_lancamento_criar(
         )
     except ValidationError as exc:
         return _erro_lancamento(request, investidor_id, exc, None)
-    caixa.create(session, data)
+    caixa.create(session, data, user.id)
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
@@ -188,7 +188,7 @@ async def ui_lancamento_atualizar(
         data = caixa.LancamentoInvestimentoUpdate.model_validate(dict(form))
     except ValidationError as exc:
         return _erro_lancamento(request, investidor_id, exc, obj)
-    caixa.update(session, obj, data)
+    caixa.update(session, obj, data, user.id)
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
@@ -206,7 +206,7 @@ def ui_lancamento_excluir(
         raise HTTPException(
             status_code=403, detail="Exclusão apenas na tela de Veículos"
         )
-    caixa.delete(session, obj)
+    caixa.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request,
         "_linhas_lancamentos.html",

@@ -50,16 +50,23 @@ def get(session: Session, imagem_id: int) -> ImagemDocumentoCliente | None:
 
 
 def create(
-    session: Session, data: ImagemDocumentoClienteCreate
+    session: Session,
+    data: ImagemDocumentoClienteCreate,
+    actor_id: int | None = None,
 ) -> ImagemDocumentoCliente:
-    return crud.create(session, ImagemDocumentoCliente, data)
+    return crud.create(session, ImagemDocumentoCliente, data, actor_id)
 
 
 def update(
-    session: Session, obj: ImagemDocumentoCliente, data: ImagemDocumentoClienteUpdate
+    session: Session,
+    obj: ImagemDocumentoCliente,
+    data: ImagemDocumentoClienteUpdate,
+    actor_id: int | None = None,
 ) -> ImagemDocumentoCliente:
-    return crud.update(session, obj, data)
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: ImagemDocumentoCliente) -> None:
-    crud.delete(session, obj)
+def delete(
+    session: Session, obj: ImagemDocumentoCliente, actor_id: int | None = None
+) -> None:
+    crud.delete(session, obj, actor_id)

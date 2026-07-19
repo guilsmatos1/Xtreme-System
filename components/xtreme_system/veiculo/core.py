@@ -114,16 +114,20 @@ def get(session: Session, veiculo_id: int) -> Veiculo | None:
     return crud.get(session, Veiculo, veiculo_id)
 
 
-def create(session: Session, data: VeiculoCreate) -> Veiculo:
-    return crud.create(session, Veiculo, data)
+def create(
+    session: Session, data: VeiculoCreate, actor_id: int | None = None
+) -> Veiculo:
+    return crud.create(session, Veiculo, data, actor_id)
 
 
-def update(session: Session, obj: Veiculo, data: VeiculoUpdate) -> Veiculo:
-    return crud.update(session, obj, data)
+def update(
+    session: Session, obj: Veiculo, data: VeiculoUpdate, actor_id: int | None = None
+) -> Veiculo:
+    return crud.update(session, obj, data, actor_id)
 
 
-def delete(session: Session, obj: Veiculo) -> None:
-    crud.delete(session, obj)
+def delete(session: Session, obj: Veiculo, actor_id: int | None = None) -> None:
+    crud.delete(session, obj, actor_id)
 
 
 def get_by_placa(session: Session, placa: str) -> Veiculo | None:

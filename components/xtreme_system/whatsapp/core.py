@@ -125,7 +125,9 @@ def _notificar_em_background(
         logger.warning("whatsapp_notify_failed", error=str(exc))
 
 
-def notificar_venda(session: Session, venda_obj: Venda) -> None:
+def notificar_venda(
+    session: Session, venda_obj: Venda, _actor_id: int | None = None
+) -> None:
     """Agenda a notificação da venda para depois do commit, best-effort.
 
     A leitura do banco e a formatação da mensagem rodam na thread da

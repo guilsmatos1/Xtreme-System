@@ -164,6 +164,7 @@ def ui_cliente_documentos_upload(
         fk_field="cliente_id",
         fk_id=cliente_id,
         arquivos=documentos,
+        actor_id=user.id,
     )
     return _documentos_modal(request, session, user, cliente_id, action_oob=True)
 

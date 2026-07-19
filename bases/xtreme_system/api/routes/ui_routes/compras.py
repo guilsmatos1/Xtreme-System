@@ -105,7 +105,9 @@ def _ctx_lista_compras(
     }
 
 
-def _remover_arquivos_comprovantes(session: Session, obj: compra.Compra) -> None:
+def _remover_arquivos_comprovantes(
+    session: Session, obj: compra.Compra, _actor_id: int | None = None
+) -> None:
     for comprovante in imagem_comprovante_compra.list_by_compra(session, obj.id):
         path = _uploaded_file_path(comprovante.url or "")
         if path is not None:
@@ -172,6 +174,7 @@ def ui_compra_comprovantes_upload(
         fk_field="compra_id",
         fk_id=compra_id,
         arquivos=comprovantes,
+        actor_id=user.id,
     )
     return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
@@ -190,7 +193,7 @@ def ui_compra_comprovantes_excluir(
     if comprovante.compra_id != compra_id:
         raise HTTPException(status_code=404, detail="Comprovante não encontrado")
     session.info["usuario_id"] = user.id
-    imagem_comprovante_compra.delete(session, comprovante)
+    imagem_comprovante_compra.delete(session, comprovante, user.id)
     path = _uploaded_file_path(comprovante.url or "")
     if path is not None:
         _remover_upload(path)
@@ -326,14 +329,14 @@ async def _criar_compra(  # noqa: PLR0911
 
     if novo_cliente_data is not None:
         try:
-            cliente_obj = cliente.create(session, novo_cliente_data)
+            cliente_obj = cliente.create(session, novo_cliente_data, user.id)
         except IntegrityError:
             session.rollback()
             return _erro_compra(request, session, user, "Cliente já existe")
 
     if novo_veiculo_data is not None:
         try:
-            veiculo_obj = veiculo.create(session, novo_veiculo_data)
+            veiculo_obj = veiculo.create(session, novo_veiculo_data, user.id)
         except IntegrityError:
             session.rollback()
             return _erro_compra(request, session, user, "Veículo já existe")
@@ -360,7 +363,7 @@ async def _criar_compra(  # noqa: PLR0911
         return _erro_compra(request, session, user, msg)
 
     try:
-        obj = compra.create(session, data)
+        obj = compra.create(session, data, user.id)
         salvar_arquivos(
             session,
             upload_dir=_uploads_compra_dir(obj.id),
@@ -370,6 +373,7 @@ async def _criar_compra(  # noqa: PLR0911
             fk_field="compra_id",
             fk_id=obj.id,
             arquivos=comprovantes,
+            actor_id=user.id,
         )
     except IntegrityError:
         session.rollback()
