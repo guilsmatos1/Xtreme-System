@@ -20,6 +20,7 @@ from xtreme_system.caixa import core as _caixa  # noqa: F401
 from xtreme_system.cliente import core as _cliente  # noqa: F401
 from xtreme_system.compra import core as _compra  # noqa: F401
 from xtreme_system.custo_veiculo import core as _custo_veiculo  # noqa: F401
+from xtreme_system.auth import rate_limit as _rate_limit  # noqa: F401
 from xtreme_system.database.core import Base, get_settings
 from xtreme_system.documento_contrato_venda import core as _documento_contrato_venda  # noqa: F401
 from xtreme_system.documento_procuracao import core as _documento_procuracao  # noqa: F401
@@ -40,9 +41,7 @@ target_metadata = Base.metadata
 # ConfigParser (usado por Config.set_main_option) trata "%" como início de
 # interpolação; URLs com querystring percent-encoded (ex.: "options=-c%20...")
 # quebram sem escapar.
-config.set_main_option(
-    "sqlalchemy.url", get_settings().database_url.replace("%", "%%")
-)
+config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -88,9 +87,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

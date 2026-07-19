@@ -39,9 +39,9 @@ Response (503) — banco indisponível:
 
 ## Rate Limiting
 
-Limites em memória por IP:
+Limites por IP:
 
-- `POST /login` e `POST /ui/login`: 5 tentativas/minuto
+- `POST /login` e `POST /ui/login`: 5 tentativas/minuto, persistido no banco e compartilhado entre processos
 - Demais rotas: 100 requests/minuto (exceto `/health`, `/docs`, `/redoc`, `/openapi.json` e arquivos estáticos)
 
 Ao exceder o limite, retorna `429` com header `Retry-After` (segundos). Corpo `{"detail": "..."}` para rotas JSON, HTML para rotas `/ui/`.

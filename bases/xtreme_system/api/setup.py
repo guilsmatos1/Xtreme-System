@@ -35,7 +35,14 @@ _LOGIN_LIMIT = 5
 _LOGIN_WINDOW_SECONDS = 60.0
 _GERAL_LIMIT = 100
 _GERAL_WINDOW_SECONDS = 60.0
-_ROTAS_ISENTAS_RATE_LIMIT = {"/health", "/docs", "/redoc", "/openapi.json"}
+_ROTAS_ISENTAS_RATE_LIMIT = {
+    "/health",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/login",
+    "/ui/login",
+}
 
 
 def _cors_origins() -> list[str]:
@@ -117,13 +124,11 @@ class _RateLimiter:
         self._hits.clear()
 
 
-_login_limiter = _RateLimiter(_LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS)
 _geral_limiter = _RateLimiter(_GERAL_LIMIT, _GERAL_WINDOW_SECONDS)
 
 
 def reset_rate_limiters() -> None:
-    """Limpa o estado dos limiters (usado em testes, que reusam o `app`)."""
-    _login_limiter.reset()
+    """Limpa o estado do limiter geral em memória (usado em testes)."""
     _geral_limiter.reset()
 
 
@@ -141,15 +146,6 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
         return await call_next(request)
 
     client_ip = request.client.host if request.client else "desconhecido"
-
-    if request.method == "POST" and path.endswith("/login"):
-        if not _login_limiter.allow(f"login:{client_ip}"):
-            return _rate_limit_response(
-                request,
-                "Muitas tentativas de login. Tente novamente em instantes.",
-                _LOGIN_WINDOW_SECONDS,
-            )
-        return await call_next(request)
 
     if not _geral_limiter.allow(client_ip):
         return _rate_limit_response(

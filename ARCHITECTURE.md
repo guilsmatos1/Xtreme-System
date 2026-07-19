@@ -49,7 +49,8 @@ app = FastAPI(title="Xtreme Motors")
 - `CORSMiddleware` — permite todas as origens (`*`)
 - Middleware `_request_id` — extrai ou gera `X-Request-ID`, disponível via `ContextVar`
 - Middleware `_log_errors` — captura exceções não tratadas e registra com traceback
-- Middleware `_rate_limit` — janela deslizante em memória por IP: 5 tentativas/min em `/login` e `/ui/login`, 100 requests/min nas demais rotas (exceto `/health`, `/docs`, `/redoc`, `/openapi.json` e `/static/`); responde `429` com header `Retry-After`. O estado é por processo: com múltiplos workers Uvicorn/Gunicorn cada um tem sua própria contagem, multiplicando o limite efetivo. Para que o rate limit seja confiável o app deve rodar com 1 worker.
+- Middleware `_rate_limit` — janela deslizante em memória por IP nas rotas gerais: 100 requests/min nas demais rotas (exceto `/health`, `/docs`, `/redoc`, `/openapi.json`, `/login`, `/ui/login` e `/static/`); responde `429` com header `Retry-After`.
+- Login (`/login` e `/ui/login`) usa um bucket persistido no banco, compartilhado entre processos, com 5 tentativas/min por IP.
 - Arquivos estáticos montados em `/static`
 - Templates Jinja2 em `templates/`
 - Raiz (`/`) redireciona para `/docs`
