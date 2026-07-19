@@ -5,6 +5,7 @@ persistent=no
 
 [MESSAGES CONTROL]
 disable=
+    duplicate-code,
     missing-module-docstring,
     missing-class-docstring,
     missing-function-docstring,

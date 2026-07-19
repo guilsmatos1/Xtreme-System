@@ -1,0 +1,57 @@
+name: xtreme-system
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: xtreme-system-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: xtreme
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    x-casaos:
+      description:
+        en_us: PostgreSQL database for Xtreme Motors.
+
+  app:
+    image: ghcr.io/guilsmatos1/xtreme-system:latest
+    container_name: xtreme-system
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/xtreme
+      AUTH_SECRET_KEY: changeme
+      LOG_LEVEL: INFO
+      LOG_JSON: "false"
+      CORS_ORIGINS: http://localhost:8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    x-casaos:
+      port_map: "8000"
+      description:
+        en_us: Sistema de gestão de estoque e vendas de veículos.
+
+volumes:
+  db_data: {}
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: app
+  description:
+    en_us: Sistema de gestão de estoque e vendas de veículos para a Xtreme Motors.
+  tagline:
+    en_us: Estoque, vendas, clientes e caixa em um só lugar.
+  developer: guilsmatos1
+  author: guilsmatos1
+  icon: ""
+  screenshot_link: []
+  thumbnail: ""
+  title:
+    en_us: Xtreme System
+  category: Business
+  port_map: "8000"
