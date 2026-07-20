@@ -19,7 +19,8 @@
   {% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}
   {% set pode_imagens = pode_operacao(user, 'veiculos', 'abrir_imagens') %}
   {% set pode_procuracao = pode_operacao(user, 'veiculos', 'abrir_procuracao') %}
-  {% if pode_editar or pode_excluir or pode_cliente_vendedor or pode_imagens or pode_procuracao %}
+  {% set pode_documento = pode_operacao(user, 'veiculos', 'upload_documento') %}
+  {% if pode_editar or pode_excluir or pode_cliente_vendedor or pode_imagens or pode_procuracao or pode_documento %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       {% if pode_editar %}
@@ -33,6 +34,9 @@
       {% endif %}
       {% if pode_procuracao %}
       {% include "_action_veiculo_procuracao.html" %}
+      {% endif %}
+      {% if pode_documento %}
+      {% include "_action_veiculo_documentos.html" %}
       {% endif %}
       {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/veiculos/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o veículo {{ v.modelo }} ({{ v.placa }})?" aria-label="Excluir {{ v.modelo }}">{{ ui.icon("trash") }}</button>
