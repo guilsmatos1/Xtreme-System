@@ -37,7 +37,7 @@ from xtreme_system.api.crud_ui.simple import (
     register_ui_simples as _register_ui_simples_impl,
 )
 from xtreme_system.api.crud_writes import safe_write as _safe_write
-from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
+from xtreme_system.api.deps import CurrentUser, SessionDep, _found
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
@@ -66,6 +66,15 @@ def _json_visible(
         if not perfil.pode_ver_campo(user, pagina, campo):
             data.pop(campo, None)
     return data
+
+
+def _require_json_operacao(user: usuario.Usuario, pagina: str, operacao: str) -> None:
+    if usuario.is_admin(user):
+        return
+    operacoes = {op for op, _label in perfil.OPERACOES.get(pagina, [])}
+    if operacao in operacoes and perfil.pode_operacao(user, pagina, operacao):
+        return
+    raise HTTPException(status_code=403, detail="Operação não permitida")
 
 
 def register_crud_routes(
@@ -102,13 +111,20 @@ def register_crud_routes(
         obj = _found(module.get(session, item_id), label)
         return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 
-    @app.post(prefix, response_model=read_schema, status_code=201)
+    @app.post(
+        prefix,
+        response_model=None if pagina else read_schema,
+        status_code=201,
+    )
     def _create(
         data: create_schema,  # type: ignore[valid-type]
         session: SessionDep,
-        user: AdminUser,
-    ) -> EntityT:
-        return _create_atomic(data, session, user.id)
+        user: CurrentUser,
+    ) -> EntityT | Any:
+        if pagina is not None:
+            _require_json_operacao(user, pagina, "cadastrar")
+        obj = _create_atomic(data, session, user.id)
+        return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 
     def _create_atomic(
         data: CreateSchemaT, session: Session, actor_id: int | None
@@ -123,14 +139,20 @@ def register_crud_routes(
             after_create(session, obj, actor_id)
         return obj
 
-    @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
+    @app.patch(
+        f"{prefix}/{{item_id}}",
+        response_model=None if pagina else read_schema,
+    )
     def _update(
         item_id: int,
         data: update_schema,  # type: ignore[valid-type]
         session: SessionDep,
-        user: AdminUser,
-    ) -> EntityT:
-        return _update_atomic(item_id, data, session, user.id)
+        user: CurrentUser,
+    ) -> EntityT | Any:
+        if pagina is not None:
+            _require_json_operacao(user, pagina, "editar")
+        obj = _update_atomic(item_id, data, session, user.id)
+        return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 
     def _update_atomic(
         item_id: int, data: UpdateSchemaT, session: Session, actor_id: int | None
@@ -147,7 +169,9 @@ def register_crud_routes(
         return obj
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
-    def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
+    def _delete(item_id: int, session: SessionDep, user: CurrentUser) -> None:
+        if pagina is not None:
+            _require_json_operacao(user, pagina, "excluir")
         _delete_atomic(item_id, session, user.id)
 
     def _delete_atomic(item_id: int, session: Session, actor_id: int | None) -> None:
