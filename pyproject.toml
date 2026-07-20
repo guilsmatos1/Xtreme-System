@@ -55,6 +55,7 @@ addopts = [
     "--strict-markers",
     "--ignore=.ai-jail",
     "--ignore=tests/e2e",
+    "--ignore=.ai-jail",
 ]
 testpaths = ["tests"]
 markers = [
@@ -194,4 +195,5 @@ ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]
 "components/xtreme_system/imagem_documento_cliente" = "xtreme_system/imagem_documento_cliente"
 "components/xtreme_system/auth" = "xtreme_system/auth"
 "components/xtreme_system/documento_procuracao" = "xtreme_system/documento_procuracao"
+"components/xtreme_system/exportacao" = "xtreme_system/exportacao"
 "components/xtreme_system/logging" = "xtreme_system/logging"

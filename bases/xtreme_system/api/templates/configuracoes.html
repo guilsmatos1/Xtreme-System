@@ -12,6 +12,9 @@
 </div>
 
 <div class="stack">
+  {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
+  {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+
   <section class="card card--pad">
     <div class="toolbar" style="margin-bottom:var(--s-3)">
       <h3 style="display:flex;align-items:center;gap:var(--s-2)">
@@ -28,8 +31,6 @@
       configurado abaixo, via uma instância do
       <a href="https://github.com/EvolutionAPI/evolution-api" target="_blank" rel="noopener">Evolution API</a>.
     </p>
-    {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
-    {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
     <form method="post" action="/ui/configuracoes">
       <div class="modal-section" style="margin-bottom:var(--s-5)">
         <h4>Conexão</h4>
@@ -73,6 +74,53 @@
         <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
+  </section>
+
+  <section class="card card--pad">
+    <div class="toolbar" style="margin-bottom:var(--s-3)">
+      <h3 style="display:flex;align-items:center;gap:var(--s-2)">
+        {{ ui.icon("settings") }} Backup / Migração do Banco
+      </h3>
+    </div>
+    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
+      Exporta e importa dumps PostgreSQL gerados com <code>pg_dump</code> e
+      restaurados com <code>pg_restore</code>. Use para migrar dados entre
+      instalações da aplicação.
+    </p>
+    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
+      A importação substitui <strong>todos os dados atuais</strong> do banco.
+      Esta ação é irreversível. Certifique-se de que nenhum outro usuário
+      está usando o sistema durante a importação.
+    </p>
+    <div class="modal-section" style="margin-bottom:var(--s-5)">
+      <h4>Exportar</h4>
+      <p style="color:var(--text-secondary);margin-bottom:var(--s-3)">
+        Baixa um arquivo <code>.dump</code> com todos os dados do sistema.
+      </p>
+      <form method="post" action="/ui/configuracoes/exportar">
+        <button class="btn btn--primary" type="submit">
+          {{ ui.icon("file") }} Exportar Dados
+        </button>
+      </form>
+    </div>
+    <div class="modal-section">
+      <h4>Importar</h4>
+      <p style="color:var(--text-secondary);margin-bottom:var(--s-3)">
+        Restaura o banco a partir de um arquivo <code>.dump</code> exportado
+        anteriormente. Todos os dados atuais serão substituídos.
+      </p>
+      <form method="post" action="/ui/configuracoes/importar" enctype="multipart/form-data">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field__label">Arquivo .dump</span>
+            <input class="input" type="file" name="arquivo" accept=".dump" required>
+          </label>
+        </div>
+        <div class="field" style="justify-content:flex-end;flex-direction:row;margin-top:var(--s-5)">
+          <button class="btn btn--primary" type="submit">Importar Dados</button>
+        </div>
+      </form>
+    </div>
   </section>
 </div>
 {% endblock %}
