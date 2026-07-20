@@ -383,7 +383,7 @@ async def _atualizar_venda(
         return _erro_venda(request, session, user, msg, venda_obj=obj)
 
     try:
-        venda.update(session, obj, data)
+        venda.update(session, obj, data, user.id)
     except IntegrityError:
         session.rollback()
         return _erro_venda(request, session, user, "Venda já existe", venda_obj=obj)
