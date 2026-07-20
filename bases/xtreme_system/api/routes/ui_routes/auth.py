@@ -7,7 +7,7 @@ from fastapi import Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from xtreme_system.api.deps import SessionDep, templates
-from xtreme_system.api.setup import _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS, app
+from xtreme_system.api.setup import _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS, _client_ip, app
 from xtreme_system.auth import core as auth
 from xtreme_system.auth.rate_limit import allow_login_attempt
 from xtreme_system.usuario import core as usuario
@@ -29,9 +29,8 @@ def ui_login(
     username: Annotated[str, Form()],
     password: Annotated[str, Form()],
 ) -> Response:
-    client_ip = request.client.host if request.client else "desconhecido"
     retry_after = allow_login_attempt(
-        session, client_ip, _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
+        session, _client_ip(request), _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
     )
     if retry_after is not None:
         return templates.TemplateResponse(

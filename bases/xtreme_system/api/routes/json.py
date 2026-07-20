@@ -20,7 +20,7 @@ from xtreme_system.api.routes.workflows import (
     validate_veiculo_disponivel_para_venda,
     validate_veiculo_fks,
 )
-from xtreme_system.api.setup import _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS, app
+from xtreme_system.api.setup import _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS, _client_ip, app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.auth.rate_limit import allow_login_attempt
@@ -59,9 +59,8 @@ def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: SessionDep,
 ) -> auth.Token:
-    client_ip = request.client.host if request.client else "desconhecido"
     retry_after = allow_login_attempt(
-        session, client_ip, _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
+        session, _client_ip(request), _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
     )
     if retry_after is not None:
         raise HTTPException(

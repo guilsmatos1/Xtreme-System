@@ -23,6 +23,23 @@ def test_login_bloqueia_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
+def test_login_rate_limit_isolates_clients_behind_proxy(
+    client: TestClient,
+) -> None:
+    headers_a = {"X-Forwarded-For": "203.0.113.10"}
+    headers_b = {"X-Forwarded-For": "203.0.113.11"}
+
+    for _ in range(_LOGIN_LIMIT):
+        resp = client.post(
+            "/login", data={"username": "x", "password": "x"}, headers=headers_a
+        )
+        assert resp.status_code == 401
+
+    resp = client.post(
+        "/login", data={"username": "x", "password": "x"}, headers=headers_b
+    )
+    assert resp.status_code == 401
+
 def test_login_rate_limit_nao_vaza_entre_clients(
     make_client: Callable[..., TestClient],
 ) -> None:
