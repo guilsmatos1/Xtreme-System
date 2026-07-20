@@ -57,14 +57,14 @@
 
 <div class="table-wrap">
   {% set sort_qs = "&q=" ~ (q | urlencode) %}
-  <table>
+  <table data-table="usuarios">
     <thead><tr>
-      <th style="width:1%">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios", sort_qs) }}</th>
-      <th>{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios", sort_qs) }}</th>
-      <th>{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios", sort_qs) }}</th>
-      <th>Perfil</th>
-      <th>{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios", sort_qs) }}</th>
-      <th class="col-actions"><span class="sr-only">Ações</span></th>
+      <th style="width:1%" data-col="id" data-col-label="ID">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th data-col="username" data-col-label="Usuário">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th data-col="papel" data-col-label="Papel">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th data-col="perfil" data-col-label="Perfil">Perfil</th>
+      <th data-col="ativo" data-col-label="Status">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
     </tr></thead>
     {% include "_linhas_usuarios.html" %}
   </table>

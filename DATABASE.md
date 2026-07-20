@@ -53,6 +53,7 @@ Veículos disponíveis para venda.
 | `status` | `statusveiculo` | Não | `disponivel` | `disponivel`, `vendido`, `reservado` |
 | `tipo_entrada` | `tipoentrada` | Não | `compra` | `compra` ou `consignacao` |
 | `revisao` | `BOOLEAN` | Não | `false` | |
+| `criado_em` | `DATETIME` | Não | `now()` | |
 | `investidor_id` | `INTEGER` | Não | - | FK → `investidor.id` (CASCADE) |
 
 ### `cliente`

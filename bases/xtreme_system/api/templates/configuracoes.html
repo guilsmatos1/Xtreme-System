@@ -3,124 +3,210 @@
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
 {% set configurado = config.evolution_api_url and config.evolution_instance %}
+{% set aba_ativa = aba or "banco" %}
 
 <div class="page-head">
   <div class="page-head__title">
     <h1>Configurações</h1>
-    <p class="page-head__subtitle">Integrações do sistema</p>
+    <p class="page-head__subtitle">Backup, migração e integrações de mensagem</p>
   </div>
 </div>
 
-<div class="stack">
-  {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
-  {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
+{% if sucesso %}{{ ui.alert(sucesso) }}{% endif %}
+{% if erro %}{{ ui.alert(erro) }}{% endif %}
 
-  <section class="card card--pad">
-    <div class="toolbar" style="margin-bottom:var(--s-3)">
-      <h3 style="display:flex;align-items:center;gap:var(--s-2)">
-        {{ ui.icon("megaphone") }} Notificação de vendas via WhatsApp
-      </h3>
-      {% if configurado %}
-      <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
-      {% else %}
-      <span class="badge badge--neutral">Não configurado</span>
-      {% endif %}
-    </div>
-    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
-      Quando uma venda é criada, uma mensagem é enviada para o grupo do WhatsApp
-      configurado abaixo, via uma instância do
-      <a href="https://github.com/EvolutionAPI/evolution-api" target="_blank" rel="noopener">Evolution API</a>.
-    </p>
-    <form method="post" action="/ui/configuracoes">
-      <div class="modal-section" style="margin-bottom:var(--s-5)">
-        <h4>Conexão</h4>
-        <div class="form-grid">
-          <label class="field">
-            <span class="field__label">URL do servidor</span>
-            <input class="input" name="evolution_api_url" placeholder="http://localhost:8080"
-                   value="{{ config.evolution_api_url }}" autocomplete="off">
-          </label>
-          <label class="field">
-            <span class="field__label">API key</span>
-            <input class="input" name="evolution_api_key" type="password"
-                   placeholder="•••••••• (deixe vazio para manter a chave atual)"
-                   autocomplete="off">
-          </label>
-          <label class="field">
-            <span class="field__label">Instância</span>
-            <input class="input" name="evolution_instance" placeholder="xtreme-motors"
-                   value="{{ config.evolution_instance }}" autocomplete="off">
-          </label>
-          <label class="field">
-            <span class="field__label">ID do grupo</span>
-            <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
-                   value="{{ config.evolution_group_id }}" autocomplete="off">
-          </label>
-        </div>
+<div class="settings-tabs">
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-banco" {% if aba_ativa == "banco" %}checked{% endif %}>
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-whatsapp" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-tema" {% if aba_ativa == "tema" %}checked{% endif %}>
+
+  <div class="settings-layout">
+    <nav class="settings-nav" role="tablist" aria-label="Seções de configurações">
+      <label class="settings-nav__item" for="tab-banco" role="tab">
+        <span class="settings-nav__icon">{{ ui.icon("database") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">Migração do Banco</span>
+          <span class="settings-nav__desc">Backup e restauração</span>
+        </span>
+      </label>
+      <label class="settings-nav__item" for="tab-tema" role="tab">
+        <span class="settings-nav__icon">{{ ui.icon("sun") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">Tema</span>
+          <span class="settings-nav__desc">Alternar entre claro e escuro</span>
+        </span>
+      </label>
+      <label class="settings-nav__item" for="tab-whatsapp" role="tab">
+        <span class="settings-nav__icon">{{ ui.icon("megaphone") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">
+            Notificações WhatsApp
+            <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if configurado }}"
+                  title="{{ 'Conectado' if configurado else 'Pendente' }}"></span>
+          </span>
+          <span class="settings-nav__desc">{{ "Conectado" if configurado else "Não configurado" }}</span>
+        </span>
+      </label>
+    </nav>
+
+    <section class="settings-tabs__panel settings-tabs__panel--banco">
+      <div class="settings-panel-head">
+        <h2>Backup e migração</h2>
+        <p class="page-head__subtitle">
+          Exporte ou restaure dumps PostgreSQL para mover dados entre instalações.
+        </p>
       </div>
-      <div class="modal-section">
-        <h4>Mensagem</h4>
-        <label class="field field--full">
-          <span class="field__label">Template da mensagem</span>
-          <textarea class="input" name="mensagem_template" rows="6">{{ config.mensagem_template }}</textarea>
-          <p style="margin-top:var(--s-2);color:var(--text-secondary)">
-            Placeholders disponíveis: <code>{cliente}</code>, <code>{veiculo}</code>,
-            <code>{valor}</code>, <code>{forma_pagamento}</code>, <code>{parcelas}</code>,
-            <code>{vendedor}</code>.
+
+      <div class="settings-grid">
+        <div class="action-card card card--pad">
+          <span class="action-card__icon action-card__icon--accent">{{ ui.icon("download") }}</span>
+          <h3>Exportar banco</h3>
+          <p class="muted">
+            Baixa um arquivo <code>.dump</code> com todos os dados atuais do sistema,
+            gerado com <code>pg_dump</code>.
           </p>
-        </label>
-      </div>
-      <div class="field" style="justify-content:flex-end;flex-direction:row;margin-top:var(--s-5)">
-        <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
-      </div>
-    </form>
-  </section>
+          <form method="post" action="/ui/configuracoes/exportar">
+            <button class="btn btn--primary" type="submit">
+              {{ ui.icon("download") }} Exportar dados
+            </button>
+          </form>
+        </div>
 
-  <section class="card card--pad">
-    <div class="toolbar" style="margin-bottom:var(--s-3)">
-      <h3 style="display:flex;align-items:center;gap:var(--s-2)">
-        {{ ui.icon("settings") }} Backup / Migração do Banco
-      </h3>
-    </div>
-    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
-      Exporta e importa dumps PostgreSQL gerados com <code>pg_dump</code> e
-      restaurados com <code>pg_restore</code>. Use para migrar dados entre
-      instalações da aplicação.
-    </p>
-    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
-      A importação substitui <strong>todos os dados atuais</strong> do banco.
-      Esta ação é irreversível. Certifique-se de que nenhum outro usuário
-      está usando o sistema durante a importação.
-    </p>
-    <div class="modal-section" style="margin-bottom:var(--s-5)">
-      <h4>Exportar</h4>
-      <p style="color:var(--text-secondary);margin-bottom:var(--s-3)">
-        Baixa um arquivo <code>.dump</code> com todos os dados do sistema.
-      </p>
-      <form method="post" action="/ui/configuracoes/exportar">
-        <button class="btn btn--primary" type="submit">
-          {{ ui.icon("file") }} Exportar Dados
-        </button>
-      </form>
-    </div>
-    <div class="modal-section">
-      <h4>Importar</h4>
-      <p style="color:var(--text-secondary);margin-bottom:var(--s-3)">
-        Restaura o banco a partir de um arquivo <code>.dump</code> exportado
-        anteriormente. Todos os dados atuais serão substituídos.
-      </p>
-      <form method="post" action="/ui/configuracoes/importar" enctype="multipart/form-data">
-        <div class="form-grid">
-          <label class="field">
-            <span class="field__label">Arquivo .dump</span>
-            <input class="input" type="file" name="arquivo" accept=".dump" required>
+        <div class="action-card action-card--danger card card--pad">
+          <span class="action-card__icon action-card__icon--danger">{{ ui.icon("upload") }}</span>
+          <h3>Importar banco</h3>
+          <p class="muted">
+            Restaura o banco a partir de um arquivo <code>.dump</code> exportado
+            anteriormente.
+          </p>
+          <div class="callout callout--danger">
+            {{ ui.icon("alert-triangle") }}
+            <span>A importação substitui <strong>todos os dados atuais</strong> do banco. Esta ação é irreversível.</span>
+          </div>
+          <form method="post" action="/ui/configuracoes/importar" enctype="multipart/form-data">
+            <label class="field">
+              <span class="field__label">Arquivo .dump</span>
+              <input class="input" type="file" name="arquivo" accept=".dump" required>
+            </label>
+            <div class="field settings-actions">
+              <button class="btn btn--danger" type="submit">
+                {{ ui.icon("upload") }} Importar dados
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-tabs__panel settings-tabs__panel--whatsapp">
+      <div class="settings-panel-head">
+        <h2>Notificações de vendas</h2>
+        <p class="page-head__subtitle">
+          Envie mensagens para um grupo do WhatsApp quando uma venda for criada.
+        </p>
+      </div>
+
+      <div class="connection-status {{ 'connection-status--ok' if configurado else 'connection-status--pending' }}">
+        <span class="connection-status__icon">{{ ui.icon("zap") }}</span>
+        <div class="connection-status__text">
+          <strong>{{ "Integração conectada" if configurado else "Integração não configurada" }}</strong>
+          <span>
+            {% if configurado %}
+              Instância <code>{{ config.evolution_instance }}</code> pronta para enviar mensagens.
+            {% else %}
+              Preencha os dados da Evolution API abaixo para ativar os alertas.
+            {% endif %}
+          </span>
+        </div>
+        {% if configurado %}
+        <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
+        {% else %}
+        <span class="badge badge--neutral">Não configurado</span>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/ui/configuracoes" class="card card--pad settings-form">
+        <div class="modal-section">
+          <h4>{{ ui.icon("link") }} Conexão Evolution API</h4>
+          <p class="muted">
+            Configure a instância do
+            <a href="https://github.com/EvolutionAPI/evolution-api" target="_blank" rel="noopener">Evolution API</a>
+            usada para enviar as mensagens.
+          </p>
+          <div class="form-grid">
+            <label class="field">
+              <span class="field__label">URL do servidor</span>
+              <input class="input" name="evolution_api_url" placeholder="http://localhost:8080"
+                     value="{{ config.evolution_api_url }}" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">API key</span>
+              <span class="field-password">
+                <input class="input" id="api-key-input" name="evolution_api_key" type="password"
+                       placeholder="•••••••• (deixe vazio para manter a chave atual)"
+                       autocomplete="off">
+                <button type="button" class="field-password__toggle" aria-label="Mostrar chave"
+                        onclick="const i=document.getElementById('api-key-input'); const hidden=i.type==='password'; i.type=hidden?'text':'password'; this.classList.toggle('is-visible',hidden); this.setAttribute('aria-label', hidden?'Ocultar chave':'Mostrar chave');">
+                  <span class="field-password__icon-show">{{ ui.icon("eye") }}</span>
+                  <span class="field-password__icon-hide">{{ ui.icon("eye-off") }}</span>
+                </button>
+              </span>
+            </label>
+            <label class="field">
+              <span class="field__label">Instância</span>
+              <input class="input" name="evolution_instance" placeholder="xtreme-motors"
+                     value="{{ config.evolution_instance }}" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">ID do grupo</span>
+              <input class="input" name="evolution_group_id" placeholder="120363043888888888@g.us"
+                     value="{{ config.evolution_group_id }}" autocomplete="off">
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-section settings-message">
+          <h4>{{ ui.icon("megaphone") }} Mensagem</h4>
+          <label class="field field--full">
+            <span class="field__label">Template da mensagem</span>
+            <textarea class="input" id="mensagem-template" name="mensagem_template" rows="6">{{ config.mensagem_template }}</textarea>
           </label>
+          <div class="placeholder-chips">
+            {% for ph in ["cliente", "veiculo", "valor", "forma_pagamento", "parcelas", "vendedor"] %}
+            <button type="button" class="placeholder-chip"
+                    onclick="const t=document.getElementById('mensagem-template'); const s=t.selectionStart||t.value.length; const v=t.value; t.value=v.slice(0,s)+'{{'{'}}{{ ph }}{{'}'}}'+v.slice(s); t.focus();">{{'{'}}{{ ph }}{{'}'}}</button>
+            {% endfor %}
+          </div>
+          <p class="muted">Clique em um placeholder para inseri-lo no texto.</p>
         </div>
-        <div class="field" style="justify-content:flex-end;flex-direction:row;margin-top:var(--s-5)">
-          <button class="btn btn--primary" type="submit">Importar Dados</button>
+
+        <div class="field settings-actions">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
         </div>
       </form>
-    </div>
-  </section>
+    </section>
+
+    <section class="settings-tabs__panel settings-tabs__panel--tema">
+      <div class="settings-panel-head">
+        <h2>Tema</h2>
+        <p class="page-head__subtitle">Escolha entre o tema claro e escuro.</p>
+      </div>
+      <div class="settings-grid">
+        <div class="action-card card card--pad" style="cursor:pointer" onclick="toggleTheme()">
+          <span class="action-card__icon action-card__icon--accent">{{ ui.icon("sun") }}</span>
+          <h3>Alternar tema</h3>
+          <p class="muted">
+            Clique para alternar entre o tema claro e escuro. A preferência é salva no navegador.
+          </p>
+          <button class="btn btn--primary" type="button" onclick="toggleTheme()">
+            {{ ui.icon("sun") }} Alternar tema
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}

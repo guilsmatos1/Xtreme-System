@@ -30,26 +30,26 @@
 </section>
 
 <div class="table-wrap">
-  <table>
+  <table data-table="auditoria">
     <thead><tr>
-      <th style="width:1%">ID</th>
-      <th>Data</th>
-      <th>Usuário</th>
-      <th>Tabela</th>
-      <th>Ação</th>
-      <th>Registro</th>
-      <th class="col-actions"><span class="sr-only">Ações</span></th>
+      <th style="width:1%" data-col="id" data-col-label="ID">ID</th>
+      <th data-col="data" data-col-label="Data">Data</th>
+      <th data-col="usuario" data-col-label="Usuário">Usuário</th>
+      <th data-col="tabela" data-col-label="Tabela">Tabela</th>
+      <th data-col="acao" data-col-label="Ação">Ação</th>
+      <th data-col="registro" data-col-label="Registro">Registro</th>
+      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
     </tr></thead>
     <tbody>
       {% for r in registros %}
       <tr>
-        <td class="cell-mono">{{ r.id }}</td>
-        <td class="cell-mono">{{ r.criado_em.strftime('%d/%m/%Y %H:%M') if r.criado_em else '-' }}</td>
-        <td>{{ nomes_usuarios.get(r.usuario_id, '—') if r.usuario_id else '—' }}</td>
-        <td class="cell-strong">{{ r.tabela }}</td>
-        <td>{{ ui.acao_badge(r.tipo_acao) }}</td>
-        <td class="cell-mono">{{ r.registro_id if r.registro_id is not none else '—' }}</td>
-        <td class="col-actions">
+        <td class="cell-mono" data-col="id">{{ r.id }}</td>
+        <td class="cell-mono" data-col="data">{{ r.criado_em.strftime('%d/%m/%Y %H:%M') if r.criado_em else '-' }}</td>
+        <td data-col="usuario">{{ nomes_usuarios.get(r.usuario_id, '—') if r.usuario_id else '—' }}</td>
+        <td class="cell-strong" data-col="tabela">{{ r.tabela }}</td>
+        <td data-col="acao">{{ ui.acao_badge(r.tipo_acao) }}</td>
+        <td class="cell-mono" data-col="registro">{{ r.registro_id if r.registro_id is not none else '—' }}</td>
+        <td class="col-actions" data-col="acoes" data-col-fixed>
           <button class="btn btn--ghost btn--sm"
                   hx-get="/ui/auditoria/{{ r.id }}/detalhe" hx-target="#modal" hx-swap="innerHTML"
                   title="Ver detalhes" aria-label="Ver detalhes do registro {{ r.id }}">

@@ -88,27 +88,6 @@
           </label>
           {% endif %}
 
-          {% if pode_operacao(user, 'veiculos', 'upload_documento') %}<label class="field field--full">
-            <span class="field__label">Documento do veículo</span>
-            {% if veiculo.documentos %}
-            <ul class="midia-list" style="margin-bottom:var(--s-2)">
-              {% for d in veiculo.documentos %}
-              <li class="midia-list__item">
-                {{ ui.icon("file") }}
-                <a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.url.split("/") | last }}</a>
-              </li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-            <label class="mmgr__drop" style="margin-top:0">
-              <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
-                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste um documento ou clique para selecionar'">
-              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
-              <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
-              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
-            </label>
-          </label>{% endif %}
-
         </div>
         {% else %}
         <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
@@ -167,24 +146,6 @@
             <select class="select" name="investidor_id" required>
               {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
             </select>
-          </label>
-          {% if pode_operacao(user, 'veiculos', 'upload_documento') %}<label class="field field--full">
-            <span class="field__label">Documento do veículo</span>
-            <label class="mmgr__drop" style="margin-top:0">
-              <input class="input" name="documento_veiculo" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
-                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste um documento ou clique para selecionar'">
-              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
-              <span class="mmgr__drop-text">Arraste um documento ou clique para selecionar</span>
-              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
-            </label>
-          </label>{% endif %}
-          <label class="field field--full">
-            <span class="field__label">Documentos de procuração</span>
-            <input class="input" name="documentos_procuracao" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
-          </label>
-          <label class="field field--full">
-            <span class="field__label">Comprovante de pagamento</span>
-            <input class="input" name="comprovantes_pagamento" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
           </label>
         </fieldset>
 

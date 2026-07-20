@@ -64,9 +64,11 @@ register_crud_ui_routes(
     before_update=_validar_veiculo_fk,
     sort_fields={
         "veiculo": lambda c: _sort_key(c.veiculo.modelo),
+        "placa": lambda c: _sort_key(c.veiculo.placa),
         "categoria": "categoria",
         "data": "data_custo",
         "valor": "valor",
+        "descricao": lambda c: _sort_key(c.descricao or ""),
     },
     csv_filename="custos_veiculos.csv",
     csv_headers=[

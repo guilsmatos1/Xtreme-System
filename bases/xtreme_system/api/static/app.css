@@ -270,7 +270,7 @@ button { font-family: inherit; }
 .btn[disabled] { opacity: .55; pointer-events: none; }
 .action-edit { color: var(--success); }
 .action-delete { color: var(--danger); }
-.action-cash { color: var(--success); }
+.action-cash { color: var(--info); }
 .action-file { color: var(--warning); }
 .action-file--purple { color: #7c3aed; }
 .action-image { color: #0891b2; }
@@ -436,6 +436,128 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .modal-section { display: flex; flex-direction: column; gap: var(--s-2); }
 .modal-section h4 { font-size: .88rem; }
 
+/* ---- Página de configurações -------------------------------------------- */
+.settings-tabs { display: flex; flex-direction: column; gap: var(--s-4); }
+.settings-tabs__input { position: absolute; opacity: 0; pointer-events: none; }
+.settings-tabs__panel { display: none; flex-direction: column; gap: var(--s-4); min-width: 0; }
+#tab-banco:checked ~ .settings-layout .settings-tabs__panel--banco,
+#tab-whatsapp:checked ~ .settings-layout .settings-tabs__panel--whatsapp { display: flex; }
+
+.settings-layout { display: grid; grid-template-columns: 240px 1fr; align-items: start; gap: var(--s-5); }
+
+/* Vertical settings nav (Stripe/Vercel-style) */
+.settings-nav {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--s-2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); background: var(--surface);
+  box-shadow: var(--shadow-sm); position: sticky; top: var(--s-4);
+}
+.settings-nav__item {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-3); border-radius: var(--r-md);
+  cursor: pointer; border: 1px solid transparent;
+  transition: background .12s, border-color .12s;
+}
+.settings-nav__item:hover { background: var(--surface-hover); }
+.settings-nav__icon {
+  display: grid; place-items: center; flex: none;
+  width: 32px; height: 32px; border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--text-secondary);
+  transition: background .12s, color .12s;
+}
+.settings-nav__icon svg { width: 17px; height: 17px; }
+.settings-nav__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.settings-nav__title { display: flex; align-items: center; gap: var(--s-2); font-size: .86rem; font-weight: 600; color: var(--text); }
+.settings-nav__desc { font-size: .74rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settings-nav__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--text-tertiary); flex: none; }
+.settings-nav__dot--ok { background: var(--success); }
+#tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"],
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] {
+  background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+#tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__icon,
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__icon {
+  background: var(--accent); color: var(--accent-contrast);
+}
+#tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__title,
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__title {
+  color: var(--accent);
+}
+
+.settings-panel-head h2 { margin-bottom: 2px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); align-items: start; }
+
+/* Action cards (export/import) */
+.action-card { display: flex; flex-direction: column; gap: var(--s-2); }
+.action-card h3 { font-size: .95rem; }
+.action-card form { margin-top: var(--s-2); }
+.action-card__icon {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: var(--r-lg); margin-bottom: var(--s-1);
+}
+.action-card__icon svg { width: 20px; height: 20px; }
+.action-card__icon--accent { background: var(--accent-soft); color: var(--accent); }
+.action-card__icon--danger { background: var(--danger-soft); color: var(--danger); }
+.action-card--danger { border-color: color-mix(in srgb, var(--danger) 26%, var(--border)); }
+
+.callout {
+  display: flex; align-items: flex-start; gap: var(--s-2);
+  padding: var(--s-3); border-radius: var(--r-md);
+  font-size: .8rem; line-height: 1.5;
+}
+.callout svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.callout--danger { background: var(--danger-soft); color: var(--danger); }
+
+/* Connection status callout */
+.connection-status {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4); border-radius: var(--r-lg); border: 1px solid var(--border);
+}
+.connection-status__icon {
+  display: grid; place-items: center; flex: none;
+  width: 40px; height: 40px; border-radius: var(--r-full);
+}
+.connection-status__icon svg { width: 19px; height: 19px; }
+.connection-status__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.connection-status__text strong { font-size: .88rem; }
+.connection-status__text span { font-size: .8rem; color: var(--text-secondary); }
+.connection-status--ok { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 26%, transparent); }
+.connection-status--ok .connection-status__icon { background: var(--success); color: var(--accent-contrast); }
+.connection-status--pending { background: var(--surface-2); }
+.connection-status--pending .connection-status__icon { background: var(--surface); color: var(--text-tertiary); border: 1px solid var(--border); }
+
+.settings-form { display: flex; flex-direction: column; gap: var(--s-5); }
+.settings-form .modal-section h4 { display: flex; align-items: center; gap: var(--s-2); }
+.settings-form .modal-section h4 svg { width: 16px; height: 16px; color: var(--text-tertiary); flex: none; }
+.settings-message { margin-top: 0; }
+.settings-actions { align-items: flex-end; margin-top: var(--s-2); padding-top: var(--s-4); border-top: 1px solid var(--border); }
+
+/* Password visibility toggle */
+.field-password { position: relative; display: block; }
+.field-password .input { padding-right: var(--s-8); }
+.field-password__toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 26px; height: 26px;
+  border: 0; border-radius: var(--r-sm); background: transparent;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.field-password__toggle:hover { background: var(--surface-hover); color: var(--text); }
+.field-password__toggle svg { width: 16px; height: 16px; }
+.field-password__icon-hide { display: none; }
+.field-password__toggle.is-visible .field-password__icon-show { display: none; }
+.field-password__toggle.is-visible .field-password__icon-hide { display: block; }
+
+/* Placeholder chips (insert into message template) */
+.placeholder-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-1); }
+.placeholder-chip {
+  font-family: var(--font-mono); font-size: .74rem; font-weight: 600;
+  padding: 4px 10px; border-radius: var(--r-full);
+  border: 1px solid var(--border-strong); background: var(--surface-2);
+  color: var(--text-secondary); cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.placeholder-chip:hover { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+
 /* ---- Configuração de colunas das tabelas -------------------------------- */
 .col-hidden { display: none !important; }
 .cols-hint { font-size: .78rem; color: var(--text-secondary); margin: 0; }
@@ -514,6 +636,12 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   .stats { grid-template-columns: 1fr 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .details-list { grid-template-columns: 1fr; }
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { position: static; flex-direction: row; overflow-x: auto; }
+  .settings-nav__item { flex: none; }
+  .settings-nav__desc { display: none; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .connection-status { flex-wrap: wrap; }
   #msg { left: var(--s-3); right: var(--s-3); bottom: var(--s-3); max-width: none; }
 }
 

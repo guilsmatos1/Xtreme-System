@@ -30,7 +30,7 @@ def ui_configuracoes(
 ) -> HTMLResponse:
     config = whatsapp.get_config(session)
     return templates.TemplateResponse(
-        request, "configuracoes.html", {"user": user, "config": config}
+        request, "configuracoes.html", {"user": user, "config": config, "aba": "banco"}
     )
 
 
@@ -59,7 +59,12 @@ def ui_configuracoes_salvar(
     return templates.TemplateResponse(
         request,
         "configuracoes.html",
-        {"user": user, "config": config, "sucesso": "Configurações salvas."},
+        {
+            "user": user,
+            "config": config,
+            "sucesso": "Configurações salvas.",
+            "aba": "whatsapp",
+        },
     )
 
 
@@ -77,7 +82,7 @@ def ui_configuracoes_exportar(
         return templates.TemplateResponse(
             request,
             "configuracoes.html",
-            {"user": user, "config": config, "erro": str(exc)},
+            {"user": user, "config": config, "erro": str(exc), "aba": "banco"},
             status_code=500,
         )
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -105,12 +110,17 @@ def ui_configuracoes_importar(
         return templates.TemplateResponse(
             request,
             "configuracoes.html",
-            {"user": user, "config": config, "erro": str(exc)},
+            {"user": user, "config": config, "erro": str(exc), "aba": "banco"},
         )
     session.expire_all()
     config = whatsapp.get_config(session)
     return templates.TemplateResponse(
         request,
         "configuracoes.html",
-        {"user": user, "config": config, "sucesso": "Dados importados com sucesso."},
+        {
+            "user": user,
+            "config": config,
+            "sucesso": "Dados importados com sucesso.",
+            "aba": "banco",
+        },
     )

@@ -2,20 +2,20 @@
 <tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
 {% for u in usuarios %}
 <tr id="usuario-{{ u.id }}">
-  <td class="cell-mono">{{ u.id }}</td>
-  <td class="cell-strong">
+  <td class="cell-mono" data-col="id">{{ u.id }}</td>
+  <td class="cell-strong" data-col="username">
     <span style="display:inline-flex;align-items:center;gap:var(--s-2)">
       <span class="avatar" style="width:24px;height:24px;font-size:.7rem">{{ u.username[0] | upper }}</span>
       {{ u.username }}
     </span>
   </td>
-  <td>{{ ui.papel_badge(u.papel) }}</td>
-  <td>{{ u.perfil.nome if u.perfil else '-' }}</td>
-  <td>
+  <td data-col="papel">{{ ui.papel_badge(u.papel) }}</td>
+  <td data-col="perfil">{{ u.perfil.nome if u.perfil else '-' }}</td>
+  <td data-col="ativo">
     {% if u.ativo %}<span class="badge badge--success">Ativo</span>
     {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
   </td>
-  <td class="col-actions">
+  <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       <button class="btn btn--ghost btn--sm action-edit"
               hx-get="/ui/usuarios/{{ u.id }}/editar"
