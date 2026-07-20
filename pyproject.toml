@@ -54,6 +54,7 @@ addopts = [
     "--strict-config",
     "--strict-markers",
     "--ignore=tests/e2e",
+    "--ignore=.ai-jail",
 ]
 testpaths = ["tests"]
 markers = [
@@ -149,7 +150,7 @@ ignore_names = [
 ignore_decorators = ["app.*"]
 
 [tool.deptry]
-extend_exclude = [".opencode", ".agents", "alembic"]
+extend_exclude = [".opencode", ".agents", ".ai-jail", "alembic"]
 known_first_party = ["xtreme_system"]
 per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"] }
 
@@ -193,4 +194,5 @@ ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]
 "components/xtreme_system/imagem_documento_cliente" = "xtreme_system/imagem_documento_cliente"
 "components/xtreme_system/auth" = "xtreme_system/auth"
 "components/xtreme_system/documento_procuracao" = "xtreme_system/documento_procuracao"
+"components/xtreme_system/exportacao" = "xtreme_system/exportacao"
 "components/xtreme_system/logging" = "xtreme_system/logging"
