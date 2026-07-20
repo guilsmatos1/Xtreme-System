@@ -79,9 +79,14 @@
   <section class="card card--pad">
     <div class="toolbar" style="margin-bottom:var(--s-3)">
       <h3 style="display:flex;align-items:center;gap:var(--s-2)">
-        {{ ui.icon("settings") }} Exportar / Importar Dados
+        {{ ui.icon("settings") }} Backup / Migração do Banco
       </h3>
     </div>
+    <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
+      Exporta e importa dumps PostgreSQL gerados com <code>pg_dump</code> e
+      restaurados com <code>pg_restore</code>. Use para migrar dados entre
+      instalações da aplicação.
+    </p>
     <p style="margin-bottom:var(--s-5);color:var(--text-secondary)">
       A importação substitui <strong>todos os dados atuais</strong> do banco.
       Esta ação é irreversível. Certifique-se de que nenhum outro usuário

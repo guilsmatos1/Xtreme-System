@@ -3,9 +3,12 @@
 import os
 import subprocess
 import tempfile
-from urllib.parse import urlparse
+
+from sqlalchemy.engine import make_url
 
 from xtreme_system.database.core import get_settings
+
+_POSTGRES_REQUIRED = "Exportação/importação exige DATABASE_URL PostgreSQL"
 
 
 class ExportacaoError(Exception):
@@ -13,16 +16,15 @@ class ExportacaoError(Exception):
 
 
 def _pg_conn_params() -> dict[str, str]:
-    url = get_settings().database_url
-    if url.startswith("postgresql+"):
-        url = "postgresql" + url[url.index("://") :]
-    parsed = urlparse(url)
+    url = make_url(get_settings().database_url)
+    if not url.drivername.startswith("postgresql"):
+        raise ExportacaoError(_POSTGRES_REQUIRED)
     return {
-        "host": parsed.hostname or "localhost",
-        "port": str(parsed.port or 5432),
-        "user": parsed.username or "postgres",
-        "password": parsed.password or "",
-        "dbname": parsed.path.lstrip("/") or "xtreme",
+        "host": url.host or "localhost",
+        "port": str(url.port or 5432),
+        "user": url.username or "postgres",
+        "password": url.password or "",
+        "dbname": url.database or "xtreme",
     }
 
 

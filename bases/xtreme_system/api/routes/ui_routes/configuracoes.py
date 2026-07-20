@@ -6,13 +6,22 @@ from typing import Annotated
 import structlog
 from fastapi import File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, Response
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
 from xtreme_system.api.setup import app
 from xtreme_system.exportacao import core as exportacao
+from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
 
 logger = structlog.get_logger(__name__)
+
+
+def _fechar_transacao_da_rota(session: Session, user: usuario.Usuario) -> None:
+    _ = user.id, user.username, user.papel, user.perfil_id
+    session.expunge(user)
+    session.rollback()
+    session.close()
 
 
 @app.get("/ui/configuracoes")
@@ -60,6 +69,7 @@ def ui_configuracoes_exportar(
     session: SessionDep,
     user: UIAdmin,
 ) -> Response:
+    _fechar_transacao_da_rota(session, user)
     try:
         dump = exportacao.dump_database()
     except exportacao.ExportacaoError as exc:
@@ -87,6 +97,7 @@ def ui_configuracoes_importar(
     arquivo: Annotated[UploadFile, File()],
 ) -> HTMLResponse:
     conteudo = arquivo.file.read()
+    _fechar_transacao_da_rota(session, user)
     try:
         exportacao.restore_database(conteudo)
     except exportacao.ExportacaoError as exc:
