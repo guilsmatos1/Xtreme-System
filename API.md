@@ -184,7 +184,9 @@ For each resource, replace `{resource}` with one of:
 
 Response: Array of resource objects
 
-**Permissions**: Requires authentication (any role)
+**Permissions**: Requires authentication and profile access to the equivalent UI
+page for non-admin users. Field restrictions configured in the user's profile
+are also applied to JSON responses by omitting hidden fields.
 
 #### Get Single Resource
 
@@ -193,6 +195,9 @@ Response: Array of resource objects
 Response: Single resource object
 
 **Permissions**: Requires authentication (any role)
+and profile access to the equivalent UI page for non-admin users. Field
+restrictions configured in the user's profile are also applied to JSON
+responses by omitting hidden fields.
 
 **Status Codes**:
 

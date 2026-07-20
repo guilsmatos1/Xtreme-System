@@ -5,6 +5,9 @@ from collections.abc import Callable
 import pytest
 from fastapi.testclient import TestClient
 
+from xtreme_system.api.core import app
+from xtreme_system.database.core import get_session
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 
@@ -84,6 +87,56 @@ def test_admin_cria_venda(client: TestClient) -> None:
     assert data["status"] == "pendente"
     assert data["cliente"]["nome"] == "João Silva"
     assert data["veiculo"]["modelo"] == "Gol"
+
+
+def test_api_json_respeita_perfil_em_veiculos_e_vendas(
+    client: TestClient,
+) -> None:
+    admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, admin_headers)
+    venda_resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "45000.00",
+            "valor_entrada": "5000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": 36,
+        },
+        headers=admin_headers,
+    )
+    assert venda_resp.status_code == 201
+
+    session = next(app.dependency_overrides[get_session]())
+    p = perfil.create(
+        session,
+        perfil.PerfilCreate(
+            nome="Vendas limitado",
+            paginas=["veiculos", "vendas"],
+            restricoes={
+                "veiculos": {"campos_ocultos": ["preco", "investidor"]},
+                "vendas": {"campos_ocultos": ["valor_venda", "valor_entrada"]},
+            },
+        ),
+    )
+    vendedor = usuario.get_by_username(session, "vendedor")
+    assert vendedor is not None
+    vendedor.perfil_id = p.id
+    session.flush()
+
+    vendedor_headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
+    veiculos_resp = client.get("/veiculos", headers=vendedor_headers)
+    assert veiculos_resp.status_code == 200
+    assert "preco" not in veiculos_resp.json()[0]
+    assert "investidor" not in veiculos_resp.json()[0]
+
+    vendas_resp = client.get("/vendas", headers=vendedor_headers)
+    assert vendas_resp.status_code == 200
+    assert "valor_venda" not in vendas_resp.json()[0]
+    assert "valor_entrada" not in vendas_resp.json()[0]
+    assert vendas_resp.json()[0]["cliente"]["nome"] == "João Silva"
 
 
 def test_admin_lista_vendas(client: TestClient) -> None:

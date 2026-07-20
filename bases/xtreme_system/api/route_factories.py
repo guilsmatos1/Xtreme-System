@@ -1,8 +1,10 @@
 """Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
 
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -36,11 +38,34 @@ from xtreme_system.api.crud_ui.simple import (
 )
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 _sort_key = sort_key
 _csv_response = csv_response
 DepFactory = Callable[..., usuario.Usuario]
+
+
+def _require_json_page(user: usuario.Usuario, pagina: str) -> None:
+    if not perfil.pode_acessar(user, pagina):
+        raise HTTPException(status_code=403, detail="Página não permitida")
+
+
+def _json_visible(
+    obj: Any,
+    user: usuario.Usuario,
+    pagina: str | None,
+    campos: tuple[str, ...],
+    read_schema: type[Any],
+) -> Any:
+    if pagina is None:
+        return obj
+    _require_json_page(user, pagina)
+    data: dict[str, Any] = jsonable_encoder(read_schema.model_validate(obj))
+    for campo in campos:
+        if not perfil.pode_ver_campo(user, pagina, campo):
+            data.pop(campo, None)
+    return data
 
 
 def register_crud_routes(
@@ -58,14 +83,24 @@ def register_crud_routes(
     after_create: AfterWriteHook[EntityT] | None = None,
     after_update: AfterWriteHook[EntityT] | None = None,
     handle_delete_error: bool = True,
+    pagina: str | None = None,
+    campos_protegidos: tuple[str, ...] = (),
 ) -> None:
-    @app.get(prefix, response_model=list[read_schema])  # type: ignore[valid-type]
-    def _list(session: SessionDep, _: CurrentUser) -> list[EntityT]:
-        return module.list_all(session)
+    response_model = None if pagina else list[read_schema]  # type: ignore[valid-type]
 
-    @app.get(f"{prefix}/{{item_id}}", response_model=read_schema)
-    def _get(item_id: int, session: SessionDep, _: CurrentUser) -> EntityT:
-        return _found(module.get(session, item_id), label)
+    @app.get(prefix, response_model=response_model)
+    def _list(session: SessionDep, user: CurrentUser) -> list[EntityT] | list[Any]:
+        if pagina is not None:
+            _require_json_page(user, pagina)
+        return [
+            _json_visible(obj, user, pagina, campos_protegidos, read_schema)
+            for obj in module.list_all(session)
+        ]
+
+    @app.get(f"{prefix}/{{item_id}}", response_model=None if pagina else read_schema)
+    def _get(item_id: int, session: SessionDep, user: CurrentUser) -> EntityT | Any:
+        obj = _found(module.get(session, item_id), label)
+        return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 
     @app.post(prefix, response_model=read_schema, status_code=201)
     def _create(
