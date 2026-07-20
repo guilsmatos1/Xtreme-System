@@ -411,6 +411,7 @@ register_crud_ui_routes(
     cadastrar_dep=require_operacao("compras", "cadastrar"),
     sort_fields={
         "cliente": lambda c: _sort_key(c.cliente.nome),
+        "documento": lambda c: _sort_key(c.cliente.documento or ""),
         "modelo": lambda c: _sort_key(c.veiculo.modelo),
         "placa": lambda c: _sort_key(c.veiculo.placa),
         "data": "data_compra",

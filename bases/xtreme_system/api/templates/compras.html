@@ -37,7 +37,7 @@
       <tr>
         {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th>{{ ui.sortable("data", "Data", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'cliente') %}<th>{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th>Documento do Cliente</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th>{{ ui.sortable("documento", "Documento do Cliente", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'status') %}<th>{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'placa') %}<th>{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'veiculo') %}<th>{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", sort_qs) }}</th>{% endif %}
