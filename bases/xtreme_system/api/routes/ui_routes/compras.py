@@ -22,6 +22,7 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
     _uploads_compra_dir,
     _validar_uploads,
+    resolver_cliente,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
@@ -205,47 +206,6 @@ def ui_compra_comprovantes_excluir(
     return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
 
-def _resolver_cliente(
-    session: Session, form: Any
-) -> tuple[cliente.Cliente | None, cliente.ClienteCreate | None, str | None]:
-    cliente_sel = str(form.get("cliente_id") or "").strip()
-    if cliente_sel:
-        try:
-            existente = cliente.get(session, int(cliente_sel))
-        except ValueError:
-            existente = None
-        if existente is None:
-            return None, None, "Cliente inválido ou inexistente"
-        return existente, None, None
-
-    nome = str(form.get("cli_nome") or "").strip()
-    documento = str(form.get("cli_documento") or "").strip()
-    erro: str | None = None
-    if not nome or not documento:
-        erro = "Informe os dados do cliente"
-    elif cliente.get_by_documento(session, documento):
-        erro = "CPF já cadastrado — selecione o cliente na lista"
-    if erro:
-        return None, None, erro
-    try:
-        novo_cliente_data = cliente.ClienteCreate.model_validate(
-            {
-                "nome": nome,
-                "documento": documento,
-                "tipo": form.get("cli_tipo") or "pessoa_fisica",
-                "telefone": str(form.get("cli_telefone") or "").strip() or None,
-                "email": str(form.get("cli_email") or "").strip() or None,
-                "endereco": str(form.get("cli_endereco") or "").strip() or None,
-                "cidade": str(form.get("cli_cidade") or "").strip() or None,
-                "estado": str(form.get("cli_estado") or "").strip() or None,
-                "cep": str(form.get("cli_cep") or "").strip() or None,
-            }
-        )
-    except ValidationError:
-        return None, None, "Dados do cliente inválidos"
-    return None, novo_cliente_data, None
-
-
 def _resolver_veiculo(
     session: Session, form: Any
 ) -> tuple[veiculo.Veiculo | None, veiculo.VeiculoCreate | None, str | None]:
@@ -331,7 +291,7 @@ async def _criar_compra(  # noqa: PLR0911
     if erro:
         return _erro_compra(request, session, user, erro)
 
-    cliente_obj, novo_cliente_data, erro = _resolver_cliente(session, form)
+    cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
     if erro:
         return _erro_compra(request, session, user, erro)
 
