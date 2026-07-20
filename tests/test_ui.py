@@ -633,6 +633,88 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_vendas_rejeita_veiculo_indisponivel_na_edicao(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+
+    cliente_id = _criar_cliente(client, headers, "Cliente UI", "33333333333")
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_disponivel = client.get("/veiculos", headers=headers).json()[0]["id"]
+    veiculo_indisponivel = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Corolla",
+            "cor": "Preto",
+            "ano": 2021,
+            "placa": "UIX9A99",
+            "km": 15000,
+            "preco": "95000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert veiculo_indisponivel.status_code == 201
+    veiculo_indisponivel_id = veiculo_indisponivel.json()["id"]
+
+    venda_concluida = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_indisponivel_id,
+            "data_venda": "2026-07-09",
+            "valor_venda": "98000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    assert venda_concluida.status_code == 201
+
+    criada = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_disponivel),
+            "data_venda": "2026-07-10",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+        },
+    )
+    assert criada.status_code == 200
+
+    venda_id = next(
+        item["id"]
+        for item in client.get("/vendas", headers=headers).json()
+        if item["cliente"]["id"] == cliente_id
+        and item["veiculo"]["id"] == veiculo_disponivel
+    )
+
+    resp = client.post(
+        f"/ui/vendas/{venda_id}",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_indisponivel_id),
+            "data_venda": "2026-07-10",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "indisponível" in resp.text
+    venda_atual = client.get(f"/vendas/{venda_id}", headers=headers)
+    assert venda_atual.status_code == 200
+    assert venda_atual.json()["veiculo"]["id"] == veiculo_disponivel
+
+
 def test_ui_vendas_busca_por_cliente_nao_duplica_resultados(
     client: TestClient,
 ) -> None:
