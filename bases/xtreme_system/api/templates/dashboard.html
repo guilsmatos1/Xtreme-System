@@ -143,6 +143,7 @@
     <table class="table--wide">
       <thead><tr>
         <th>Atividade</th>
+        <th>Usuário</th>
         <th>Origem</th>
         <th>Quando</th>
       </tr></thead>
@@ -150,6 +151,7 @@
         {% for item in atividades_recentes %}
         <tr>
           <td>{{ item.titulo }}</td>
+          <td>{{ item.usuario }}</td>
           <td>{{ item.detalhe }}</td>
           <td>{{ item.quando }}</td>
         </tr>

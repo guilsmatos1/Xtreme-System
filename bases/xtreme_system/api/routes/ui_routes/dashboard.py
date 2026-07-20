@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
@@ -118,10 +119,17 @@ def _atividade_titulo(row: auditoria.Auditoria) -> str:
 
 
 def _atividades_recentes(session: Session) -> list[dict[str, str]]:
+    def _nome_usuario(usuario_id: int | None) -> str:
+        if not usuario_id:
+            return "Sistema"
+        usu = usuario.get(session, usuario_id)
+        return usu.username if usu else "Sistema"
+
     return [
         {
             "titulo": _atividade_titulo(row),
             "detalhe": f"{row.tabela} · {row.tipo_acao}",
+            "usuario": _nome_usuario(row.usuario_id),
             "quando": row.criado_em.strftime("%d/%m/%Y %H:%M"),
         }
         for row in auditoria.query(session, limit=8)
