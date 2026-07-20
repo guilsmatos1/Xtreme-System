@@ -1,5 +1,6 @@
 """HTMX routes for veículos — CRUD override (create/update transacionais)."""
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, Any
 
@@ -58,11 +59,28 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
 def _ctx_lista_veiculos(
     session: Session, veiculos: list[veiculo.Veiculo]
 ) -> dict[str, Any]:
-    compras_por_veiculo = compra.latest_by_veiculo_ids(
-        session, [item.id for item in veiculos]
-    )
+    ids = [item.id for item in veiculos]
+    compras_por_veiculo = compra.latest_by_veiculo_ids(session, ids)
+    datas_entrada: dict[int, datetime] = {}
+    if ids:
+        datas_entrada = {
+            veiculo_id: criado_em
+            for veiculo_id, criado_em in session.query(
+                caixa.LancamentoInvestimento.veiculo_id,
+                caixa.LancamentoInvestimento.criado_em,
+            )
+            .filter(caixa.LancamentoInvestimento.veiculo_id.in_(ids))
+            .all()
+            if veiculo_id is not None
+        }
+    hoje = datetime.now(UTC).date()
     return {
         "compras_por_veiculo": compras_por_veiculo,
+        "tempo_estoque_por_veiculo": {
+            veiculo_id: max((hoje - data_entrada.date()).days, 0)
+            for veiculo_id, data_entrada in datas_entrada.items()
+            if data_entrada is not None
+        },
     }
 
 
