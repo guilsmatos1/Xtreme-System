@@ -78,17 +78,27 @@
         <div class="stepper">
           <div class="stepper__item is-active" data-stepper="1">
             <span class="stepper__num">1</span>
-            <span class="stepper__label">Partes</span>
+            <span class="stepper__label">Cliente</span>
           </div>
           <div class="stepper__connector" data-connector="1"></div>
           <div class="stepper__item" data-stepper="2">
             <span class="stepper__num">2</span>
-            <span class="stepper__label">Valores</span>
+            <span class="stepper__label">Veículo</span>
           </div>
           <div class="stepper__connector" data-connector="2"></div>
           <div class="stepper__item" data-stepper="3">
             <span class="stepper__num">3</span>
-            <span class="stepper__label">Notas</span>
+            <span class="stepper__label">Valores</span>
+          </div>
+          <div class="stepper__connector" data-connector="3"></div>
+          <div class="stepper__item" data-stepper="4">
+            <span class="stepper__num">4</span>
+            <span class="stepper__label">Observações</span>
+          </div>
+          <div class="stepper__connector" data-connector="4"></div>
+          <div class="stepper__item" data-stepper="5">
+            <span class="stepper__num">5</span>
+            <span class="stepper__label">Comprovante</span>
           </div>
         </div>
 
@@ -103,8 +113,6 @@
               {% endfor %}
             </select>
           </label>
-          {% endif %}
-          {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-novo-cliente required>
@@ -144,6 +152,9 @@
             <input class="input" name="cli_cep" data-novo-cliente>
           </label>
           {% endif %}
+        </fieldset>
+
+        <fieldset class="wizard-step form-grid" data-step="2">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo</span>
@@ -200,7 +211,7 @@
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid" data-step="2">
+        <fieldset class="wizard-step form-grid" data-step="3">
           {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field field--full">
             <span class="field__label">Data da compra</span>
@@ -221,18 +232,26 @@
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid" data-step="3">
+        <fieldset class="wizard-step form-grid" data-step="4">
           {% if pode_ver_campo(user, 'compras', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="5"></textarea>
           </label>
           {% endif %}
+        </fieldset>
+
+        <fieldset class="wizard-step" data-step="5">
           {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
-          <label class="field field--full">
-            <span class="field__label">Comprovante de pagamento</span>
-            <input class="input" name="comprovantes_pagamento" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple>
-          </label>
+          <div class="mmgr__upload">
+            <label class="mmgr__drop">
+              <input type="file" name="comprovantes_pagamento" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste o comprovante aqui ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
+              <span class="mmgr__drop-text">Arraste o comprovante aqui ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
+            </label>
+          </div>
           {% endif %}
         </fieldset>
         {% endif %}
