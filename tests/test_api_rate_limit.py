@@ -40,6 +40,7 @@ def test_login_rate_limit_isolates_clients_behind_proxy(
     )
     assert resp.status_code == 401
 
+
 def test_login_rate_limit_nao_vaza_entre_clients(
     make_client: Callable[..., TestClient],
 ) -> None:
