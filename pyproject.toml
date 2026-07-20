@@ -53,6 +53,7 @@ dev-mode-dirs = ["components", "bases", "development"]
 addopts = [
     "--strict-config",
     "--strict-markers",
+    "--ignore=.ai-jail",
     "--ignore=tests/e2e",
 ]
 testpaths = ["tests"]
@@ -149,7 +150,7 @@ ignore_names = [
 ignore_decorators = ["app.*"]
 
 [tool.deptry]
-extend_exclude = [".opencode", ".agents", "alembic"]
+extend_exclude = [".opencode", ".agents", ".ai-jail", "alembic"]
 known_first_party = ["xtreme_system"]
 per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"] }
 

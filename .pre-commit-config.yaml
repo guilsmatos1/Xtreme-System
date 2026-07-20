@@ -70,7 +70,7 @@ repos:
 
       - id: deptry
         name: deptry
-        entry: uv run deptry .
+        entry: uv run deptry bases components development projects tests
         language: system
         pass_filenames: false
         always_run: true

@@ -13,6 +13,7 @@
     {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<td class="cell-center" data-col="revisao">{% if v.revisao %}✓{% else %}-{% endif %}</td>{% endif %}
     {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if compra_v and compra_v.debitos is not none %}R$ {{ "{:,.2f}".format(compra_v.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
+    {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}<td class="cell-num" data-col="tempo_estoque">{{ v.tempo_estoque }} dia{% if v.tempo_estoque != 1 %}s{% endif %}</td>{% endif %}
   {% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'veiculos', 'excluir') %}
   {% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}

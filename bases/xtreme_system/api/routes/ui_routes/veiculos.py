@@ -102,6 +102,7 @@ register_crud_ui_routes(
         "revisao": "revisao",
         "investidor": "investidor",
         "procuracao": "procuracao",
+        "tempo_estoque": "criado_em",
     },
     csv_filename="veiculos.csv",
     csv_headers=[
@@ -117,6 +118,7 @@ register_crud_ui_routes(
         "Revisao",
         "Investidor",
         "Procurador",
+        "Tempo de Estoque",
     ],
     csv_fields=[
         None,
@@ -131,6 +133,7 @@ register_crud_ui_routes(
         "revisao",
         "investidor",
         "procuracao",
+        "tempo_estoque",
     ],
     csv_row=lambda v: [
         v.id,
@@ -145,6 +148,7 @@ register_crud_ui_routes(
         "Sim" if v.revisao else "Não",
         v.investidor.nome,
         v.procuracao or "",
+        f"{v.tempo_estoque} dias",
     ],
     pagina="veiculos",
     register_create=False,
