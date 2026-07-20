@@ -17,7 +17,7 @@
           <label class="field">
             <span class="field__label">Cliente *</span>
             <input class="input" id="cliente-search" name="cliente_id" type="hidden" value="{{ venda.cliente_id }}" required>
-            <input class="input" placeholder="Buscar por nome" list="clientes-list" value="{{ venda.cliente.nome }}" onchange="document.getElementById('cliente-search').value = this.selectedOptions[0]?.dataset.id || ''">
+            <input class="input" id="cliente-input" placeholder="Buscar por nome" list="clientes-list" value="{{ venda.cliente.nome }}">
             <datalist id="clientes-list">
               {% for c in clientes %}
               <option value="{{ c.nome }}" data-id="{{ c.id }}"></option>
@@ -29,7 +29,7 @@
           <label class="field">
             <span class="field__label">Veículo *</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
-            <input class="input" placeholder="Buscar por placa ou modelo" list="veiculos-list" onchange="document.getElementById('veiculo-search').value = this.selectedOptions[0]?.dataset.id || ''">
+            <input class="input" id="veiculo-input" placeholder="Buscar por placa ou modelo" list="veiculos-list">
             <datalist id="veiculos-list">
               {% for veic in veiculos %}
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
@@ -220,7 +220,7 @@
           <label class="field field--full">
             <span class="field__label">Veículo *</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
-            <input class="input" placeholder="Buscar por placa ou modelo" list="veiculos-list" onchange="document.getElementById('veiculo-search').value = this.selectedOptions[0]?.dataset.id || ''">
+            <input class="input" id="veiculo-input" placeholder="Buscar por placa ou modelo" list="veiculos-list">
             <datalist id="veiculos-list">
               {% for veic in veiculos %}
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
@@ -353,7 +353,42 @@
     </form>
   </div>
 </div>
-{% if not venda %}
+<script>
+(function () {
+  var clienteInput = document.getElementById('cliente-input');
+  var clienteSearch = document.getElementById('cliente-search');
+  var clienteOptions = document.querySelectorAll('#clientes-list option');
+  var veiculoInput = document.getElementById('veiculo-input');
+  var veiculoSearch = document.getElementById('veiculo-search');
+  var veiculoOptions = document.querySelectorAll('#veiculos-list option');
+
+  if (clienteInput && clienteSearch) {
+    function sincronizarCliente() {
+      var id = '';
+      clienteOptions.forEach(function (option) {
+        if (option.value === clienteInput.value) {
+          id = option.dataset.id || '';
+        }
+      });
+      clienteSearch.value = id;
+    }
+    clienteInput.addEventListener('change', sincronizarCliente);
+  }
+
+  if (veiculoInput && veiculoSearch) {
+    function sincronizarVeiculo() {
+      var id = '';
+      veiculoOptions.forEach(function (option) {
+        if (option.value === veiculoInput.value) {
+          id = option.dataset.id || '';
+        }
+      });
+      veiculoSearch.value = id;
+    }
+    veiculoInput.addEventListener('change', sincronizarVeiculo);
+  }
+})();
+</script>
 <script>
 (function () {
   var form = document.getElementById('form-nova-venda');
