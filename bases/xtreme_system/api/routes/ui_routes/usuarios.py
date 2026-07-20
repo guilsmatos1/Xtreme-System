@@ -44,14 +44,10 @@ def ui_usuarios(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
-    q: str = "",
     sort: str = "",
     order: str = "asc",
 ) -> HTMLResponse:
     usuarios = usuario.list_all(session)
-    if q:
-        termo = q.lower()
-        usuarios = [u for u in usuarios if termo in u.username.lower()]
     field = _USUARIO_SORT_FIELDS.get(sort)
     if field:
         usuarios = sorted(
@@ -65,7 +61,6 @@ def ui_usuarios(
         "perfis": perfil.list_all(session),
         "sort": sort,
         "order": order,
-        "q": q,
     }
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_linhas_usuarios.html", ctx)

@@ -8,7 +8,7 @@
 <div class="page-head">
   <div class="page-head__title">
     <h1>Configurações</h1>
-    <p class="page-head__subtitle">Backup, migração e integrações de mensagem</p>
+    <p class="page-head__subtitle">Dados da empresa, tema, WhatsApp e backup</p>
   </div>
 </div>
 
@@ -30,15 +30,15 @@
       <label class="settings-nav__item" for="tab-banco" role="tab">
         <span class="settings-nav__icon">{{ ui.icon("database") }}</span>
         <span class="settings-nav__text">
-          <span class="settings-nav__title">Migração do Banco</span>
-          <span class="settings-nav__desc">Backup e restauração</span>
+          <span class="settings-nav__title">Backup</span>
+          <span class="settings-nav__desc">Exportar ou restaurar dados</span>
         </span>
       </label>
       <label class="settings-nav__item" for="tab-tema" role="tab">
         <span class="settings-nav__icon">{{ ui.icon("sun") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">Tema</span>
-          <span class="settings-nav__desc">Alternar entre claro e escuro</span>
+          <span class="settings-nav__desc">Claro ou escuro</span>
         </span>
       </label>
       <label class="settings-nav__item" for="tab-empresa" role="tab">
@@ -52,7 +52,7 @@
         <span class="settings-nav__icon">{{ ui.icon("megaphone") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">
-            Notificações WhatsApp
+            WhatsApp
             <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if configurado }}"
                   title="{{ 'Conectado' if configurado else 'Pendente' }}"></span>
           </span>
@@ -64,18 +64,15 @@
     <section class="settings-tabs__panel settings-tabs__panel--banco">
       <div class="settings-panel-head">
         <h2>Backup e migração</h2>
-        <p class="page-head__subtitle">
-          Exporte ou restaure dumps PostgreSQL para mover dados entre instalações.
-        </p>
+        <p class="page-head__subtitle">Exporte ou restaure os dados do sistema.</p>
       </div>
 
       <div class="settings-grid">
         <div class="action-card card card--pad">
           <span class="action-card__icon action-card__icon--accent">{{ ui.icon("download") }}</span>
-          <h3>Exportar banco</h3>
+          <h3>Exportar dados</h3>
           <p class="muted">
-            Baixa um arquivo <code>.dump</code> com todos os dados atuais do sistema,
-            gerado com <code>pg_dump</code>.
+            Baixa um arquivo <code>.dump</code> com os dados atuais.
           </p>
           <form method="post" action="/ui/configuracoes/exportar">
             <button class="btn btn--primary" type="submit">
@@ -86,10 +83,9 @@
 
         <div class="action-card action-card--danger card card--pad">
           <span class="action-card__icon action-card__icon--danger">{{ ui.icon("upload") }}</span>
-          <h3>Importar banco</h3>
+          <h3>Importar dados</h3>
           <p class="muted">
-            Restaura o banco a partir de um arquivo <code>.dump</code> exportado
-            anteriormente.
+            Restaura o sistema a partir de um arquivo <code>.dump</code>.
           </p>
           <div class="callout callout--danger">
             {{ ui.icon("alert-triangle") }}
@@ -250,12 +246,10 @@
         <p class="page-head__subtitle">Escolha entre o tema claro e escuro.</p>
       </div>
       <div class="settings-grid">
-        <div class="action-card card card--pad" style="cursor:pointer" onclick="toggleTheme()">
+        <div class="action-card card card--pad" style="cursor:pointer">
           <span class="action-card__icon action-card__icon--accent">{{ ui.icon("sun") }}</span>
           <h3>Alternar tema</h3>
-          <p class="muted">
-            Clique para alternar entre o tema claro e escuro. A preferência é salva no navegador.
-          </p>
+          <p class="muted">A preferência fica salva neste navegador.</p>
           <button class="btn btn--primary" type="button" onclick="toggleTheme()">
             {{ ui.icon("sun") }} Alternar tema
           </button>

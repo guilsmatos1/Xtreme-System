@@ -153,6 +153,7 @@ register_crud_ui_routes(
     ctx_form=_ctx_form_venda,
     ctx_list=_ctx_lista_vendas,
     searchable=True,
+    search_func=venda.search,
     parse_form=_parse_venda_form,
     before_delete=recompute_vehicle_status_on_delete,
     register_create=False,

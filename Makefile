@@ -52,7 +52,7 @@ watch:
 	uv run ptw --runner "python -m pytest tests/ -q"
 
 coverage:
-	$(PYTHON) -m pytest tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing --cov-fail-under=75
+	$(PYTHON) -m pytest tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing
 
 ci: lint coverage
 

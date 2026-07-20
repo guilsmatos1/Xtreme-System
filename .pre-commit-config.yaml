@@ -48,11 +48,20 @@ repos:
         always_run: true
 
       - id: alembic-check
-        name: alembic check & migrate
-        entry: bash -c 'uv run alembic check || (uv run alembic revision --autogenerate -m "auto_migration" && uv run alembic upgrade head && echo "Migration applied. Stage the new migration file before committing.")'
+        name: alembic check
+        entry: uv run alembic check
         language: system
         pass_filenames: false
         always_run: true
+        stages: [pre-commit]
+
+      - id: alembic-chain
+        name: alembic migration chain integrity
+        entry: uv run python development/alembic_chain_check.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^alembic/versions/.*\.py$
 
       - id: vulture
         name: vulture

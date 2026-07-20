@@ -1,0 +1,197 @@
+- generic [ref=f4e2]:
+  - complementary "Navegação principal" [ref=f4e3]:
+    - generic [ref=f4e4]: Xtreme Motors
+    - generic [ref=f4e10]: Visão Geral
+    - navigation [ref=f4e11]:
+      - link "Dashboard" [ref=f4e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f4e18]: Operações
+    - navigation [ref=f4e19]:
+      - link "Veículos" [ref=f4e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f4e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f4e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f4e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f4e36]: Pessoas
+    - navigation [ref=f4e37]:
+      - link "Investidores" [ref=f4e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f4e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f4e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f4e52]: Administração
+    - navigation [ref=f4e53]:
+      - link "Usuários" [ref=f4e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f4e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f4e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f4e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f4e72]:
+      - link "P playwright_admin admin" [ref=f4e73] [cursor=pointer]:
+        - /url: /ui/conta
+        - generic [ref=f4e74]: P
+        - generic [ref=f4e75]:
+          - generic [ref=f4e76]: playwright_admin
+          - generic [ref=f4e77]: admin
+      - button "Sair" [ref=f4e79] [cursor=pointer]
+  - main [ref=f4e83]:
+    - generic [ref=f4e84]:
+      - generic [ref=f4e85]:
+        - heading "Veículos" [level=1] [ref=f4e86]
+        - paragraph [ref=f4e87]: Gerencie o estoque de veículos da operação
+      - generic [ref=f4e88]:
+        - button "Colunas" [ref=f4e89] [cursor=pointer]
+        - link "Exportar dados" [ref=f4e93] [cursor=pointer]:
+          - /url: /ui/veiculos/exportar?q=
+    - region "Resumo do estoque" [ref=f4e97]:
+      - article [ref=f4e98]:
+        - generic [ref=f4e99]: Total no estoque
+        - generic [ref=f4e103]: "97"
+        - generic [ref=f4e104]: veículos cadastrados
+      - article [ref=f4e105]:
+        - generic [ref=f4e106]: Disponíveis
+        - generic [ref=f4e109]: "97"
+        - generic [ref=f4e110]: prontos para venda
+      - article [ref=f4e111]:
+        - generic [ref=f4e112]: Vendidos
+        - generic [ref=f4e116]: "0"
+        - generic [ref=f4e117]: baixados do estoque
+    - generic [ref=f4e118]:
+      - searchbox "Buscar veículos" [active] [ref=f4e120]: ONIX
+      - combobox "Buscar por coluna" [ref=f4e121]:
+        - option "Todas as colunas"
+        - option "Modelo"
+        - option "Placa" [selected]
+        - option "Tipo"
+        - option "Ano"
+        - option "KM"
+        - option "Estado"
+        - option "Preço"
+        - option "Tipo de Entrada"
+        - option "Investidor"
+        - option "Procurador"
+        - option "Revisão"
+        - option "Débitos"
+    - table [ref=f4e123]:
+      - rowgroup [ref=f4e124]:
+        - row [ref=f4e125]:
+          - columnheader [ref=f4e126]:
+            - link "Modelo" [ref=f4e127] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=modelo&order=asc&q=&search_column=
+          - columnheader [ref=f4e128]:
+            - link "Placa" [ref=f4e129] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=placa&order=asc&q=&search_column=
+          - columnheader [ref=f4e130]:
+            - link "Tipo" [ref=f4e131] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo&order=asc&q=&search_column=
+          - columnheader [ref=f4e132]:
+            - link "Ano" [ref=f4e133] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=ano&order=asc&q=&search_column=
+          - columnheader [ref=f4e134]:
+            - link "KM" [ref=f4e135] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=km&order=asc&q=&search_column=
+          - columnheader [ref=f4e136]:
+            - link "Estado" [ref=f4e137] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=status&order=asc&q=&search_column=
+          - columnheader [ref=f4e138]:
+            - link "Preço de Custo" [ref=f4e139] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=preco&order=asc&q=&search_column=
+          - columnheader [ref=f4e140]:
+            - link "Tipo de Entrada" [ref=f4e141] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo_entrada&order=asc&q=&search_column=
+          - columnheader [ref=f4e142]:
+            - link "Investidor" [ref=f4e143] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=investidor&order=asc&q=&search_column=
+          - columnheader [ref=f4e144]:
+            - link "Procurador" [ref=f4e145] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=procuracao&order=asc&q=&search_column=
+          - columnheader [ref=f4e146]:
+            - link "Revisão" [ref=f4e147] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=revisao&order=asc&q=&search_column=
+          - columnheader [ref=f4e148]:
+            - link "Débitos" [ref=f4e149] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=debitos&order=asc&q=&search_column=
+          - columnheader [ref=f4e150]:
+            - link "Tempo de Estoque" [ref=f4e151] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tempo_estoque&order=asc&q=&search_column=
+          - columnheader "Ações" [ref=f4e152]
+      - rowgroup [ref=f4e9791]:
+        - row [ref=f4e9792]:
+          - cell "ONIX LT 1.4" [ref=f4e9793]
+          - cell "FLG1D76" [ref=f4e9794]
+          - cell [ref=f4e9795]
+          - cell "2014" [ref=f4e9799]
+          - cell "120.000" [ref=f4e9800]
+          - cell "Disponível" [ref=f4e9801]
+          - cell "R$ 49.900,00" [ref=f4e9803]
+          - cell "Compra" [ref=f4e9804]
+          - cell "Guilherme" [ref=f4e9806]
+          - cell "XTREME" [ref=f4e9807]
+          - cell "-" [ref=f4e9808]
+          - cell "-" [ref=f4e9809]
+          - cell "0 dias" [ref=f4e9810]
+          - cell [ref=f4e9811]:
+            - generic [ref=f4e9812]:
+              - link "Ver detalhes de ONIX LT 1.4" [ref=f4e9813] [cursor=pointer]:
+                - /url: /ui/veiculos/50/detalhes
+              - button "Editar ONIX LT 1.4" [ref=f4e9817] [cursor=pointer]
+              - button "Cliente vendedor de ONIX LT 1.4" [ref=f4e9820] [cursor=pointer]
+              - button "Imagens de ONIX LT 1.4" [ref=f4e9824] [cursor=pointer]
+              - button "Procuração de ONIX LT 1.4" [ref=f4e9829] [cursor=pointer]
+              - button "Documento do veículo ONIX LT 1.4" [ref=f4e9833] [cursor=pointer]
+              - button "Excluir ONIX LT 1.4" [ref=f4e9837] [cursor=pointer]
+        - row [ref=f4e9840]:
+          - cell "ONIX LT PLUS" [ref=f4e9841]
+          - cell "TCM9G85" [ref=f4e9842]
+          - cell [ref=f4e9843]
+          - cell "2025" [ref=f4e9847]
+          - cell "39.000" [ref=f4e9848]
+          - cell "Disponível" [ref=f4e9849]
+          - cell "R$ 73.900,00" [ref=f4e9851]
+          - cell "Compra" [ref=f4e9852]
+          - cell "Guilherme" [ref=f4e9854]
+          - cell "TRANSFERINDO" [ref=f4e9855]
+          - cell "-" [ref=f4e9856]
+          - cell "-" [ref=f4e9857]
+          - cell "0 dias" [ref=f4e9858]
+          - cell [ref=f4e9859]:
+            - generic [ref=f4e9860]:
+              - link "Ver detalhes de ONIX LT PLUS" [ref=f4e9861] [cursor=pointer]:
+                - /url: /ui/veiculos/58/detalhes
+              - button "Editar ONIX LT PLUS" [ref=f4e9865] [cursor=pointer]
+              - button "Cliente vendedor de ONIX LT PLUS" [ref=f4e9868] [cursor=pointer]
+              - button "Imagens de ONIX LT PLUS" [ref=f4e9872] [cursor=pointer]
+              - button "Procuração de ONIX LT PLUS" [ref=f4e9877] [cursor=pointer]
+              - button "Documento do veículo ONIX LT PLUS" [ref=f4e9881] [cursor=pointer]
+              - button "Excluir ONIX LT PLUS" [ref=f4e9885] [cursor=pointer]
+        - row [ref=f4e9888]:
+          - cell "ONIX" [ref=f4e9889]
+          - cell "GJN2D34" [ref=f4e9890]
+          - cell [ref=f4e9891]
+          - cell "2020" [ref=f4e9895]
+          - cell "64.000" [ref=f4e9896]
+          - cell "Disponível" [ref=f4e9897]
+          - cell "R$ 65.900,00" [ref=f4e9899]
+          - cell "Compra" [ref=f4e9900]
+          - cell "Gustavo" [ref=f4e9902]
+          - cell "XTREME" [ref=f4e9903]
+          - cell "-" [ref=f4e9904]
+          - cell "-" [ref=f4e9905]
+          - cell "0 dias" [ref=f4e9906]
+          - cell [ref=f4e9907]:
+            - generic [ref=f4e9908]:
+              - link "Ver detalhes de ONIX" [ref=f4e9909] [cursor=pointer]:
+                - /url: /ui/veiculos/93/detalhes
+              - button "Editar ONIX" [ref=f4e9913] [cursor=pointer]
+              - button "Cliente vendedor de ONIX" [ref=f4e9916] [cursor=pointer]
+              - button "Imagens de ONIX" [ref=f4e9920] [cursor=pointer]
+              - button "Procuração de ONIX" [ref=f4e9925] [cursor=pointer]
+              - button "Documento do veículo ONIX" [ref=f4e9929] [cursor=pointer]
+              - button "Excluir ONIX" [ref=f4e9933] [cursor=pointer]

@@ -1,0 +1,2453 @@
+- generic [ref=f4e2]:
+  - complementary "Navegação principal" [ref=f4e3]:
+    - generic [ref=f4e4]: Xtreme Motors
+    - generic [ref=f4e10]: Visão Geral
+    - navigation [ref=f4e11]:
+      - link "Dashboard" [ref=f4e12] [cursor=pointer]:
+        - /url: /ui/dashboard
+    - generic [ref=f4e18]: Operações
+    - navigation [ref=f4e19]:
+      - link "Veículos" [ref=f4e20] [cursor=pointer]:
+        - /url: /ui/veiculos
+      - link "Compras" [ref=f4e24] [cursor=pointer]:
+        - /url: /ui/compras
+      - link "Custos" [ref=f4e28] [cursor=pointer]:
+        - /url: /ui/custos-veiculos
+      - link "Vendas" [ref=f4e32] [cursor=pointer]:
+        - /url: /ui/vendas
+    - generic [ref=f4e36]: Pessoas
+    - navigation [ref=f4e37]:
+      - link "Investidores" [ref=f4e38] [cursor=pointer]:
+        - /url: /ui/investidores
+      - link "Clientes Compradores" [ref=f4e42] [cursor=pointer]:
+        - /url: /ui/clientes/compradores
+      - link "Clientes Vendedores" [ref=f4e47] [cursor=pointer]:
+        - /url: /ui/clientes/vendedores
+    - generic [ref=f4e52]: Administração
+    - navigation [ref=f4e53]:
+      - link "Usuários" [ref=f4e54] [cursor=pointer]:
+        - /url: /ui/usuarios
+      - link "Auditoria" [ref=f4e59] [cursor=pointer]:
+        - /url: /ui/auditoria
+      - link "Perfis" [ref=f4e63] [cursor=pointer]:
+        - /url: /ui/perfis
+      - link "Configurações" [ref=f4e67] [cursor=pointer]:
+        - /url: /ui/configuracoes
+    - generic [ref=f4e72]:
+      - link "P playwright_admin admin" [ref=f4e73] [cursor=pointer]:
+        - /url: /ui/conta
+        - generic [ref=f4e74]: P
+        - generic [ref=f4e75]:
+          - generic [ref=f4e76]: playwright_admin
+          - generic [ref=f4e77]: admin
+      - button "Sair" [ref=f4e79] [cursor=pointer]
+  - main [ref=f4e83]:
+    - generic [ref=f4e84]:
+      - generic [ref=f4e85]:
+        - heading "Veículos" [level=1] [ref=f4e86]
+        - paragraph [ref=f4e87]: Gerencie o estoque de veículos da operação
+      - generic [ref=f4e88]:
+        - button "Colunas" [ref=f4e89] [cursor=pointer]
+        - link "Exportar dados" [ref=f4e93] [cursor=pointer]:
+          - /url: /ui/veiculos/exportar?q=
+    - region "Resumo do estoque" [ref=f4e97]:
+      - article [ref=f4e98]:
+        - generic [ref=f4e99]: Total no estoque
+        - generic [ref=f4e103]: "97"
+        - generic [ref=f4e104]: veículos cadastrados
+      - article [ref=f4e105]:
+        - generic [ref=f4e106]: Disponíveis
+        - generic [ref=f4e109]: "97"
+        - generic [ref=f4e110]: prontos para venda
+      - article [ref=f4e111]:
+        - generic [ref=f4e112]: Vendidos
+        - generic [ref=f4e116]: "0"
+        - generic [ref=f4e117]: baixados do estoque
+    - generic [ref=f4e118]:
+      - searchbox "Buscar veículos" [active] [ref=f4e120]: ONIX
+      - combobox "Buscar por coluna" [ref=f4e121]:
+        - option "Todas as colunas" [selected]
+        - option "Modelo"
+        - option "Placa"
+        - option "Tipo"
+        - option "Ano"
+        - option "KM"
+        - option "Estado"
+        - option "Preço"
+        - option "Tipo de Entrada"
+        - option "Investidor"
+        - option "Procurador"
+        - option "Revisão"
+        - option "Débitos"
+    - table [ref=f4e123]:
+      - rowgroup [ref=f4e124]:
+        - row [ref=f4e125]:
+          - columnheader [ref=f4e126]:
+            - link "Modelo" [ref=f4e127] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=modelo&order=asc&q=&search_column=
+          - columnheader [ref=f4e128]:
+            - link "Placa" [ref=f4e129] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=placa&order=asc&q=&search_column=
+          - columnheader [ref=f4e130]:
+            - link "Tipo" [ref=f4e131] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo&order=asc&q=&search_column=
+          - columnheader [ref=f4e132]:
+            - link "Ano" [ref=f4e133] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=ano&order=asc&q=&search_column=
+          - columnheader [ref=f4e134]:
+            - link "KM" [ref=f4e135] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=km&order=asc&q=&search_column=
+          - columnheader [ref=f4e136]:
+            - link "Estado" [ref=f4e137] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=status&order=asc&q=&search_column=
+          - columnheader [ref=f4e138]:
+            - link "Preço de Custo" [ref=f4e139] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=preco&order=asc&q=&search_column=
+          - columnheader [ref=f4e140]:
+            - link "Tipo de Entrada" [ref=f4e141] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tipo_entrada&order=asc&q=&search_column=
+          - columnheader [ref=f4e142]:
+            - link "Investidor" [ref=f4e143] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=investidor&order=asc&q=&search_column=
+          - columnheader [ref=f4e144]:
+            - link "Procurador" [ref=f4e145] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=procuracao&order=asc&q=&search_column=
+          - columnheader [ref=f4e146]:
+            - link "Revisão" [ref=f4e147] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=revisao&order=asc&q=&search_column=
+          - columnheader [ref=f4e148]:
+            - link "Débitos" [ref=f4e149] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=debitos&order=asc&q=&search_column=
+          - columnheader [ref=f4e150]:
+            - link "Tempo de Estoque" [ref=f4e151] [cursor=pointer]:
+              - /url: /ui/veiculos?sort=tempo_estoque&order=asc&q=&search_column=
+          - columnheader "Ações" [ref=f4e152]
+      - rowgroup [ref=f4e9936]:
+        - row [ref=f4e9937]:
+          - cell "START" [ref=f4e9938]
+          - cell "UEX7G58" [ref=f4e9939]
+          - cell [ref=f4e9940]
+          - cell "2025" [ref=f4e9945]
+          - cell "0" [ref=f4e9946]
+          - cell "Disponível" [ref=f4e9947]
+          - cell "R$ 21.900,00" [ref=f4e9949]
+          - cell "Compra" [ref=f4e9950]
+          - cell "Gustavo" [ref=f4e9952]
+          - cell "HONDA" [ref=f4e9953]
+          - cell "-" [ref=f4e9954]
+          - cell "-" [ref=f4e9955]
+          - cell "0 dias" [ref=f4e9956]
+          - cell [ref=f4e9957]:
+            - generic [ref=f4e9958]:
+              - link "Ver detalhes de START" [ref=f4e9959] [cursor=pointer]:
+                - /url: /ui/veiculos/2/detalhes
+              - button "Editar START" [ref=f4e9963] [cursor=pointer]
+              - button "Cliente vendedor de START" [ref=f4e9966] [cursor=pointer]
+              - button "Imagens de START" [ref=f4e9970] [cursor=pointer]
+              - button "Procuração de START" [ref=f4e9975] [cursor=pointer]
+              - button "Documento do veículo START" [ref=f4e9979] [cursor=pointer]
+              - button "Excluir START" [ref=f4e9983] [cursor=pointer]
+        - row [ref=f4e9986]:
+          - cell "G 310 GS" [ref=f4e9987]
+          - cell "SEX4E34" [ref=f4e9988]
+          - cell [ref=f4e9989]
+          - cell "2024" [ref=f4e9994]
+          - cell "5.000" [ref=f4e9995]
+          - cell "Disponível" [ref=f4e9996]
+          - cell "R$ 34.900,00" [ref=f4e9998]
+          - cell "Compra" [ref=f4e9999]
+          - cell "Gustavo" [ref=f4e10001]
+          - cell "FABIANO" [ref=f4e10002]
+          - cell "-" [ref=f4e10003]
+          - cell "-" [ref=f4e10004]
+          - cell "0 dias" [ref=f4e10005]
+          - cell [ref=f4e10006]:
+            - generic [ref=f4e10007]:
+              - link "Ver detalhes de G 310 GS" [ref=f4e10008] [cursor=pointer]:
+                - /url: /ui/veiculos/3/detalhes
+              - button "Editar G 310 GS" [ref=f4e10012] [cursor=pointer]
+              - button "Cliente vendedor de G 310 GS" [ref=f4e10015] [cursor=pointer]
+              - button "Imagens de G 310 GS" [ref=f4e10019] [cursor=pointer]
+              - button "Procuração de G 310 GS" [ref=f4e10024] [cursor=pointer]
+              - button "Documento do veículo G 310 GS" [ref=f4e10028] [cursor=pointer]
+              - button "Excluir G 310 GS" [ref=f4e10032] [cursor=pointer]
+        - row [ref=f4e10035]:
+          - cell "POP 110I" [ref=f4e10036]
+          - cell "GKE1E51" [ref=f4e10037]
+          - cell [ref=f4e10038]
+          - cell "2026" [ref=f4e10043]
+          - cell "0" [ref=f4e10044]
+          - cell "Disponível" [ref=f4e10045]
+          - cell "R$ 14.900,00" [ref=f4e10047]
+          - cell "Compra" [ref=f4e10048]
+          - cell "Gustavo" [ref=f4e10050]
+          - cell "XTREME" [ref=f4e10051]
+          - cell "-" [ref=f4e10052]
+          - cell "-" [ref=f4e10053]
+          - cell "0 dias" [ref=f4e10054]
+          - cell [ref=f4e10055]:
+            - generic [ref=f4e10056]:
+              - link "Ver detalhes de POP 110I" [ref=f4e10057] [cursor=pointer]:
+                - /url: /ui/veiculos/4/detalhes
+              - button "Editar POP 110I" [ref=f4e10061] [cursor=pointer]
+              - button "Cliente vendedor de POP 110I" [ref=f4e10064] [cursor=pointer]
+              - button "Imagens de POP 110I" [ref=f4e10068] [cursor=pointer]
+              - button "Procuração de POP 110I" [ref=f4e10073] [cursor=pointer]
+              - button "Documento do veículo POP 110I" [ref=f4e10077] [cursor=pointer]
+              - button "Excluir POP 110I" [ref=f4e10081] [cursor=pointer]
+        - row [ref=f4e10084]:
+          - cell "START 0KM" [ref=f4e10085]
+          - cell "TIS2A35" [ref=f4e10086]
+          - cell [ref=f4e10087]
+          - cell "2026" [ref=f4e10092]
+          - cell "0" [ref=f4e10093]
+          - cell "Disponível" [ref=f4e10094]
+          - cell "R$ 22.990,00" [ref=f4e10096]
+          - cell "Compra" [ref=f4e10097]
+          - cell "Gustavo" [ref=f4e10099]
+          - cell "ROSEMARI" [ref=f4e10100]
+          - cell "-" [ref=f4e10101]
+          - cell "-" [ref=f4e10102]
+          - cell "0 dias" [ref=f4e10103]
+          - cell [ref=f4e10104]:
+            - generic [ref=f4e10105]:
+              - link "Ver detalhes de START 0KM" [ref=f4e10106] [cursor=pointer]:
+                - /url: /ui/veiculos/5/detalhes
+              - button "Editar START 0KM" [ref=f4e10110] [cursor=pointer]
+              - button "Cliente vendedor de START 0KM" [ref=f4e10113] [cursor=pointer]
+              - button "Imagens de START 0KM" [ref=f4e10117] [cursor=pointer]
+              - button "Procuração de START 0KM" [ref=f4e10122] [cursor=pointer]
+              - button "Documento do veículo START 0KM" [ref=f4e10126] [cursor=pointer]
+              - button "Excluir START 0KM" [ref=f4e10130] [cursor=pointer]
+        - row [ref=f4e10133]:
+          - cell "FAN 0KM" [ref=f4e10134]
+          - cell "UEZ7D50" [ref=f4e10135]
+          - cell [ref=f4e10136]
+          - cell "2026" [ref=f4e10141]
+          - cell "0" [ref=f4e10142]
+          - cell "Disponível" [ref=f4e10143]
+          - cell "R$ 23.990,00" [ref=f4e10145]
+          - cell "Compra" [ref=f4e10146]
+          - cell "Gustavo" [ref=f4e10148]
+          - cell "ROSEMARI" [ref=f4e10149]
+          - cell "-" [ref=f4e10150]
+          - cell "-" [ref=f4e10151]
+          - cell "0 dias" [ref=f4e10152]
+          - cell [ref=f4e10153]:
+            - generic [ref=f4e10154]:
+              - link "Ver detalhes de FAN 0KM" [ref=f4e10155] [cursor=pointer]:
+                - /url: /ui/veiculos/6/detalhes
+              - button "Editar FAN 0KM" [ref=f4e10159] [cursor=pointer]
+              - button "Cliente vendedor de FAN 0KM" [ref=f4e10162] [cursor=pointer]
+              - button "Imagens de FAN 0KM" [ref=f4e10166] [cursor=pointer]
+              - button "Procuração de FAN 0KM" [ref=f4e10171] [cursor=pointer]
+              - button "Documento do veículo FAN 0KM" [ref=f4e10175] [cursor=pointer]
+              - button "Excluir FAN 0KM" [ref=f4e10179] [cursor=pointer]
+        - row [ref=f4e10182]:
+          - cell "START" [ref=f4e10183]
+          - cell "TKY8J76" [ref=f4e10184]
+          - cell [ref=f4e10185]
+          - cell "2026" [ref=f4e10190]
+          - cell "0" [ref=f4e10191]
+          - cell "Disponível" [ref=f4e10192]
+          - cell "R$ 22.990,00" [ref=f4e10194]
+          - cell "Compra" [ref=f4e10195]
+          - cell "Gustavo" [ref=f4e10197]
+          - cell "JEAN" [ref=f4e10198]
+          - cell "-" [ref=f4e10199]
+          - cell "-" [ref=f4e10200]
+          - cell "0 dias" [ref=f4e10201]
+          - cell [ref=f4e10202]:
+            - generic [ref=f4e10203]:
+              - link "Ver detalhes de START" [ref=f4e10204] [cursor=pointer]:
+                - /url: /ui/veiculos/7/detalhes
+              - button "Editar START" [ref=f4e10208] [cursor=pointer]
+              - button "Cliente vendedor de START" [ref=f4e10211] [cursor=pointer]
+              - button "Imagens de START" [ref=f4e10215] [cursor=pointer]
+              - button "Procuração de START" [ref=f4e10220] [cursor=pointer]
+              - button "Documento do veículo START" [ref=f4e10224] [cursor=pointer]
+              - button "Excluir START" [ref=f4e10228] [cursor=pointer]
+        - row [ref=f4e10231]:
+          - cell "POP 110I" [ref=f4e10232]
+          - cell "UDX6I10" [ref=f4e10233]
+          - cell [ref=f4e10234]
+          - cell "2026" [ref=f4e10239]
+          - cell "0" [ref=f4e10240]
+          - cell "Disponível" [ref=f4e10241]
+          - cell "R$ 14.990,00" [ref=f4e10243]
+          - cell "Compra" [ref=f4e10244]
+          - cell "Gustavo" [ref=f4e10246]
+          - cell "XTREME" [ref=f4e10247]
+          - cell "-" [ref=f4e10248]
+          - cell "-" [ref=f4e10249]
+          - cell "0 dias" [ref=f4e10250]
+          - cell [ref=f4e10251]:
+            - generic [ref=f4e10252]:
+              - link "Ver detalhes de POP 110I" [ref=f4e10253] [cursor=pointer]:
+                - /url: /ui/veiculos/8/detalhes
+              - button "Editar POP 110I" [ref=f4e10257] [cursor=pointer]
+              - button "Cliente vendedor de POP 110I" [ref=f4e10260] [cursor=pointer]
+              - button "Imagens de POP 110I" [ref=f4e10264] [cursor=pointer]
+              - button "Procuração de POP 110I" [ref=f4e10269] [cursor=pointer]
+              - button "Documento do veículo POP 110I" [ref=f4e10273] [cursor=pointer]
+              - button "Excluir POP 110I" [ref=f4e10277] [cursor=pointer]
+        - row [ref=f4e10280]:
+          - cell "FACTOR 150 DX" [ref=f4e10281]
+          - cell "UFO0H58" [ref=f4e10282]
+          - cell [ref=f4e10283]
+          - cell "2026" [ref=f4e10288]
+          - cell "0" [ref=f4e10289]
+          - cell "Disponível" [ref=f4e10290]
+          - cell "R$ 22.990,00" [ref=f4e10292]
+          - cell "Compra" [ref=f4e10293]
+          - cell "Gustavo" [ref=f4e10295]
+          - cell "XTREME" [ref=f4e10296]
+          - cell "-" [ref=f4e10297]
+          - cell "-" [ref=f4e10298]
+          - cell "0 dias" [ref=f4e10299]
+          - cell [ref=f4e10300]:
+            - generic [ref=f4e10301]:
+              - link "Ver detalhes de FACTOR 150 DX" [ref=f4e10302] [cursor=pointer]:
+                - /url: /ui/veiculos/9/detalhes
+              - button "Editar FACTOR 150 DX" [ref=f4e10306] [cursor=pointer]
+              - button "Cliente vendedor de FACTOR 150 DX" [ref=f4e10309] [cursor=pointer]
+              - button "Imagens de FACTOR 150 DX" [ref=f4e10313] [cursor=pointer]
+              - button "Procuração de FACTOR 150 DX" [ref=f4e10318] [cursor=pointer]
+              - button "Documento do veículo FACTOR 150 DX" [ref=f4e10322] [cursor=pointer]
+              - button "Excluir FACTOR 150 DX" [ref=f4e10326] [cursor=pointer]
+        - row [ref=f4e10329]:
+          - cell "ELITE 125" [ref=f4e10330]
+          - cell "ELI3G19" [ref=f4e10331]
+          - cell [ref=f4e10332]
+          - cell "2019" [ref=f4e10337]
+          - cell "13.000" [ref=f4e10338]
+          - cell "Disponível" [ref=f4e10339]
+          - cell "R$ 12.900,00" [ref=f4e10341]
+          - cell "Compra" [ref=f4e10342]
+          - cell "XTreme" [ref=f4e10344]
+          - cell "XTREME" [ref=f4e10345]
+          - cell "-" [ref=f4e10346]
+          - cell "-" [ref=f4e10347]
+          - cell "0 dias" [ref=f4e10348]
+          - cell [ref=f4e10349]:
+            - generic [ref=f4e10350]:
+              - link "Ver detalhes de ELITE 125" [ref=f4e10351] [cursor=pointer]:
+                - /url: /ui/veiculos/10/detalhes
+              - button "Editar ELITE 125" [ref=f4e10355] [cursor=pointer]
+              - button "Cliente vendedor de ELITE 125" [ref=f4e10358] [cursor=pointer]
+              - button "Imagens de ELITE 125" [ref=f4e10362] [cursor=pointer]
+              - button "Procuração de ELITE 125" [ref=f4e10367] [cursor=pointer]
+              - button "Documento do veículo ELITE 125" [ref=f4e10371] [cursor=pointer]
+              - button "Excluir ELITE 125" [ref=f4e10375] [cursor=pointer]
+        - row [ref=f4e10378]:
+          - cell "FAN" [ref=f4e10379]
+          - cell "UFU4B00" [ref=f4e10380]
+          - cell [ref=f4e10381]
+          - cell "2026" [ref=f4e10386]
+          - cell "0" [ref=f4e10387]
+          - cell "Disponível" [ref=f4e10388]
+          - cell "R$ 23.990,00" [ref=f4e10390]
+          - cell "Compra" [ref=f4e10391]
+          - cell "Gustavo" [ref=f4e10393]
+          - cell "XTREME" [ref=f4e10394]
+          - cell "-" [ref=f4e10395]
+          - cell "-" [ref=f4e10396]
+          - cell "0 dias" [ref=f4e10397]
+          - cell [ref=f4e10398]:
+            - generic [ref=f4e10399]:
+              - link "Ver detalhes de FAN" [ref=f4e10400] [cursor=pointer]:
+                - /url: /ui/veiculos/11/detalhes
+              - button "Editar FAN" [ref=f4e10404] [cursor=pointer]
+              - button "Cliente vendedor de FAN" [ref=f4e10407] [cursor=pointer]
+              - button "Imagens de FAN" [ref=f4e10411] [cursor=pointer]
+              - button "Procuração de FAN" [ref=f4e10416] [cursor=pointer]
+              - button "Documento do veículo FAN" [ref=f4e10420] [cursor=pointer]
+              - button "Excluir FAN" [ref=f4e10424] [cursor=pointer]
+        - row [ref=f4e10427]:
+          - cell "PCX" [ref=f4e10428]
+          - cell "CUJ9A33" [ref=f4e10429]
+          - cell [ref=f4e10430]
+          - cell "2022" [ref=f4e10435]
+          - cell "16.000" [ref=f4e10436]
+          - cell "Disponível" [ref=f4e10437]
+          - cell "R$ 17.900,00" [ref=f4e10439]
+          - cell "Compra" [ref=f4e10440]
+          - cell "Gustavo" [ref=f4e10442]
+          - cell "XTREME" [ref=f4e10443]
+          - cell "-" [ref=f4e10444]
+          - cell "-" [ref=f4e10445]
+          - cell "0 dias" [ref=f4e10446]
+          - cell [ref=f4e10447]:
+            - generic [ref=f4e10448]:
+              - link "Ver detalhes de PCX" [ref=f4e10449] [cursor=pointer]:
+                - /url: /ui/veiculos/12/detalhes
+              - button "Editar PCX" [ref=f4e10453] [cursor=pointer]
+              - button "Cliente vendedor de PCX" [ref=f4e10456] [cursor=pointer]
+              - button "Imagens de PCX" [ref=f4e10460] [cursor=pointer]
+              - button "Procuração de PCX" [ref=f4e10465] [cursor=pointer]
+              - button "Documento do veículo PCX" [ref=f4e10469] [cursor=pointer]
+              - button "Excluir PCX" [ref=f4e10473] [cursor=pointer]
+        - row [ref=f4e10476]:
+          - cell "VMAX" [ref=f4e10477]
+          - cell "DRC1F47" [ref=f4e10478]
+          - cell [ref=f4e10479]
+          - cell "1995" [ref=f4e10484]
+          - cell "34.000" [ref=f4e10485]
+          - cell "Disponível" [ref=f4e10486]
+          - cell "R$ 35.900,00" [ref=f4e10488]
+          - cell "Compra" [ref=f4e10489]
+          - cell "Gustavo" [ref=f4e10491]
+          - cell "XTREME" [ref=f4e10492]
+          - cell "-" [ref=f4e10493]
+          - cell "-" [ref=f4e10494]
+          - cell "0 dias" [ref=f4e10495]
+          - cell [ref=f4e10496]:
+            - generic [ref=f4e10497]:
+              - link "Ver detalhes de VMAX" [ref=f4e10498] [cursor=pointer]:
+                - /url: /ui/veiculos/13/detalhes
+              - button "Editar VMAX" [ref=f4e10502] [cursor=pointer]
+              - button "Cliente vendedor de VMAX" [ref=f4e10505] [cursor=pointer]
+              - button "Imagens de VMAX" [ref=f4e10509] [cursor=pointer]
+              - button "Procuração de VMAX" [ref=f4e10514] [cursor=pointer]
+              - button "Documento do veículo VMAX" [ref=f4e10518] [cursor=pointer]
+              - button "Excluir VMAX" [ref=f4e10522] [cursor=pointer]
+        - row [ref=f4e10525]:
+          - cell "CB650 R (Leilão Peq)" [ref=f4e10526]
+          - cell "SWU-5I47" [ref=f4e10527]
+          - cell [ref=f4e10528]
+          - cell "2024" [ref=f4e10533]
+          - cell "4.800" [ref=f4e10534]
+          - cell "Disponível" [ref=f4e10535]
+          - cell "R$ 52.900,00" [ref=f4e10537]
+          - cell "Compra" [ref=f4e10538]
+          - cell "Gustavo" [ref=f4e10540]
+          - cell "XTREME" [ref=f4e10541]
+          - cell "-" [ref=f4e10542]
+          - cell "-" [ref=f4e10543]
+          - cell "0 dias" [ref=f4e10544]
+          - cell [ref=f4e10545]:
+            - generic [ref=f4e10546]:
+              - link "Ver detalhes de CB650 R (Leilão Peq)" [ref=f4e10547] [cursor=pointer]:
+                - /url: /ui/veiculos/14/detalhes
+              - button "Editar CB650 R (Leilão Peq)" [ref=f4e10551] [cursor=pointer]
+              - button "Cliente vendedor de CB650 R (Leilão Peq)" [ref=f4e10554] [cursor=pointer]
+              - button "Imagens de CB650 R (Leilão Peq)" [ref=f4e10558] [cursor=pointer]
+              - button "Procuração de CB650 R (Leilão Peq)" [ref=f4e10563] [cursor=pointer]
+              - button "Documento do veículo CB650 R (Leilão Peq)" [ref=f4e10567] [cursor=pointer]
+              - button "Excluir CB650 R (Leilão Peq)" [ref=f4e10571] [cursor=pointer]
+        - row [ref=f4e10574]:
+          - cell "CITYCOM 300I" [ref=f4e10575]
+          - cell "FIF2D56" [ref=f4e10576]
+          - cell [ref=f4e10577]
+          - cell "2014" [ref=f4e10582]
+          - cell "102.000" [ref=f4e10583]
+          - cell "Disponível" [ref=f4e10584]
+          - cell "R$ 11.900,00" [ref=f4e10586]
+          - cell "Compra" [ref=f4e10587]
+          - cell "Gustavo" [ref=f4e10589]
+          - cell "XTREME" [ref=f4e10590]
+          - cell "-" [ref=f4e10591]
+          - cell "-" [ref=f4e10592]
+          - cell "0 dias" [ref=f4e10593]
+          - cell [ref=f4e10594]:
+            - generic [ref=f4e10595]:
+              - link "Ver detalhes de CITYCOM 300I" [ref=f4e10596] [cursor=pointer]:
+                - /url: /ui/veiculos/15/detalhes
+              - button "Editar CITYCOM 300I" [ref=f4e10600] [cursor=pointer]
+              - button "Cliente vendedor de CITYCOM 300I" [ref=f4e10603] [cursor=pointer]
+              - button "Imagens de CITYCOM 300I" [ref=f4e10607] [cursor=pointer]
+              - button "Procuração de CITYCOM 300I" [ref=f4e10612] [cursor=pointer]
+              - button "Documento do veículo CITYCOM 300I" [ref=f4e10616] [cursor=pointer]
+              - button "Excluir CITYCOM 300I" [ref=f4e10620] [cursor=pointer]
+        - row [ref=f4e10623]:
+          - cell "S1000RR (Leilao Peq)" [ref=f4e10624]
+          - cell "FKN-0A63" [ref=f4e10625]
+          - cell [ref=f4e10626]
+          - cell "2011" [ref=f4e10631]
+          - cell "52.000" [ref=f4e10632]
+          - cell "Disponível" [ref=f4e10633]
+          - cell "R$ 49.900,00" [ref=f4e10635]
+          - cell "Compra" [ref=f4e10636]
+          - cell "Guilherme" [ref=f4e10638]
+          - cell "XTREME" [ref=f4e10639]
+          - cell "-" [ref=f4e10640]
+          - cell "-" [ref=f4e10641]
+          - cell "0 dias" [ref=f4e10642]
+          - cell [ref=f4e10643]:
+            - generic [ref=f4e10644]:
+              - link "Ver detalhes de S1000RR (Leilao Peq)" [ref=f4e10645] [cursor=pointer]:
+                - /url: /ui/veiculos/16/detalhes
+              - button "Editar S1000RR (Leilao Peq)" [ref=f4e10649] [cursor=pointer]
+              - button "Cliente vendedor de S1000RR (Leilao Peq)" [ref=f4e10652] [cursor=pointer]
+              - button "Imagens de S1000RR (Leilao Peq)" [ref=f4e10656] [cursor=pointer]
+              - button "Procuração de S1000RR (Leilao Peq)" [ref=f4e10661] [cursor=pointer]
+              - button "Documento do veículo S1000RR (Leilao Peq)" [ref=f4e10665] [cursor=pointer]
+              - button "Excluir S1000RR (Leilao Peq)" [ref=f4e10669] [cursor=pointer]
+        - row [ref=f4e10672]:
+          - cell "CG 50 ANOS" [ref=f4e10673]
+          - cell "UEO1E49" [ref=f4e10674]
+          - cell [ref=f4e10675]
+          - cell "2026" [ref=f4e10680]
+          - cell "0" [ref=f4e10681]
+          - cell "Disponível" [ref=f4e10682]
+          - cell "R$ 26.990,00" [ref=f4e10684]
+          - cell "Compra" [ref=f4e10685]
+          - cell "Gustavo" [ref=f4e10687]
+          - cell "XTREME" [ref=f4e10688]
+          - cell "-" [ref=f4e10689]
+          - cell "-" [ref=f4e10690]
+          - cell "0 dias" [ref=f4e10691]
+          - cell [ref=f4e10692]:
+            - generic [ref=f4e10693]:
+              - link "Ver detalhes de CG 50 ANOS" [ref=f4e10694] [cursor=pointer]:
+                - /url: /ui/veiculos/17/detalhes
+              - button "Editar CG 50 ANOS" [ref=f4e10698] [cursor=pointer]
+              - button "Cliente vendedor de CG 50 ANOS" [ref=f4e10701] [cursor=pointer]
+              - button "Imagens de CG 50 ANOS" [ref=f4e10705] [cursor=pointer]
+              - button "Procuração de CG 50 ANOS" [ref=f4e10710] [cursor=pointer]
+              - button "Documento do veículo CG 50 ANOS" [ref=f4e10714] [cursor=pointer]
+              - button "Excluir CG 50 ANOS" [ref=f4e10718] [cursor=pointer]
+        - row [ref=f4e10721]:
+          - cell "CG 50 ANOS" [ref=f4e10722]
+          - cell "UFT7C59" [ref=f4e10723]
+          - cell [ref=f4e10724]
+          - cell "2026" [ref=f4e10729]
+          - cell "0" [ref=f4e10730]
+          - cell "Disponível" [ref=f4e10731]
+          - cell "R$ 26.900,00" [ref=f4e10733]
+          - cell "Compra" [ref=f4e10734]
+          - cell "Gustavo" [ref=f4e10736]
+          - cell "XTREME" [ref=f4e10737]
+          - cell "-" [ref=f4e10738]
+          - cell "R$ 1.000,00" [ref=f4e10739]
+          - cell "0 dias" [ref=f4e10740]
+          - cell [ref=f4e10741]:
+            - generic [ref=f4e10742]:
+              - link "Ver detalhes de CG 50 ANOS" [ref=f4e10743] [cursor=pointer]:
+                - /url: /ui/veiculos/18/detalhes
+              - button "Editar CG 50 ANOS" [ref=f4e10747] [cursor=pointer]
+              - button "Cliente vendedor de CG 50 ANOS" [ref=f4e10750] [cursor=pointer]
+              - button "Imagens de CG 50 ANOS" [ref=f4e10754] [cursor=pointer]
+              - button "Procuração de CG 50 ANOS" [ref=f4e10759] [cursor=pointer]
+              - button "Documento do veículo CG 50 ANOS" [ref=f4e10763] [cursor=pointer]
+              - button "Excluir CG 50 ANOS" [ref=f4e10767] [cursor=pointer]
+        - row [ref=f4e10770]:
+          - cell "DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10771]
+          - cell "FWZ2B85" [ref=f4e10772]
+          - cell [ref=f4e10773]
+          - cell "2023" [ref=f4e10778]
+          - cell "11.000" [ref=f4e10779]
+          - cell "Disponível" [ref=f4e10780]
+          - cell "R$ 21.900,00" [ref=f4e10782]
+          - cell "Compra" [ref=f4e10783]
+          - cell "Gustavo" [ref=f4e10785]
+          - cell "XTREME" [ref=f4e10786]
+          - cell "-" [ref=f4e10787]
+          - cell "-" [ref=f4e10788]
+          - cell "0 dias" [ref=f4e10789]
+          - cell [ref=f4e10790]:
+            - generic [ref=f4e10791]:
+              - link "Ver detalhes de DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10792] [cursor=pointer]:
+                - /url: /ui/veiculos/19/detalhes
+              - button "Editar DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10796] [cursor=pointer]
+              - button "Cliente vendedor de DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10799] [cursor=pointer]
+              - button "Imagens de DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10803] [cursor=pointer]
+              - button "Procuração de DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10808] [cursor=pointer]
+              - button "Documento do veículo DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10812] [cursor=pointer]
+              - button "Excluir DOMINAR 400 (Leilão Roubo RM)" [ref=f4e10816] [cursor=pointer]
+        - row [ref=f4e10819]:
+          - cell "TITAN" [ref=f4e10820]
+          - cell "EAE3251" [ref=f4e10821]
+          - cell [ref=f4e10822]
+          - cell "2019" [ref=f4e10827]
+          - cell "183.000" [ref=f4e10828]
+          - cell "Disponível" [ref=f4e10829]
+          - cell "R$ 16.900,00" [ref=f4e10831]
+          - cell "Compra" [ref=f4e10832]
+          - cell "Gustavo" [ref=f4e10834]
+          - cell "XTREME" [ref=f4e10835]
+          - cell "-" [ref=f4e10836]
+          - cell "-" [ref=f4e10837]
+          - cell "0 dias" [ref=f4e10838]
+          - cell [ref=f4e10839]:
+            - generic [ref=f4e10840]:
+              - link "Ver detalhes de TITAN" [ref=f4e10841] [cursor=pointer]:
+                - /url: /ui/veiculos/20/detalhes
+              - button "Editar TITAN" [ref=f4e10845] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e10848] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e10852] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e10857] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e10861] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e10865] [cursor=pointer]
+        - row [ref=f4e10868]:
+          - cell "TITAN" [ref=f4e10869]
+          - cell "TKI9E90" [ref=f4e10870]
+          - cell [ref=f4e10871]
+          - cell "2025" [ref=f4e10876]
+          - cell "200" [ref=f4e10877]
+          - cell "Disponível" [ref=f4e10878]
+          - cell "R$ 24.990,00" [ref=f4e10880]
+          - cell "Compra" [ref=f4e10881]
+          - cell "Gustavo" [ref=f4e10883]
+          - cell "XTREME" [ref=f4e10884]
+          - cell "-" [ref=f4e10885]
+          - cell "-" [ref=f4e10886]
+          - cell "0 dias" [ref=f4e10887]
+          - cell [ref=f4e10888]:
+            - generic [ref=f4e10889]:
+              - link "Ver detalhes de TITAN" [ref=f4e10890] [cursor=pointer]:
+                - /url: /ui/veiculos/21/detalhes
+              - button "Editar TITAN" [ref=f4e10894] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e10897] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e10901] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e10906] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e10910] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e10914] [cursor=pointer]
+        - row [ref=f4e10917]:
+          - cell "TITAN" [ref=f4e10918]
+          - cell "STL5F81" [ref=f4e10919]
+          - cell [ref=f4e10920]
+          - cell "2025" [ref=f4e10925]
+          - cell "20.000" [ref=f4e10926]
+          - cell "Disponível" [ref=f4e10927]
+          - cell "R$ 22.900,00" [ref=f4e10929]
+          - cell "Compra" [ref=f4e10930]
+          - cell "Gustavo" [ref=f4e10932]
+          - cell "XTREME" [ref=f4e10933]
+          - cell "-" [ref=f4e10934]
+          - cell "-" [ref=f4e10935]
+          - cell "0 dias" [ref=f4e10936]
+          - cell [ref=f4e10937]:
+            - generic [ref=f4e10938]:
+              - link "Ver detalhes de TITAN" [ref=f4e10939] [cursor=pointer]:
+                - /url: /ui/veiculos/22/detalhes
+              - button "Editar TITAN" [ref=f4e10943] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e10946] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e10950] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e10955] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e10959] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e10963] [cursor=pointer]
+        - row [ref=f4e10966]:
+          - cell "XMAX" [ref=f4e10967]
+          - cell "FRZ2D16" [ref=f4e10968]
+          - cell [ref=f4e10969]
+          - cell "2022" [ref=f4e10974]
+          - cell "23.000" [ref=f4e10975]
+          - cell "Disponível" [ref=f4e10976]
+          - cell "R$ 27.900,00" [ref=f4e10978]
+          - cell "Compra" [ref=f4e10979]
+          - cell "Guilherme" [ref=f4e10981]
+          - cell "XTREME" [ref=f4e10982]
+          - cell "-" [ref=f4e10983]
+          - cell "-" [ref=f4e10984]
+          - cell "0 dias" [ref=f4e10985]
+          - cell [ref=f4e10986]:
+            - generic [ref=f4e10987]:
+              - link "Ver detalhes de XMAX" [ref=f4e10988] [cursor=pointer]:
+                - /url: /ui/veiculos/23/detalhes
+              - button "Editar XMAX" [ref=f4e10992] [cursor=pointer]
+              - button "Cliente vendedor de XMAX" [ref=f4e10995] [cursor=pointer]
+              - button "Imagens de XMAX" [ref=f4e10999] [cursor=pointer]
+              - button "Procuração de XMAX" [ref=f4e11004] [cursor=pointer]
+              - button "Documento do veículo XMAX" [ref=f4e11008] [cursor=pointer]
+              - button "Excluir XMAX" [ref=f4e11012] [cursor=pointer]
+        - row [ref=f4e11015]:
+          - cell "TITAN" [ref=f4e11016]
+          - cell "UFI0E49" [ref=f4e11017]
+          - cell [ref=f4e11018]
+          - cell "2026" [ref=f4e11023]
+          - cell "0" [ref=f4e11024]
+          - cell "Disponível" [ref=f4e11025]
+          - cell "R$ 25.900,00" [ref=f4e11027]
+          - cell "Compra" [ref=f4e11028]
+          - cell "Gustavo" [ref=f4e11030]
+          - cell "XTREME" [ref=f4e11031]
+          - cell "-" [ref=f4e11032]
+          - cell "-" [ref=f4e11033]
+          - cell "0 dias" [ref=f4e11034]
+          - cell [ref=f4e11035]:
+            - generic [ref=f4e11036]:
+              - link "Ver detalhes de TITAN" [ref=f4e11037] [cursor=pointer]:
+                - /url: /ui/veiculos/24/detalhes
+              - button "Editar TITAN" [ref=f4e11041] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e11044] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e11048] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e11053] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e11057] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e11061] [cursor=pointer]
+        - row [ref=f4e11064]:
+          - cell "TITAN" [ref=f4e11065]
+          - cell "UEY9E88" [ref=f4e11066]
+          - cell [ref=f4e11067]
+          - cell "2026" [ref=f4e11072]
+          - cell "0" [ref=f4e11073]
+          - cell "Disponível" [ref=f4e11074]
+          - cell "R$ 25.990,00" [ref=f4e11076]
+          - cell "Compra" [ref=f4e11077]
+          - cell "Gustavo" [ref=f4e11079]
+          - cell "XTREME" [ref=f4e11080]
+          - cell "-" [ref=f4e11081]
+          - cell "-" [ref=f4e11082]
+          - cell "0 dias" [ref=f4e11083]
+          - cell [ref=f4e11084]:
+            - generic [ref=f4e11085]:
+              - link "Ver detalhes de TITAN" [ref=f4e11086] [cursor=pointer]:
+                - /url: /ui/veiculos/25/detalhes
+              - button "Editar TITAN" [ref=f4e11090] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e11093] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e11097] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e11102] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e11106] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e11110] [cursor=pointer]
+        - row [ref=f4e11113]:
+          - cell "SCRAMBLER" [ref=f4e11114]
+          - cell "QSO3G49" [ref=f4e11115]
+          - cell [ref=f4e11116]
+          - cell "2026" [ref=f4e11121]
+          - cell "15.000" [ref=f4e11122]
+          - cell "Disponível" [ref=f4e11123]
+          - cell "R$ 33.900,00" [ref=f4e11125]
+          - cell "Compra" [ref=f4e11126]
+          - cell "Gustavo" [ref=f4e11128]
+          - cell "XTREME" [ref=f4e11129]
+          - cell "-" [ref=f4e11130]
+          - cell "-" [ref=f4e11131]
+          - cell "0 dias" [ref=f4e11132]
+          - cell [ref=f4e11133]:
+            - generic [ref=f4e11134]:
+              - link "Ver detalhes de SCRAMBLER" [ref=f4e11135] [cursor=pointer]:
+                - /url: /ui/veiculos/26/detalhes
+              - button "Editar SCRAMBLER" [ref=f4e11139] [cursor=pointer]
+              - button "Cliente vendedor de SCRAMBLER" [ref=f4e11142] [cursor=pointer]
+              - button "Imagens de SCRAMBLER" [ref=f4e11146] [cursor=pointer]
+              - button "Procuração de SCRAMBLER" [ref=f4e11151] [cursor=pointer]
+              - button "Documento do veículo SCRAMBLER" [ref=f4e11155] [cursor=pointer]
+              - button "Excluir SCRAMBLER" [ref=f4e11159] [cursor=pointer]
+        - row [ref=f4e11162]:
+          - cell "HB20 COMFORT HATCH PLUS" [ref=f4e11163]
+          - cell "TDU3C17" [ref=f4e11164]
+          - cell [ref=f4e11165]
+          - cell "2025" [ref=f4e11169]
+          - cell "39.000" [ref=f4e11170]
+          - cell "Disponível" [ref=f4e11171]
+          - cell "R$ 76.900,00" [ref=f4e11173]
+          - cell "Compra" [ref=f4e11174]
+          - cell "Guilherme" [ref=f4e11176]
+          - cell "TRANSFERINDO" [ref=f4e11177]
+          - cell "-" [ref=f4e11178]
+          - cell "-" [ref=f4e11179]
+          - cell "0 dias" [ref=f4e11180]
+          - cell [ref=f4e11181]:
+            - generic [ref=f4e11182]:
+              - link "Ver detalhes de HB20 COMFORT HATCH PLUS" [ref=f4e11183] [cursor=pointer]:
+                - /url: /ui/veiculos/27/detalhes
+              - button "Editar HB20 COMFORT HATCH PLUS" [ref=f4e11187] [cursor=pointer]
+              - button "Cliente vendedor de HB20 COMFORT HATCH PLUS" [ref=f4e11190] [cursor=pointer]
+              - button "Imagens de HB20 COMFORT HATCH PLUS" [ref=f4e11194] [cursor=pointer]
+              - button "Procuração de HB20 COMFORT HATCH PLUS" [ref=f4e11199] [cursor=pointer]
+              - button "Documento do veículo HB20 COMFORT HATCH PLUS" [ref=f4e11203] [cursor=pointer]
+              - button "Excluir HB20 COMFORT HATCH PLUS" [ref=f4e11207] [cursor=pointer]
+        - row [ref=f4e11210]:
+          - cell "W2DS" [ref=f4e11211]
+          - cell "AUTOPRO" [ref=f4e11212]
+          - cell [ref=f4e11213]
+          - cell "2025" [ref=f4e11218]
+          - cell "0" [ref=f4e11219]
+          - cell "Disponível" [ref=f4e11220]
+          - cell "R$ 8.900,00" [ref=f4e11222]
+          - cell "Compra" [ref=f4e11223]
+          - cell "Gustavo" [ref=f4e11225]
+          - cell "XTREME" [ref=f4e11226]
+          - cell "-" [ref=f4e11227]
+          - cell "-" [ref=f4e11228]
+          - cell "0 dias" [ref=f4e11229]
+          - cell [ref=f4e11230]:
+            - generic [ref=f4e11231]:
+              - link "Ver detalhes de W2DS" [ref=f4e11232] [cursor=pointer]:
+                - /url: /ui/veiculos/28/detalhes
+              - button "Editar W2DS" [ref=f4e11236] [cursor=pointer]
+              - button "Cliente vendedor de W2DS" [ref=f4e11239] [cursor=pointer]
+              - button "Imagens de W2DS" [ref=f4e11243] [cursor=pointer]
+              - button "Procuração de W2DS" [ref=f4e11248] [cursor=pointer]
+              - button "Documento do veículo W2DS" [ref=f4e11252] [cursor=pointer]
+              - button "Excluir W2DS" [ref=f4e11256] [cursor=pointer]
+        - row [ref=f4e11259]:
+          - cell "W2DS" [ref=f4e11260]
+          - cell "AUTOPRO-1" [ref=f4e11261]
+          - cell [ref=f4e11262]
+          - cell "2025" [ref=f4e11267]
+          - cell "0" [ref=f4e11268]
+          - cell "Disponível" [ref=f4e11269]
+          - cell "R$ 8.900,00" [ref=f4e11271]
+          - cell "Compra" [ref=f4e11272]
+          - cell "Gustavo" [ref=f4e11274]
+          - cell "XTREME" [ref=f4e11275]
+          - cell "-" [ref=f4e11276]
+          - cell "-" [ref=f4e11277]
+          - cell "0 dias" [ref=f4e11278]
+          - cell [ref=f4e11279]:
+            - generic [ref=f4e11280]:
+              - link "Ver detalhes de W2DS" [ref=f4e11281] [cursor=pointer]:
+                - /url: /ui/veiculos/29/detalhes
+              - button "Editar W2DS" [ref=f4e11285] [cursor=pointer]
+              - button "Cliente vendedor de W2DS" [ref=f4e11288] [cursor=pointer]
+              - button "Imagens de W2DS" [ref=f4e11292] [cursor=pointer]
+              - button "Procuração de W2DS" [ref=f4e11297] [cursor=pointer]
+              - button "Documento do veículo W2DS" [ref=f4e11301] [cursor=pointer]
+              - button "Excluir W2DS" [ref=f4e11305] [cursor=pointer]
+        - row [ref=f4e11308]:
+          - cell "W2DS" [ref=f4e11309]
+          - cell "AUTOPRO-2" [ref=f4e11310]
+          - cell [ref=f4e11311]
+          - cell "2025" [ref=f4e11316]
+          - cell "0" [ref=f4e11317]
+          - cell "Disponível" [ref=f4e11318]
+          - cell "R$ 8.900,00" [ref=f4e11320]
+          - cell "Compra" [ref=f4e11321]
+          - cell "Gustavo" [ref=f4e11323]
+          - cell "XTREME" [ref=f4e11324]
+          - cell "-" [ref=f4e11325]
+          - cell "-" [ref=f4e11326]
+          - cell "0 dias" [ref=f4e11327]
+          - cell [ref=f4e11328]:
+            - generic [ref=f4e11329]:
+              - link "Ver detalhes de W2DS" [ref=f4e11330] [cursor=pointer]:
+                - /url: /ui/veiculos/30/detalhes
+              - button "Editar W2DS" [ref=f4e11334] [cursor=pointer]
+              - button "Cliente vendedor de W2DS" [ref=f4e11337] [cursor=pointer]
+              - button "Imagens de W2DS" [ref=f4e11341] [cursor=pointer]
+              - button "Procuração de W2DS" [ref=f4e11346] [cursor=pointer]
+              - button "Documento do veículo W2DS" [ref=f4e11350] [cursor=pointer]
+              - button "Excluir W2DS" [ref=f4e11354] [cursor=pointer]
+        - row [ref=f4e11357]:
+          - cell "ADV" [ref=f4e11358]
+          - cell "CUH4C08" [ref=f4e11359]
+          - cell [ref=f4e11360]
+          - cell "2022" [ref=f4e11365]
+          - cell "44.000" [ref=f4e11366]
+          - cell "Disponível" [ref=f4e11367]
+          - cell "R$ 23.900,00" [ref=f4e11369]
+          - cell "Compra" [ref=f4e11370]
+          - cell "Gustavo" [ref=f4e11372]
+          - cell "XTREME" [ref=f4e11373]
+          - cell "-" [ref=f4e11374]
+          - cell "-" [ref=f4e11375]
+          - cell "0 dias" [ref=f4e11376]
+          - cell [ref=f4e11377]:
+            - generic [ref=f4e11378]:
+              - link "Ver detalhes de ADV" [ref=f4e11379] [cursor=pointer]:
+                - /url: /ui/veiculos/31/detalhes
+              - button "Editar ADV" [ref=f4e11383] [cursor=pointer]
+              - button "Cliente vendedor de ADV" [ref=f4e11386] [cursor=pointer]
+              - button "Imagens de ADV" [ref=f4e11390] [cursor=pointer]
+              - button "Procuração de ADV" [ref=f4e11395] [cursor=pointer]
+              - button "Documento do veículo ADV" [ref=f4e11399] [cursor=pointer]
+              - button "Excluir ADV" [ref=f4e11403] [cursor=pointer]
+        - row [ref=f4e11406]:
+          - cell "MOBI LIKE" [ref=f4e11407]
+          - cell "FNE5D63" [ref=f4e11408]
+          - cell [ref=f4e11409]
+          - cell "2023" [ref=f4e11413]
+          - cell "48.000" [ref=f4e11414]
+          - cell "Disponível" [ref=f4e11415]
+          - cell "R$ 55.900,00" [ref=f4e11417]
+          - cell "Compra" [ref=f4e11418]
+          - cell "Guilherme" [ref=f4e11420]
+          - cell "TRANSFERINDO" [ref=f4e11421]
+          - cell "-" [ref=f4e11422]
+          - cell "-" [ref=f4e11423]
+          - cell "0 dias" [ref=f4e11424]
+          - cell [ref=f4e11425]:
+            - generic [ref=f4e11426]:
+              - link "Ver detalhes de MOBI LIKE" [ref=f4e11427] [cursor=pointer]:
+                - /url: /ui/veiculos/32/detalhes
+              - button "Editar MOBI LIKE" [ref=f4e11431] [cursor=pointer]
+              - button "Cliente vendedor de MOBI LIKE" [ref=f4e11434] [cursor=pointer]
+              - button "Imagens de MOBI LIKE" [ref=f4e11438] [cursor=pointer]
+              - button "Procuração de MOBI LIKE" [ref=f4e11443] [cursor=pointer]
+              - button "Documento do veículo MOBI LIKE" [ref=f4e11447] [cursor=pointer]
+              - button "Excluir MOBI LIKE" [ref=f4e11451] [cursor=pointer]
+        - row [ref=f4e11454]:
+          - cell "XMAX 250" [ref=f4e11455]
+          - cell "SWO1A85" [ref=f4e11456]
+          - cell [ref=f4e11457]
+          - cell "2025" [ref=f4e11462]
+          - cell "7.000" [ref=f4e11463]
+          - cell "Disponível" [ref=f4e11464]
+          - cell "R$ 35.900,00" [ref=f4e11466]
+          - cell "Compra" [ref=f4e11467]
+          - cell "Gustavo" [ref=f4e11469]
+          - cell "XTREME" [ref=f4e11470]
+          - cell "-" [ref=f4e11471]
+          - cell "-" [ref=f4e11472]
+          - cell "0 dias" [ref=f4e11473]
+          - cell [ref=f4e11474]:
+            - generic [ref=f4e11475]:
+              - link "Ver detalhes de XMAX 250" [ref=f4e11476] [cursor=pointer]:
+                - /url: /ui/veiculos/33/detalhes
+              - button "Editar XMAX 250" [ref=f4e11480] [cursor=pointer]
+              - button "Cliente vendedor de XMAX 250" [ref=f4e11483] [cursor=pointer]
+              - button "Imagens de XMAX 250" [ref=f4e11487] [cursor=pointer]
+              - button "Procuração de XMAX 250" [ref=f4e11492] [cursor=pointer]
+              - button "Documento do veículo XMAX 250" [ref=f4e11496] [cursor=pointer]
+              - button "Excluir XMAX 250" [ref=f4e11500] [cursor=pointer]
+        - row [ref=f4e11503]:
+          - cell "CBR1000RR FIREBLADE HRC" [ref=f4e11504]
+          - cell "JRS6H43" [ref=f4e11505]
+          - cell [ref=f4e11506]
+          - cell "2008" [ref=f4e11511]
+          - cell "53.500" [ref=f4e11512]
+          - cell "Disponível" [ref=f4e11513]
+          - cell "R$ 38.900,00" [ref=f4e11515]
+          - cell "Compra" [ref=f4e11516]
+          - cell "Gustavo" [ref=f4e11518]
+          - cell "XTREME" [ref=f4e11519]
+          - cell "-" [ref=f4e11520]
+          - cell "-" [ref=f4e11521]
+          - cell "0 dias" [ref=f4e11522]
+          - cell [ref=f4e11523]:
+            - generic [ref=f4e11524]:
+              - link "Ver detalhes de CBR1000RR FIREBLADE HRC" [ref=f4e11525] [cursor=pointer]:
+                - /url: /ui/veiculos/34/detalhes
+              - button "Editar CBR1000RR FIREBLADE HRC" [ref=f4e11529] [cursor=pointer]
+              - button "Cliente vendedor de CBR1000RR FIREBLADE HRC" [ref=f4e11532] [cursor=pointer]
+              - button "Imagens de CBR1000RR FIREBLADE HRC" [ref=f4e11536] [cursor=pointer]
+              - button "Procuração de CBR1000RR FIREBLADE HRC" [ref=f4e11541] [cursor=pointer]
+              - button "Documento do veículo CBR1000RR FIREBLADE HRC" [ref=f4e11545] [cursor=pointer]
+              - button "Excluir CBR1000RR FIREBLADE HRC" [ref=f4e11549] [cursor=pointer]
+        - row [ref=f4e11552]:
+          - cell "CROSSER" [ref=f4e11553]
+          - cell "SWS9I80" [ref=f4e11554]
+          - cell [ref=f4e11555]
+          - cell "2024" [ref=f4e11560]
+          - cell "24.000" [ref=f4e11561]
+          - cell "Disponível" [ref=f4e11562]
+          - cell "R$ 21.900,00" [ref=f4e11564]
+          - cell "Compra" [ref=f4e11565]
+          - cell "Zuppo" [ref=f4e11567]
+          - cell "XTREME" [ref=f4e11568]
+          - cell "-" [ref=f4e11569]
+          - cell "-" [ref=f4e11570]
+          - cell "0 dias" [ref=f4e11571]
+          - cell [ref=f4e11572]:
+            - generic [ref=f4e11573]:
+              - link "Ver detalhes de CROSSER" [ref=f4e11574] [cursor=pointer]:
+                - /url: /ui/veiculos/35/detalhes
+              - button "Editar CROSSER" [ref=f4e11578] [cursor=pointer]
+              - button "Cliente vendedor de CROSSER" [ref=f4e11581] [cursor=pointer]
+              - button "Imagens de CROSSER" [ref=f4e11585] [cursor=pointer]
+              - button "Procuração de CROSSER" [ref=f4e11590] [cursor=pointer]
+              - button "Documento do veículo CROSSER" [ref=f4e11594] [cursor=pointer]
+              - button "Excluir CROSSER" [ref=f4e11598] [cursor=pointer]
+        - row [ref=f4e11601]:
+          - cell "HIMALAIA" [ref=f4e11602]
+          - cell "BHX9A17" [ref=f4e11603]
+          - cell [ref=f4e11604]
+          - cell "2020" [ref=f4e11609]
+          - cell "43.000" [ref=f4e11610]
+          - cell "Disponível" [ref=f4e11611]
+          - cell "R$ 18.900,00" [ref=f4e11613]
+          - cell "Compra" [ref=f4e11614]
+          - cell "Gustavo" [ref=f4e11616]
+          - cell "XTREME" [ref=f4e11617]
+          - cell "-" [ref=f4e11618]
+          - cell "-" [ref=f4e11619]
+          - cell "0 dias" [ref=f4e11620]
+          - cell [ref=f4e11621]:
+            - generic [ref=f4e11622]:
+              - link "Ver detalhes de HIMALAIA" [ref=f4e11623] [cursor=pointer]:
+                - /url: /ui/veiculos/36/detalhes
+              - button "Editar HIMALAIA" [ref=f4e11627] [cursor=pointer]
+              - button "Cliente vendedor de HIMALAIA" [ref=f4e11630] [cursor=pointer]
+              - button "Imagens de HIMALAIA" [ref=f4e11634] [cursor=pointer]
+              - button "Procuração de HIMALAIA" [ref=f4e11639] [cursor=pointer]
+              - button "Documento do veículo HIMALAIA" [ref=f4e11643] [cursor=pointer]
+              - button "Excluir HIMALAIA" [ref=f4e11647] [cursor=pointer]
+        - row [ref=f4e11650]:
+          - cell "BURGMAN" [ref=f4e11651]
+          - cell "FFC5660" [ref=f4e11652]
+          - cell [ref=f4e11653]
+          - cell "2015" [ref=f4e11658]
+          - cell "53.000" [ref=f4e11659]
+          - cell "Disponível" [ref=f4e11660]
+          - cell "R$ 10.900,00" [ref=f4e11662]
+          - cell "Compra" [ref=f4e11663]
+          - cell "Gustavo" [ref=f4e11665]
+          - cell "XTREME" [ref=f4e11666]
+          - cell "-" [ref=f4e11667]
+          - cell "-" [ref=f4e11668]
+          - cell "0 dias" [ref=f4e11669]
+          - cell [ref=f4e11670]:
+            - generic [ref=f4e11671]:
+              - link "Ver detalhes de BURGMAN" [ref=f4e11672] [cursor=pointer]:
+                - /url: /ui/veiculos/37/detalhes
+              - button "Editar BURGMAN" [ref=f4e11676] [cursor=pointer]
+              - button "Cliente vendedor de BURGMAN" [ref=f4e11679] [cursor=pointer]
+              - button "Imagens de BURGMAN" [ref=f4e11683] [cursor=pointer]
+              - button "Procuração de BURGMAN" [ref=f4e11688] [cursor=pointer]
+              - button "Documento do veículo BURGMAN" [ref=f4e11692] [cursor=pointer]
+              - button "Excluir BURGMAN" [ref=f4e11696] [cursor=pointer]
+        - row [ref=f4e11699]:
+          - cell "FACTOR" [ref=f4e11700]
+          - cell "EOY1F41" [ref=f4e11701]
+          - cell [ref=f4e11702]
+          - cell "2007" [ref=f4e11707]
+          - cell "50.000" [ref=f4e11708]
+          - cell "Disponível" [ref=f4e11709]
+          - cell "R$ 11.900,00" [ref=f4e11711]
+          - cell "Compra" [ref=f4e11712]
+          - cell "Gustavo" [ref=f4e11714]
+          - cell "XTREME" [ref=f4e11715]
+          - cell "-" [ref=f4e11716]
+          - cell "-" [ref=f4e11717]
+          - cell "0 dias" [ref=f4e11718]
+          - cell [ref=f4e11719]:
+            - generic [ref=f4e11720]:
+              - link "Ver detalhes de FACTOR" [ref=f4e11721] [cursor=pointer]:
+                - /url: /ui/veiculos/38/detalhes
+              - button "Editar FACTOR" [ref=f4e11725] [cursor=pointer]
+              - button "Cliente vendedor de FACTOR" [ref=f4e11728] [cursor=pointer]
+              - button "Imagens de FACTOR" [ref=f4e11732] [cursor=pointer]
+              - button "Procuração de FACTOR" [ref=f4e11737] [cursor=pointer]
+              - button "Documento do veículo FACTOR" [ref=f4e11741] [cursor=pointer]
+              - button "Excluir FACTOR" [ref=f4e11745] [cursor=pointer]
+        - row [ref=f4e11748]:
+          - cell "FZ15" [ref=f4e11749]
+          - cell "GFI6D16" [ref=f4e11750]
+          - cell [ref=f4e11751]
+          - cell "2023" [ref=f4e11756]
+          - cell "33.000" [ref=f4e11757]
+          - cell "Disponível" [ref=f4e11758]
+          - cell "R$ 18.900,00" [ref=f4e11760]
+          - cell "Compra" [ref=f4e11761]
+          - cell "Gustavo" [ref=f4e11763]
+          - cell "VINICIUS" [ref=f4e11764]
+          - cell "-" [ref=f4e11765]
+          - cell "-" [ref=f4e11766]
+          - cell "0 dias" [ref=f4e11767]
+          - cell [ref=f4e11768]:
+            - generic [ref=f4e11769]:
+              - link "Ver detalhes de FZ15" [ref=f4e11770] [cursor=pointer]:
+                - /url: /ui/veiculos/39/detalhes
+              - button "Editar FZ15" [ref=f4e11774] [cursor=pointer]
+              - button "Cliente vendedor de FZ15" [ref=f4e11777] [cursor=pointer]
+              - button "Imagens de FZ15" [ref=f4e11781] [cursor=pointer]
+              - button "Procuração de FZ15" [ref=f4e11786] [cursor=pointer]
+              - button "Documento do veículo FZ15" [ref=f4e11790] [cursor=pointer]
+              - button "Excluir FZ15" [ref=f4e11794] [cursor=pointer]
+        - row [ref=f4e11797]:
+          - cell "NH 190" [ref=f4e11798]
+          - cell "TJC8E58" [ref=f4e11799]
+          - cell [ref=f4e11800]
+          - cell "2024" [ref=f4e11805]
+          - cell "60.000" [ref=f4e11806]
+          - cell "Disponível" [ref=f4e11807]
+          - cell "R$ 17.900,00" [ref=f4e11809]
+          - cell "Compra" [ref=f4e11810]
+          - cell "Gustavo" [ref=f4e11812]
+          - cell "XTREME" [ref=f4e11813]
+          - cell "-" [ref=f4e11814]
+          - cell "R$ 100,00" [ref=f4e11815]
+          - cell "0 dias" [ref=f4e11816]
+          - cell [ref=f4e11817]:
+            - generic [ref=f4e11818]:
+              - link "Ver detalhes de NH 190" [ref=f4e11819] [cursor=pointer]:
+                - /url: /ui/veiculos/40/detalhes
+              - button "Editar NH 190" [ref=f4e11823] [cursor=pointer]
+              - button "Cliente vendedor de NH 190" [ref=f4e11826] [cursor=pointer]
+              - button "Imagens de NH 190" [ref=f4e11830] [cursor=pointer]
+              - button "Procuração de NH 190" [ref=f4e11835] [cursor=pointer]
+              - button "Documento do veículo NH 190" [ref=f4e11839] [cursor=pointer]
+              - button "Excluir NH 190" [ref=f4e11843] [cursor=pointer]
+        - row [ref=f4e11846]:
+          - cell "BURGMAN" [ref=f4e11847]
+          - cell "FSI0J99" [ref=f4e11848]
+          - cell [ref=f4e11849]
+          - cell "2014" [ref=f4e11854]
+          - cell "53.000" [ref=f4e11855]
+          - cell "Disponível" [ref=f4e11856]
+          - cell "R$ 11.900,00" [ref=f4e11858]
+          - cell "Compra" [ref=f4e11859]
+          - cell "Gustavo" [ref=f4e11861]
+          - cell "XTREME" [ref=f4e11862]
+          - cell "-" [ref=f4e11863]
+          - cell "-" [ref=f4e11864]
+          - cell "0 dias" [ref=f4e11865]
+          - cell [ref=f4e11866]:
+            - generic [ref=f4e11867]:
+              - link "Ver detalhes de BURGMAN" [ref=f4e11868] [cursor=pointer]:
+                - /url: /ui/veiculos/41/detalhes
+              - button "Editar BURGMAN" [ref=f4e11872] [cursor=pointer]
+              - button "Cliente vendedor de BURGMAN" [ref=f4e11875] [cursor=pointer]
+              - button "Imagens de BURGMAN" [ref=f4e11879] [cursor=pointer]
+              - button "Procuração de BURGMAN" [ref=f4e11884] [cursor=pointer]
+              - button "Documento do veículo BURGMAN" [ref=f4e11888] [cursor=pointer]
+              - button "Excluir BURGMAN" [ref=f4e11892] [cursor=pointer]
+        - row [ref=f4e11895]:
+          - cell "BURGMAN" [ref=f4e11896]
+          - cell "DWV1B52" [ref=f4e11897]
+          - cell [ref=f4e11898]
+          - cell "2008" [ref=f4e11903]
+          - cell "60.000" [ref=f4e11904]
+          - cell "Disponível" [ref=f4e11905]
+          - cell "R$ 10.900,00" [ref=f4e11907]
+          - cell "Compra" [ref=f4e11908]
+          - cell "Gustavo" [ref=f4e11910]
+          - cell "XTREME" [ref=f4e11911]
+          - cell "-" [ref=f4e11912]
+          - cell "-" [ref=f4e11913]
+          - cell "0 dias" [ref=f4e11914]
+          - cell [ref=f4e11915]:
+            - generic [ref=f4e11916]:
+              - link "Ver detalhes de BURGMAN" [ref=f4e11917] [cursor=pointer]:
+                - /url: /ui/veiculos/42/detalhes
+              - button "Editar BURGMAN" [ref=f4e11921] [cursor=pointer]
+              - button "Cliente vendedor de BURGMAN" [ref=f4e11924] [cursor=pointer]
+              - button "Imagens de BURGMAN" [ref=f4e11928] [cursor=pointer]
+              - button "Procuração de BURGMAN" [ref=f4e11933] [cursor=pointer]
+              - button "Documento do veículo BURGMAN" [ref=f4e11937] [cursor=pointer]
+              - button "Excluir BURGMAN" [ref=f4e11941] [cursor=pointer]
+        - row [ref=f4e11944]:
+          - cell "CARGO" [ref=f4e11945]
+          - cell "STU8I67" [ref=f4e11946]
+          - cell [ref=f4e11947]
+          - cell "2024" [ref=f4e11952]
+          - cell "80.000" [ref=f4e11953]
+          - cell "Disponível" [ref=f4e11954]
+          - cell "R$ 18.900,00" [ref=f4e11956]
+          - cell "Compra" [ref=f4e11957]
+          - cell "Gustavo" [ref=f4e11959]
+          - cell "XTREME" [ref=f4e11960]
+          - cell "-" [ref=f4e11961]
+          - cell "-" [ref=f4e11962]
+          - cell "0 dias" [ref=f4e11963]
+          - cell [ref=f4e11964]:
+            - generic [ref=f4e11965]:
+              - link "Ver detalhes de CARGO" [ref=f4e11966] [cursor=pointer]:
+                - /url: /ui/veiculos/43/detalhes
+              - button "Editar CARGO" [ref=f4e11970] [cursor=pointer]
+              - button "Cliente vendedor de CARGO" [ref=f4e11973] [cursor=pointer]
+              - button "Imagens de CARGO" [ref=f4e11977] [cursor=pointer]
+              - button "Procuração de CARGO" [ref=f4e11982] [cursor=pointer]
+              - button "Documento do veículo CARGO" [ref=f4e11986] [cursor=pointer]
+              - button "Excluir CARGO" [ref=f4e11990] [cursor=pointer]
+        - row [ref=f4e11993]:
+          - cell "PCX" [ref=f4e11994]
+          - cell "GFJ4H15" [ref=f4e11995]
+          - cell [ref=f4e11996]
+          - cell "2023" [ref=f4e12001]
+          - cell "15.493" [ref=f4e12002]
+          - cell "Disponível" [ref=f4e12003]
+          - cell "R$ 20.900,00" [ref=f4e12005]
+          - cell "Compra" [ref=f4e12006]
+          - cell "Guilherme" [ref=f4e12008]
+          - cell "XTREME" [ref=f4e12009]
+          - cell "-" [ref=f4e12010]
+          - cell "-" [ref=f4e12011]
+          - cell "0 dias" [ref=f4e12012]
+          - cell [ref=f4e12013]:
+            - generic [ref=f4e12014]:
+              - link "Ver detalhes de PCX" [ref=f4e12015] [cursor=pointer]:
+                - /url: /ui/veiculos/44/detalhes
+              - button "Editar PCX" [ref=f4e12019] [cursor=pointer]
+              - button "Cliente vendedor de PCX" [ref=f4e12022] [cursor=pointer]
+              - button "Imagens de PCX" [ref=f4e12026] [cursor=pointer]
+              - button "Procuração de PCX" [ref=f4e12031] [cursor=pointer]
+              - button "Documento do veículo PCX" [ref=f4e12035] [cursor=pointer]
+              - button "Excluir PCX" [ref=f4e12039] [cursor=pointer]
+        - row [ref=f4e12042]:
+          - cell "CITYCOM 300I" [ref=f4e12043]
+          - cell "EXC7I57" [ref=f4e12044]
+          - cell [ref=f4e12045]
+          - cell "2021" [ref=f4e12050]
+          - cell "49.000" [ref=f4e12051]
+          - cell "Disponível" [ref=f4e12052]
+          - cell "R$ 20.900,00" [ref=f4e12054]
+          - cell "Compra" [ref=f4e12055]
+          - cell "Gustavo" [ref=f4e12057]
+          - cell "XTREME" [ref=f4e12058]
+          - cell "-" [ref=f4e12059]
+          - cell "-" [ref=f4e12060]
+          - cell "0 dias" [ref=f4e12061]
+          - cell [ref=f4e12062]:
+            - generic [ref=f4e12063]:
+              - link "Ver detalhes de CITYCOM 300I" [ref=f4e12064] [cursor=pointer]:
+                - /url: /ui/veiculos/45/detalhes
+              - button "Editar CITYCOM 300I" [ref=f4e12068] [cursor=pointer]
+              - button "Cliente vendedor de CITYCOM 300I" [ref=f4e12071] [cursor=pointer]
+              - button "Imagens de CITYCOM 300I" [ref=f4e12075] [cursor=pointer]
+              - button "Procuração de CITYCOM 300I" [ref=f4e12080] [cursor=pointer]
+              - button "Documento do veículo CITYCOM 300I" [ref=f4e12084] [cursor=pointer]
+              - button "Excluir CITYCOM 300I" [ref=f4e12088] [cursor=pointer]
+        - row [ref=f4e12091]:
+          - cell "TWISTER 250 CBS" [ref=f4e12092]
+          - cell "FSB7G88" [ref=f4e12093]
+          - cell [ref=f4e12094]
+          - cell "2021" [ref=f4e12099]
+          - cell "41.100" [ref=f4e12100]
+          - cell "Disponível" [ref=f4e12101]
+          - cell "R$ 23.900,00" [ref=f4e12103]
+          - cell "Compra" [ref=f4e12104]
+          - cell "Gustavo" [ref=f4e12106]
+          - cell "XTREME" [ref=f4e12107]
+          - cell "-" [ref=f4e12108]
+          - cell "-" [ref=f4e12109]
+          - cell "0 dias" [ref=f4e12110]
+          - cell [ref=f4e12111]:
+            - generic [ref=f4e12112]:
+              - link "Ver detalhes de TWISTER 250 CBS" [ref=f4e12113] [cursor=pointer]:
+                - /url: /ui/veiculos/46/detalhes
+              - button "Editar TWISTER 250 CBS" [ref=f4e12117] [cursor=pointer]
+              - button "Cliente vendedor de TWISTER 250 CBS" [ref=f4e12120] [cursor=pointer]
+              - button "Imagens de TWISTER 250 CBS" [ref=f4e12124] [cursor=pointer]
+              - button "Procuração de TWISTER 250 CBS" [ref=f4e12129] [cursor=pointer]
+              - button "Documento do veículo TWISTER 250 CBS" [ref=f4e12133] [cursor=pointer]
+              - button "Excluir TWISTER 250 CBS" [ref=f4e12137] [cursor=pointer]
+        - row [ref=f4e12140]:
+          - cell "TITAN 160" [ref=f4e12141]
+          - cell "EDI2D80" [ref=f4e12142]
+          - cell [ref=f4e12143]
+          - cell "2019" [ref=f4e12148]
+          - cell "20.000" [ref=f4e12149]
+          - cell "Disponível" [ref=f4e12150]
+          - cell "R$ 18.900,00" [ref=f4e12152]
+          - cell "Compra" [ref=f4e12153]
+          - cell "Gustavo" [ref=f4e12155]
+          - cell "MATHEUS" [ref=f4e12156]
+          - cell "-" [ref=f4e12157]
+          - cell "-" [ref=f4e12158]
+          - cell "0 dias" [ref=f4e12159]
+          - cell [ref=f4e12160]:
+            - generic [ref=f4e12161]:
+              - link "Ver detalhes de TITAN 160" [ref=f4e12162] [cursor=pointer]:
+                - /url: /ui/veiculos/47/detalhes
+              - button "Editar TITAN 160" [ref=f4e12166] [cursor=pointer]
+              - button "Cliente vendedor de TITAN 160" [ref=f4e12169] [cursor=pointer]
+              - button "Imagens de TITAN 160" [ref=f4e12173] [cursor=pointer]
+              - button "Procuração de TITAN 160" [ref=f4e12178] [cursor=pointer]
+              - button "Documento do veículo TITAN 160" [ref=f4e12182] [cursor=pointer]
+              - button "Excluir TITAN 160" [ref=f4e12186] [cursor=pointer]
+        - row [ref=f4e12189]:
+          - cell "CB 300" [ref=f4e12190]
+          - cell "EII5D84" [ref=f4e12191]
+          - cell [ref=f4e12192]
+          - cell "2010" [ref=f4e12197]
+          - cell "155.000" [ref=f4e12198]
+          - cell "Disponível" [ref=f4e12199]
+          - cell "R$ 12.900,00" [ref=f4e12201]
+          - cell "Compra" [ref=f4e12202]
+          - cell "Gustavo" [ref=f4e12204]
+          - cell "XTREME" [ref=f4e12205]
+          - cell "-" [ref=f4e12206]
+          - cell "-" [ref=f4e12207]
+          - cell "0 dias" [ref=f4e12208]
+          - cell [ref=f4e12209]:
+            - generic [ref=f4e12210]:
+              - link "Ver detalhes de CB 300" [ref=f4e12211] [cursor=pointer]:
+                - /url: /ui/veiculos/48/detalhes
+              - button "Editar CB 300" [ref=f4e12215] [cursor=pointer]
+              - button "Cliente vendedor de CB 300" [ref=f4e12218] [cursor=pointer]
+              - button "Imagens de CB 300" [ref=f4e12222] [cursor=pointer]
+              - button "Procuração de CB 300" [ref=f4e12227] [cursor=pointer]
+              - button "Documento do veículo CB 300" [ref=f4e12231] [cursor=pointer]
+              - button "Excluir CB 300" [ref=f4e12235] [cursor=pointer]
+        - row [ref=f4e12238]:
+          - cell "XRE 190 SE" [ref=f4e12239]
+          - cell "SUD9C97" [ref=f4e12240]
+          - cell [ref=f4e12241]
+          - cell "2024" [ref=f4e12246]
+          - cell "45.000" [ref=f4e12247]
+          - cell "Disponível" [ref=f4e12248]
+          - cell "R$ 23.900,00" [ref=f4e12250]
+          - cell "Compra" [ref=f4e12251]
+          - cell "Gustavo" [ref=f4e12253]
+          - cell "XTREME" [ref=f4e12254]
+          - cell "-" [ref=f4e12255]
+          - cell "-" [ref=f4e12256]
+          - cell "0 dias" [ref=f4e12257]
+          - cell [ref=f4e12258]:
+            - generic [ref=f4e12259]:
+              - link "Ver detalhes de XRE 190 SE" [ref=f4e12260] [cursor=pointer]:
+                - /url: /ui/veiculos/49/detalhes
+              - button "Editar XRE 190 SE" [ref=f4e12264] [cursor=pointer]
+              - button "Cliente vendedor de XRE 190 SE" [ref=f4e12267] [cursor=pointer]
+              - button "Imagens de XRE 190 SE" [ref=f4e12271] [cursor=pointer]
+              - button "Procuração de XRE 190 SE" [ref=f4e12276] [cursor=pointer]
+              - button "Documento do veículo XRE 190 SE" [ref=f4e12280] [cursor=pointer]
+              - button "Excluir XRE 190 SE" [ref=f4e12284] [cursor=pointer]
+        - row [ref=f4e12287]:
+          - cell "ONIX LT 1.4" [ref=f4e12288]
+          - cell "FLG1D76" [ref=f4e12289]
+          - cell [ref=f4e12290]
+          - cell "2014" [ref=f4e12294]
+          - cell "120.000" [ref=f4e12295]
+          - cell "Disponível" [ref=f4e12296]
+          - cell "R$ 49.900,00" [ref=f4e12298]
+          - cell "Compra" [ref=f4e12299]
+          - cell "Guilherme" [ref=f4e12301]
+          - cell "XTREME" [ref=f4e12302]
+          - cell "-" [ref=f4e12303]
+          - cell "-" [ref=f4e12304]
+          - cell "0 dias" [ref=f4e12305]
+          - cell [ref=f4e12306]:
+            - generic [ref=f4e12307]:
+              - link "Ver detalhes de ONIX LT 1.4" [ref=f4e12308] [cursor=pointer]:
+                - /url: /ui/veiculos/50/detalhes
+              - button "Editar ONIX LT 1.4" [ref=f4e12312] [cursor=pointer]
+              - button "Cliente vendedor de ONIX LT 1.4" [ref=f4e12315] [cursor=pointer]
+              - button "Imagens de ONIX LT 1.4" [ref=f4e12319] [cursor=pointer]
+              - button "Procuração de ONIX LT 1.4" [ref=f4e12324] [cursor=pointer]
+              - button "Documento do veículo ONIX LT 1.4" [ref=f4e12328] [cursor=pointer]
+              - button "Excluir ONIX LT 1.4" [ref=f4e12332] [cursor=pointer]
+        - row [ref=f4e12335]:
+          - cell "S1000 R" [ref=f4e12336]
+          - cell "FUG0I60" [ref=f4e12337]
+          - cell [ref=f4e12338]
+          - cell "2015" [ref=f4e12343]
+          - cell "30.000" [ref=f4e12344]
+          - cell "Disponível" [ref=f4e12345]
+          - cell "R$ 52.900,00" [ref=f4e12347]
+          - cell "Compra" [ref=f4e12348]
+          - cell "Barba" [ref=f4e12350]
+          - cell "XTREME" [ref=f4e12351]
+          - cell "-" [ref=f4e12352]
+          - cell "-" [ref=f4e12353]
+          - cell "0 dias" [ref=f4e12354]
+          - cell [ref=f4e12355]:
+            - generic [ref=f4e12356]:
+              - link "Ver detalhes de S1000 R" [ref=f4e12357] [cursor=pointer]:
+                - /url: /ui/veiculos/51/detalhes
+              - button "Editar S1000 R" [ref=f4e12361] [cursor=pointer]
+              - button "Cliente vendedor de S1000 R" [ref=f4e12364] [cursor=pointer]
+              - button "Imagens de S1000 R" [ref=f4e12368] [cursor=pointer]
+              - button "Procuração de S1000 R" [ref=f4e12373] [cursor=pointer]
+              - button "Documento do veículo S1000 R" [ref=f4e12377] [cursor=pointer]
+              - button "Excluir S1000 R" [ref=f4e12381] [cursor=pointer]
+        - row [ref=f4e12384]:
+          - cell "POP 110I" [ref=f4e12385]
+          - cell "SWM0A16" [ref=f4e12386]
+          - cell [ref=f4e12387]
+          - cell "2025" [ref=f4e12392]
+          - cell "25.000" [ref=f4e12393]
+          - cell "Disponível" [ref=f4e12394]
+          - cell "R$ 12.900,00" [ref=f4e12396]
+          - cell "Compra" [ref=f4e12397]
+          - cell "Gustavo" [ref=f4e12399]
+          - cell "XTREME" [ref=f4e12400]
+          - cell "-" [ref=f4e12401]
+          - cell "-" [ref=f4e12402]
+          - cell "0 dias" [ref=f4e12403]
+          - cell [ref=f4e12404]:
+            - generic [ref=f4e12405]:
+              - link "Ver detalhes de POP 110I" [ref=f4e12406] [cursor=pointer]:
+                - /url: /ui/veiculos/52/detalhes
+              - button "Editar POP 110I" [ref=f4e12410] [cursor=pointer]
+              - button "Cliente vendedor de POP 110I" [ref=f4e12413] [cursor=pointer]
+              - button "Imagens de POP 110I" [ref=f4e12417] [cursor=pointer]
+              - button "Procuração de POP 110I" [ref=f4e12422] [cursor=pointer]
+              - button "Documento do veículo POP 110I" [ref=f4e12426] [cursor=pointer]
+              - button "Excluir POP 110I" [ref=f4e12430] [cursor=pointer]
+        - row [ref=f4e12433]:
+          - cell "YAMAHA TDM 225" [ref=f4e12434]
+          - cell "DBR5967" [ref=f4e12435]
+          - cell [ref=f4e12436]
+          - cell "2000" [ref=f4e12441]
+          - cell "80.000" [ref=f4e12442]
+          - cell "Disponível" [ref=f4e12443]
+          - cell "R$ 7.900,00" [ref=f4e12445]
+          - cell "Compra" [ref=f4e12446]
+          - cell "Gustavo" [ref=f4e12448]
+          - cell "XTREME" [ref=f4e12449]
+          - cell "-" [ref=f4e12450]
+          - cell "-" [ref=f4e12451]
+          - cell "0 dias" [ref=f4e12452]
+          - cell [ref=f4e12453]:
+            - generic [ref=f4e12454]:
+              - link "Ver detalhes de YAMAHA TDM 225" [ref=f4e12455] [cursor=pointer]:
+                - /url: /ui/veiculos/53/detalhes
+              - button "Editar YAMAHA TDM 225" [ref=f4e12459] [cursor=pointer]
+              - button "Cliente vendedor de YAMAHA TDM 225" [ref=f4e12462] [cursor=pointer]
+              - button "Imagens de YAMAHA TDM 225" [ref=f4e12466] [cursor=pointer]
+              - button "Procuração de YAMAHA TDM 225" [ref=f4e12471] [cursor=pointer]
+              - button "Documento do veículo YAMAHA TDM 225" [ref=f4e12475] [cursor=pointer]
+              - button "Excluir YAMAHA TDM 225" [ref=f4e12479] [cursor=pointer]
+        - row [ref=f4e12482]:
+          - cell "KAWASAKI VERSYS 300" [ref=f4e12483]
+          - cell "GDA6E46" [ref=f4e12484]
+          - cell [ref=f4e12485]
+          - cell "2020" [ref=f4e12490]
+          - cell "70.000" [ref=f4e12491]
+          - cell "Disponível" [ref=f4e12492]
+          - cell "R$ 31.900,00" [ref=f4e12494]
+          - cell "Compra" [ref=f4e12495]
+          - cell "Gustavo" [ref=f4e12497]
+          - cell "XTREME" [ref=f4e12498]
+          - cell "-" [ref=f4e12499]
+          - cell "-" [ref=f4e12500]
+          - cell "0 dias" [ref=f4e12501]
+          - cell [ref=f4e12502]:
+            - generic [ref=f4e12503]:
+              - link "Ver detalhes de KAWASAKI VERSYS 300" [ref=f4e12504] [cursor=pointer]:
+                - /url: /ui/veiculos/54/detalhes
+              - button "Editar KAWASAKI VERSYS 300" [ref=f4e12508] [cursor=pointer]
+              - button "Cliente vendedor de KAWASAKI VERSYS 300" [ref=f4e12511] [cursor=pointer]
+              - button "Imagens de KAWASAKI VERSYS 300" [ref=f4e12515] [cursor=pointer]
+              - button "Procuração de KAWASAKI VERSYS 300" [ref=f4e12520] [cursor=pointer]
+              - button "Documento do veículo KAWASAKI VERSYS 300" [ref=f4e12524] [cursor=pointer]
+              - button "Excluir KAWASAKI VERSYS 300" [ref=f4e12528] [cursor=pointer]
+        - row [ref=f4e12531]:
+          - cell "FACTOR" [ref=f4e12532]
+          - cell "BQU8469" [ref=f4e12533]
+          - cell [ref=f4e12534]
+          - cell "2020" [ref=f4e12539]
+          - cell "130.000" [ref=f4e12540]
+          - cell "Disponível" [ref=f4e12541]
+          - cell "R$ 16.900,00" [ref=f4e12543]
+          - cell "Compra" [ref=f4e12544]
+          - cell "Gustavo" [ref=f4e12546]
+          - cell "XTREME" [ref=f4e12547]
+          - cell "-" [ref=f4e12548]
+          - cell "-" [ref=f4e12549]
+          - cell "0 dias" [ref=f4e12550]
+          - cell [ref=f4e12551]:
+            - generic [ref=f4e12552]:
+              - link "Ver detalhes de FACTOR" [ref=f4e12553] [cursor=pointer]:
+                - /url: /ui/veiculos/55/detalhes
+              - button "Editar FACTOR" [ref=f4e12557] [cursor=pointer]
+              - button "Cliente vendedor de FACTOR" [ref=f4e12560] [cursor=pointer]
+              - button "Imagens de FACTOR" [ref=f4e12564] [cursor=pointer]
+              - button "Procuração de FACTOR" [ref=f4e12569] [cursor=pointer]
+              - button "Documento do veículo FACTOR" [ref=f4e12573] [cursor=pointer]
+              - button "Excluir FACTOR" [ref=f4e12577] [cursor=pointer]
+        - row [ref=f4e12580]:
+          - cell "CBR1000 HRC" [ref=f4e12581]
+          - cell "EJO5F86" [ref=f4e12582]
+          - cell [ref=f4e12583]
+          - cell "2009" [ref=f4e12588]
+          - cell "50.000" [ref=f4e12589]
+          - cell "Disponível" [ref=f4e12590]
+          - cell "R$ 45.900,00" [ref=f4e12592]
+          - cell "Compra" [ref=f4e12593]
+          - cell "Gustavo" [ref=f4e12595]
+          - cell "XTREME" [ref=f4e12596]
+          - cell "-" [ref=f4e12597]
+          - cell "-" [ref=f4e12598]
+          - cell "0 dias" [ref=f4e12599]
+          - cell [ref=f4e12600]:
+            - generic [ref=f4e12601]:
+              - link "Ver detalhes de CBR1000 HRC" [ref=f4e12602] [cursor=pointer]:
+                - /url: /ui/veiculos/56/detalhes
+              - button "Editar CBR1000 HRC" [ref=f4e12606] [cursor=pointer]
+              - button "Cliente vendedor de CBR1000 HRC" [ref=f4e12609] [cursor=pointer]
+              - button "Imagens de CBR1000 HRC" [ref=f4e12613] [cursor=pointer]
+              - button "Procuração de CBR1000 HRC" [ref=f4e12618] [cursor=pointer]
+              - button "Documento do veículo CBR1000 HRC" [ref=f4e12622] [cursor=pointer]
+              - button "Excluir CBR1000 HRC" [ref=f4e12626] [cursor=pointer]
+        - row [ref=f4e12629]:
+          - cell "SUZUKI GSX-S1000GT" [ref=f4e12630]
+          - cell "TLR0D59" [ref=f4e12631]
+          - cell [ref=f4e12632]
+          - cell "2025" [ref=f4e12637]
+          - cell "1.300" [ref=f4e12638]
+          - cell "Disponível" [ref=f4e12639]
+          - cell "R$ 79.900,00" [ref=f4e12641]
+          - cell "Compra" [ref=f4e12642]
+          - cell "Guilherme" [ref=f4e12644]
+          - cell "XTREME" [ref=f4e12645]
+          - cell "-" [ref=f4e12646]
+          - cell "-" [ref=f4e12647]
+          - cell "0 dias" [ref=f4e12648]
+          - cell [ref=f4e12649]:
+            - generic [ref=f4e12650]:
+              - link "Ver detalhes de SUZUKI GSX-S1000GT" [ref=f4e12651] [cursor=pointer]:
+                - /url: /ui/veiculos/57/detalhes
+              - button "Editar SUZUKI GSX-S1000GT" [ref=f4e12655] [cursor=pointer]
+              - button "Cliente vendedor de SUZUKI GSX-S1000GT" [ref=f4e12658] [cursor=pointer]
+              - button "Imagens de SUZUKI GSX-S1000GT" [ref=f4e12662] [cursor=pointer]
+              - button "Procuração de SUZUKI GSX-S1000GT" [ref=f4e12667] [cursor=pointer]
+              - button "Documento do veículo SUZUKI GSX-S1000GT" [ref=f4e12671] [cursor=pointer]
+              - button "Excluir SUZUKI GSX-S1000GT" [ref=f4e12675] [cursor=pointer]
+        - row [ref=f4e12678]:
+          - cell "ONIX LT PLUS" [ref=f4e12679]
+          - cell "TCM9G85" [ref=f4e12680]
+          - cell [ref=f4e12681]
+          - cell "2025" [ref=f4e12685]
+          - cell "39.000" [ref=f4e12686]
+          - cell "Disponível" [ref=f4e12687]
+          - cell "R$ 73.900,00" [ref=f4e12689]
+          - cell "Compra" [ref=f4e12690]
+          - cell "Guilherme" [ref=f4e12692]
+          - cell "TRANSFERINDO" [ref=f4e12693]
+          - cell "-" [ref=f4e12694]
+          - cell "-" [ref=f4e12695]
+          - cell "0 dias" [ref=f4e12696]
+          - cell [ref=f4e12697]:
+            - generic [ref=f4e12698]:
+              - link "Ver detalhes de ONIX LT PLUS" [ref=f4e12699] [cursor=pointer]:
+                - /url: /ui/veiculos/58/detalhes
+              - button "Editar ONIX LT PLUS" [ref=f4e12703] [cursor=pointer]
+              - button "Cliente vendedor de ONIX LT PLUS" [ref=f4e12706] [cursor=pointer]
+              - button "Imagens de ONIX LT PLUS" [ref=f4e12710] [cursor=pointer]
+              - button "Procuração de ONIX LT PLUS" [ref=f4e12715] [cursor=pointer]
+              - button "Documento do veículo ONIX LT PLUS" [ref=f4e12719] [cursor=pointer]
+              - button "Excluir ONIX LT PLUS" [ref=f4e12723] [cursor=pointer]
+        - row [ref=f4e12726]:
+          - cell "XMAX 250" [ref=f4e12727]
+          - cell "CPV4C66" [ref=f4e12728]
+          - cell [ref=f4e12729]
+          - cell "2021" [ref=f4e12734]
+          - cell "50.000" [ref=f4e12735]
+          - cell "Disponível" [ref=f4e12736]
+          - cell "R$ 26.900,00" [ref=f4e12738]
+          - cell "Compra" [ref=f4e12739]
+          - cell "Cassio" [ref=f4e12741]
+          - cell "XTREME" [ref=f4e12742]
+          - cell "-" [ref=f4e12743]
+          - cell "-" [ref=f4e12744]
+          - cell "0 dias" [ref=f4e12745]
+          - cell [ref=f4e12746]:
+            - generic [ref=f4e12747]:
+              - link "Ver detalhes de XMAX 250" [ref=f4e12748] [cursor=pointer]:
+                - /url: /ui/veiculos/59/detalhes
+              - button "Editar XMAX 250" [ref=f4e12752] [cursor=pointer]
+              - button "Cliente vendedor de XMAX 250" [ref=f4e12755] [cursor=pointer]
+              - button "Imagens de XMAX 250" [ref=f4e12759] [cursor=pointer]
+              - button "Procuração de XMAX 250" [ref=f4e12764] [cursor=pointer]
+              - button "Documento do veículo XMAX 250" [ref=f4e12768] [cursor=pointer]
+              - button "Excluir XMAX 250" [ref=f4e12772] [cursor=pointer]
+        - row [ref=f4e12775]:
+          - cell "CG FAN KS 125" [ref=f4e12776]
+          - cell "HLR4F69" [ref=f4e12777]
+          - cell [ref=f4e12778]
+          - cell "2011" [ref=f4e12783]
+          - cell "50.000" [ref=f4e12784]
+          - cell "Disponível" [ref=f4e12785]
+          - cell "R$ 11.900,00" [ref=f4e12787]
+          - cell "Compra" [ref=f4e12788]
+          - cell "Gustavo" [ref=f4e12790]
+          - cell "XTREME" [ref=f4e12791]
+          - cell "-" [ref=f4e12792]
+          - cell "-" [ref=f4e12793]
+          - cell "0 dias" [ref=f4e12794]
+          - cell [ref=f4e12795]:
+            - generic [ref=f4e12796]:
+              - link "Ver detalhes de CG FAN KS 125" [ref=f4e12797] [cursor=pointer]:
+                - /url: /ui/veiculos/60/detalhes
+              - button "Editar CG FAN KS 125" [ref=f4e12801] [cursor=pointer]
+              - button "Cliente vendedor de CG FAN KS 125" [ref=f4e12804] [cursor=pointer]
+              - button "Imagens de CG FAN KS 125" [ref=f4e12808] [cursor=pointer]
+              - button "Procuração de CG FAN KS 125" [ref=f4e12813] [cursor=pointer]
+              - button "Documento do veículo CG FAN KS 125" [ref=f4e12817] [cursor=pointer]
+              - button "Excluir CG FAN KS 125" [ref=f4e12821] [cursor=pointer]
+        - row [ref=f4e12824]:
+          - cell "XMAX" [ref=f4e12825]
+          - cell "SVT3D89" [ref=f4e12826]
+          - cell [ref=f4e12827]
+          - cell "2025" [ref=f4e12832]
+          - cell "5.500" [ref=f4e12833]
+          - cell "Disponível" [ref=f4e12834]
+          - cell "R$ 35.900,00" [ref=f4e12836]
+          - cell "Compra" [ref=f4e12837]
+          - cell "Gustavo" [ref=f4e12839]
+          - cell "XTREME" [ref=f4e12840]
+          - cell "-" [ref=f4e12841]
+          - cell "-" [ref=f4e12842]
+          - cell "0 dias" [ref=f4e12843]
+          - cell [ref=f4e12844]:
+            - generic [ref=f4e12845]:
+              - link "Ver detalhes de XMAX" [ref=f4e12846] [cursor=pointer]:
+                - /url: /ui/veiculos/61/detalhes
+              - button "Editar XMAX" [ref=f4e12850] [cursor=pointer]
+              - button "Cliente vendedor de XMAX" [ref=f4e12853] [cursor=pointer]
+              - button "Imagens de XMAX" [ref=f4e12857] [cursor=pointer]
+              - button "Procuração de XMAX" [ref=f4e12862] [cursor=pointer]
+              - button "Documento do veículo XMAX" [ref=f4e12866] [cursor=pointer]
+              - button "Excluir XMAX" [ref=f4e12870] [cursor=pointer]
+        - row [ref=f4e12873]:
+          - cell "KAWASAKI Z800" [ref=f4e12874]
+          - cell "GIC2I00" [ref=f4e12875]
+          - cell [ref=f4e12876]
+          - cell "2016" [ref=f4e12881]
+          - cell "40.000" [ref=f4e12882]
+          - cell "Disponível" [ref=f4e12883]
+          - cell "R$ 44.900,00" [ref=f4e12885]
+          - cell "Compra" [ref=f4e12886]
+          - cell "Gustavo" [ref=f4e12888]
+          - cell "XTREME" [ref=f4e12889]
+          - cell "-" [ref=f4e12890]
+          - cell "-" [ref=f4e12891]
+          - cell "0 dias" [ref=f4e12892]
+          - cell [ref=f4e12893]:
+            - generic [ref=f4e12894]:
+              - link "Ver detalhes de KAWASAKI Z800" [ref=f4e12895] [cursor=pointer]:
+                - /url: /ui/veiculos/62/detalhes
+              - button "Editar KAWASAKI Z800" [ref=f4e12899] [cursor=pointer]
+              - button "Cliente vendedor de KAWASAKI Z800" [ref=f4e12902] [cursor=pointer]
+              - button "Imagens de KAWASAKI Z800" [ref=f4e12906] [cursor=pointer]
+              - button "Procuração de KAWASAKI Z800" [ref=f4e12911] [cursor=pointer]
+              - button "Documento do veículo KAWASAKI Z800" [ref=f4e12915] [cursor=pointer]
+              - button "Excluir KAWASAKI Z800" [ref=f4e12919] [cursor=pointer]
+        - row [ref=f4e12922]:
+          - cell "XRE 300" [ref=f4e12923]
+          - cell "EJQ2B17" [ref=f4e12924]
+          - cell [ref=f4e12925]
+          - cell "2010" [ref=f4e12930]
+          - cell "99.000" [ref=f4e12931]
+          - cell "Disponível" [ref=f4e12932]
+          - cell "R$ 16.900,00" [ref=f4e12934]
+          - cell "Compra" [ref=f4e12935]
+          - cell "Gustavo" [ref=f4e12937]
+          - cell "XTREME" [ref=f4e12938]
+          - cell "-" [ref=f4e12939]
+          - cell "-" [ref=f4e12940]
+          - cell "0 dias" [ref=f4e12941]
+          - cell [ref=f4e12942]:
+            - generic [ref=f4e12943]:
+              - link "Ver detalhes de XRE 300" [ref=f4e12944] [cursor=pointer]:
+                - /url: /ui/veiculos/63/detalhes
+              - button "Editar XRE 300" [ref=f4e12948] [cursor=pointer]
+              - button "Cliente vendedor de XRE 300" [ref=f4e12951] [cursor=pointer]
+              - button "Imagens de XRE 300" [ref=f4e12955] [cursor=pointer]
+              - button "Procuração de XRE 300" [ref=f4e12960] [cursor=pointer]
+              - button "Documento do veículo XRE 300" [ref=f4e12964] [cursor=pointer]
+              - button "Excluir XRE 300" [ref=f4e12968] [cursor=pointer]
+        - row [ref=f4e12971]:
+          - cell "HONDA CG FAN" [ref=f4e12972]
+          - cell "DVC2I41" [ref=f4e12973]
+          - cell [ref=f4e12974]
+          - cell "2019" [ref=f4e12979]
+          - cell "80.000" [ref=f4e12980]
+          - cell "Disponível" [ref=f4e12981]
+          - cell "R$ 15.900,00" [ref=f4e12983]
+          - cell "Compra" [ref=f4e12984]
+          - cell "Gustavo" [ref=f4e12986]
+          - cell "XTREME" [ref=f4e12987]
+          - cell "-" [ref=f4e12988]
+          - cell "-" [ref=f4e12989]
+          - cell "0 dias" [ref=f4e12990]
+          - cell [ref=f4e12991]:
+            - generic [ref=f4e12992]:
+              - link "Ver detalhes de HONDA CG FAN" [ref=f4e12993] [cursor=pointer]:
+                - /url: /ui/veiculos/64/detalhes
+              - button "Editar HONDA CG FAN" [ref=f4e12997] [cursor=pointer]
+              - button "Cliente vendedor de HONDA CG FAN" [ref=f4e13000] [cursor=pointer]
+              - button "Imagens de HONDA CG FAN" [ref=f4e13004] [cursor=pointer]
+              - button "Procuração de HONDA CG FAN" [ref=f4e13009] [cursor=pointer]
+              - button "Documento do veículo HONDA CG FAN" [ref=f4e13013] [cursor=pointer]
+              - button "Excluir HONDA CG FAN" [ref=f4e13017] [cursor=pointer]
+        - row [ref=f4e13020]:
+          - cell "CB 300 R" [ref=f4e13021]
+          - cell "EHK4A63" [ref=f4e13022]
+          - cell [ref=f4e13023]
+          - cell "2010" [ref=f4e13028]
+          - cell "100.000" [ref=f4e13029]
+          - cell "Disponível" [ref=f4e13030]
+          - cell "R$ 13.900,00" [ref=f4e13032]
+          - cell "Compra" [ref=f4e13033]
+          - cell "Gustavo" [ref=f4e13035]
+          - cell "XTREME" [ref=f4e13036]
+          - cell "-" [ref=f4e13037]
+          - cell "-" [ref=f4e13038]
+          - cell "0 dias" [ref=f4e13039]
+          - cell [ref=f4e13040]:
+            - generic [ref=f4e13041]:
+              - link "Ver detalhes de CB 300 R" [ref=f4e13042] [cursor=pointer]:
+                - /url: /ui/veiculos/65/detalhes
+              - button "Editar CB 300 R" [ref=f4e13046] [cursor=pointer]
+              - button "Cliente vendedor de CB 300 R" [ref=f4e13049] [cursor=pointer]
+              - button "Imagens de CB 300 R" [ref=f4e13053] [cursor=pointer]
+              - button "Procuração de CB 300 R" [ref=f4e13058] [cursor=pointer]
+              - button "Documento do veículo CB 300 R" [ref=f4e13062] [cursor=pointer]
+              - button "Excluir CB 300 R" [ref=f4e13066] [cursor=pointer]
+        - row [ref=f4e13069]:
+          - cell "CB 300F" [ref=f4e13070]
+          - cell "TLM0I79" [ref=f4e13071]
+          - cell [ref=f4e13072]
+          - cell "2025" [ref=f4e13077]
+          - cell "8.000" [ref=f4e13078]
+          - cell "Disponível" [ref=f4e13079]
+          - cell "R$ 28.900,00" [ref=f4e13081]
+          - cell "Compra" [ref=f4e13082]
+          - cell "Gustavo" [ref=f4e13084]
+          - cell "XTREME" [ref=f4e13085]
+          - cell "-" [ref=f4e13086]
+          - cell "-" [ref=f4e13087]
+          - cell "0 dias" [ref=f4e13088]
+          - cell [ref=f4e13089]:
+            - generic [ref=f4e13090]:
+              - link "Ver detalhes de CB 300F" [ref=f4e13091] [cursor=pointer]:
+                - /url: /ui/veiculos/66/detalhes
+              - button "Editar CB 300F" [ref=f4e13095] [cursor=pointer]
+              - button "Cliente vendedor de CB 300F" [ref=f4e13098] [cursor=pointer]
+              - button "Imagens de CB 300F" [ref=f4e13102] [cursor=pointer]
+              - button "Procuração de CB 300F" [ref=f4e13107] [cursor=pointer]
+              - button "Documento do veículo CB 300F" [ref=f4e13111] [cursor=pointer]
+              - button "Excluir CB 300F" [ref=f4e13115] [cursor=pointer]
+        - row [ref=f4e13118]:
+          - cell "PCX 160 ABS" [ref=f4e13119]
+          - cell "FVE8E31" [ref=f4e13120]
+          - cell [ref=f4e13121]
+          - cell "2023" [ref=f4e13126]
+          - cell "53.000" [ref=f4e13127]
+          - cell "Disponível" [ref=f4e13128]
+          - cell "R$ 19.900,00" [ref=f4e13130]
+          - cell "Compra" [ref=f4e13131]
+          - cell "Gustavo" [ref=f4e13133]
+          - cell "XTREME" [ref=f4e13134]
+          - cell "-" [ref=f4e13135]
+          - cell "-" [ref=f4e13136]
+          - cell "0 dias" [ref=f4e13137]
+          - cell [ref=f4e13138]:
+            - generic [ref=f4e13139]:
+              - link "Ver detalhes de PCX 160 ABS" [ref=f4e13140] [cursor=pointer]:
+                - /url: /ui/veiculos/67/detalhes
+              - button "Editar PCX 160 ABS" [ref=f4e13144] [cursor=pointer]
+              - button "Cliente vendedor de PCX 160 ABS" [ref=f4e13147] [cursor=pointer]
+              - button "Imagens de PCX 160 ABS" [ref=f4e13151] [cursor=pointer]
+              - button "Procuração de PCX 160 ABS" [ref=f4e13156] [cursor=pointer]
+              - button "Documento do veículo PCX 160 ABS" [ref=f4e13160] [cursor=pointer]
+              - button "Excluir PCX 160 ABS" [ref=f4e13164] [cursor=pointer]
+        - row [ref=f4e13167]:
+          - cell "START 160" [ref=f4e13168]
+          - cell "SUI5C08" [ref=f4e13169]
+          - cell [ref=f4e13170]
+          - cell "2024" [ref=f4e13175]
+          - cell "44.000" [ref=f4e13176]
+          - cell "Disponível" [ref=f4e13177]
+          - cell "R$ 17.900,00" [ref=f4e13179]
+          - cell "Compra" [ref=f4e13180]
+          - cell "Guilherme" [ref=f4e13182]
+          - cell "XTREME" [ref=f4e13183]
+          - cell "-" [ref=f4e13184]
+          - cell "-" [ref=f4e13185]
+          - cell "0 dias" [ref=f4e13186]
+          - cell [ref=f4e13187]:
+            - generic [ref=f4e13188]:
+              - link "Ver detalhes de START 160" [ref=f4e13189] [cursor=pointer]:
+                - /url: /ui/veiculos/68/detalhes
+              - button "Editar START 160" [ref=f4e13193] [cursor=pointer]
+              - button "Cliente vendedor de START 160" [ref=f4e13196] [cursor=pointer]
+              - button "Imagens de START 160" [ref=f4e13200] [cursor=pointer]
+              - button "Procuração de START 160" [ref=f4e13205] [cursor=pointer]
+              - button "Documento do veículo START 160" [ref=f4e13209] [cursor=pointer]
+              - button "Excluir START 160" [ref=f4e13213] [cursor=pointer]
+        - row [ref=f4e13216]:
+          - cell "MT 09" [ref=f4e13217]
+          - cell "FKS2B09" [ref=f4e13218]
+          - cell [ref=f4e13219]
+          - cell "2016" [ref=f4e13224]
+          - cell "60.405" [ref=f4e13225]
+          - cell "Disponível" [ref=f4e13226]
+          - cell "R$ 43.900,00" [ref=f4e13228]
+          - cell "Compra" [ref=f4e13229]
+          - cell "Gustavo" [ref=f4e13231]
+          - cell "XTREME" [ref=f4e13232]
+          - cell "-" [ref=f4e13233]
+          - cell "-" [ref=f4e13234]
+          - cell "0 dias" [ref=f4e13235]
+          - cell [ref=f4e13236]:
+            - generic [ref=f4e13237]:
+              - link "Ver detalhes de MT 09" [ref=f4e13238] [cursor=pointer]:
+                - /url: /ui/veiculos/69/detalhes
+              - button "Editar MT 09" [ref=f4e13242] [cursor=pointer]
+              - button "Cliente vendedor de MT 09" [ref=f4e13245] [cursor=pointer]
+              - button "Imagens de MT 09" [ref=f4e13249] [cursor=pointer]
+              - button "Procuração de MT 09" [ref=f4e13254] [cursor=pointer]
+              - button "Documento do veículo MT 09" [ref=f4e13258] [cursor=pointer]
+              - button "Excluir MT 09" [ref=f4e13262] [cursor=pointer]
+        - row [ref=f4e13265]:
+          - cell "TITAN" [ref=f4e13266]
+          - cell "GFY2E97" [ref=f4e13267]
+          - cell [ref=f4e13268]
+          - cell "2022" [ref=f4e13273]
+          - cell "19.000" [ref=f4e13274]
+          - cell "Disponível" [ref=f4e13275]
+          - cell "R$ 19.900,00" [ref=f4e13277]
+          - cell "Compra" [ref=f4e13278]
+          - cell "Gustavo" [ref=f4e13280]
+          - cell "XTREME" [ref=f4e13281]
+          - cell "-" [ref=f4e13282]
+          - cell "-" [ref=f4e13283]
+          - cell "0 dias" [ref=f4e13284]
+          - cell [ref=f4e13285]:
+            - generic [ref=f4e13286]:
+              - link "Ver detalhes de TITAN" [ref=f4e13287] [cursor=pointer]:
+                - /url: /ui/veiculos/70/detalhes
+              - button "Editar TITAN" [ref=f4e13291] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e13294] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e13298] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e13303] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e13307] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e13311] [cursor=pointer]
+        - row [ref=f4e13314]:
+          - cell "FZ6" [ref=f4e13315]
+          - cell "EFE1A86" [ref=f4e13316]
+          - cell [ref=f4e13317]
+          - cell "2009" [ref=f4e13322]
+          - cell "84.000" [ref=f4e13323]
+          - cell "Disponível" [ref=f4e13324]
+          - cell "R$ 31.900,00" [ref=f4e13326]
+          - cell "Compra" [ref=f4e13327]
+          - cell "Gustavo" [ref=f4e13329]
+          - cell "XTREME" [ref=f4e13330]
+          - cell "-" [ref=f4e13331]
+          - cell "-" [ref=f4e13332]
+          - cell "0 dias" [ref=f4e13333]
+          - cell [ref=f4e13334]:
+            - generic [ref=f4e13335]:
+              - link "Ver detalhes de FZ6" [ref=f4e13336] [cursor=pointer]:
+                - /url: /ui/veiculos/71/detalhes
+              - button "Editar FZ6" [ref=f4e13340] [cursor=pointer]
+              - button "Cliente vendedor de FZ6" [ref=f4e13343] [cursor=pointer]
+              - button "Imagens de FZ6" [ref=f4e13347] [cursor=pointer]
+              - button "Procuração de FZ6" [ref=f4e13352] [cursor=pointer]
+              - button "Documento do veículo FZ6" [ref=f4e13356] [cursor=pointer]
+              - button "Excluir FZ6" [ref=f4e13360] [cursor=pointer]
+        - row [ref=f4e13363]:
+          - cell "FORD KA HATCH 1.0" [ref=f4e13364]
+          - cell "QXE9C36" [ref=f4e13365]
+          - cell [ref=f4e13366]
+          - cell "2020" [ref=f4e13370]
+          - cell "120.000" [ref=f4e13371]
+          - cell "Disponível" [ref=f4e13372]
+          - cell "R$ 45.900,00" [ref=f4e13374]
+          - cell "Compra" [ref=f4e13375]
+          - cell "Guilherme" [ref=f4e13377]
+          - cell "XTREME" [ref=f4e13378]
+          - cell "-" [ref=f4e13379]
+          - cell "-" [ref=f4e13380]
+          - cell "0 dias" [ref=f4e13381]
+          - cell [ref=f4e13382]:
+            - generic [ref=f4e13383]:
+              - link "Ver detalhes de FORD KA HATCH 1.0" [ref=f4e13384] [cursor=pointer]:
+                - /url: /ui/veiculos/72/detalhes
+              - button "Editar FORD KA HATCH 1.0" [ref=f4e13388] [cursor=pointer]
+              - button "Cliente vendedor de FORD KA HATCH 1.0" [ref=f4e13391] [cursor=pointer]
+              - button "Imagens de FORD KA HATCH 1.0" [ref=f4e13395] [cursor=pointer]
+              - button "Procuração de FORD KA HATCH 1.0" [ref=f4e13400] [cursor=pointer]
+              - button "Documento do veículo FORD KA HATCH 1.0" [ref=f4e13404] [cursor=pointer]
+              - button "Excluir FORD KA HATCH 1.0" [ref=f4e13408] [cursor=pointer]
+        - row [ref=f4e13411]:
+          - cell "TIGER 900 RALLY" [ref=f4e13412]
+          - cell "FVO5D14" [ref=f4e13413]
+          - cell [ref=f4e13414]
+          - cell "2021" [ref=f4e13419]
+          - cell "13.000" [ref=f4e13420]
+          - cell "Disponível" [ref=f4e13421]
+          - cell "R$ 64.900,00" [ref=f4e13423]
+          - cell "Compra" [ref=f4e13424]
+          - cell "Gustavo" [ref=f4e13426]
+          - cell "XTREME" [ref=f4e13427]
+          - cell "-" [ref=f4e13428]
+          - cell "-" [ref=f4e13429]
+          - cell "0 dias" [ref=f4e13430]
+          - cell [ref=f4e13431]:
+            - generic [ref=f4e13432]:
+              - link "Ver detalhes de TIGER 900 RALLY" [ref=f4e13433] [cursor=pointer]:
+                - /url: /ui/veiculos/73/detalhes
+              - button "Editar TIGER 900 RALLY" [ref=f4e13437] [cursor=pointer]
+              - button "Cliente vendedor de TIGER 900 RALLY" [ref=f4e13440] [cursor=pointer]
+              - button "Imagens de TIGER 900 RALLY" [ref=f4e13444] [cursor=pointer]
+              - button "Procuração de TIGER 900 RALLY" [ref=f4e13449] [cursor=pointer]
+              - button "Documento do veículo TIGER 900 RALLY" [ref=f4e13453] [cursor=pointer]
+              - button "Excluir TIGER 900 RALLY" [ref=f4e13457] [cursor=pointer]
+        - row [ref=f4e13460]:
+          - cell "CBR1000" [ref=f4e13461]
+          - cell "DYT5E00" [ref=f4e13462]
+          - cell [ref=f4e13463]
+          - cell "2008" [ref=f4e13468]
+          - cell "66.000" [ref=f4e13469]
+          - cell "Disponível" [ref=f4e13470]
+          - cell "R$ 44.900,00" [ref=f4e13472]
+          - cell "Compra" [ref=f4e13473]
+          - cell "Gustavo" [ref=f4e13475]
+          - cell "XTREME" [ref=f4e13476]
+          - cell "-" [ref=f4e13477]
+          - cell "-" [ref=f4e13478]
+          - cell "0 dias" [ref=f4e13479]
+          - cell [ref=f4e13480]:
+            - generic [ref=f4e13481]:
+              - link "Ver detalhes de CBR1000" [ref=f4e13482] [cursor=pointer]:
+                - /url: /ui/veiculos/74/detalhes
+              - button "Editar CBR1000" [ref=f4e13486] [cursor=pointer]
+              - button "Cliente vendedor de CBR1000" [ref=f4e13489] [cursor=pointer]
+              - button "Imagens de CBR1000" [ref=f4e13493] [cursor=pointer]
+              - button "Procuração de CBR1000" [ref=f4e13498] [cursor=pointer]
+              - button "Documento do veículo CBR1000" [ref=f4e13502] [cursor=pointer]
+              - button "Excluir CBR1000" [ref=f4e13506] [cursor=pointer]
+        - row [ref=f4e13509]:
+          - cell "IX35" [ref=f4e13510]
+          - cell "ETP2H54" [ref=f4e13511]
+          - cell [ref=f4e13512]
+          - cell "2011" [ref=f4e13516]
+          - cell "171.000" [ref=f4e13517]
+          - cell "Disponível" [ref=f4e13518]
+          - cell "R$ 59.900,00" [ref=f4e13520]
+          - cell "Compra" [ref=f4e13521]
+          - cell "Gustavo" [ref=f4e13523]
+          - cell "XTREME" [ref=f4e13524]
+          - cell "-" [ref=f4e13525]
+          - cell "-" [ref=f4e13526]
+          - cell "0 dias" [ref=f4e13527]
+          - cell [ref=f4e13528]:
+            - generic [ref=f4e13529]:
+              - link "Ver detalhes de IX35" [ref=f4e13530] [cursor=pointer]:
+                - /url: /ui/veiculos/75/detalhes
+              - button "Editar IX35" [ref=f4e13534] [cursor=pointer]
+              - button "Cliente vendedor de IX35" [ref=f4e13537] [cursor=pointer]
+              - button "Imagens de IX35" [ref=f4e13541] [cursor=pointer]
+              - button "Procuração de IX35" [ref=f4e13546] [cursor=pointer]
+              - button "Documento do veículo IX35" [ref=f4e13550] [cursor=pointer]
+              - button "Excluir IX35" [ref=f4e13554] [cursor=pointer]
+        - row [ref=f4e13557]:
+          - cell "FZ25" [ref=f4e13558]
+          - cell "EBS3E67" [ref=f4e13559]
+          - cell [ref=f4e13560]
+          - cell "2023" [ref=f4e13565]
+          - cell "49.000" [ref=f4e13566]
+          - cell "Disponível" [ref=f4e13567]
+          - cell "R$ 19.900,00" [ref=f4e13569]
+          - cell "Compra" [ref=f4e13570]
+          - cell "Gustavo" [ref=f4e13572]
+          - cell "XTREME" [ref=f4e13573]
+          - cell "-" [ref=f4e13574]
+          - cell "-" [ref=f4e13575]
+          - cell "0 dias" [ref=f4e13576]
+          - cell [ref=f4e13577]:
+            - generic [ref=f4e13578]:
+              - link "Ver detalhes de FZ25" [ref=f4e13579] [cursor=pointer]:
+                - /url: /ui/veiculos/76/detalhes
+              - button "Editar FZ25" [ref=f4e13583] [cursor=pointer]
+              - button "Cliente vendedor de FZ25" [ref=f4e13586] [cursor=pointer]
+              - button "Imagens de FZ25" [ref=f4e13590] [cursor=pointer]
+              - button "Procuração de FZ25" [ref=f4e13595] [cursor=pointer]
+              - button "Documento do veículo FZ25" [ref=f4e13599] [cursor=pointer]
+              - button "Excluir FZ25" [ref=f4e13603] [cursor=pointer]
+        - row [ref=f4e13606]:
+          - cell "XJ6 N" [ref=f4e13607]
+          - cell "ESW0966" [ref=f4e13608]
+          - cell [ref=f4e13609]
+          - cell "2011" [ref=f4e13614]
+          - cell "66.000" [ref=f4e13615]
+          - cell "Disponível" [ref=f4e13616]
+          - cell "R$ 39.900,00" [ref=f4e13618]
+          - cell "Compra" [ref=f4e13619]
+          - cell "Zuppo" [ref=f4e13621]
+          - cell "XTREME" [ref=f4e13622]
+          - cell "-" [ref=f4e13623]
+          - cell "-" [ref=f4e13624]
+          - cell "0 dias" [ref=f4e13625]
+          - cell [ref=f4e13626]:
+            - generic [ref=f4e13627]:
+              - link "Ver detalhes de XJ6 N" [ref=f4e13628] [cursor=pointer]:
+                - /url: /ui/veiculos/77/detalhes
+              - button "Editar XJ6 N" [ref=f4e13632] [cursor=pointer]
+              - button "Cliente vendedor de XJ6 N" [ref=f4e13635] [cursor=pointer]
+              - button "Imagens de XJ6 N" [ref=f4e13639] [cursor=pointer]
+              - button "Procuração de XJ6 N" [ref=f4e13644] [cursor=pointer]
+              - button "Documento do veículo XJ6 N" [ref=f4e13648] [cursor=pointer]
+              - button "Excluir XJ6 N" [ref=f4e13652] [cursor=pointer]
+        - row [ref=f4e13655]:
+          - cell "R3" [ref=f4e13656]
+          - cell "FJO4J29" [ref=f4e13657]
+          - cell [ref=f4e13658]
+          - cell "2018" [ref=f4e13663]
+          - cell "49.000" [ref=f4e13664]
+          - cell "Disponível" [ref=f4e13665]
+          - cell "R$ 22.900,00" [ref=f4e13667]
+          - cell "Compra" [ref=f4e13668]
+          - cell "Cassio" [ref=f4e13670]
+          - cell "XTREME" [ref=f4e13671]
+          - cell "-" [ref=f4e13672]
+          - cell "-" [ref=f4e13673]
+          - cell "0 dias" [ref=f4e13674]
+          - cell [ref=f4e13675]:
+            - generic [ref=f4e13676]:
+              - link "Ver detalhes de R3" [ref=f4e13677] [cursor=pointer]:
+                - /url: /ui/veiculos/78/detalhes
+              - button "Editar R3" [ref=f4e13681] [cursor=pointer]
+              - button "Cliente vendedor de R3" [ref=f4e13684] [cursor=pointer]
+              - button "Imagens de R3" [ref=f4e13688] [cursor=pointer]
+              - button "Procuração de R3" [ref=f4e13693] [cursor=pointer]
+              - button "Documento do veículo R3" [ref=f4e13697] [cursor=pointer]
+              - button "Excluir R3" [ref=f4e13701] [cursor=pointer]
+        - row [ref=f4e13704]:
+          - cell "HAOJUE JTZ / VR 150" [ref=f4e13705]
+          - cell "EKU1J65" [ref=f4e13706]
+          - cell [ref=f4e13707]
+          - cell "2022" [ref=f4e13712]
+          - cell "13.000" [ref=f4e13713]
+          - cell "Disponível" [ref=f4e13714]
+          - cell "R$ 11.900,00" [ref=f4e13716]
+          - cell "Compra" [ref=f4e13717]
+          - cell "Gustavo" [ref=f4e13719]
+          - cell "XTREME" [ref=f4e13720]
+          - cell "-" [ref=f4e13721]
+          - cell "-" [ref=f4e13722]
+          - cell "0 dias" [ref=f4e13723]
+          - cell [ref=f4e13724]:
+            - generic [ref=f4e13725]:
+              - link "Ver detalhes de HAOJUE JTZ / VR 150" [ref=f4e13726] [cursor=pointer]:
+                - /url: /ui/veiculos/79/detalhes
+              - button "Editar HAOJUE JTZ / VR 150" [ref=f4e13730] [cursor=pointer]
+              - button "Cliente vendedor de HAOJUE JTZ / VR 150" [ref=f4e13733] [cursor=pointer]
+              - button "Imagens de HAOJUE JTZ / VR 150" [ref=f4e13737] [cursor=pointer]
+              - button "Procuração de HAOJUE JTZ / VR 150" [ref=f4e13742] [cursor=pointer]
+              - button "Documento do veículo HAOJUE JTZ / VR 150" [ref=f4e13746] [cursor=pointer]
+              - button "Excluir HAOJUE JTZ / VR 150" [ref=f4e13750] [cursor=pointer]
+        - row [ref=f4e13753]:
+          - cell "PCX 150 SPORT ABS" [ref=f4e13754]
+          - cell "FPD3J22" [ref=f4e13755]
+          - cell [ref=f4e13756]
+          - cell "2022" [ref=f4e13761]
+          - cell "28.100" [ref=f4e13762]
+          - cell "Disponível" [ref=f4e13763]
+          - cell "R$ 18.900,00" [ref=f4e13765]
+          - cell "Compra" [ref=f4e13766]
+          - cell "Gustavo" [ref=f4e13768]
+          - cell "XTREME" [ref=f4e13769]
+          - cell "-" [ref=f4e13770]
+          - cell "-" [ref=f4e13771]
+          - cell "0 dias" [ref=f4e13772]
+          - cell [ref=f4e13773]:
+            - generic [ref=f4e13774]:
+              - link "Ver detalhes de PCX 150 SPORT ABS" [ref=f4e13775] [cursor=pointer]:
+                - /url: /ui/veiculos/80/detalhes
+              - button "Editar PCX 150 SPORT ABS" [ref=f4e13779] [cursor=pointer]
+              - button "Cliente vendedor de PCX 150 SPORT ABS" [ref=f4e13782] [cursor=pointer]
+              - button "Imagens de PCX 150 SPORT ABS" [ref=f4e13786] [cursor=pointer]
+              - button "Procuração de PCX 150 SPORT ABS" [ref=f4e13791] [cursor=pointer]
+              - button "Documento do veículo PCX 150 SPORT ABS" [ref=f4e13795] [cursor=pointer]
+              - button "Excluir PCX 150 SPORT ABS" [ref=f4e13799] [cursor=pointer]
+        - row [ref=f4e13802]:
+          - cell "PCX 160 ABS" [ref=f4e13803]
+          - cell "SVR7I68" [ref=f4e13804]
+          - cell [ref=f4e13805]
+          - cell "2024" [ref=f4e13810]
+          - cell "27.000" [ref=f4e13811]
+          - cell "Disponível" [ref=f4e13812]
+          - cell "R$ 20.900,00" [ref=f4e13814]
+          - cell "Compra" [ref=f4e13815]
+          - cell "Gustavo" [ref=f4e13817]
+          - cell "XTREME" [ref=f4e13818]
+          - cell "-" [ref=f4e13819]
+          - cell "-" [ref=f4e13820]
+          - cell "0 dias" [ref=f4e13821]
+          - cell [ref=f4e13822]:
+            - generic [ref=f4e13823]:
+              - link "Ver detalhes de PCX 160 ABS" [ref=f4e13824] [cursor=pointer]:
+                - /url: /ui/veiculos/81/detalhes
+              - button "Editar PCX 160 ABS" [ref=f4e13828] [cursor=pointer]
+              - button "Cliente vendedor de PCX 160 ABS" [ref=f4e13831] [cursor=pointer]
+              - button "Imagens de PCX 160 ABS" [ref=f4e13835] [cursor=pointer]
+              - button "Procuração de PCX 160 ABS" [ref=f4e13840] [cursor=pointer]
+              - button "Documento do veículo PCX 160 ABS" [ref=f4e13844] [cursor=pointer]
+              - button "Excluir PCX 160 ABS" [ref=f4e13848] [cursor=pointer]
+        - row [ref=f4e13851]:
+          - cell "FORD FOCUS SEDAN" [ref=f4e13852]
+          - cell "ELA6758" [ref=f4e13853]
+          - cell [ref=f4e13854]
+          - cell "2011" [ref=f4e13858]
+          - cell "54.000" [ref=f4e13859]
+          - cell "Disponível" [ref=f4e13860]
+          - cell "R$ 42.900,00" [ref=f4e13862]
+          - cell "Compra" [ref=f4e13863]
+          - cell "Guilherme" [ref=f4e13865]
+          - cell "XTREME" [ref=f4e13866]
+          - cell "-" [ref=f4e13867]
+          - cell "-" [ref=f4e13868]
+          - cell "0 dias" [ref=f4e13869]
+          - cell [ref=f4e13870]:
+            - generic [ref=f4e13871]:
+              - link "Ver detalhes de FORD FOCUS SEDAN" [ref=f4e13872] [cursor=pointer]:
+                - /url: /ui/veiculos/82/detalhes
+              - button "Editar FORD FOCUS SEDAN" [ref=f4e13876] [cursor=pointer]
+              - button "Cliente vendedor de FORD FOCUS SEDAN" [ref=f4e13879] [cursor=pointer]
+              - button "Imagens de FORD FOCUS SEDAN" [ref=f4e13883] [cursor=pointer]
+              - button "Procuração de FORD FOCUS SEDAN" [ref=f4e13888] [cursor=pointer]
+              - button "Documento do veículo FORD FOCUS SEDAN" [ref=f4e13892] [cursor=pointer]
+              - button "Excluir FORD FOCUS SEDAN" [ref=f4e13896] [cursor=pointer]
+        - row [ref=f4e13899]:
+          - cell "TIGER 800 XC" [ref=f4e13900]
+          - cell "FVY7I78" [ref=f4e13901]
+          - cell [ref=f4e13902]
+          - cell "2015" [ref=f4e13907]
+          - cell "42.000" [ref=f4e13908]
+          - cell "Disponível" [ref=f4e13909]
+          - cell "R$ 42.900,00" [ref=f4e13911]
+          - cell "Compra" [ref=f4e13912]
+          - cell "Gustavo" [ref=f4e13914]
+          - cell "XTREME" [ref=f4e13915]
+          - cell "-" [ref=f4e13916]
+          - cell "-" [ref=f4e13917]
+          - cell "0 dias" [ref=f4e13918]
+          - cell [ref=f4e13919]:
+            - generic [ref=f4e13920]:
+              - link "Ver detalhes de TIGER 800 XC" [ref=f4e13921] [cursor=pointer]:
+                - /url: /ui/veiculos/83/detalhes
+              - button "Editar TIGER 800 XC" [ref=f4e13925] [cursor=pointer]
+              - button "Cliente vendedor de TIGER 800 XC" [ref=f4e13928] [cursor=pointer]
+              - button "Imagens de TIGER 800 XC" [ref=f4e13932] [cursor=pointer]
+              - button "Procuração de TIGER 800 XC" [ref=f4e13937] [cursor=pointer]
+              - button "Documento do veículo TIGER 800 XC" [ref=f4e13941] [cursor=pointer]
+              - button "Excluir TIGER 800 XC" [ref=f4e13945] [cursor=pointer]
+        - row [ref=f4e13948]:
+          - cell "PCX 150" [ref=f4e13949]
+          - cell "GCQ6E52" [ref=f4e13950]
+          - cell [ref=f4e13951]
+          - cell "2016" [ref=f4e13956]
+          - cell "54.000" [ref=f4e13957]
+          - cell "Disponível" [ref=f4e13958]
+          - cell "R$ 14.900,00" [ref=f4e13960]
+          - cell "Compra" [ref=f4e13961]
+          - cell "Gustavo" [ref=f4e13963]
+          - cell "XTREME" [ref=f4e13964]
+          - cell "-" [ref=f4e13965]
+          - cell "-" [ref=f4e13966]
+          - cell "0 dias" [ref=f4e13967]
+          - cell [ref=f4e13968]:
+            - generic [ref=f4e13969]:
+              - link "Ver detalhes de PCX 150" [ref=f4e13970] [cursor=pointer]:
+                - /url: /ui/veiculos/84/detalhes
+              - button "Editar PCX 150" [ref=f4e13974] [cursor=pointer]
+              - button "Cliente vendedor de PCX 150" [ref=f4e13977] [cursor=pointer]
+              - button "Imagens de PCX 150" [ref=f4e13981] [cursor=pointer]
+              - button "Procuração de PCX 150" [ref=f4e13986] [cursor=pointer]
+              - button "Documento do veículo PCX 150" [ref=f4e13990] [cursor=pointer]
+              - button "Excluir PCX 150" [ref=f4e13994] [cursor=pointer]
+        - row [ref=f4e13997]:
+          - cell "NMAX 160" [ref=f4e13998]
+          - cell "ELI6G32" [ref=f4e13999]
+          - cell [ref=f4e14000]
+          - cell "2024" [ref=f4e14005]
+          - cell "24.000" [ref=f4e14006]
+          - cell "Disponível" [ref=f4e14007]
+          - cell "R$ 21.900,00" [ref=f4e14009]
+          - cell "Compra" [ref=f4e14010]
+          - cell "Gustavo" [ref=f4e14012]
+          - cell "XTREME" [ref=f4e14013]
+          - cell "-" [ref=f4e14014]
+          - cell "-" [ref=f4e14015]
+          - cell "0 dias" [ref=f4e14016]
+          - cell [ref=f4e14017]:
+            - generic [ref=f4e14018]:
+              - link "Ver detalhes de NMAX 160" [ref=f4e14019] [cursor=pointer]:
+                - /url: /ui/veiculos/85/detalhes
+              - button "Editar NMAX 160" [ref=f4e14023] [cursor=pointer]
+              - button "Cliente vendedor de NMAX 160" [ref=f4e14026] [cursor=pointer]
+              - button "Imagens de NMAX 160" [ref=f4e14030] [cursor=pointer]
+              - button "Procuração de NMAX 160" [ref=f4e14035] [cursor=pointer]
+              - button "Documento do veículo NMAX 160" [ref=f4e14039] [cursor=pointer]
+              - button "Excluir NMAX 160" [ref=f4e14043] [cursor=pointer]
+        - row [ref=f4e14046]:
+          - cell "NX BROS" [ref=f4e14047]
+          - cell "BPQ0C28" [ref=f4e14048]
+          - cell [ref=f4e14049]
+          - cell "2021" [ref=f4e14054]
+          - cell "58.000" [ref=f4e14055]
+          - cell "Disponível" [ref=f4e14056]
+          - cell "R$ 18.900,00" [ref=f4e14058]
+          - cell "Compra" [ref=f4e14059]
+          - cell "Gabriela" [ref=f4e14061]
+          - cell "XTREME" [ref=f4e14062]
+          - cell "-" [ref=f4e14063]
+          - cell "-" [ref=f4e14064]
+          - cell "0 dias" [ref=f4e14065]
+          - cell [ref=f4e14066]:
+            - generic [ref=f4e14067]:
+              - link "Ver detalhes de NX BROS" [ref=f4e14068] [cursor=pointer]:
+                - /url: /ui/veiculos/86/detalhes
+              - button "Editar NX BROS" [ref=f4e14072] [cursor=pointer]
+              - button "Cliente vendedor de NX BROS" [ref=f4e14075] [cursor=pointer]
+              - button "Imagens de NX BROS" [ref=f4e14079] [cursor=pointer]
+              - button "Procuração de NX BROS" [ref=f4e14084] [cursor=pointer]
+              - button "Documento do veículo NX BROS" [ref=f4e14088] [cursor=pointer]
+              - button "Excluir NX BROS" [ref=f4e14092] [cursor=pointer]
+        - row [ref=f4e14095]:
+          - cell "MT 03 **leilao" [ref=f4e14096]
+          - cell "TLW7D00" [ref=f4e14097]
+          - cell [ref=f4e14098]
+          - cell "2025" [ref=f4e14103]
+          - cell "5.000" [ref=f4e14104]
+          - cell "Disponível" [ref=f4e14105]
+          - cell "R$ 29.900,00" [ref=f4e14107]
+          - cell "Compra" [ref=f4e14108]
+          - cell "Guilherme" [ref=f4e14110]
+          - cell "XTREME" [ref=f4e14111]
+          - cell "-" [ref=f4e14112]
+          - cell "-" [ref=f4e14113]
+          - cell "0 dias" [ref=f4e14114]
+          - cell [ref=f4e14115]:
+            - generic [ref=f4e14116]:
+              - link "Ver detalhes de MT 03 **leilao" [ref=f4e14117] [cursor=pointer]:
+                - /url: /ui/veiculos/87/detalhes
+              - button "Editar MT 03 **leilao" [ref=f4e14121] [cursor=pointer]
+              - button "Cliente vendedor de MT 03 **leilao" [ref=f4e14124] [cursor=pointer]
+              - button "Imagens de MT 03 **leilao" [ref=f4e14128] [cursor=pointer]
+              - button "Procuração de MT 03 **leilao" [ref=f4e14133] [cursor=pointer]
+              - button "Documento do veículo MT 03 **leilao" [ref=f4e14137] [cursor=pointer]
+              - button "Excluir MT 03 **leilao" [ref=f4e14141] [cursor=pointer]
+        - row [ref=f4e14144]:
+          - cell "R1200 GS TRIPLE BLACK" [ref=f4e14145]
+          - cell "QNW5H77" [ref=f4e14146]
+          - cell [ref=f4e14147]
+          - cell "2018" [ref=f4e14152]
+          - cell "44.000" [ref=f4e14153]
+          - cell "Disponível" [ref=f4e14154]
+          - cell "R$ 72.900,00" [ref=f4e14156]
+          - cell "Compra" [ref=f4e14157]
+          - cell "Gustavo" [ref=f4e14159]
+          - cell "VITOR BUS" [ref=f4e14160]
+          - cell "-" [ref=f4e14161]
+          - cell "-" [ref=f4e14162]
+          - cell "0 dias" [ref=f4e14163]
+          - cell [ref=f4e14164]:
+            - generic [ref=f4e14165]:
+              - link "Ver detalhes de R1200 GS TRIPLE BLACK" [ref=f4e14166] [cursor=pointer]:
+                - /url: /ui/veiculos/88/detalhes
+              - button "Editar R1200 GS TRIPLE BLACK" [ref=f4e14170] [cursor=pointer]
+              - button "Cliente vendedor de R1200 GS TRIPLE BLACK" [ref=f4e14173] [cursor=pointer]
+              - button "Imagens de R1200 GS TRIPLE BLACK" [ref=f4e14177] [cursor=pointer]
+              - button "Procuração de R1200 GS TRIPLE BLACK" [ref=f4e14182] [cursor=pointer]
+              - button "Documento do veículo R1200 GS TRIPLE BLACK" [ref=f4e14186] [cursor=pointer]
+              - button "Excluir R1200 GS TRIPLE BLACK" [ref=f4e14190] [cursor=pointer]
+        - row [ref=f4e14193]:
+          - cell "MT 03" [ref=f4e14194]
+          - cell "TKI7D30" [ref=f4e14195]
+          - cell [ref=f4e14196]
+          - cell "2025" [ref=f4e14201]
+          - cell "2.500" [ref=f4e14202]
+          - cell "Disponível" [ref=f4e14203]
+          - cell "R$ 34.900,00" [ref=f4e14205]
+          - cell "Compra" [ref=f4e14206]
+          - cell "Gustavo" [ref=f4e14208]
+          - cell "XTREME" [ref=f4e14209]
+          - cell "-" [ref=f4e14210]
+          - cell "-" [ref=f4e14211]
+          - cell "0 dias" [ref=f4e14212]
+          - cell [ref=f4e14213]:
+            - generic [ref=f4e14214]:
+              - link "Ver detalhes de MT 03" [ref=f4e14215] [cursor=pointer]:
+                - /url: /ui/veiculos/89/detalhes
+              - button "Editar MT 03" [ref=f4e14219] [cursor=pointer]
+              - button "Cliente vendedor de MT 03" [ref=f4e14222] [cursor=pointer]
+              - button "Imagens de MT 03" [ref=f4e14226] [cursor=pointer]
+              - button "Procuração de MT 03" [ref=f4e14231] [cursor=pointer]
+              - button "Documento do veículo MT 03" [ref=f4e14235] [cursor=pointer]
+              - button "Excluir MT 03" [ref=f4e14239] [cursor=pointer]
+        - row [ref=f4e14242]:
+          - cell "XT 600 ( RM ) REMARCADA" [ref=f4e14243]
+          - cell "KRJ1087" [ref=f4e14244]
+          - cell [ref=f4e14245]
+          - cell "1998" [ref=f4e14250]
+          - cell "29.000" [ref=f4e14251]
+          - cell "Disponível" [ref=f4e14252]
+          - cell "R$ 16.900,00" [ref=f4e14254]
+          - cell "Compra" [ref=f4e14255]
+          - cell "Barba" [ref=f4e14257]
+          - cell "XTREME" [ref=f4e14258]
+          - cell "-" [ref=f4e14259]
+          - cell "-" [ref=f4e14260]
+          - cell "0 dias" [ref=f4e14261]
+          - cell [ref=f4e14262]:
+            - generic [ref=f4e14263]:
+              - link "Ver detalhes de XT 600 ( RM ) REMARCADA" [ref=f4e14264] [cursor=pointer]:
+                - /url: /ui/veiculos/90/detalhes
+              - button "Editar XT 600 ( RM ) REMARCADA" [ref=f4e14268] [cursor=pointer]
+              - button "Cliente vendedor de XT 600 ( RM ) REMARCADA" [ref=f4e14271] [cursor=pointer]
+              - button "Imagens de XT 600 ( RM ) REMARCADA" [ref=f4e14275] [cursor=pointer]
+              - button "Procuração de XT 600 ( RM ) REMARCADA" [ref=f4e14280] [cursor=pointer]
+              - button "Documento do veículo XT 600 ( RM ) REMARCADA" [ref=f4e14284] [cursor=pointer]
+              - button "Excluir XT 600 ( RM ) REMARCADA" [ref=f4e14288] [cursor=pointer]
+        - row [ref=f4e14291]:
+          - cell "R15" [ref=f4e14292]
+          - cell "SVZ6I32" [ref=f4e14293]
+          - cell [ref=f4e14294]
+          - cell "2025" [ref=f4e14299]
+          - cell "20.000" [ref=f4e14300]
+          - cell "Disponível" [ref=f4e14301]
+          - cell "R$ 22.900,00" [ref=f4e14303]
+          - cell "Compra" [ref=f4e14304]
+          - cell "Barba" [ref=f4e14306]
+          - cell "XTREME" [ref=f4e14307]
+          - cell "-" [ref=f4e14308]
+          - cell "-" [ref=f4e14309]
+          - cell "0 dias" [ref=f4e14310]
+          - cell [ref=f4e14311]:
+            - generic [ref=f4e14312]:
+              - link "Ver detalhes de R15" [ref=f4e14313] [cursor=pointer]:
+                - /url: /ui/veiculos/91/detalhes
+              - button "Editar R15" [ref=f4e14317] [cursor=pointer]
+              - button "Cliente vendedor de R15" [ref=f4e14320] [cursor=pointer]
+              - button "Imagens de R15" [ref=f4e14324] [cursor=pointer]
+              - button "Procuração de R15" [ref=f4e14329] [cursor=pointer]
+              - button "Documento do veículo R15" [ref=f4e14333] [cursor=pointer]
+              - button "Excluir R15" [ref=f4e14337] [cursor=pointer]
+        - row [ref=f4e14340]:
+          - cell "TITAN" [ref=f4e14341]
+          - cell "SVE0H26" [ref=f4e14342]
+          - cell [ref=f4e14343]
+          - cell "2024" [ref=f4e14348]
+          - cell "120.000" [ref=f4e14349]
+          - cell "Disponível" [ref=f4e14350]
+          - cell "R$ 18.900,00" [ref=f4e14352]
+          - cell "Compra" [ref=f4e14353]
+          - cell "Gustavo" [ref=f4e14355]
+          - cell "XTREME" [ref=f4e14356]
+          - cell "-" [ref=f4e14357]
+          - cell "-" [ref=f4e14358]
+          - cell "0 dias" [ref=f4e14359]
+          - cell [ref=f4e14360]:
+            - generic [ref=f4e14361]:
+              - link "Ver detalhes de TITAN" [ref=f4e14362] [cursor=pointer]:
+                - /url: /ui/veiculos/92/detalhes
+              - button "Editar TITAN" [ref=f4e14366] [cursor=pointer]
+              - button "Cliente vendedor de TITAN" [ref=f4e14369] [cursor=pointer]
+              - button "Imagens de TITAN" [ref=f4e14373] [cursor=pointer]
+              - button "Procuração de TITAN" [ref=f4e14378] [cursor=pointer]
+              - button "Documento do veículo TITAN" [ref=f4e14382] [cursor=pointer]
+              - button "Excluir TITAN" [ref=f4e14386] [cursor=pointer]
+        - row [ref=f4e14389]:
+          - cell "ONIX" [ref=f4e14390]
+          - cell "GJN2D34" [ref=f4e14391]
+          - cell [ref=f4e14392]
+          - cell "2020" [ref=f4e14396]
+          - cell "64.000" [ref=f4e14397]
+          - cell "Disponível" [ref=f4e14398]
+          - cell "R$ 65.900,00" [ref=f4e14400]
+          - cell "Compra" [ref=f4e14401]
+          - cell "Gustavo" [ref=f4e14403]
+          - cell "XTREME" [ref=f4e14404]
+          - cell "-" [ref=f4e14405]
+          - cell "-" [ref=f4e14406]
+          - cell "0 dias" [ref=f4e14407]
+          - cell [ref=f4e14408]:
+            - generic [ref=f4e14409]:
+              - link "Ver detalhes de ONIX" [ref=f4e14410] [cursor=pointer]:
+                - /url: /ui/veiculos/93/detalhes
+              - button "Editar ONIX" [ref=f4e14414] [cursor=pointer]
+              - button "Cliente vendedor de ONIX" [ref=f4e14417] [cursor=pointer]
+              - button "Imagens de ONIX" [ref=f4e14421] [cursor=pointer]
+              - button "Procuração de ONIX" [ref=f4e14426] [cursor=pointer]
+              - button "Documento do veículo ONIX" [ref=f4e14430] [cursor=pointer]
+              - button "Excluir ONIX" [ref=f4e14434] [cursor=pointer]
+        - row [ref=f4e14437]:
+          - cell "MT03 ABS" [ref=f4e14438]
+          - cell "SUO3H85" [ref=f4e14439]
+          - cell [ref=f4e14440]
+          - cell "2025" [ref=f4e14445]
+          - cell "26.825" [ref=f4e14446]
+          - cell "Disponível" [ref=f4e14447]
+          - cell "R$ 34.900,00" [ref=f4e14449]
+          - cell "Compra" [ref=f4e14450]
+          - cell "Gustavo" [ref=f4e14452]
+          - cell "XTREME" [ref=f4e14453]
+          - cell "-" [ref=f4e14454]
+          - cell "-" [ref=f4e14455]
+          - cell "0 dias" [ref=f4e14456]
+          - cell [ref=f4e14457]:
+            - generic [ref=f4e14458]:
+              - link "Ver detalhes de MT03 ABS" [ref=f4e14459] [cursor=pointer]:
+                - /url: /ui/veiculos/94/detalhes
+              - button "Editar MT03 ABS" [ref=f4e14463] [cursor=pointer]
+              - button "Cliente vendedor de MT03 ABS" [ref=f4e14466] [cursor=pointer]
+              - button "Imagens de MT03 ABS" [ref=f4e14470] [cursor=pointer]
+              - button "Procuração de MT03 ABS" [ref=f4e14475] [cursor=pointer]
+              - button "Documento do veículo MT03 ABS" [ref=f4e14479] [cursor=pointer]
+              - button "Excluir MT03 ABS" [ref=f4e14483] [cursor=pointer]
+        - row [ref=f4e14486]:
+          - cell "YAMAHA YS150 FAZER SED" [ref=f4e14487]
+          - cell "GGH6C23" [ref=f4e14488]
+          - cell [ref=f4e14489]
+          - cell "2024" [ref=f4e14494]
+          - cell "0" [ref=f4e14495]
+          - cell "Disponível" [ref=f4e14496]
+          - cell "R$ 18.900,00" [ref=f4e14498]
+          - cell "Compra" [ref=f4e14499]
+          - cell "Gustavo" [ref=f4e14501]
+          - cell "XTREME" [ref=f4e14502]
+          - cell "-" [ref=f4e14503]
+          - cell "-" [ref=f4e14504]
+          - cell "0 dias" [ref=f4e14505]
+          - cell [ref=f4e14506]:
+            - generic [ref=f4e14507]:
+              - link "Ver detalhes de YAMAHA YS150 FAZER SED" [ref=f4e14508] [cursor=pointer]:
+                - /url: /ui/veiculos/95/detalhes
+              - button "Editar YAMAHA YS150 FAZER SED" [ref=f4e14512] [cursor=pointer]
+              - button "Cliente vendedor de YAMAHA YS150 FAZER SED" [ref=f4e14515] [cursor=pointer]
+              - button "Imagens de YAMAHA YS150 FAZER SED" [ref=f4e14519] [cursor=pointer]
+              - button "Procuração de YAMAHA YS150 FAZER SED" [ref=f4e14524] [cursor=pointer]
+              - button "Documento do veículo YAMAHA YS150 FAZER SED" [ref=f4e14528] [cursor=pointer]
+              - button "Excluir YAMAHA YS150 FAZER SED" [ref=f4e14532] [cursor=pointer]
+        - row [ref=f4e14535]:
+          - cell "HONDA SAHARA" [ref=f4e14536]
+          - cell "SSU4D97" [ref=f4e14537]
+          - cell [ref=f4e14538]
+          - cell "2024" [ref=f4e14543]
+          - cell "46.000" [ref=f4e14544]
+          - cell "Disponível" [ref=f4e14545]
+          - cell "R$ 32.900,00" [ref=f4e14547]
+          - cell "Compra" [ref=f4e14548]
+          - cell "Gustavo" [ref=f4e14550]
+          - cell "XTREME" [ref=f4e14551]
+          - cell "-" [ref=f4e14552]
+          - cell "-" [ref=f4e14553]
+          - cell "0 dias" [ref=f4e14554]
+          - cell [ref=f4e14555]:
+            - generic [ref=f4e14556]:
+              - link "Ver detalhes de HONDA SAHARA" [ref=f4e14557] [cursor=pointer]:
+                - /url: /ui/veiculos/96/detalhes
+              - button "Editar HONDA SAHARA" [ref=f4e14561] [cursor=pointer]
+              - button "Cliente vendedor de HONDA SAHARA" [ref=f4e14564] [cursor=pointer]
+              - button "Imagens de HONDA SAHARA" [ref=f4e14568] [cursor=pointer]
+              - button "Procuração de HONDA SAHARA" [ref=f4e14573] [cursor=pointer]
+              - button "Documento do veículo HONDA SAHARA" [ref=f4e14577] [cursor=pointer]
+              - button "Excluir HONDA SAHARA" [ref=f4e14581] [cursor=pointer]
+        - row [ref=f4e14584]:
+          - cell "TIGER 900 RALLY" [ref=f4e14585]
+          - cell "GCO6J08" [ref=f4e14586]
+          - cell [ref=f4e14587]
+          - cell "2022" [ref=f4e14592]
+          - cell "27.000" [ref=f4e14593]
+          - cell "Disponível" [ref=f4e14594]
+          - cell "R$ 64.900,00" [ref=f4e14596]
+          - cell "Compra" [ref=f4e14597]
+          - cell "Gustavo" [ref=f4e14599]
+          - cell "XTREME" [ref=f4e14600]
+          - cell "-" [ref=f4e14601]
+          - cell "-" [ref=f4e14602]
+          - cell "0 dias" [ref=f4e14603]
+          - cell [ref=f4e14604]:
+            - generic [ref=f4e14605]:
+              - link "Ver detalhes de TIGER 900 RALLY" [ref=f4e14606] [cursor=pointer]:
+                - /url: /ui/veiculos/97/detalhes
+              - button "Editar TIGER 900 RALLY" [ref=f4e14610] [cursor=pointer]
+              - button "Cliente vendedor de TIGER 900 RALLY" [ref=f4e14613] [cursor=pointer]
+              - button "Imagens de TIGER 900 RALLY" [ref=f4e14617] [cursor=pointer]
+              - button "Procuração de TIGER 900 RALLY" [ref=f4e14622] [cursor=pointer]
+              - button "Documento do veículo TIGER 900 RALLY" [ref=f4e14626] [cursor=pointer]
+              - button "Excluir TIGER 900 RALLY" [ref=f4e14630] [cursor=pointer]
+        - row [ref=f4e14633]:
+          - cell "TIGER 900 RALLY PRO" [ref=f4e14634]
+          - cell "FCU3G72" [ref=f4e14635]
+          - cell [ref=f4e14636]
+          - cell "2021" [ref=f4e14641]
+          - cell "27.000" [ref=f4e14642]
+          - cell "Disponível" [ref=f4e14643]
+          - cell "R$ 65.900,00" [ref=f4e14645]
+          - cell "Compra" [ref=f4e14646]
+          - cell "Guilherme" [ref=f4e14648]
+          - cell "XTREME" [ref=f4e14649]
+          - cell "-" [ref=f4e14650]
+          - cell "-" [ref=f4e14651]
+          - cell "0 dias" [ref=f4e14652]
+          - cell [ref=f4e14653]:
+            - generic [ref=f4e14654]:
+              - link "Ver detalhes de TIGER 900 RALLY PRO" [ref=f4e14655] [cursor=pointer]:
+                - /url: /ui/veiculos/98/detalhes
+              - button "Editar TIGER 900 RALLY PRO" [ref=f4e14659] [cursor=pointer]
+              - button "Cliente vendedor de TIGER 900 RALLY PRO" [ref=f4e14662] [cursor=pointer]
+              - button "Imagens de TIGER 900 RALLY PRO" [ref=f4e14666] [cursor=pointer]
+              - button "Procuração de TIGER 900 RALLY PRO" [ref=f4e14671] [cursor=pointer]
+              - button "Documento do veículo TIGER 900 RALLY PRO" [ref=f4e14675] [cursor=pointer]
+              - button "Excluir TIGER 900 RALLY PRO" [ref=f4e14679] [cursor=pointer]

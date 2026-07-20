@@ -4,6 +4,7 @@
 {% block content %}
 {% set disponiveis = veiculos | selectattr("status.value", "equalto", "disponivel") | list %}
 {% set vendidos = veiculos | selectattr("status.value", "equalto", "vendido") | list %}
+{% set reservados = veiculos | selectattr("status.value", "equalto", "reservado") | list %}
 
 <div class="page-head">
   <div class="page-head__title">
@@ -11,7 +12,7 @@
     <p class="page-head__subtitle">Gerencie o estoque de veículos da operação</p>
   </div>
   <div class="page-head__actions">
-    <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}">
+    <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
   </div>
@@ -33,6 +34,11 @@
     <div class="stat__value cell-num">{{ vendidos | length }}</div>
     <div class="stat__hint">baixados do estoque</div>
   </article>
+  <article class="card stat stat--accent">
+    <div class="stat__label">{{ ui.icon("clock") }} Reservados</div>
+    <div class="stat__value cell-num">{{ reservados | length }}</div>
+    <div class="stat__hint">aguardando conclusão</div>
+  </article>
 </section>
 
 {% set search_colunas = [] %}
@@ -49,23 +55,32 @@
 {% if pode_ver_campo(user, 'veiculos', 'revisao') %}{% set _ = search_colunas.append({"key": "revisao", "label": "Revisão"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'debitos') %}{% set _ = search_colunas.append({"key": "debitos", "label": "Débitos"}) %}{% endif %}
 
-<div class="toolbar">
-  <div class="search">
-    {{ ui.icon("search") }}
-    <input class="input" type="search" name="q"
-           hx-get="/ui/veiculos" hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar…"
-           value="{{ q or '' }}" aria-label="Buscar veículos">
+<div class="toolbar" id="busca-veiculos">
+  <div class="search-filter-group">
+    <div class="search">
+      {{ ui.icon("search") }}
+      <input class="input" type="search" name="q"
+             hx-get="/ui/veiculos" hx-trigger="keyup changed delay:300ms, search" hx-include="#busca-veiculos"
+             hx-target="#linhas" hx-swap="outerHTML"
+             placeholder="Buscar por qualquer campo…"
+             value="{{ q or '' }}" aria-label="Buscar veículos">
+    </div>
+    <div class="filter-separator"></div>
+    <div class="filter-control">
+      <label class="filter-label">{{ ui.icon("filter") }} Coluna:</label>
+      <select class="input filter-select" name="search_column"
+              hx-get="/ui/veiculos" hx-trigger="change" hx-include="#busca-veiculos" hx-target="#linhas" hx-swap="outerHTML"
+              aria-label="Filtrar por coluna">
+        <option value="">Todas</option>
+        {% for col in search_colunas %}
+        <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
+        {% endfor %}
+      </select>
+      {% if search_column %}
+      <span class="filter-badge">{{ search_column }}</span>
+      {% endif %}
+    </div>
   </div>
-  <select class="input" name="search_column"
-          hx-get="/ui/veiculos" hx-trigger="change" hx-target="#linhas" hx-swap="outerHTML"
-          aria-label="Buscar por coluna">
-    <option value="">Todas as colunas</option>
-    {% for col in search_colunas %}
-    <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
-    {% endfor %}
-  </select>
 </div>
 
 <div class="table-wrap">

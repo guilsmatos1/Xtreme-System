@@ -3,7 +3,7 @@
   <td class="cell-strong" data-col="nome">{{ c.nome }}</td>
   <td class="cell-mono" data-col="documento">{{ c.documento }}</td>
   <td data-col="telefone">{{ c.telefone or "-" }}</td>
-  <td data-col="tipo"><span class="badge badge--plain">{{ c.tipo.value | replace("_", " ") | title }}</span></td>
+  <td data-col="tipo"><span class="badge badge--plain {% if c.tipo.value == 'pessoa_fisica' %}badge--info{% elif c.tipo.value == 'pessoa_juridica' %}badge--success{% endif %}">{{ c.tipo.value | replace("_", " ") | title }}</span></td>
   <td data-col="cidade">{{ c.cidade or "-" }}</td>
   <td data-col="estado">{{ c.estado or "-" }}</td>
   {% set pode_editar = pode_operacao(user, 'clientes', 'editar') %}

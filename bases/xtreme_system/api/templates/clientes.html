@@ -8,7 +8,7 @@
     <p class="page-head__subtitle">{{ page_subtitle or "Cadastre e gerencie os clientes da operação" }}</p>
   </div>
   <div class="page-head__actions">
-    <a class="btn btn--ghost" href="{{ route_prefix or '/ui/clientes' }}/exportar?q={{ q | urlencode }}">
+    <a class="btn btn--ghost" href="{{ route_prefix or '/ui/clientes' }}/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
     {% if is_admin(user) %}
@@ -19,18 +19,44 @@
   </div>
 </div>
 
-<div class="toolbar">
-  <div class="search">
-    {{ ui.icon("search") }}
-    <input class="input" type="search" name="q"
-           hx-get="{{ route_prefix or '/ui/clientes' }}" hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar por nome, documento, cidade ou estado…"
-           value="{{ q or '' }}" aria-label="Buscar clientes">
+{% set search_colunas = [
+  {"key": "nome", "label": "Nome"},
+  {"key": "documento", "label": "Documento"},
+  {"key": "telefone", "label": "Telefone"},
+  {"key": "tipo", "label": "Tipo"},
+  {"key": "cidade", "label": "Cidade"},
+  {"key": "estado", "label": "Estado"},
+] %}
+
+<div class="toolbar" id="busca-clientes">
+  <div class="search-filter-group">
+    <div class="search">
+      {{ ui.icon("search") }}
+      <input class="input" type="search" name="q"
+             hx-get="{{ route_prefix or '/ui/clientes' }}" hx-trigger="keyup changed delay:300ms, search" hx-include="#busca-clientes"
+             hx-target="#linhas" hx-swap="outerHTML"
+             placeholder="Buscar por qualquer campo…"
+             value="{{ q or '' }}" aria-label="Buscar clientes">
+    </div>
+    <div class="filter-separator"></div>
+    <div class="filter-control">
+      <label class="filter-label">{{ ui.icon("filter") }} Coluna:</label>
+      <select class="input filter-select" name="search_column"
+              hx-get="{{ route_prefix or '/ui/clientes' }}" hx-trigger="change" hx-include="#busca-clientes" hx-target="#linhas" hx-swap="outerHTML"
+              aria-label="Filtrar por coluna">
+        <option value="">Todas</option>
+        {% for col in search_colunas %}
+        <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
+        {% endfor %}
+      </select>
+      {% if search_column %}
+      <span class="filter-badge">{{ search_column }}</span>
+      {% endif %}
+    </div>
   </div>
 </div>
 
-{% set sort_qs = "&q=" ~ (q | urlencode) %}
+{% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
 <div class="table-wrap">
   <table class="table--wide" data-table="clientes">
     <thead>

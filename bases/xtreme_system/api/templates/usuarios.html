@@ -45,25 +45,14 @@
 
 {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
 
-<div class="toolbar">
-  <div class="search">
-    {{ ui.icon("search") }}
-    <input class="input" type="search" name="q"
-           hx-get="/ui/usuarios" hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar por usuário…" value="{{ q or '' }}" aria-label="Buscar usuários">
-  </div>
-</div>
-
 <div class="table-wrap">
-  {% set sort_qs = "&q=" ~ (q | urlencode) %}
   <table data-table="usuarios">
     <thead><tr>
-      <th style="width:1%" data-col="id" data-col-label="ID">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
-      <th data-col="username" data-col-label="Usuário">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
-      <th data-col="papel" data-col-label="Papel">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th style="width:1%" data-col="id" data-col-label="ID">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="username" data-col-label="Usuário">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="papel" data-col-label="Papel">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
       <th data-col="perfil" data-col-label="Perfil">Perfil</th>
-      <th data-col="ativo" data-col-label="Status">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios", extra_qs=sort_qs) }}</th>
+      <th data-col="ativo" data-col-label="Status">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
       <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
     </tr></thead>
     {% include "_linhas_usuarios.html" %}

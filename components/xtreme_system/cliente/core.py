@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import or_
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -113,20 +113,18 @@ def delete(session: Session, obj: Cliente, actor_id: int | None = None) -> None:
     crud.delete(session, obj, actor_id)
 
 
-def search(session: Session, term: str) -> list[Cliente]:
-    pattern = f"%{term}%"
-    return list(
-        session.query(Cliente)
-        .where(
-            or_(
-                Cliente.nome.ilike(pattern),
-                Cliente.documento.ilike(pattern),
-                Cliente.cidade.ilike(pattern),
-                Cliente.estado.ilike(pattern),
-            )
-        )
-        .all()
-    )
+_COLUNAS_BUSCA = {
+    "nome": Cliente.nome,
+    "documento": Cliente.documento,
+    "telefone": Cliente.telefone,
+    "tipo": Cliente.tipo,
+    "cidade": Cliente.cidade,
+    "estado": Cliente.estado,
+}
+
+
+def search(session: Session, term: str, column: str | None = None) -> list[Cliente]:
+    return list(_search_com_vinculo(session, term, column).all())
 
 
 def list_compradores(session: Session) -> list[Cliente]:
@@ -135,10 +133,12 @@ def list_compradores(session: Session) -> list[Cliente]:
     return list(session.query(Cliente).join(Venda).distinct().all())
 
 
-def search_compradores(session: Session, term: str) -> list[Cliente]:
+def search_compradores(
+    session: Session, term: str, column: str | None = None
+) -> list[Cliente]:
     from xtreme_system.venda.core import Venda  # noqa: PLC0415
 
-    return list(_search_com_vinculo(session, term).join(Venda).distinct().all())
+    return list(_search_com_vinculo(session, term, column).join(Venda).distinct().all())
 
 
 def list_vendedores(session: Session) -> list[Cliente]:
@@ -147,14 +147,23 @@ def list_vendedores(session: Session) -> list[Cliente]:
     return list(session.query(Cliente).join(Compra).distinct().all())
 
 
-def search_vendedores(session: Session, term: str) -> list[Cliente]:
+def search_vendedores(
+    session: Session, term: str, column: str | None = None
+) -> list[Cliente]:
     from xtreme_system.compra.core import Compra  # noqa: PLC0415
 
-    return list(_search_com_vinculo(session, term).join(Compra).distinct().all())
+    return list(
+        _search_com_vinculo(session, term, column).join(Compra).distinct().all()
+    )
 
 
-def _search_com_vinculo(session: Session, term: str) -> Any:
+def _search_com_vinculo(session: Session, term: str, column: str | None = None) -> Any:
     pattern = f"%{term}%"
+
+    if column and column in _COLUNAS_BUSCA:
+        col = _COLUNAS_BUSCA[column]
+        return session.query(Cliente).where(cast(col, String).ilike(pattern))
+
     return session.query(Cliente).where(
         or_(
             Cliente.nome.ilike(pattern),

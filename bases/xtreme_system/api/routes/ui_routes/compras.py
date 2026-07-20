@@ -410,6 +410,7 @@ register_crud_ui_routes(
     ctx_form=_ctx_form_compra,
     ctx_list=_ctx_lista_compras,
     searchable=True,
+    search_func=compra.search,
     parse_form=_parse_compra_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,

@@ -5,7 +5,18 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, extract, false, func, or_
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Numeric,
+    String,
+    cast,
+    extract,
+    false,
+    func,
+    or_,
+)
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -206,13 +217,32 @@ def delete(session: Session, obj: Venda, actor_id: int | None = None) -> None:
     crud.delete(session, obj, actor_id)
 
 
-def search(session: Session, term: str) -> list[Venda]:
+def search(session: Session, term: str, column: str | None = None) -> list[Venda]:
     pattern = f"%{term}%"
-    return list(
+    query = (
         session.query(Venda)
         .join(Cliente, Venda.cliente_id == Cliente.id)
         .join(Veiculo, Venda.veiculo_id == Veiculo.id)
-        .where(
+    )
+
+    columns_map = {
+        "cliente": Cliente.nome,
+        "veiculo": Veiculo.modelo,
+        "data": Venda.data_venda,
+        "valor": Venda.valor_venda,
+        "entrada": Venda.valor_entrada,
+        "divida": Venda.valor_pendente,
+        "pagamento": Venda.forma_pagamento,
+        "parcelas": Venda.parcelas,
+        "status": Venda.status,
+    }
+
+    if column and column in columns_map:
+        col = columns_map[column]
+        return list(query.where(cast(col, String).ilike(pattern)).distinct().all())
+
+    return list(
+        query.where(
             or_(
                 Cliente.nome.ilike(pattern),
                 Cliente.documento.ilike(pattern),

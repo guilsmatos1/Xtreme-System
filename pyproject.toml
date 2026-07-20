@@ -171,6 +171,29 @@ source_modules = ["xtreme_system"]
 forbidden_modules = ["xtreme_system.api"]
 ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]
 
+[tool.coverage.run]
+branch = true
+source = ["xtreme_system"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+fail_under = 75
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@overload",
+]
+ignore_errors = false
+
 [tool.polylith.bricks]
 "bases/xtreme_system/api" = "xtreme_system/api"
 "components/xtreme_system/documento_veiculo" = "xtreme_system/documento_veiculo"

@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric, or_
+from sqlalchemy import Date, ForeignKey, Numeric, String, cast, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -125,13 +125,31 @@ def delete(session: Session, obj: Compra, actor_id: int | None = None) -> None:
     crud.delete(session, obj, actor_id)
 
 
-def search(session: Session, term: str) -> list[Compra]:
+def search(session: Session, term: str, column: str | None = None) -> list[Compra]:
     pattern = f"%{term}%"
-    return list(
+    query = (
         session.query(Compra)
         .join(Cliente, Compra.cliente_id == Cliente.id)
         .join(Veiculo, Compra.veiculo_id == Veiculo.id)
-        .where(
+    )
+
+    columns_map = {
+        "cliente": Cliente.nome,
+        "documento": Cliente.documento,
+        "modelo": Veiculo.modelo,
+        "placa": Veiculo.placa,
+        "data": Compra.data_compra,
+        "valor": Compra.valor_compra,
+        "status": Compra.status,
+        "observacoes": Compra.observacoes,
+    }
+
+    if column and column in columns_map:
+        col = columns_map[column]
+        return list(query.where(cast(col, String).ilike(pattern)).distinct().all())
+
+    return list(
+        query.where(
             or_(
                 Cliente.nome.ilike(pattern),
                 Cliente.documento.ilike(pattern),

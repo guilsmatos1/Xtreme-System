@@ -259,9 +259,19 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     veiculo2_id = vei2.json()["id"]
 
     comprador_id = _criar_cliente(client, headers, "Ana Compradora", "12345678901")
-    vendedor_id = _criar_cliente(client, headers, "Bia Vendedora", "12345678902")
     ambos_id = _criar_cliente(client, headers, "Caio Ambos", "12345678903")
     _criar_cliente(client, headers, "Dora Sem Vinculo", "12345678904")
+    vendedor_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Bia Vendedora",
+            "documento": "12345678902",
+            "tipo": "pessoa_juridica",
+        },
+        headers=headers,
+    )
+    assert vendedor_resp.status_code == 201
+    vendedor_id = int(vendedor_resp.json()["id"])
 
     venda_resp = client.post(
         "/vendas",
@@ -338,6 +348,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     assert "Novo cliente" in compradores.text
     assert "Ana Compradora" in compradores.text
     assert "Caio Ambos" in compradores.text
+    assert 'badge badge--plain badge--info">Pessoa Fisica' in compradores.text
     assert "Bia Vendedora" not in compradores.text
     assert "Dora Sem Vinculo" not in compradores.text
 
@@ -346,6 +357,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     assert "Clientes Vendedores" in vendedores.text
     assert "Bia Vendedora" in vendedores.text
     assert "Caio Ambos" in vendedores.text
+    assert 'badge badge--plain badge--success">Pessoa Juridica' in vendedores.text
     assert "Ana Compradora" not in vendedores.text
     assert "Dora Sem Vinculo" not in vendedores.text
 

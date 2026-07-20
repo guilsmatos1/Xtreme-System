@@ -8,7 +8,7 @@
     <p class="page-head__subtitle">Registre e acompanhe as compras de veículos</p>
   </div>
   <div class="page-head__actions">
-    <a class="btn btn--ghost" href="/ui/compras/exportar">
+    <a class="btn btn--ghost" href="/ui/compras/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
       {{ ui.icon("inbox") }} Exportar dados
     </a>
     {% if pode_operacao(user, 'compras', 'cadastrar') %}
@@ -19,20 +19,47 @@
   </div>
 </div>
 
-<div class="toolbar">
-  <div class="search">
-    {{ ui.icon("search") }}
-    <input class="input" type="search" name="q"
-           hx-get="/ui/compras" hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar por cliente, placa ou modelo…"
-           value="{{ q or '' }}" aria-label="Buscar compras">
+{% set search_colunas = [] %}
+{% if pode_ver_campo(user, 'compras', 'data_compra') %}{% set _ = search_colunas.append({"key": "data", "label": "Data"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'cliente') %}{% set _ = search_colunas.append({"key": "cliente", "label": "Nome do Cliente"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'documento_cliente') %}{% set _ = search_colunas.append({"key": "documento", "label": "Documento do Cliente"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'placa') %}{% set _ = search_colunas.append({"key": "placa", "label": "Placa"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'veiculo') %}{% set _ = search_colunas.append({"key": "modelo", "label": "Veículo"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'valor_compra') %}{% set _ = search_colunas.append({"key": "valor", "label": "Valor"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'observacoes') %}{% set _ = search_colunas.append({"key": "observacoes", "label": "Observações"}) %}{% endif %}
+
+<div class="toolbar" id="busca-compras">
+  <div class="search-filter-group">
+    <div class="search">
+      {{ ui.icon("search") }}
+      <input class="input" type="search" name="q"
+             hx-get="/ui/compras" hx-trigger="keyup changed delay:300ms, search" hx-include="#busca-compras"
+             hx-target="#linhas" hx-swap="outerHTML"
+             placeholder="Buscar por qualquer campo…"
+             value="{{ q or '' }}" aria-label="Buscar compras">
+    </div>
+    <div class="filter-separator"></div>
+    <div class="filter-control">
+      <label class="filter-label">{{ ui.icon("filter") }} Coluna:</label>
+      <select class="input filter-select" name="search_column"
+              hx-get="/ui/compras" hx-trigger="change" hx-include="#busca-compras" hx-target="#linhas" hx-swap="outerHTML"
+              aria-label="Filtrar por coluna">
+        <option value="">Todas</option>
+        {% for col in search_colunas %}
+        <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
+        {% endfor %}
+      </select>
+      {% if search_column %}
+      <span class="filter-badge">{{ search_column }}</span>
+      {% endif %}
+    </div>
   </div>
 </div>
 
 <div class="table-wrap">
   <table class="table--wide" data-table="compras">
-    {% set sort_qs = "&q=" ~ (q | urlencode) %}
+    {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead>
       <tr>
         {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
