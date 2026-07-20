@@ -9,7 +9,10 @@ from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 from xtreme_system.api import deps
+from xtreme_system.api.core import app
 from xtreme_system.auth import core as auth
+from xtreme_system.database.core import get_session
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 
@@ -83,7 +86,24 @@ def test_get_ui_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
     assert db_session.info["usuario_id"] == admin.id
 
 
-def test_vendedor_pode_ler(client: TestClient) -> None:
+def test_vendedor_sem_perfil_nao_le_json_de_pagina_restrita(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
+    assert client.get("/investidores", headers=headers).status_code == 403
+
+
+def test_vendedor_com_perfil_pode_ler_json_da_pagina(client: TestClient) -> None:
+    session = next(app.dependency_overrides[get_session]())
+    p = perfil.create(
+        session,
+        perfil.PerfilCreate(nome="Investidores", paginas=["investidores"]),
+    )
+    vendedor = usuario.get_by_username(session, "vendedor")
+    assert vendedor is not None
+    vendedor.perfil_id = p.id
+    session.flush()
+
     headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}
     assert client.get("/investidores", headers=headers).status_code == 200
 

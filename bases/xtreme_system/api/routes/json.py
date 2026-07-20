@@ -127,6 +127,7 @@ register_crud_routes(
     read_schema=investidor.InvestidorRead,
     create_schema=investidor.InvestidorCreate,
     update_schema=investidor.InvestidorUpdate,
+    pagina="investidores",
 )
 
 # ---- Veículos ----
@@ -147,6 +148,20 @@ register_crud_routes(
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
     handle_delete_error=False,
+    pagina="veiculos",
+    campos_protegidos=(
+        "tipo",
+        "modelo",
+        "ano",
+        "placa",
+        "km",
+        "preco",
+        "procuracao",
+        "status",
+        "tipo_entrada",
+        "revisao",
+        "investidor",
+    ),
 )
 
 # ---- Caixa dos investidores ----
@@ -176,6 +191,7 @@ register_crud_routes(
     before_create=_validate_investidor_lancamento,
     before_update=_guard_lancamento_veiculo,
     before_delete=_guard_lancamento_veiculo,
+    pagina="investidores",
 )
 
 
@@ -242,6 +258,7 @@ register_crud_routes(
     read_schema=cliente.ClienteRead,
     create_schema=cliente.ClienteCreate,
     update_schema=cliente.ClienteUpdate,
+    pagina="clientes",
 )
 
 
@@ -271,6 +288,25 @@ register_crud_routes(
     before_update=_validate_venda_update,
     before_delete=recompute_vehicle_status_on_delete,
     after_create=whatsapp.notificar_venda,
+    pagina="vendas",
+    campos_protegidos=(
+        "cliente",
+        "veiculo",
+        "veiculo_troca",
+        "data_venda",
+        "valor_venda",
+        "valor_entrada",
+        "debitos",
+        "km",
+        "forma_pagamento",
+        "parcelas",
+        "status",
+        "observacoes",
+        "valor_diferenca",
+        "pagamento_pendente",
+        "valor_pendente",
+        "datas_pagamento",
+    ),
 )
 
 
