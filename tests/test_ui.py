@@ -18,6 +18,7 @@ from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.api.routes.ui_routes.common import resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
+from xtreme_system.auditoria import core as auditoria
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -631,6 +632,118 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Lima" not in csv_resp.text
+
+
+def test_ui_atualizar_venda_registra_autor_na_auditoria(
+    make_client: Callable[..., TestClient],
+) -> None:
+    sessions: dict[str, Session] = {}
+
+    def seed(session: Session) -> None:
+        sessions["session"] = session
+        _seed_investidor_e_veiculo(session)
+
+    client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=seed,
+    )
+    _login_admin(client)
+    headers = _admin_headers(client)
+    admin_id = next(
+        u["id"]
+        for u in client.get("/usuarios", headers=headers).json()
+        if u["username"] == "admin"
+    )
+    cliente_id = _criar_cliente(client, headers, "Carlos Lima", "98765432100")
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    criado = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+        },
+    )
+    assert criado.status_code == 200
+    venda_id = client.get("/vendas", headers=headers).json()[0]["id"]
+
+    editado = client.post(
+        f"/ui/vendas/{venda_id}",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "86000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "aprovado",
+        },
+    )
+
+    assert editado.status_code == 200
+    rows = auditoria.query(
+        sessions["session"], tabela="venda", tipo_acao="UPDATE", limit=100
+    )
+    assert rows
+    assert rows[0].usuario_id == admin_id
+
+
+def test_ui_atualizar_veiculo_registra_autor_na_auditoria_do_lancamento(
+    make_client: Callable[..., TestClient],
+) -> None:
+    sessions: dict[str, Session] = {}
+
+    def seed(session: Session) -> None:
+        sessions["session"] = session
+        _seed_investidor_e_veiculo(session)
+        veiculo_obj = veiculo.list_all(session)[0]
+        caixa.criar_lancamento_veiculo(session, veiculo_obj)
+
+    client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=seed,
+    )
+    _login_admin(client)
+    headers = _admin_headers(client)
+    admin_id = next(
+        u["id"]
+        for u in client.get("/usuarios", headers=headers).json()
+        if u["username"] == "admin"
+    )
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+
+    editado = client.post(
+        f"/ui/veiculos/{veiculo_id}",
+        data={
+            "tipo": "carro",
+            "modelo": "Onix",
+            "cor": "Prata",
+            "ano": "2024",
+            "placa": "ABC1234",
+            "km": "12000",
+            "preco": "86000.00",
+            "investidor_id": str(investidor_id),
+            "status": "disponivel",
+        },
+    )
+
+    assert editado.status_code == 200
+    rows = auditoria.query(
+        sessions["session"],
+        tabela="lancamento_investimento",
+        tipo_acao="UPDATE",
+        limit=100,
+    )
+    assert rows
+    assert rows[0].usuario_id == admin_id
 
 
 def test_ui_vendas_rejeita_veiculo_indisponivel_na_edicao(

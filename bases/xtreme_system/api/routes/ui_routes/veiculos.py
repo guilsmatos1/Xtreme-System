@@ -274,7 +274,7 @@ async def _atualizar_veiculo(
                 compra.CompraUpdate(debitos=debitos),
                 user.id,
             )
-        caixa.sincronizar_lancamento_veiculo(session, atualizado)
+        caixa.sincronizar_lancamento_veiculo(session, atualizado, user.id)
     except IntegrityError:
         session.rollback()
         return _erro_veiculo(request, session, user, "Veículo já existe")
