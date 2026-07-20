@@ -61,7 +61,8 @@
       {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<th data-col="investidor" data-col-label="Investidor">{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<th data-col="procuracao" data-col-label="Procurador">{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<th data-col="revisao" data-col-label="Revisão">{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<th data-col="debitos" data-col-label="Débitos">Débitos</th>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<th data-col="debitos" data-col-label="Débitos">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
+      <th data-col="tempo_estoque" data-col-label="Tempo de Estoque">{{ ui.sortable("tempo_estoque", "Tempo de Estoque", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>
       {% if pode_operacao(user, 'veiculos', 'editar') or pode_operacao(user, 'veiculos', 'excluir') or pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') or pode_operacao(user, 'veiculos', 'abrir_imagens') or pode_operacao(user, 'veiculos', 'abrir_procuracao') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
     </tr></thead>
     {% include "_linhas_veiculos.html" %}

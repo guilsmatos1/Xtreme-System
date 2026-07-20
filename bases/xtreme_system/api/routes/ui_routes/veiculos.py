@@ -1,5 +1,6 @@
 """HTMX routes for veículos — CRUD override (create/update transacionais)."""
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, Any
 
@@ -66,6 +67,42 @@ def _ctx_lista_veiculos(
     }
 
 
+def _preparar_veiculos_lista(
+    session: Session, itens: list[veiculo.Veiculo]
+) -> list[veiculo.Veiculo]:
+    compras_por_veiculo = compra.latest_by_veiculo_ids(
+        session, [item.id for item in itens]
+    )
+    hoje = datetime.now(UTC).date()
+    for item in itens:
+        compra_item = compras_por_veiculo.get(item.id)
+        object.__setattr__(
+            item, "debitos_sort", compra_item.debitos if compra_item else None
+        )
+        object.__setattr__(
+            item,
+            "tempo_estoque_dias",
+            max((hoje - compra_item.data_compra).days, 0) if compra_item else None,
+        )
+    return itens
+
+
+def _debitos_sort(v: veiculo.Veiculo) -> Decimal:
+    return getattr(v, "debitos_sort", None) or Decimal("-1")
+
+
+def _tempo_estoque_sort(v: veiculo.Veiculo) -> int:
+    return getattr(v, "tempo_estoque_dias", None) or -1
+
+
+def _listar_veiculos(session: Session) -> list[veiculo.Veiculo]:
+    return _preparar_veiculos_lista(session, veiculo.list_all(session))
+
+
+def _buscar_veiculos(session: Session, term: str) -> list[veiculo.Veiculo]:
+    return _preparar_veiculos_lista(session, veiculo.search(session, term))
+
+
 register_crud_ui_routes(
     app,
     templates,
@@ -83,6 +120,8 @@ register_crud_ui_routes(
     ctx_form=_ctx_form_veiculo,
     ctx_list=_ctx_lista_veiculos,
     searchable=True,
+    list_func=_listar_veiculos,
+    search_func=_buscar_veiculos,
     before_create=validate_veiculo_fks,
     before_update=lambda session, data: validate_veiculo_fks(
         session, data, update=True
@@ -102,6 +141,8 @@ register_crud_ui_routes(
         "revisao": "revisao",
         "investidor": "investidor",
         "procuracao": "procuracao",
+        "debitos": _debitos_sort,
+        "tempo_estoque": _tempo_estoque_sort,
     },
     csv_filename="veiculos.csv",
     csv_headers=[
@@ -191,8 +232,11 @@ def _excluir_veiculo(
         session.rollback()
         erro = delete_conflict_detail("Veículo")
         status_code = 409
-    lista = query_list(
-        session, veiculo, q="", searchable=True, list_func=None, search_func=None
+    lista = _preparar_veiculos_lista(
+        session,
+        query_list(
+            session, veiculo, q="", searchable=True, list_func=None, search_func=None
+        ),
     )
     return list_response(
         templates,
@@ -210,7 +254,7 @@ def _excluir_veiculo(
 def _ok_veiculo(
     request: Request, session: Session, user: usuario.Usuario
 ) -> HTMLResponse:
-    veiculos = veiculo.list_all(session)
+    veiculos = _listar_veiculos(session)
     return templates.TemplateResponse(
         request,
         "_veiculos_ok.html",
