@@ -19,7 +19,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_cliente_dir,
     _validar_uploads,
 )
-from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+    salvar_arquivos,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
@@ -57,6 +61,7 @@ def _cliente_vendedor_modal(
             "compra": item_compra,
             "documentos": documentos,
             "erro": erro,
+            "pending_upload_paths": pending_upload_paths(session),
         },
         status_code=400 if erro else 200,
     )

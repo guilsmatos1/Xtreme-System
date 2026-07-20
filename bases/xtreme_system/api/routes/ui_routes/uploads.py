@@ -9,12 +9,16 @@ from fastapi import UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.routes.ui_routes.common import (
-    _uploaded_file_path,
-)
 from xtreme_system.database.core import register_post_commit
 
 _PENDING_UPLOAD_PATHS_KEY = "_pending_upload_paths"
+
+
+def pending_upload_paths(session: Session) -> set[str]:
+    info = getattr(session, "info", None)
+    if info is None:
+        return set()
+    return set(info.get(_PENDING_UPLOAD_PATHS_KEY, set()))
 
 
 def salvar_arquivos(
@@ -75,18 +79,13 @@ def salvar_arquivos(
 
 
 def remover_orfaos(
-    session: Session,
-    docs: Iterable[Any],
-    delete_fn: Callable[[Session, Any], None],
+    _session: Session,
+    _docs: Iterable[Any],
+    _delete_fn: Callable[[Session, Any], None],
 ) -> None:
-    """Remove do DB registros cujo arquivo em disco não existe mais."""
-    info = getattr(session, "info", None)
-    pending_paths: set[str] = set()
-    if info is not None:
-        pending_paths = info.get(_PENDING_UPLOAD_PATHS_KEY, set())
-    for doc in list(docs):
-        path = _uploaded_file_path(doc.url or "")
-        if path is not None and str(path) in pending_paths:
-            continue
-        if path is not None and not path.exists():
-            delete_fn(session, doc)
+    """Mantido por compatibilidade; não remove registros no fluxo de leitura.
+
+    A reconciliação de órfãos deve ocorrer em um processo explícito de limpeza,
+    não durante a abertura de modais ou outras leituras.
+    """
+    return

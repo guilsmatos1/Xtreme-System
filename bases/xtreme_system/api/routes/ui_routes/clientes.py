@@ -22,7 +22,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_cliente_dir,
     _validar_uploads,
 )
-from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+    salvar_arquivos,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -123,7 +127,12 @@ def _documentos_modal(
     return templates.TemplateResponse(
         request,
         "_modal_documentos_cliente.html",
-        {"cliente": item, "user": user, "action_oob": action_oob},
+        {
+            "cliente": item,
+            "user": user,
+            "action_oob": action_oob,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
     )
 
 

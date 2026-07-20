@@ -13,7 +13,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_dir,
     _validar_uploads,
 )
-from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+    salvar_arquivos,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.perfil import core as perfil
@@ -48,6 +52,7 @@ def _imagem_modal(
         {
             "veiculo": item,
             "action_oob": action_oob,
+            "pending_upload_paths": pending_upload_paths(session),
             "pode_enviar_imagens": perfil.pode_operacao(
                 user, "veiculos", "enviar_imagens"
             ),

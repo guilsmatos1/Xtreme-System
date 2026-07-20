@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.routes.ui_routes.common import arquivo_disponivel
 from xtreme_system.auth import core as auth
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
@@ -24,6 +25,7 @@ templates.env.globals["campos_protegidos"] = perfil.CAMPOS_PROTEGIDOS
 templates.env.globals["operacoes_disponiveis"] = perfil.OPERACOES
 templates.env.globals["is_admin"] = usuario.is_admin
 templates.env.globals["Papel"] = usuario.Papel
+templates.env.globals["arquivo_disponivel"] = arquivo_disponivel
 
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
