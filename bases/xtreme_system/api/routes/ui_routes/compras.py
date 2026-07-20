@@ -23,7 +23,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_compra_dir,
     _validar_uploads,
 )
-from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+    salvar_arquivos,
+)
 from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
@@ -134,6 +138,7 @@ def _comprovantes_modal(
             "user": user,
             "erro": erro,
             "action_oob": action_oob,
+            "pending_upload_paths": pending_upload_paths(session),
         },
         status_code=400 if erro else 200,
     )

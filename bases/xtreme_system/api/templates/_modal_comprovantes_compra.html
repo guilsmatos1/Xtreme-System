@@ -15,7 +15,7 @@
         {% for comp in comprovantes %}
         {% set is_imagem = comp.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
         <div class="mmgr__card">
-          {% if is_imagem %}
+          {% if arquivo_disponivel(comp.url, pending_upload_paths) and is_imagem %}
           <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar comprovante">
             <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}" loading="lazy">
           </button>
@@ -23,12 +23,18 @@
             <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
             <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}">
           </dialog>
-          {% else %}
+          {% elif arquivo_disponivel(comp.url, pending_upload_paths) %}
           <a class="mmgr__doc" href="{{ comp.url }}" target="_blank" rel="noopener" aria-label="Abrir comprovante PDF">
             <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
             <span class="mmgr__doc-badge">PDF</span>
             <span class="mmgr__doc-name">{{ comp.url.split("/") | last }}</span>
           </a>
+          {% else %}
+          <div class="mmgr__doc mmgr__doc--missing" aria-disabled="true">
+            <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
+            <span class="mmgr__doc-badge">Indisponível</span>
+            <span class="mmgr__doc-name">{{ comp.url.split("/") | last }}</span>
+          </div>
           {% endif %}
           {% if pode_operacao(user, 'compras', 'excluir_comprovante') %}
           <button class="mmgr__del" type="button" hx-post="/ui/compras/{{ compra.id }}/comprovantes/{{ comp.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este comprovante?" aria-label="Excluir comprovante">{{ ui.icon("trash") }}</button>

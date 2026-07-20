@@ -13,7 +13,11 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploads_procuracao_dir,
     _validar_uploads,
 )
-from xtreme_system.api.routes.ui_routes.uploads import remover_orfaos, salvar_arquivos
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+    salvar_arquivos,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.documento_procuracao import core as documento_procuracao
 from xtreme_system.usuario import core as usuario
@@ -45,7 +49,13 @@ def _procuracao_modal(
     return templates.TemplateResponse(
         request,
         "_modal_procuracao_veiculo.html",
-        {"veiculo": item, "user": user, "erro": erro, "action_oob": action_oob},
+        {
+            "veiculo": item,
+            "user": user,
+            "erro": erro,
+            "action_oob": action_oob,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
         status_code=400 if erro else 200,
     )
 

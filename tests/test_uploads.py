@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
     _validar_uploads,
+    arquivo_disponivel,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     remover_orfaos,
@@ -139,18 +140,11 @@ def test_salvar_arquivos_falha_create_remove_arquivo(tmp_path: Path) -> None:
     assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
 
 
-def test_remover_orfaos_deleta_db_se_arquivo_inexistente(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_remover_orfaos_nao_deleta_db_se_arquivo_inexistente() -> None:
     deleted: list[Any] = []
 
     def delete_fn(_session: Session, doc: Any) -> None:
         deleted.append(doc)
-
-    monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.uploads._uploaded_file_path",
-        lambda _url: Path("/nonexistent/file.jpg"),
-    )
 
     remover_orfaos(
         cast(Session, object()),
@@ -158,11 +152,11 @@ def test_remover_orfaos_deleta_db_se_arquivo_inexistente(
         cast(Callable[[Session, Any], None], delete_fn),
     )
 
-    assert len(deleted) == 1
+    assert deleted == []
 
 
 def test_remover_orfaos_mantem_se_arquivo_existe(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    tmp_path: Path,
 ) -> None:
     deleted: list[Any] = []
 
@@ -172,11 +166,6 @@ def test_remover_orfaos_mantem_se_arquivo_existe(
     arquivo = tmp_path / "foto.jpg"
     arquivo.write_bytes(b"dados")
 
-    monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.uploads._uploaded_file_path",
-        lambda _url: arquivo,
-    )
-
     remover_orfaos(
         cast(Session, object()),
         [_FakeDoc("/static/uploads/veiculos/1/foto.jpg")],
@@ -184,6 +173,13 @@ def test_remover_orfaos_mantem_se_arquivo_existe(
     )
 
     assert deleted == []
+
+
+def test_arquivo_disponivel_retorna_false_quando_arquivo_falta(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", tmp_path)
+    assert not arquivo_disponivel("/static/uploads/veiculos/1/foto.jpg")
 
 
 class _MagicFakeFile:

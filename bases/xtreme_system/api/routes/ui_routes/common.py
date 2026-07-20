@@ -1,6 +1,7 @@
 """Shared helpers for HTMX route modules."""
 
 import contextlib
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -8,8 +9,9 @@ from fastapi import UploadFile
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.setup import _ui_dir
 from xtreme_system.cliente import core as cliente
+
+_ui_dir = Path(__file__).resolve().parents[2]
 
 
 def _uploads_dir(veiculo_id: int) -> Path:
@@ -91,6 +93,15 @@ def _uploaded_file_path(url: str) -> Path | None:
     if not candidate.is_relative_to(uploads_root):
         return None
     return candidate
+
+
+def arquivo_disponivel(url: str, pending_paths: Iterable[str] | None = None) -> bool:
+    path = _uploaded_file_path(url)
+    if path is None:
+        return False
+    if pending_paths is not None and str(path) in set(pending_paths):
+        return True
+    return path.exists()
 
 
 def _remover_upload(path: Path) -> None:

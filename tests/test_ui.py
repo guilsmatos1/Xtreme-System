@@ -153,7 +153,7 @@ def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
             Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
 
 
-def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> None:
+def test_modal_imagens_mostra_indisponivel_sem_arquivo(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
@@ -170,6 +170,7 @@ def test_modal_imagens_ignora_url_estatica_sem_arquivo(client: TestClient) -> No
     resp = client.get(f"/ui/veiculos/{veiculo_id}/imagens")
 
     assert resp.status_code == 200
+    assert "Indisponível" in resp.text
     assert url not in resp.text
 
 
