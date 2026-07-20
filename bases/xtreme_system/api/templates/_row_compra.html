@@ -15,11 +15,11 @@
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       <a class="btn btn--ghost btn--sm btn--focus action-view" href="/ui/veiculos/{{ c.veiculo.id }}/detalhes" aria-label="Ver detalhes de {{ c.veiculo.modelo }}">{{ ui.icon("eye") }}</a>
+      {% if pode_editar %}
+      <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/compras/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar compra {{ c.id }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
       {% if pode_abrir_comprovante %}
       {% include "_action_compra_comprovantes.html" %}
-      {% endif %}
-      {% if pode_editar %}
-      <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/compras/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar compra {{ c.id }}">{{ ui.icon("receipt") }}</button>
       {% endif %}
       {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/compras/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta compra?" aria-label="Excluir compra {{ c.id }}">{{ ui.icon("trash") }}</button>
