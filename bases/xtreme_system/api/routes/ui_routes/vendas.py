@@ -46,6 +46,9 @@ logger = structlog.get_logger(__name__)
 _CadastrarVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "cadastrar"))
 ]
+_EditarVendaDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("vendas", "editar"))
+]
 _BaixarContratoVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "baixar_contrato"))
 ]
@@ -119,6 +122,14 @@ def _filtrar_campos_ocultos_venda(
     return data
 
 
+def _validate_venda_update(
+    session: Session, obj: venda.Venda, data: venda.VendaUpdate
+) -> None:
+    validate_cliente_veiculo_fks(session, data)
+    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
+        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
+
+
 def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
     fechamentos = fechamento_venda.list_all(session)
     return {"fechamentos_by_venda": {f.venda_id: f for f in fechamentos}}
@@ -142,10 +153,9 @@ register_crud_ui_routes(
     ctx_list=_ctx_lista_vendas,
     searchable=True,
     parse_form=_parse_venda_form,
-    before_create=validate_cliente_veiculo_fks,
-    before_update=validate_cliente_veiculo_fks,
     before_delete=recompute_vehicle_status_on_delete,
-    after_create=whatsapp.notificar_venda,
+    register_create=False,
+    register_update=False,
     sort_fields={
         "cliente": lambda v: _sort_key(v.cliente.nome),
         "veiculo": lambda v: _sort_key(v.veiculo.modelo),
@@ -219,7 +229,6 @@ register_crud_ui_routes(
         v.status.value,
         v.observacoes or "",
     ],
-    register_create=False,
     cadastrar_dep=require_operacao("vendas", "cadastrar"),
     editar_dep=require_operacao("vendas", "editar"),
     excluir_dep=require_operacao("vendas", "excluir"),
@@ -257,14 +266,18 @@ def _ok_venda(
 
 
 def _erro_venda(
-    request: Request, session: Session, user: usuario.Usuario, msg: str
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    msg: str,
+    venda_obj: venda.Venda | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "_form_venda.html",
         {
             **_ctx_form_venda(session),
-            "venda": None,
+            "venda": venda_obj,
             "user": user,
             "erro": msg,
         },
@@ -337,6 +350,31 @@ async def _criar_venda(
     except IntegrityError:
         session.rollback()
         return _erro_venda(request, session, user, "Venda já existe")
+    return _ok_venda(request, session, user)
+
+
+@app.post("/ui/vendas/{item_id}")
+async def _atualizar_venda(
+    item_id: int, request: Request, session: SessionDep, user: _EditarVendaDep
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(venda.get(session, item_id), "Venda")
+    form = await request.form()
+
+    try:
+        data = venda.VendaUpdate.model_validate(
+            _filtrar_campos_ocultos_venda(user, _parse_venda_form(form))
+        )
+        _validate_venda_update(session, obj, data)
+    except (ValidationError, HTTPException) as exc:
+        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        return _erro_venda(request, session, user, msg, venda_obj=obj)
+
+    try:
+        venda.update(session, obj, data)
+    except IntegrityError:
+        session.rollback()
+        return _erro_venda(request, session, user, "Venda já existe", venda_obj=obj)
     return _ok_venda(request, session, user)
 
 
