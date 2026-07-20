@@ -24,7 +24,7 @@ from xtreme_system.api.crud_types import (
     SortSpec,
     UpdateSchemaT,
 )
-from xtreme_system.api.crud_ui.query import query_list, sorted_list
+from xtreme_system.api.crud_ui.query import filter_list, query_list, sorted_list
 from xtreme_system.api.crud_ui.responses import (
     conflict_form_response,
     csv_response,
@@ -232,15 +232,22 @@ def register_list_route(
         q: str = "",
         sort: str = "",
         order: str = "asc",
+        filter_col: str = "",
+        filter_val: str = "",
     ) -> HTMLResponse:
         lista = sorted_list(
-            query_list(
-                session,
-                module,
-                q=q,
-                searchable=searchable,
-                list_func=list_func,
-                search_func=search_func,
+            filter_list(
+                query_list(
+                    session,
+                    module,
+                    q=q,
+                    searchable=searchable,
+                    list_func=list_func,
+                    search_func=search_func,
+                ),
+                filter_col,
+                filter_val,
+                sort_fields,
             ),
             sort,
             order,
@@ -262,6 +269,8 @@ def register_list_route(
             sort=sort,
             order=order,
             q=q if searchable else None,
+            filter_col=filter_col,
+            filter_val=filter_val,
         )
 
 

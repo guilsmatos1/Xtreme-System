@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/columns.js" defer></script>
+  <script src="/static/filters.js?v=2" defer></script>
   <script>
     // Theme: restore before paint to avoid flash.
     (function () {
@@ -97,19 +98,18 @@
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/configuracoes') }}" href="/ui/configuracoes">
           {{ ui.icon("settings") }} Configurações
         </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/conta') }}" href="/ui/conta">
-          {{ ui.icon("users") }} Minha conta
-        </a>
       </nav>
       {% endif %}
 
       <div class="sidebar__footer">
         <div class="sidebar__user">
-          <span class="avatar">{{ (user.username[0] | upper) if user else '?' }}</span>
-          <div class="sidebar__user-meta">
-            <b>{{ user.username if user else '' }}</b>
-            <span>{{ user.papel.value if user else '' }}</span>
-          </div>
+          <a class="sidebar__user-link nav__link {{ 'is-active' if path.startswith('/ui/conta') }}" href="/ui/conta">
+            <span class="avatar">{{ (user.username[0] | upper) if user else '?' }}</span>
+            <div class="sidebar__user-meta">
+              <b>{{ user.username if user else '' }}</b>
+              <span>{{ user.papel.value if user else '' }}</span>
+            </div>
+          </a>
           <form method="post" action="/ui/logout" style="margin-left:auto">
             <button class="icon-btn" type="submit" aria-label="Sair" title="Sair">{{ ui.icon("logout") }}</button>
           </form>
@@ -147,7 +147,7 @@
     }
     // Close mobile drawer after navigating.
     document.addEventListener("click", function (e) {
-      if (e.target.closest(".nav__link")) document.body.classList.remove("nav-open");
+      if (e.target.closest(".nav__link, .sidebar__user-link")) document.body.classList.remove("nav-open");
     });
     // Auto-dismiss the toast (#msg) a few seconds after it receives content.
     (function () {

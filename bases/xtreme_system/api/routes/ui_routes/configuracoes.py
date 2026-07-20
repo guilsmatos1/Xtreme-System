@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
 from xtreme_system.api.setup import app
+from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
@@ -29,8 +30,16 @@ def ui_configuracoes(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     config = whatsapp.get_config(session)
+    config_empresa = empresa.get_config(session)
     return templates.TemplateResponse(
-        request, "configuracoes.html", {"user": user, "config": config, "aba": "banco"}
+        request,
+        "configuracoes.html",
+        {
+            "user": user,
+            "config": config,
+            "config_empresa": config_empresa,
+            "aba": "banco",
+        },
     )
 
 
@@ -62,8 +71,47 @@ def ui_configuracoes_salvar(
         {
             "user": user,
             "config": config,
+            "config_empresa": empresa.get_config(session),
             "sucesso": "Configurações salvas.",
             "aba": "whatsapp",
+        },
+    )
+
+
+@app.post("/ui/configuracoes/empresa")
+def ui_configuracoes_empresa_salvar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    nome: Annotated[str, Form()] = "",
+    endereco: Annotated[str, Form()] = "",
+    bairro: Annotated[str, Form()] = "",
+    cidade: Annotated[str, Form()] = "",
+    uf: Annotated[str, Form()] = "",
+    cnpj: Annotated[str, Form()] = "",
+    signatario: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    config_empresa = empresa.atualizar_config(
+        session,
+        empresa.EmpresaConfigUpdate(
+            nome=nome,
+            endereco=endereco,
+            bairro=bairro,
+            cidade=cidade,
+            uf=uf,
+            cnpj=cnpj,
+            signatario=signatario,
+        ),
+    )
+    return templates.TemplateResponse(
+        request,
+        "configuracoes.html",
+        {
+            "user": user,
+            "config": whatsapp.get_config(session),
+            "config_empresa": config_empresa,
+            "sucesso": "Dados da empresa salvos.",
+            "aba": "empresa",
         },
     )
 
@@ -82,7 +130,13 @@ def ui_configuracoes_exportar(
         return templates.TemplateResponse(
             request,
             "configuracoes.html",
-            {"user": user, "config": config, "erro": str(exc), "aba": "banco"},
+            {
+                "user": user,
+                "config": config,
+                "config_empresa": empresa.get_config(session),
+                "erro": str(exc),
+                "aba": "banco",
+            },
             status_code=500,
         )
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -110,7 +164,13 @@ def ui_configuracoes_importar(
         return templates.TemplateResponse(
             request,
             "configuracoes.html",
-            {"user": user, "config": config, "erro": str(exc), "aba": "banco"},
+            {
+                "user": user,
+                "config": config,
+                "config_empresa": empresa.get_config(session),
+                "erro": str(exc),
+                "aba": "banco",
+            },
         )
     session.expire_all()
     config = whatsapp.get_config(session)
@@ -120,6 +180,7 @@ def ui_configuracoes_importar(
         {
             "user": user,
             "config": config,
+            "config_empresa": empresa.get_config(session),
             "sucesso": "Dados importados com sucesso.",
             "aba": "banco",
         },

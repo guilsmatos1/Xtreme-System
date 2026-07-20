@@ -9,9 +9,14 @@
     <p class="page-head__subtitle">Resumo executivo de vendas e operações</p>
   </div>
   <div class="page-head__actions">
-    {% for value, label in periodos.items() %}
-    <a class="btn btn--{{ 'primary' if periodo == value else 'ghost' }}" href="/ui/dashboard?periodo={{ value }}">{{ label }}</a>
-    {% endfor %}
+    <form class="dashboard-filter" method="get" action="/ui/dashboard">
+      <label class="field__label" for="dashboard-mes">Mês</label>
+      <select id="dashboard-mes" class="select" name="mes" onchange="this.form.submit()">
+        {% for item in meses %}
+        <option value="{{ item.value }}"{% if mes == item.value %} selected="selected"{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </form>
   </div>
 </div>
 
@@ -27,9 +32,9 @@
     <div class="stat__hint">valor médio de venda</div>
   </article>
   <article class="card stat stat--accent">
-    <div class="stat__label">{{ ui.icon("check") }} Taxa de conversão</div>
-    <div class="stat__value cell-num">{{ "{:.1f}".format(taxa_conversao) }}%</div>
-    <div class="stat__hint">{{ vendidos }}/{{ disponiveis + vendidos }} avaliados</div>
+    <div class="stat__label">{{ ui.icon("car") }} Total de veículos</div>
+    <div class="stat__value cell-num">{{ total_veiculos }}</div>
+    <div class="stat__hint">disponíveis para venda</div>
   </article>
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("wallet") }} Valor em estoque</div>
@@ -38,62 +43,123 @@
   </article>
 </section>
 
-<section class="stats" aria-label="Receita por tipo de veículo">
-  {% for item in receita_tipo %}
-  <article class="card stat {{ 'stat--accent' if item.icone == 'car' else 'stat--warning' }}">
-    <div class="stat__label">{{ ui.icon(item.icone) }} {{ item.label }}</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(item.valor or 0) | replace(",", ".") }}</div>
-    <div class="stat__hint">faturamento</div>
-  </article>
-  {% endfor %}
+<section class="card card--pad" style="margin-top:var(--s-6)">
+  <h2 style="margin-bottom:var(--s-4)">Desempenho de vendas — últimos 6 meses</h2>
+  <div class="bar-chart" data-bar-chart="desempenho-vendas">
+    <div class="bar-chart__inner">
+      <div class="bar-chart__yaxis">
+        {% for tick in desempenho_eixo_y %}
+        <span class="bar-chart__ytick">R$ {{ "{:,.0f}".format(tick) | replace(",", ".") }}</span>
+        {% endfor %}
+      </div>
+      <div class="bar-chart__plot">
+        <div class="bar-chart__bars">
+          {% for item in desempenho_chart %}
+          <div class="bar-chart__col">
+            <div
+              class="bar-chart__bar"
+              style="height:{{ item.pct }}%"
+              tabindex="0"
+              data-label="{{ item.label }}"
+              data-total="R$ {{ '{:,.0f}'.format(item.total or 0) | replace(',', '.') }}"
+              data-count="{{ item.count }} venda{{ '' if item.count == 1 else 's' }}"
+              aria-label="{{ item.label }}: R$ {{ '{:,.0f}'.format(item.total or 0) | replace(',', '.') }}, {{ item.count }} venda{{ '' if item.count == 1 else 's' }}"
+            ></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="bar-chart__axis">
+      {% for item in desempenho_chart %}
+      <span class="bar-chart__axis-label">{{ item.label }}</span>
+      {% endfor %}
+    </div>
+    <div class="bar-chart__tooltip">
+      <strong data-tt-total></strong>
+      <span data-tt-label></span> · <span data-tt-count></span>
+    </div>
+  </div>
+  <details class="chart-table-details">
+    <summary>Ver como tabela</summary>
+    <div class="table-wrap">
+      <table class="table--wide">
+        <thead><tr>
+          <th>Mês</th>
+          <th>Vendas</th>
+          <th>Faturamento</th>
+        </tr></thead>
+        <tbody>
+          {% for item in desempenho_chart %}
+          <tr>
+            <td>{{ item.label }}</td>
+            <td class="cell-num">{{ item.count }}</td>
+            <td class="cell-num">R$ {{ "{:,.0f}".format(item.total or 0) | replace(",", ".") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
 </section>
 
+<script>
+(function () {
+  var chart = document.querySelector('[data-bar-chart="desempenho-vendas"]');
+  if (!chart) return;
+  var tooltip = chart.querySelector('.bar-chart__tooltip');
+  var ttTotal = tooltip.querySelector('[data-tt-total]');
+  var ttLabel = tooltip.querySelector('[data-tt-label]');
+  var ttCount = tooltip.querySelector('[data-tt-count]');
+  var bars = chart.querySelectorAll('.bar-chart__bar');
+
+  function show(bar, x, y) {
+    ttTotal.textContent = bar.dataset.total;
+    ttLabel.textContent = bar.dataset.label;
+    ttCount.textContent = bar.dataset.count;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.setAttribute('data-visible', 'true');
+  }
+  function hide() { tooltip.removeAttribute('data-visible'); }
+
+  bars.forEach(function (bar) {
+    bar.addEventListener('pointermove', function (e) { show(bar, e.clientX, e.clientY - 12); });
+    bar.addEventListener('pointerenter', function (e) { show(bar, e.clientX, e.clientY - 12); });
+    bar.addEventListener('pointerleave', hide);
+    bar.addEventListener('focus', function () {
+      var rect = bar.getBoundingClientRect();
+      show(bar, rect.left + rect.width / 2, rect.top - 8);
+    });
+    bar.addEventListener('blur', hide);
+  });
+})();
+</script>
+
 <section style="margin-top:var(--s-6)">
-  <h2 style="margin-bottom:var(--s-4)">Tendência de vendas por {{ tendencia_granularidade }}</h2>
-  {% if tendencia_vendas %}
+  <h2 style="margin-bottom:var(--s-4)">Atividades Recentes</h2>
+  {% if atividades_recentes %}
   <div class="table-wrap">
     <table class="table--wide">
       <thead><tr>
-        <th>Período</th>
-        <th>Vendas</th>
-        <th>Faturamento</th>
+        <th>Atividade</th>
+        <th>Origem</th>
+        <th>Quando</th>
       </tr></thead>
       <tbody>
-        {% for label, count, total in tendencia_vendas %}
+        {% for item in atividades_recentes %}
         <tr>
-          <td>{{ label }}</td>
-          <td class="cell-num">{{ count }}</td>
-          <td class="cell-num">R$ {{ "{:,.0f}".format(total or 0) | replace(",", ".") }}</td>
+          <td>{{ item.titulo }}</td>
+          <td>{{ item.detalhe }}</td>
+          <td>{{ item.quando }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% else %}
-  {{ ui.empty("cash", "Sem vendas no período", "Nenhuma venda foi registrada neste intervalo") }}
+  {{ ui.empty("dashboard", "Sem atividades recentes", "Nenhuma ação auditada foi registrada ainda") }}
   {% endif %}
-</section>
-
-<section style="margin-top:var(--s-6)">
-  <h2 style="margin-bottom:var(--s-4)">Funil de vendas</h2>
-  <div class="table-wrap">
-    <table class="table--wide">
-      <thead><tr>
-        <th>Status</th>
-        <th>Quantidade</th>
-        <th>Valor total</th>
-      </tr></thead>
-      <tbody>
-        {% for item in funil %}
-        <tr>
-          <td>{{ item.status }}</td>
-          <td class="cell-num">{{ item.count }}</td>
-          <td class="cell-num">R$ {{ "{:,.0f}".format(item.valor or 0) | replace(",", ".") }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
 </section>
 
 <section style="margin-top:var(--s-6)">

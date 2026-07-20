@@ -107,10 +107,20 @@ def list_response(
     sort: str = "",
     order: str = "asc",
     q: str | None = None,
+    filter_col: str = "",
+    filter_val: str = "",
     erro: str | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
-    context = {"user": user, list_key: lista, "sort": sort, "order": order, **ctx_list}
+    context = {
+        "user": user,
+        list_key: lista,
+        "sort": sort,
+        "order": order,
+        "filter_col": filter_col,
+        "filter_val": filter_val,
+        **ctx_list,
+    }
     if q is not None:
         context["q"] = q
     if erro is not None:

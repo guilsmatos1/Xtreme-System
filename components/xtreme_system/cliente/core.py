@@ -29,9 +29,11 @@ class Cliente(Base):
     email: Mapped[str | None]
     telefone: Mapped[str | None]
     endereco: Mapped[str | None]
+    bairro: Mapped[str | None]
     cidade: Mapped[str | None]
     estado: Mapped[str | None]
     cep: Mapped[str | None]
+    profissao: Mapped[str | None]
 
     documentos: Mapped[list["ImagemDocumentoCliente"]] = relationship(
         cascade="all, delete-orphan"
@@ -45,9 +47,11 @@ class ClienteCreate(BaseModel):
     email: str | None = None
     telefone: str | None = None
     endereco: str | None = None
+    bairro: str | None = None
     cidade: str | None = None
     estado: str | None = None
     cep: str | None = None
+    profissao: str | None = None
 
 
 class ClienteUpdate(BaseModel):
@@ -57,9 +61,11 @@ class ClienteUpdate(BaseModel):
     email: str | None = None
     telefone: str | None = None
     endereco: str | None = None
+    bairro: str | None = None
     cidade: str | None = None
     estado: str | None = None
     cep: str | None = None
+    profissao: str | None = None
 
 
 class ClienteRead(BaseModel):
@@ -72,9 +78,11 @@ class ClienteRead(BaseModel):
     email: str | None
     telefone: str | None
     endereco: str | None
+    bairro: str | None
     cidade: str | None
     estado: str | None
     cep: str | None
+    profissao: str | None
 
 
 def list_all(session: Session) -> list[Cliente]:

@@ -271,10 +271,17 @@ def _resolver_veiculo(
                 "tipo_entrada": form.get("vei_tipo_entrada"),
                 "placa": placa,
                 "modelo": str(form.get("vei_modelo") or "").strip(),
+                "marca": str(form.get("vei_marca") or "").strip() or None,
                 "cor": str(form.get("vei_cor") or "").strip(),
                 "ano": int(form.get("vei_ano") or 0),
                 "km": str(form.get("vei_km") or "").strip() or None,
+                "chassi": str(form.get("vei_chassi") or "").strip() or None,
+                "renavam": str(form.get("vei_renavam") or "").strip() or None,
                 "preco": str(form.get("vei_preco") or "").strip(),
+                "proprietario_registrado": str(
+                    form.get("vei_proprietario_registrado") or ""
+                ).strip()
+                or None,
                 "investidor_id": int(form.get("vei_investidor_id") or 0),
             }
         )
@@ -417,6 +424,7 @@ register_crud_ui_routes(
         "data": "data_compra",
         "valor": "valor_compra",
         "status": "status",
+        "observacoes": lambda c: _sort_key(c.observacoes or ""),
     },
     csv_filename="compras.csv",
     csv_headers=[

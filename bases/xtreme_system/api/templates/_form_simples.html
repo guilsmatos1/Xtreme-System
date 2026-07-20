@@ -10,7 +10,7 @@
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <label class="field">
-          <span class="field__label">Nome</span>
+          <span class="field__label">Nome *</span>
           <input class="input" name="nome" value="{{ item.nome if item else '' }}" required autofocus>
         </label>
         {% if not item and prefixo == '/ui/investidores' %}

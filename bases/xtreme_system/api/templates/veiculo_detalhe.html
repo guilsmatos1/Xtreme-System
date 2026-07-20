@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}{{ veiculo.modelo }}{% endblock %}
+{% block content %}
+{% set v = veiculo %}
+{% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
+{% set pode_excluir = pode_operacao(user, 'veiculos', 'excluir') %}
+{% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}
+{% set pode_imagens = pode_operacao(user, 'veiculos', 'abrir_imagens') %}
+{% set pode_procuracao = pode_operacao(user, 'veiculos', 'abrir_procuracao') %}
+{% set pode_documento = pode_operacao(user, 'veiculos', 'upload_documento') %}
+
+<a class="btn btn--ghost btn--sm" href="/ui/veiculos" style="margin-bottom:var(--s-3)" aria-label="Voltar para veículos">{{ ui.icon("arrow-left") }} Voltar</a>
+
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>{{ veiculo.modelo }} {% if pode_ver_campo(user, 'veiculos', 'placa') %}<span class="cell-mono">{{ veiculo.placa }}</span>{% endif %}</h1>
+    <p class="page-head__subtitle" style="display:flex; gap:var(--s-2); margin-top:var(--s-2)">
+      {% if pode_ver_campo(user, 'veiculos', 'tipo') %}{{ ui.tipo_badge(veiculo.tipo) }}{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'status') %}{{ ui.status_badge(veiculo.status) }}{% endif %}
+    </p>
+  </div>
+  <div class="page-head__actions">
+    {% if pode_editar %}
+    <button class="btn btn--default" hx-get="/ui/veiculos/{{ veiculo.id }}/editar" hx-target="#modal" hx-swap="innerHTML">{{ ui.icon("edit") }} Editar</button>
+    {% endif %}
+    {% if pode_excluir %}
+    <button class="btn btn--default btn--danger" hx-post="/ui/veiculos/{{ veiculo.id }}/excluir" hx-target="#detail-alert" hx-swap="innerHTML" hx-confirm="Excluir o veículo {{ veiculo.modelo }} ({{ veiculo.placa }})?">{{ ui.icon("trash") }} Excluir</button>
+    {% endif %}
+  </div>
+</div>
+
+<div id="detail-alert"></div>
+
+<section class="stats" aria-label="Resumo do veículo">
+  {% if pode_ver_campo(user, 'veiculos', 'preco') %}
+  <article class="card stat stat--info">
+    <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
+    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(veiculo.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+  </article>
+  {% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
+  <article class="card stat stat--warning">
+    <div class="stat__label">{{ ui.icon("cash") }} Débitos</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.debitos is not none %}R$ {{ "{:,.2f}".format(compra_atual.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</div>
+  </article>
+  {% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}
+  <article class="card stat stat--success">
+    <div class="stat__label">{{ ui.icon("tag") }} Tempo em Estoque</div>
+    <div class="stat__value cell-num">{{ veiculo.tempo_estoque }} dia{% if veiculo.tempo_estoque != 1 %}s{% endif %}</div>
+  </article>
+  {% endif %}
+</section>
+
+<div class="panel-grid">
+  <section class="card card--pad">
+    <h2 style="margin-bottom:var(--s-4)">Identificação</h2>
+    <dl class="details-list">
+      {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<div><dt>Tipo</dt><dd>{{ veiculo.tipo.value | capitalize }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<div><dt>Tipo de Entrada</dt><dd>{{ veiculo.tipo_entrada.value | capitalize }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<div><dt>Modelo</dt><dd>{{ veiculo.modelo }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'marca') %}<div><dt>Marca</dt><dd>{{ veiculo.marca or "-" }}</dd></div>{% endif %}
+      <div><dt>Cor</dt><dd>{{ veiculo.cor }}</dd></div>
+      {% if pode_ver_campo(user, 'veiculos', 'ano') %}<div><dt>Ano</dt><dd>{{ veiculo.ano }}</dd></div>{% endif %}
+    </dl>
+  </section>
+
+  <section class="card card--pad">
+    <h2 style="margin-bottom:var(--s-4)">Documentação</h2>
+    <dl class="details-list">
+      {% if pode_ver_campo(user, 'veiculos', 'placa') %}<div><dt>Placa</dt><dd>{{ veiculo.placa }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<div><dt>Chassi</dt><dd>{{ veiculo.chassi or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<div><dt>RENAVAM</dt><dd>{{ veiculo.renavam or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<div><dt>Procurador</dt><dd>{{ veiculo.procuracao or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<div><dt>Proprietário Registrado</dt><dd>{{ veiculo.proprietario_registrado or "-" }}</dd></div>{% endif %}
+    </dl>
+  </section>
+
+  <section class="card card--pad">
+    <h2 style="margin-bottom:var(--s-4)">Estoque</h2>
+    <dl class="details-list">
+      {% if pode_ver_campo(user, 'veiculos', 'km') %}<div><dt>Quilometragem</dt><dd>{{ "{:,}".format(veiculo.km) | replace(",", ".") if veiculo.km is not none else "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<div><dt>Revisão</dt><dd>{{ "Sim" if veiculo.revisao else "Não" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<div><dt>Investidor</dt><dd>{{ veiculo.investidor.nome }}</dd></div>{% endif %}
+    </dl>
+  </section>
+
+  {% if pode_cliente_vendedor %}
+  <section class="card card--pad">
+    <h2 style="margin-bottom:var(--s-4)">Comprado de</h2>
+    {% if compra_atual %}
+    <dl class="details-list">
+      <div><dt>Nome</dt><dd>{{ compra_atual.cliente.nome }}</dd></div>
+      <div><dt>Documento</dt><dd>{{ compra_atual.cliente.documento }}</dd></div>
+      <div><dt>Tipo</dt><dd>{{ compra_atual.cliente.tipo.value | replace("_", " ") | title }}</dd></div>
+      <div><dt>Telefone</dt><dd>{{ compra_atual.cliente.telefone or "-" }}</dd></div>
+      <div><dt>Email</dt><dd>{{ compra_atual.cliente.email or "-" }}</dd></div>
+      <div><dt>Endereço</dt><dd>{{ compra_atual.cliente.endereco or "-" }}</dd></div>
+      <div><dt>Cidade/UF</dt><dd>{{ compra_atual.cliente.cidade or "-" }}{% if compra_atual.cliente.estado %}/{{ compra_atual.cliente.estado }}{% endif %}</dd></div>
+      <div><dt>CEP</dt><dd>{{ compra_atual.cliente.cep or "-" }}</dd></div>
+      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<div><dt>Débitos</dt><dd>{% if compra_atual.debitos is not none %}R$ {{ "{:,.2f}".format(compra_atual.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</dd></div>{% endif %}
+    </dl>
+    {% if documentos_vendedor %}
+    <div style="margin-top:var(--s-4)">
+      <div class="field__label" style="margin-bottom:var(--s-2)">Documentos</div>
+      <ul class="midia-list">
+        {% for doc in documentos_vendedor %}
+        <li class="midia-list__item">
+          {{ ui.icon("file") }}
+          {% if arquivo_disponivel(doc.url, pending_upload_paths) %}
+          <a href="{{ doc.url }}" target="_blank" rel="noopener">Documento {{ loop.index }}</a>
+          {% else %}
+          <span aria-disabled="true">Documento {{ loop.index }} indisponível</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% else %}
+    {{ ui.empty("user", "Cliente vendedor não encontrado", "Este veículo ainda não possui uma compra vinculada.") }}
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+
+{% if pode_ver_campo(user, 'veiculos', 'debitos') %}
+<section class="card card--pad" style="margin-bottom:var(--s-4)">
+  <h2 style="margin-bottom:var(--s-4)">Custos</h2>
+  {% if custos %}
+  <div class="table-wrap">
+    <table class="table--wide">
+      <thead><tr>
+        <th>Categoria</th>
+        <th>Data</th>
+        <th class="cell-num">Valor</th>
+        <th>Descrição</th>
+      </tr></thead>
+      <tbody>
+        {% for c in custos %}
+        <tr>
+          <td data-col="categoria">{{ c.categoria }}</td>
+          <td data-col="data">{{ c.data_custo.isoformat() }}</td>
+          <td class="cell-num" data-col="valor">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+          <td data-col="descricao">{{ c.descricao or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ ui.empty("cash", "Nenhum custo lançado", "Não há custos cadastrados para este veículo.") }}
+  {% endif %}
+</section>
+{% endif %}
+
+{% if pode_imagens or pode_procuracao or pode_documento %}
+<section class="card card--pad">
+  <h2 style="margin-bottom:var(--s-4)">Mídia e documentos</h2>
+  <div style="display:flex; gap:var(--s-3); flex-wrap:wrap">
+    {% if pode_imagens %}
+    {% include "_action_veiculo_imagens.html" %}
+    {% endif %}
+    {% if pode_procuracao %}
+    {% include "_action_veiculo_procuracao.html" %}
+    {% endif %}
+    {% if pode_documento %}
+    {% include "_action_veiculo_documentos.html" %}
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

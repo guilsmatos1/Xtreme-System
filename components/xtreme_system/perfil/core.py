@@ -24,7 +24,10 @@ PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}
 CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
     "veiculos": [
         ("modelo", "Modelo"),
+        ("marca", "Marca"),
         ("placa", "Placa"),
+        ("chassi", "Chassi"),
+        ("renavam", "RENAVAM"),
         ("tipo", "Tipo"),
         ("ano", "Ano"),
         ("km", "KM"),
@@ -33,6 +36,7 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("tipo_entrada", "Tipo de Entrada"),
         ("investidor", "Investidor"),
         ("procuracao", "Procurador"),
+        ("proprietario_registrado", "Proprietário Registrado"),
         ("revisao", "Revisão"),
         ("debitos", "Débitos"),
         ("tempo_estoque", "Tempo de Estoque"),

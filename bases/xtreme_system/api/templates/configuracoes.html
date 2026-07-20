@@ -22,6 +22,8 @@
          id="tab-whatsapp" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
          id="tab-tema" {% if aba_ativa == "tema" %}checked{% endif %}>
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-empresa" {% if aba_ativa == "empresa" %}checked{% endif %}>
 
   <div class="settings-layout">
     <nav class="settings-nav" role="tablist" aria-label="Seções de configurações">
@@ -37,6 +39,13 @@
         <span class="settings-nav__text">
           <span class="settings-nav__title">Tema</span>
           <span class="settings-nav__desc">Alternar entre claro e escuro</span>
+        </span>
+      </label>
+      <label class="settings-nav__item" for="tab-empresa" role="tab">
+        <span class="settings-nav__icon">{{ ui.icon("building") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">Empresa</span>
+          <span class="settings-nav__desc">Dados cadastrais</span>
         </span>
       </label>
       <label class="settings-nav__item" for="tab-whatsapp" role="tab">
@@ -181,6 +190,52 @@
             {% endfor %}
           </div>
           <p class="muted">Clique em um placeholder para inseri-lo no texto.</p>
+        </div>
+
+        <div class="field settings-actions">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="settings-tabs__panel settings-tabs__panel--empresa">
+      <div class="settings-panel-head">
+        <h2>Dados da empresa</h2>
+        <p class="page-head__subtitle">Informações cadastrais usadas em documentos e contratos.</p>
+      </div>
+
+      <form method="post" action="/ui/configuracoes/empresa" class="card card--pad settings-form">
+        <div class="modal-section">
+          <div class="form-grid">
+            <label class="field field--full">
+              <span class="field__label">Nome</span>
+              <input class="input" name="nome" value="{{ config_empresa.nome }}" autocomplete="off">
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Endereço</span>
+              <input class="input" name="endereco" value="{{ config_empresa.endereco }}" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">Bairro</span>
+              <input class="input" name="bairro" value="{{ config_empresa.bairro }}" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">Cidade</span>
+              <input class="input" name="cidade" value="{{ config_empresa.cidade }}" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">UF</span>
+              <input class="input" name="uf" value="{{ config_empresa.uf }}" maxlength="2" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field__label">CNPJ</span>
+              <input class="input" name="cnpj" value="{{ config_empresa.cnpj }}" autocomplete="off">
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Signatário</span>
+              <input class="input" name="signatario" value="{{ config_empresa.signatario }}" autocomplete="off">
+            </label>
+          </div>
         </div>
 
         <div class="field settings-actions">

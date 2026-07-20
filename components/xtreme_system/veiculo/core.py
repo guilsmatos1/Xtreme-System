@@ -38,12 +38,16 @@ class Veiculo(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tipo: Mapped[TipoVeiculo]
     modelo: Mapped[str]
+    marca: Mapped[str | None]
     cor: Mapped[str]
     ano: Mapped[int]
     placa: Mapped[str] = mapped_column(unique=True, index=True)
+    chassi: Mapped[str | None]
+    renavam: Mapped[str | None]
     km: Mapped[int | None]
     preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     procuracao: Mapped[str | None]
+    proprietario_registrado: Mapped[str | None]
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
     tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)
     revisao: Mapped[bool] = mapped_column(default=False)
@@ -67,12 +71,16 @@ class Veiculo(Base):
 class VeiculoCreate(BaseModel):
     tipo: TipoVeiculo
     modelo: str
+    marca: str | None = None
     cor: str
     ano: int
     placa: str
+    chassi: str | None = None
+    renavam: str | None = None
     km: int | None = None
     preco: Decimal
     procuracao: str | None = None
+    proprietario_registrado: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
     tipo_entrada: TipoEntrada = TipoEntrada.compra
     revisao: bool = False
@@ -82,12 +90,16 @@ class VeiculoCreate(BaseModel):
 class VeiculoUpdate(BaseModel):
     tipo: TipoVeiculo | None = None
     modelo: str | None = None
+    marca: str | None = None
     cor: str | None = None
     ano: int | None = None
     placa: str | None = None
+    chassi: str | None = None
+    renavam: str | None = None
     km: int | None = None
     preco: Decimal | None = None
     procuracao: str | None = None
+    proprietario_registrado: str | None = None
     status: StatusVeiculo | None = None
     tipo_entrada: TipoEntrada | None = None
     revisao: bool | None = None
@@ -100,12 +112,16 @@ class VeiculoRead(BaseModel):
     id: int
     tipo: TipoVeiculo
     modelo: str
+    marca: str | None
     cor: str
     ano: int
     placa: str
+    chassi: str | None
+    renavam: str | None
     km: int | None = None
     preco: Decimal
     procuracao: str | None
+    proprietario_registrado: str | None
     status: StatusVeiculo
     tipo_entrada: TipoEntrada
     revisao: bool

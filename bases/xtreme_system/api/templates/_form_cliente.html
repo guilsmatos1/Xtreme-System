@@ -11,16 +11,16 @@
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
           <label class="field field--full">
-            <span class="field__label">Nome</span>
+            <span class="field__label">Nome *</span>
             <input class="input" name="nome" value="{{ cliente.nome if cliente else '' }}" required autofocus>
           </label>
 
           <label class="field">
-            <span class="field__label">Documento</span>
+            <span class="field__label">Documento *</span>
             <input class="input" name="documento" value="{{ cliente.documento if cliente else '' }}" required>
           </label>
           <label class="field">
-            <span class="field__label">Tipo</span>
+            <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required>
               {% for t in tipos %}
               <option value="{{ t.value }}"{% if cliente and cliente.tipo == t %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
@@ -43,6 +43,15 @@
           </label>
 
           <label class="field">
+            <span class="field__label">Bairro</span>
+            <input class="input" name="bairro" value="{{ cliente.bairro if cliente and cliente.bairro else '' }}">
+          </label>
+          <label class="field">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cep" value="{{ cliente.cep if cliente and cliente.cep else '' }}">
+          </label>
+
+          <label class="field">
             <span class="field__label">Cidade</span>
             <input class="input" name="cidade" value="{{ cliente.cidade if cliente and cliente.cidade else '' }}">
           </label>
@@ -51,9 +60,9 @@
             <input class="input" name="estado" maxlength="2" value="{{ cliente.estado if cliente and cliente.estado else '' }}">
           </label>
 
-          <label class="field">
-            <span class="field__label">CEP</span>
-            <input class="input" name="cep" value="{{ cliente.cep if cliente and cliente.cep else '' }}">
+          <label class="field field--full">
+            <span class="field__label">Profissão</span>
+            <input class="input" name="profissao" value="{{ cliente.profissao if cliente and cliente.profissao else '' }}">
           </label>
         </div>
       </div>

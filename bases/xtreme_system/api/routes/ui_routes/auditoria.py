@@ -6,7 +6,7 @@ from typing import Any, cast
 from urllib.parse import urlencode
 
 import structlog
-from fastapi import Request, Response
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,24 @@ from xtreme_system.usuario import core as usuario
 logger = structlog.get_logger(__name__)
 
 # ---- Auditoria (consulta, admin-only) ----
+
+
+def _usuario_id_filtro(value: str | None) -> int | None:
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="usuario_id inválido") from exc
+
+
+def _data_filtro(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="data inválida") from exc
 
 
 def _nomes_usuarios(
@@ -102,26 +120,28 @@ def ui_auditoria(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
-    usuario_id: int | None = None,
+    usuario_id: str | None = None,
     tabela: str | None = None,
     tipo_acao: str | None = None,
-    data_de: date | None = None,
-    data_ate: date | None = None,
+    data_de: str | None = None,
+    data_ate: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
-    if data_de is None:
-        data_de = datetime.now(UTC).date() - timedelta(days=1)
-    if data_ate is None:
-        data_ate = datetime.now(UTC).date()
+    data_de_filtro = _data_filtro(data_de)
+    data_ate_filtro = _data_filtro(data_ate)
+    if data_de_filtro is None:
+        data_de_filtro = datetime.now(UTC).date() - timedelta(days=1)
+    if data_ate_filtro is None:
+        data_ate_filtro = datetime.now(UTC).date()
     ctx = _ctx_auditoria(
         session,
         user,
-        usuario_id=usuario_id,
+        usuario_id=_usuario_id_filtro(usuario_id),
         tabela=tabela,
         tipo_acao=tipo_acao,
-        data_de=data_de,
-        data_ate=data_ate,
+        data_de=data_de_filtro,
+        data_ate=data_ate_filtro,
         limit=limit,
         offset=offset,
     )
@@ -134,20 +154,20 @@ def ui_auditoria(
 def ui_auditoria_exportar(
     session: SessionDep,
     _: UIAdmin,
-    usuario_id: int | None = None,
+    usuario_id: str | None = None,
     tabela: str | None = None,
     tipo_acao: str | None = None,
-    data_de: date | None = None,
-    data_ate: date | None = None,
+    data_de: str | None = None,
+    data_ate: str | None = None,
 ) -> Response:
     # Teto de 10k linhas no export; paginar se crescer além disso.
     registros = auditoria.query(
         session,
-        usuario_id=usuario_id,
+        usuario_id=_usuario_id_filtro(usuario_id),
         tabela=tabela,
         tipo_acao=tipo_acao,
-        data_de=data_de,
-        data_ate=data_ate,
+        data_de=_data_filtro(data_de),
+        data_ate=_data_filtro(data_ate),
         limit=10_000,
         offset=0,
     )

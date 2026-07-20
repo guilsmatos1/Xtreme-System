@@ -374,3 +374,63 @@ def tendencia_por_periodo(
         grupos[chave] = prev_count + count, prev_total + total
 
     return [(chave, count, total) for chave, (count, total) in grupos.items()]
+
+
+MESES_ABREV = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+]
+
+
+def desempenho_vendas_mensal(
+    session: Session, meses: int = 6
+) -> list[tuple[str, int, Decimal]]:
+    """Retorna (label, count, total) dos últimos N meses, incluindo meses sem vendas."""
+    hoje = datetime.now(UTC).date()
+    mes_inicial = hoje.month - (meses - 1)
+    ano_inicial = hoje.year
+    while mes_inicial <= 0:
+        mes_inicial += 12
+        ano_inicial -= 1
+    inicio = date(ano_inicial, mes_inicial, 1)
+
+    ano_expr = extract("year", Venda.data_venda)
+    mes_expr = extract("month", Venda.data_venda)
+    rows = (
+        session.query(
+            ano_expr.label("ano"),
+            mes_expr.label("mes"),
+            func.count(Venda.id).label("count"),
+            func.sum(Venda.valor_venda).label("total"),
+        )
+        .filter(Venda.data_venda >= inicio)
+        .filter(Venda.data_venda.isnot(None))
+        .filter(Venda.status != StatusVenda.cancelado)
+        .group_by(ano_expr, mes_expr)
+        .all()
+    )
+    por_chave = {
+        (int(ano), int(mes)): (count or 0, total or Decimal("0"))
+        for ano, mes, count, total in rows
+    }
+
+    resultado: list[tuple[str, int, Decimal]] = []
+    ano, mes = ano_inicial, mes_inicial
+    for _ in range(meses):
+        count, total = por_chave.get((ano, mes), (0, Decimal("0")))
+        resultado.append((f"{MESES_ABREV[mes - 1]}/{ano % 100:02d}", count, total))
+        mes += 1
+        if mes > len(MESES_ABREV):
+            mes = 1
+            ano += 1
+    return resultado

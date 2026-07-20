@@ -12,13 +12,25 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import delete_conflict_detail, list_response
 from xtreme_system.api.crud_writes import delete_with_hook
-from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
+from xtreme_system.api.deps import (
+    SessionDep,
+    UIUser,
+    _found,
+    require_operacao,
+    templates,
+)
 from xtreme_system.api.route_factories import register_crud_ui_routes
+from xtreme_system.api.routes.ui_routes.uploads import (
+    pending_upload_paths,
+    remover_orfaos,
+)
 from xtreme_system.api.routes.workflows import validate_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.custo_veiculo import core as custo_veiculo
+from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -27,7 +39,10 @@ from xtreme_system.veiculo import core as veiculo
 # Campos do form.html que só devem ser aplicados se o perfil puder vê-los.
 _CAMPO_FORM_MAP = {
     "modelo": "modelo",
+    "marca": "marca",
     "placa": "placa",
+    "chassi": "chassi",
+    "renavam": "renavam",
     "tipo": "tipo",
     "ano": "ano",
     "km": "km",
@@ -36,6 +51,7 @@ _CAMPO_FORM_MAP = {
     "tipo_entrada": "tipo_entrada",
     "investidor": "investidor_id",
     "procuracao": "procuracao",
+    "proprietario_registrado": "proprietario_registrado",
     "revisao": "revisao",
     "debitos": "debitos",
 }
@@ -55,6 +71,13 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
     }
 
 
+_STATUS_LABELS = {
+    "disponivel": "Disponível",
+    "vendido": "Vendido",
+    "reservado": "Reservado",
+}
+
+
 def _ctx_lista_veiculos(
     session: Session, veiculos: list[veiculo.Veiculo]
 ) -> dict[str, Any]:
@@ -63,6 +86,13 @@ def _ctx_lista_veiculos(
     )
     return {
         "compras_por_veiculo": compras_por_veiculo,
+        "filtro_tipos": [(t.value, t.value.capitalize()) for t in veiculo.TipoVeiculo],
+        "filtro_status": [
+            (s.value, _STATUS_LABELS[s.value]) for s in veiculo.StatusVeiculo
+        ],
+        "filtro_tipo_entradas": [
+            (t.value, t.value.capitalize()) for t in veiculo.TipoEntrada
+        ],
     }
 
 
@@ -204,12 +234,45 @@ def _editar_veiculo(
     )
 
 
+@app.get("/ui/veiculos/{item_id}/detalhes")
+def _detalhe_veiculo(
+    item_id: int,
+    request: Request,
+    session: SessionDep,
+    user: UIUser,
+) -> HTMLResponse:
+    obj = _found(veiculo.get(session, item_id), "Veículo")
+    compra_atual = compra.get_latest_by_veiculo(session, item_id)
+    custos = [c for c in custo_veiculo.list_all(session) if c.veiculo_id == item_id]
+    documentos_vendedor = []
+    if compra_atual is not None:
+        docs = list(compra_atual.cliente.documentos)
+        remover_orfaos(session, docs, imagem_documento_cliente.delete)
+        session.refresh(compra_atual.cliente)
+        documentos_vendedor = imagem_documento_cliente.list_by_cliente(
+            session, compra_atual.cliente_id
+        )
+    return templates.TemplateResponse(
+        request,
+        "veiculo_detalhe.html",
+        {
+            "user": user,
+            "veiculo": obj,
+            "compra_atual": compra_atual,
+            "custos": custos,
+            "documentos_vendedor": documentos_vendedor,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
+    )
+
+
 @app.post("/ui/veiculos/{item_id}/excluir")
 def _excluir_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(veiculo.get(session, item_id), "Veículo")
+    veio_da_pagina_detalhes = "/detalhes" in request.headers.get("HX-Current-URL", "")
     erro = None
     status_code = 200
     try:
@@ -224,6 +287,18 @@ def _excluir_veiculo(
         session.rollback()
         erro = delete_conflict_detail("Veículo")
         status_code = 409
+
+    if veio_da_pagina_detalhes:
+        if erro:
+            return templates.TemplateResponse(
+                request,
+                "_alert.html",
+                {"msg": erro},
+                status_code=status_code,
+                headers={"HX-Retarget": "#detail-alert", "HX-Reswap": "innerHTML"},
+            )
+        return HTMLResponse(status_code=200, headers={"HX-Redirect": "/ui/veiculos"})
+
     lista = _preparar_veiculos_lista(
         session,
         query_list(

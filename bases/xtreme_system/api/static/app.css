@@ -193,6 +193,11 @@ button { font-family: inherit; }
   padding: var(--s-2) var(--s-2); border-top: 1px solid var(--sidebar-border);
   padding-top: var(--s-3);
 }
+.sidebar__user-link {
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+}
 /* Botões dentro da sidebar escura */
 .sidebar .btn--ghost { color: var(--sidebar-fg-muted); }
 .sidebar .btn--ghost:hover { background: var(--sidebar-hover); color: var(--sidebar-fg); }
@@ -239,6 +244,8 @@ button { font-family: inherit; }
 .page-head__title h1 { margin-bottom: 2px; }
 .page-head__subtitle { color: var(--text-secondary); font-size: .84rem; }
 .page-head__actions { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+.dashboard-filter { display: flex; align-items: center; gap: var(--s-2); }
+.dashboard-filter .select { min-width: 132px; }
 
 /* ---- 6. Buttons ---------------------------------------------------------- */
 .btn {
@@ -272,6 +279,7 @@ button { font-family: inherit; }
 .action-delete { color: var(--danger); }
 .action-cash { color: var(--info); }
 .action-file { color: var(--warning); }
+.action-view { color: var(--warning); }
 .action-file--purple { color: #7c3aed; }
 .action-image { color: #0891b2; }
 .action-user { color: #4f46e5; }
@@ -306,12 +314,17 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 }
 .search .input { padding-left: var(--s-8); height: 36px; }
 
+/* Filter bar */
+.filter-bar { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.filter-bar .input { height: 36px; width: auto; }
+
 /* ---- 8. Card ------------------------------------------------------------- */
 .card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
 }
 .card--pad { padding: var(--s-4); }
+.panel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); align-items: stretch; margin-bottom: var(--s-4); }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); flex-wrap: wrap; }
 
 /* ---- 9. Stat cards ------------------------------------------------------- */
@@ -441,7 +454,8 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .settings-tabs__input { position: absolute; opacity: 0; pointer-events: none; }
 .settings-tabs__panel { display: none; flex-direction: column; gap: var(--s-4); min-width: 0; }
 #tab-banco:checked ~ .settings-layout .settings-tabs__panel--banco,
-#tab-whatsapp:checked ~ .settings-layout .settings-tabs__panel--whatsapp { display: flex; }
+#tab-whatsapp:checked ~ .settings-layout .settings-tabs__panel--whatsapp,
+#tab-empresa:checked ~ .settings-layout .settings-tabs__panel--empresa { display: flex; }
 
 .settings-layout { display: grid; grid-template-columns: 240px 1fr; align-items: start; gap: var(--s-5); }
 
@@ -472,15 +486,18 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .settings-nav__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--text-tertiary); flex: none; }
 .settings-nav__dot--ok { background: var(--success); }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"],
-#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] {
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"],
+#tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] {
   background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 24%, transparent);
 }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__icon,
-#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__icon {
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__icon,
+#tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] .settings-nav__icon {
   background: var(--accent); color: var(--accent-contrast);
 }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__title,
-#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__title {
+#tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__title,
+#tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] .settings-nav__title {
   color: var(--accent);
 }
 
@@ -636,6 +653,7 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   .stats { grid-template-columns: 1fr 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .details-list { grid-template-columns: 1fr; }
+  .panel-grid { grid-template-columns: 1fr; }
   .settings-layout { grid-template-columns: 1fr; }
   .settings-nav { position: static; flex-direction: row; overflow-x: auto; }
   .settings-nav__item { flex: none; }
@@ -838,3 +856,42 @@ form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
 .mmgr__drop-text { font-size: .86rem; font-weight: 550; color: var(--text); }
 .mmgr__drop-hint { font-size: .72rem; color: var(--text-tertiary); }
 .mmgr__upload-actions { display: flex; justify-content: flex-end; }
+
+/* ---- 21. Bar chart --------------------------------------------------------- */
+.bar-chart__inner { display: flex; gap: var(--s-3); }
+.bar-chart__yaxis {
+  display: flex; flex-direction: column; justify-content: space-between;
+  height: 220px; padding-right: var(--s-2); border-right: 1px solid var(--border);
+  text-align: right; flex: none;
+}
+.bar-chart__ytick { font-size: .68rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.bar-chart__plot {
+  position: relative; flex: 1; height: 220px;
+  background-image: repeating-linear-gradient(to top, var(--border) 0, var(--border) 1px, transparent 1px, transparent 25%);
+}
+.bar-chart__bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: var(--s-4); padding: 0 var(--s-2); }
+.bar-chart__col { flex: 1; display: flex; justify-content: center; height: 100%; align-items: flex-end; }
+.bar-chart__bar {
+  width: 100%; max-width: 40px; min-height: 2px;
+  background: var(--accent); border-radius: 4px 4px 0 0;
+  cursor: pointer; transition: filter .12s;
+}
+.bar-chart__bar:hover, .bar-chart__bar:focus-visible { filter: brightness(1.1); }
+
+.bar-chart__axis { display: flex; gap: var(--s-4); padding: var(--s-2) var(--s-2) 0 calc(var(--s-2) + 1px); margin-left: 56px; margin-top: var(--s-2); border-top: 1px solid var(--border); }
+.bar-chart__axis-label { flex: 1; text-align: center; font-size: .74rem; color: var(--text-secondary); }
+
+.bar-chart__tooltip {
+  position: fixed; z-index: 50; pointer-events: none; opacity: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  box-shadow: var(--shadow-md); padding: var(--s-2) var(--s-3); font-size: .78rem;
+  transition: opacity .1s; transform: translate(-50%, -100%);
+}
+.bar-chart__tooltip[data-visible="true"] { opacity: 1; }
+.bar-chart__tooltip strong { display: block; font-size: .92rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.bar-chart__tooltip span { color: var(--text-secondary); }
+
+.chart-table-details summary { cursor: pointer; font-size: .78rem; color: var(--text-secondary); margin-top: var(--s-3); }
+.chart-table-details summary:hover { color: var(--text); }
+.chart-table-details .table-wrap { margin-top: var(--s-3); }

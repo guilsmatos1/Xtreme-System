@@ -81,6 +81,44 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_auditoria_filtrar_aceita_selects_vazios(client: TestClient) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/auditoria")
+    assert pagina.status_code == 200
+    assert "data-omit-empty-params" in pagina.text
+
+    com_datas = client.get(
+        "/ui/auditoria",
+        params={
+            "data_de": "2026-07-19",
+            "data_ate": "2026-07-20",
+            "usuario_id": "",
+            "tabela": "",
+            "tipo_acao": "",
+        },
+        headers={"HX-Request": "true"},
+    )
+
+    assert com_datas.status_code == 200
+    assert 'id="auditoria-resultado"' in com_datas.text
+
+    sem_datas = client.get(
+        "/ui/auditoria",
+        params={
+            "data_de": "",
+            "data_ate": "",
+            "usuario_id": "",
+            "tabela": "",
+            "tipo_acao": "",
+        },
+        headers={"HX-Request": "true"},
+    )
+
+    assert sem_datas.status_code == 200
+    assert 'id="auditoria-resultado"' in sem_datas.text
+
+
 def test_ui_perfis_novo_exibe_campo_debitos_de_veiculos(client: TestClient) -> None:
     _login_admin(client)
 
@@ -391,12 +429,33 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    novo_veiculo = client.post(
+        "/veiculos",
+        json={
+            "tipo": "moto",
+            "modelo": "CG 160",
+            "cor": "Vermelha",
+            "ano": 2025,
+            "placa": "XYZ1234",
+            "km": 0,
+            "preco": "15000.00",
+            "investidor_id": investidor_id,
+            "tipo_entrada": "consignacao",
+        },
+        headers=headers,
+    )
+    assert novo_veiculo.status_code == 201
 
     pagina_veiculos = client.get("/ui/veiculos").text
     assert "btn--focus" in pagina_veiculos
     assert "action-edit" in pagina_veiculos
     assert "action-user" in pagina_veiculos
-    assert "btn--danger" in pagina_veiculos
+    assert "action-view" in pagina_veiculos
+    assert "badge--success badge--plain" in pagina_veiculos
+    assert 'badge--info badge--plain">Compra<' in pagina_veiculos
+    assert 'badge--warning badge--plain">Consignação<' in pagina_veiculos
+    assert "btn--danger action-delete" not in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/imagens"' in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/procuracao"' in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/comprovantes"' not in pagina_veiculos
@@ -985,6 +1044,7 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert editado.status_code == 200
     assert "ajustada" in editado.text
     assert "R$ 83.000,00" in editado.text
+    assert 'badge badge--plain badge--warning">' in editado.text
 
     excluido = client.post(f"/ui/compras/{compra_id}/excluir")
     assert excluido.status_code == 200
@@ -1224,7 +1284,7 @@ def test_ui_compras_upload_comprovante_invalido_rejeita_lote(
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
 
-def test_ui_dashboard_filtra_tendencia_por_periodo(client: TestClient) -> None:
+def test_ui_dashboard_filtra_por_mes(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
     hoje = datetime.now(UTC).date()
@@ -1257,14 +1317,23 @@ def test_ui_dashboard_filtra_tendencia_por_periodo(client: TestClient) -> None:
     )
     assert venda_resp.status_code == 201
 
-    pagina = client.get("/ui/dashboard?periodo=12m")
+    pagina_padrao = client.get("/ui/dashboard")
+    mes_atual = f"{hoje.year:04d}-{hoje.month:02d}"
+
+    assert pagina_padrao.status_code == 200
+    assert f'value="{mes_atual}" selected="selected"' in pagina_padrao.text
+
+    pagina = client.get(f"/ui/dashboard?mes={mes_atual}")
 
     assert pagina.status_code == 200
-    assert "30 dias" in pagina.text
-    assert "90 dias" in pagina.text
-    assert "12 meses" in pagina.text
-    assert "Tendência de vendas por mês" in pagina.text
-    assert f"{hoje.year:04d}-{hoje.month:02d}" in pagina.text
+    assert f'value="{mes_atual}" selected="selected"' in pagina.text
+    assert "30 dias" not in pagina.text
+    assert "90 dias" not in pagina.text
+    assert "12 meses" not in pagina.text
+    assert 'id="dashboard-mes"' in pagina.text
+    assert "Mês" in pagina.text
+    assert "Tendência de vendas por semana" not in pagina.text
+    assert "Funil de vendas" not in pagina.text
     assert "R$ 85.000" in pagina.text
 
 
@@ -2118,7 +2187,12 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "Dashboard" in resp.text
     assert "Vendas" in resp.text
-    assert "Taxa de conversão" in resp.text
+    assert "Total de veículos" in resp.text
+    assert 'class="sidebar__user-link nav__link' in resp.text
+    assert resp.text.count('href="/ui/conta"') == 1
+    assert "Taxa de conversão" not in resp.text
+    assert "Tendência de vendas por semana" not in resp.text
+    assert "Funil de vendas" not in resp.text
 
     # adiciona uma venda para ter dados não-zero
     resp_client = client.post("/login", data={"username": "admin", "password": "senha"})
@@ -2171,6 +2245,8 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "95000" in resp.text or "95.000" in resp.text  # valor venda aparece
     assert "1" in resp.text  # contagem de vendas > 0
+    assert "Atividades Recentes" in resp.text
+    assert "Venda #" in resp.text
 
 
 # ---- Validação de uploads ----

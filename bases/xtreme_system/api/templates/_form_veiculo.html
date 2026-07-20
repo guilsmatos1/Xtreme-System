@@ -15,33 +15,37 @@
         {% if veiculo %}
         <div class="form-grid">
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
-            <span class="field__label">Tipo</span>
+            <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required>
               {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
-            <span class="field__label">Tipo de Entrada</span>
+            <span class="field__label">Tipo de Entrada *</span>
             <select class="select" name="tipo_entrada" required>
               {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
-            <span class="field__label">Modelo</span>
+            <span class="field__label">Modelo *</span>
             <input class="input" name="modelo" value="{{ veiculo.modelo }}" required autofocus>
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'marca') %}<label class="field">
+            <span class="field__label">Marca</span>
+            <input class="input" name="marca" value="{{ veiculo.marca or '' }}">
           </label>{% endif %}
 
           <label class="field">
-            <span class="field__label">Cor</span>
+            <span class="field__label">Cor *</span>
             <input class="input" name="cor" value="{{ veiculo.cor }}" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
-            <span class="field__label">Ano</span>
+            <span class="field__label">Ano *</span>
             <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
           </label>{% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
-            <span class="field__label">Placa</span>
+            <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
@@ -49,16 +53,25 @@
             <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
           </label>{% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<label class="field">
+            <span class="field__label">Chassi</span>
+            <input class="input" name="chassi" value="{{ veiculo.chassi or '' }}">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<label class="field">
+            <span class="field__label">RENAVAM</span>
+            <input class="input" name="renavam" value="{{ veiculo.renavam or '' }}">
+          </label>{% endif %}
+
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
-            <span class="field__label">Preço de Compra (R$)</span>
+            <span class="field__label">Preço de Compra (R$) *</span>
             <input class="input" name="preco" type="number" step="0.01" value="{{ veiculo.preco }}" required>
           </label>
           {% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'revisao') %}
           <label class="field">
-            <span class="field__label">Revisão</span>
+            <span class="field__label">Revisão *</span>
             <select class="select" name="revisao" required>
               <option value="true"{% if veiculo.revisao %} selected{% endif %}>Sim</option>
               <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
@@ -79,9 +92,14 @@
             <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
           </label>{% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<label class="field">
+            <span class="field__label">Proprietário Registrado</span>
+            <input class="input" name="proprietario_registrado" value="{{ veiculo.proprietario_registrado or '' }}">
+          </label>{% endif %}
+
           {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
           <label class="field">
-            <span class="field__label">Investidor</span>
+            <span class="field__label">Investidor *</span>
             <select class="select" name="investidor_id" required>
               {% for i in investidores %}<option value="{{ i.id }}"{% if veiculo.investidor_id == i.id %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
             </select>
@@ -94,13 +112,13 @@
 
         <fieldset class="wizard-step form-grid is-active" data-step="1">
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
-            <span class="field__label">Tipo</span>
+            <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required autofocus>
               {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
-            <span class="field__label">Tipo de Entrada</span>
+            <span class="field__label">Tipo de Entrada *</span>
             <select class="select" name="tipo_entrada" required>
               {% for t in tipo_entradas %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
             </select>
@@ -109,19 +127,19 @@
 
         <fieldset class="wizard-step form-grid" data-step="2">
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
-            <span class="field__label">Placa</span>
+            <span class="field__label">Placa *</span>
             <input class="input" name="placa" required style="text-transform:uppercase">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
-            <span class="field__label">Modelo</span>
+            <span class="field__label">Modelo *</span>
             <input class="input" name="modelo" required>
           </label>{% endif %}
           <label class="field">
-            <span class="field__label">Cor</span>
+            <span class="field__label">Cor *</span>
             <input class="input" name="cor" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
-            <span class="field__label">Ano</span>
+            <span class="field__label">Ano *</span>
             <input class="input" name="ano" type="number" required>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
@@ -132,7 +150,7 @@
 
         <fieldset class="wizard-step form-grid" data-step="3">
           <label class="field">
-            <span class="field__label">Preço de Compra (R$)</span>
+            <span class="field__label">Preço de Compra (R$) *</span>
             <input class="input" name="preco" type="number" step="0.01" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
@@ -142,7 +160,7 @@
           </label>
           {% endif %}
           <label class="field">
-            <span class="field__label">Investidor</span>
+            <span class="field__label">Investidor *</span>
             <select class="select" name="investidor_id" required>
               {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
             </select>
@@ -159,11 +177,11 @@
           </label>
 
           <label class="field field--full">
-            <span class="field__label">Nome</span>
+            <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-novo-cliente required>
           </label>
           <label class="field">
-            <span class="field__label">CPF</span>
+            <span class="field__label">CPF *</span>
             <input class="input" name="cli_documento" data-novo-cliente required>
           </label>
           <label class="field">

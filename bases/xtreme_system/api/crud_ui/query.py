@@ -30,6 +30,31 @@ def sort_key_fn(spec: SortSpec[EntityT]) -> Callable[[EntityT], Any]:
     return lambda obj: sort_key(getattr(obj, spec))
 
 
+def _filter_repr(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    value = getattr(value, "value", value)
+    if hasattr(value, "nome"):
+        value = value.nome
+    return str(value).lower()
+
+
+def filter_list(
+    lista: list[EntityT],
+    filter_col: str,
+    filter_val: str,
+    sort_fields: Mapping[str, SortSpec[EntityT]],
+) -> list[EntityT]:
+    spec = sort_fields.get(filter_col)
+    needle = filter_val.strip().lower()
+    if spec is None or not needle:
+        return lista
+    getter = sort_key_fn(spec)
+    return [obj for obj in lista if needle in _filter_repr(getter(obj))]
+
+
 def sorted_list(
     lista: list[EntityT],
     sort: str,

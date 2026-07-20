@@ -44,12 +44,16 @@ Veículos disponíveis para venda.
 | `id` | `INTEGER` | Não | - | PK |
 | `tipo` | `tipoveiculo` | Não | - | `moto` ou `carro` |
 | `modelo` | `VARCHAR` | Não | - | |
+| `marca` | `VARCHAR` | Sim | - | |
 | `cor` | `VARCHAR` | Não | - | |
 | `ano` | `INTEGER` | Não | - | |
 | `placa` | `VARCHAR` | Não | - | Único, indexado |
+| `chassi` | `VARCHAR` | Sim | - | |
+| `renavam` | `VARCHAR` | Sim | - | |
 | `km` | `INTEGER` | Sim | - | |
 | `preco` | `NUMERIC(12,2)` | Não | - | |
 | `procuracao` | `VARCHAR` | Sim | - | |
+| `proprietario_registrado` | `VARCHAR` | Sim | - | Nome do proprietário registrado no documento do veículo |
 | `status` | `statusveiculo` | Não | `disponivel` | `disponivel`, `vendido`, `reservado` |
 | `tipo_entrada` | `tipoentrada` | Não | `compra` | `compra` ou `consignacao` |
 | `revisao` | `BOOLEAN` | Não | `false` | |
@@ -69,9 +73,11 @@ Clientes do sistema.
 | `email` | `VARCHAR` | Sim | - | |
 | `telefone` | `VARCHAR` | Sim | - | |
 | `endereco` | `VARCHAR` | Sim | - | |
+| `bairro` | `VARCHAR` | Sim | - | |
 | `cidade` | `VARCHAR` | Sim | - | |
 | `estado` | `VARCHAR` | Sim | - | |
 | `cep` | `VARCHAR` | Sim | - | |
+| `profissao` | `VARCHAR` | Sim | - | |
 
 ### `usuario`
 
@@ -286,6 +292,21 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `evolution_instance` | `VARCHAR` | Não | `''` | Nome da instância |
 | `evolution_group_id` | `VARCHAR` | Não | `''` | ID do grupo do WhatsApp |
 | `mensagem_template` | `VARCHAR` | Não | template padrão | Corpo da mensagem enviada na notificação de venda, com placeholders `{cliente}`, `{veiculo}`, `{valor}`, `{forma_pagamento}`, `{parcelas}`, `{vendedor}` |
+
+### `empresa_config`
+
+Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela de Configurações.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `nome` | `VARCHAR` | Não | `''` | Nome da empresa |
+| `endereco` | `VARCHAR` | Não | `''` | Endereço |
+| `bairro` | `VARCHAR` | Não | `''` | Bairro |
+| `cidade` | `VARCHAR` | Não | `''` | Cidade |
+| `uf` | `VARCHAR` | Não | `''` | UF |
+| `cnpj` | `VARCHAR` | Não | `''` | CNPJ |
+| `signatario` | `VARCHAR` | Não | `''` | Nome do signatário |
 
 ---
 

@@ -15,7 +15,7 @@
 <section class="card card--pad" style="margin-bottom:var(--s-4)">
   <form class="form-grid"
         hx-get="/ui/auditoria" hx-target="#auditoria-resultado" hx-swap="outerHTML"
-        hx-trigger="submit, change" hx-include="this">
+        hx-trigger="submit, change" hx-include="this" data-omit-empty-params>
     <label class="field">
       <span class="field__label">De</span>
       <input class="input" type="date" name="data_de" value="{{ f_data_de or '' }}">
