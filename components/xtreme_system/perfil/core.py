@@ -35,6 +35,7 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("procuracao", "Procurador"),
         ("revisao", "Revisão"),
         ("debitos", "Débitos"),
+        ("tempo_estoque", "Tempo de Estoque"),
     ],
     "compras": [
         ("data_compra", "Data da Compra"),

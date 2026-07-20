@@ -1,10 +1,11 @@
 """Veículo: enums, model (com FKs), schemas e CRUD."""
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey, Numeric, func, or_
+from sqlalchemy import DateTime, ForeignKey, Numeric, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -46,6 +47,7 @@ class Veiculo(Base):
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
     tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)
     revisao: Mapped[bool] = mapped_column(default=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
 
     investidor: Mapped[Investidor] = relationship(lazy="joined")
@@ -56,6 +58,10 @@ class Veiculo(Base):
     documentos_procuracao: Mapped[list["DocumentoProcuracao"]] = relationship(
         cascade="all, delete-orphan"
     )
+
+    @property
+    def tempo_estoque(self) -> int:
+        return (datetime.now(UTC).date() - self.criado_em.date()).days
 
 
 class VeiculoCreate(BaseModel):
