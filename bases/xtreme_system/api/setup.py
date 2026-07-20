@@ -134,13 +134,20 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
     return JSONResponse({"detail": mensagem}, status_code=429, headers=headers)
 
 
+def _client_ip(request: Request) -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",", 1)[0].strip()
+    return request.client.host if request.client else "desconhecido"
+
+
 @app.middleware("http")
 async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> Any:
     path = request.url.path
     if path.startswith("/static/") or path in _ROTAS_ISENTAS_RATE_LIMIT:
         return await call_next(request)
 
-    client_ip = request.client.host if request.client else "desconhecido"
+    client_ip = _client_ip(request)
 
     if request.method == "POST" and path.endswith("/login"):
         if not _login_limiter.allow(f"login:{client_ip}"):
