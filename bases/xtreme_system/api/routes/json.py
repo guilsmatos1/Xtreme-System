@@ -127,6 +127,7 @@ register_crud_routes(
     read_schema=investidor.InvestidorRead,
     create_schema=investidor.InvestidorCreate,
     update_schema=investidor.InvestidorUpdate,
+    perfil_pagina="investidores",
 )
 
 # ---- Veículos ----
@@ -147,6 +148,7 @@ register_crud_routes(
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
     handle_delete_error=False,
+    perfil_pagina="veiculos",
 )
 
 # ---- Caixa dos investidores ----
@@ -176,6 +178,7 @@ register_crud_routes(
     before_create=_validate_investidor_lancamento,
     before_update=_guard_lancamento_veiculo,
     before_delete=_guard_lancamento_veiculo,
+    perfil_pagina="investidores",
 )
 
 
@@ -242,6 +245,7 @@ register_crud_routes(
     read_schema=cliente.ClienteRead,
     create_schema=cliente.ClienteCreate,
     update_schema=cliente.ClienteUpdate,
+    perfil_pagina="clientes",
 )
 
 
@@ -271,6 +275,7 @@ register_crud_routes(
     before_update=_validate_venda_update,
     before_delete=recompute_vehicle_status_on_delete,
     after_create=whatsapp.notificar_venda,
+    perfil_pagina="vendas",
 )
 
 

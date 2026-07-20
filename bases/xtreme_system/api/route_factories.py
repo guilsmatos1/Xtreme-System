@@ -1,8 +1,10 @@
 """Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
 
 from collections.abc import Callable
+from typing import cast
 
 from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -35,12 +37,32 @@ from xtreme_system.api.crud_ui.simple import (
     register_ui_simples as _register_ui_simples_impl,
 )
 from xtreme_system.api.crud_writes import safe_write as _safe_write
-from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
+from xtreme_system.api.deps import CurrentUser, SessionDep, _found
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 _sort_key = sort_key
 _csv_response = csv_response
 DepFactory = Callable[..., usuario.Usuario]
+
+
+def _perfil_json(
+    obj: EntityT, read_schema: type[ReadSchemaT], user: usuario.Usuario, pagina: str
+) -> dict[str, object]:
+    data = cast("dict[str, object]", jsonable_encoder(read_schema.model_validate(obj)))
+    for campo, _label in perfil.CAMPOS_PROTEGIDOS.get(pagina, []):
+        if not perfil.pode_ver_campo(user, pagina, campo):
+            data.pop(campo, None)
+    return data
+
+
+def _require_perfil_operacao(user: usuario.Usuario, pagina: str, operacao: str) -> None:
+    if usuario.is_admin(user):
+        return
+    operacoes = {op for op, _label in perfil.OPERACOES.get(pagina, [])}
+    if operacao in operacoes and perfil.pode_operacao(user, pagina, operacao):
+        return
+    raise HTTPException(status_code=403, detail="Operação não permitida")
 
 
 def register_crud_routes(
@@ -58,22 +80,59 @@ def register_crud_routes(
     after_create: AfterWriteHook[EntityT] | None = None,
     after_update: AfterWriteHook[EntityT] | None = None,
     handle_delete_error: bool = True,
+    perfil_pagina: str | None = None,
 ) -> None:
-    @app.get(prefix, response_model=list[read_schema])  # type: ignore[valid-type]
-    def _list(session: SessionDep, _: CurrentUser) -> list[EntityT]:
-        return module.list_all(session)
+    def _json(obj: EntityT, user: usuario.Usuario) -> dict[str, object]:
+        if perfil_pagina is None:
+            return cast(
+                "dict[str, object]", jsonable_encoder(read_schema.model_validate(obj))
+            )
+        return _perfil_json(obj, read_schema, user, perfil_pagina)
 
-    @app.get(f"{prefix}/{{item_id}}", response_model=read_schema)
-    def _get(item_id: int, session: SessionDep, _: CurrentUser) -> EntityT:
-        return _found(module.get(session, item_id), label)
+    def _require_operacao(user: usuario.Usuario, operacao: str) -> None:
+        if perfil_pagina is None or usuario.is_admin(user):
+            return
+        _require_perfil_operacao(user, perfil_pagina, operacao)
 
-    @app.post(prefix, response_model=read_schema, status_code=201)
+    @app.get(
+        prefix,
+        response_model=list[read_schema] if perfil_pagina is None else None,  # type: ignore[valid-type]
+    )
+    def _list(
+        session: SessionDep, user: CurrentUser
+    ) -> list[EntityT] | list[dict[str, object]]:
+        objs = module.list_all(session)
+        if perfil_pagina is None:
+            return objs
+        return [_json(obj, user) for obj in objs]
+
+    @app.get(
+        f"{prefix}/{{item_id}}",
+        response_model=read_schema if perfil_pagina is None else None,
+    )
+    def _get(
+        item_id: int, session: SessionDep, user: CurrentUser
+    ) -> EntityT | dict[str, object]:
+        obj = _found(module.get(session, item_id), label)
+        if perfil_pagina is None:
+            return obj
+        return _json(obj, user)
+
+    @app.post(
+        prefix,
+        response_model=read_schema if perfil_pagina is None else None,
+        status_code=201,
+    )
     def _create(
         data: create_schema,  # type: ignore[valid-type]
         session: SessionDep,
-        user: AdminUser,
-    ) -> EntityT:
-        return _create_atomic(data, session, user.id)
+        user: CurrentUser,
+    ) -> EntityT | dict[str, object]:
+        _require_operacao(user, "cadastrar")
+        obj = _create_atomic(data, session, user.id)
+        if perfil_pagina is None:
+            return obj
+        return _json(obj, user)
 
     def _create_atomic(
         data: CreateSchemaT, session: Session, actor_id: int | None
@@ -88,14 +147,21 @@ def register_crud_routes(
             after_create(session, obj, actor_id)
         return obj
 
-    @app.patch(f"{prefix}/{{item_id}}", response_model=read_schema)
+    @app.patch(
+        f"{prefix}/{{item_id}}",
+        response_model=read_schema if perfil_pagina is None else None,
+    )
     def _update(
         item_id: int,
         data: update_schema,  # type: ignore[valid-type]
         session: SessionDep,
-        user: AdminUser,
-    ) -> EntityT:
-        return _update_atomic(item_id, data, session, user.id)
+        user: CurrentUser,
+    ) -> EntityT | dict[str, object]:
+        _require_operacao(user, "editar")
+        obj = _update_atomic(item_id, data, session, user.id)
+        if perfil_pagina is None:
+            return obj
+        return _json(obj, user)
 
     def _update_atomic(
         item_id: int, data: UpdateSchemaT, session: Session, actor_id: int | None
@@ -112,7 +178,8 @@ def register_crud_routes(
         return obj
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
-    def _delete(item_id: int, session: SessionDep, user: AdminUser) -> None:
+    def _delete(item_id: int, session: SessionDep, user: CurrentUser) -> None:
+        _require_operacao(user, "excluir")
         _delete_atomic(item_id, session, user.id)
 
     def _delete_atomic(item_id: int, session: Session, actor_id: int | None) -> None:
