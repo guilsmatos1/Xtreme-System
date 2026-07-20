@@ -75,9 +75,15 @@ def query_list(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    search_column: str | None = None,
 ) -> list[EntityT]:
     if q and search_func is not None:
-        return list(search_func(session, q))
+        # Se search_func aceitar column, passar como kwarg
+        try:
+            return list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
+        except TypeError:
+            # Fallback para functions que não aceitam column
+            return list(search_func(session, q))
     if searchable and q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module

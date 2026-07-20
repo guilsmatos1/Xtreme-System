@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import DateTime, ForeignKey, Numeric, func, or_
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, cast, func, or_
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -156,8 +156,37 @@ def get_by_placa(session: Session, placa: str) -> Veiculo | None:
     return session.query(Veiculo).filter_by(placa=placa).one_or_none()
 
 
-def search(session: Session, term: str) -> list[Veiculo]:
+def search(session: Session, term: str, column: str | None = None) -> list[Veiculo]:
     pattern = f"%{term}%"
+
+    # Mapa de colunas permitidas para busca
+    columns_map = {
+        "modelo": Veiculo.modelo,
+        "placa": Veiculo.placa,
+        "cor": Veiculo.cor,
+        "marca": Veiculo.marca,
+        "chassi": Veiculo.chassi,
+        "renavam": Veiculo.renavam,
+        "procuracao": Veiculo.procuracao,
+        "proprietario_registrado": Veiculo.proprietario_registrado,
+        "tipo": Veiculo.tipo,
+        "status": Veiculo.status,
+        "tipo_entrada": Veiculo.tipo_entrada,
+        "investidor": Veiculo.investidor,
+        "ano": Veiculo.ano,
+        "km": Veiculo.km,
+        "preco": Veiculo.preco,
+        "revisao": Veiculo.revisao,
+    }
+
+    # Se coluna específica for fornecida, buscar apenas nela
+    if column and column in columns_map:
+        col = columns_map[column]
+        return list(
+            session.query(Veiculo).where(cast(col, String).ilike(pattern)).all()
+        )
+
+    # Caso contrário, buscar nas colunas padrão
     return list(
         session.query(Veiculo)
         .where(

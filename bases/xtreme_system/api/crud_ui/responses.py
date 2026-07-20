@@ -109,6 +109,7 @@ def list_response(
     q: str | None = None,
     filter_col: str = "",
     filter_val: str = "",
+    search_column: str = "",
     erro: str | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
@@ -119,6 +120,7 @@ def list_response(
         "order": order,
         "filter_col": filter_col,
         "filter_val": filter_val,
+        "search_column": search_column,
         **ctx_list,
     }
     if q is not None:

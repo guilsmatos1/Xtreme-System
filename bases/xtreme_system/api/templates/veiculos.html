@@ -35,19 +35,19 @@
   </article>
 </section>
 
-{% set filtro_colunas = [] %}
-{% if pode_ver_campo(user, 'veiculos', 'modelo') %}{% set _ = filtro_colunas.append({"key": "modelo", "label": "Modelo"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'placa') %}{% set _ = filtro_colunas.append({"key": "placa", "label": "Placa"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'tipo') %}{% set _ = filtro_colunas.append({"key": "tipo", "label": "Tipo", "options": filtro_tipos}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'ano') %}{% set _ = filtro_colunas.append({"key": "ano", "label": "Ano"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'km') %}{% set _ = filtro_colunas.append({"key": "km", "label": "KM"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'status') %}{% set _ = filtro_colunas.append({"key": "status", "label": "Estado", "options": filtro_status}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = filtro_colunas.append({"key": "preco", "label": "Preço de Custo"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}{% set _ = filtro_colunas.append({"key": "tipo_entrada", "label": "Tipo de Entrada", "options": filtro_tipo_entradas}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'investidor') %}{% set _ = filtro_colunas.append({"key": "investidor", "label": "Investidor"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'procuracao') %}{% set _ = filtro_colunas.append({"key": "procuracao", "label": "Procurador"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'revisao') %}{% set _ = filtro_colunas.append({"key": "revisao", "label": "Revisão", "options": [("true", "Sim"), ("false", "Não")]}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'debitos') %}{% set _ = filtro_colunas.append({"key": "debitos", "label": "Débitos"}) %}{% endif %}
+{% set search_colunas = [] %}
+{% if pode_ver_campo(user, 'veiculos', 'modelo') %}{% set _ = search_colunas.append({"key": "modelo", "label": "Modelo"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'placa') %}{% set _ = search_colunas.append({"key": "placa", "label": "Placa"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'tipo') %}{% set _ = search_colunas.append({"key": "tipo", "label": "Tipo"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'ano') %}{% set _ = search_colunas.append({"key": "ano", "label": "Ano"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'km') %}{% set _ = search_colunas.append({"key": "km", "label": "KM"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = search_colunas.append({"key": "preco", "label": "Preço"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}{% set _ = search_colunas.append({"key": "tipo_entrada", "label": "Tipo de Entrada"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'investidor') %}{% set _ = search_colunas.append({"key": "investidor", "label": "Investidor"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'procuracao') %}{% set _ = search_colunas.append({"key": "procuracao", "label": "Procurador"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'revisao') %}{% set _ = search_colunas.append({"key": "revisao", "label": "Revisão"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'debitos') %}{% set _ = search_colunas.append({"key": "debitos", "label": "Débitos"}) %}{% endif %}
 
 <div class="toolbar">
   <div class="search">
@@ -55,15 +55,22 @@
     <input class="input" type="search" name="q"
            hx-get="/ui/veiculos" hx-trigger="keyup changed delay:300ms, search"
            hx-target="#linhas" hx-swap="outerHTML"
-           placeholder="Buscar por modelo, placa ou cor…"
+           placeholder="Buscar…"
            value="{{ q or '' }}" aria-label="Buscar veículos">
   </div>
-  {{ ui.filtro_tabela(filtro_colunas, filter_col, filter_val, "/ui/veiculos", "#linhas", q=q or "", sort=sort or "", order=order or "asc") }}
+  <select class="input" name="search_column"
+          hx-get="/ui/veiculos" hx-trigger="change" hx-target="#linhas" hx-swap="outerHTML"
+          aria-label="Buscar por coluna">
+    <option value="">Todas as colunas</option>
+    {% for col in search_colunas %}
+    <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
+    {% endfor %}
+  </select>
 </div>
 
 <div class="table-wrap">
   <table class="table--wide" data-table="veiculos">
-    {% set sort_qs = "&q=" ~ (q | urlencode) %}
+    {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead><tr>
       {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'placa') %}<th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}

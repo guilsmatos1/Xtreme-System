@@ -118,8 +118,12 @@ def _listar_veiculos(session: Session) -> list[veiculo.Veiculo]:
     return _preparar_veiculos_lista(session, veiculo.list_all(session))
 
 
-def _buscar_veiculos(session: Session, term: str) -> list[veiculo.Veiculo]:
-    return _preparar_veiculos_lista(session, veiculo.search(session, term))
+def _buscar_veiculos(
+    session: Session, term: str, column: str | None = None
+) -> list[veiculo.Veiculo]:
+    return _preparar_veiculos_lista(
+        session, veiculo.search(session, term, column=column)
+    )
 
 
 register_crud_ui_routes(
