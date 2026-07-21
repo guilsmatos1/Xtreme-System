@@ -46,9 +46,7 @@ def allow_login_attempt(
     predicate = and_(table.c.scope == "login", table.c.bucket == bucket)
 
     bind = session.get_bind()
-    insert_stmt = (
-        sqlite_insert(table) if bind.dialect.name == "sqlite" else pg_insert(table)
-    )
+    is_sqlite = bind.dialect.name == "sqlite"
 
     def _try_claim(connection: Connection) -> bool:
         updated = connection.execute(
@@ -70,13 +68,30 @@ def allow_login_attempt(
         if reset:
             return True
 
+        # Dialect-aware insert: SQLite vs PostgreSQL handle conflicts differently
+        if is_sqlite:
+            # SQLite: use OR IGNORE and check rowcount (reliable for OR IGNORE)
+            inserted = connection.execute(
+                sqlite_insert(table)
+                .prefix_with("OR IGNORE")
+                .values(
+                    scope="login",
+                    bucket=bucket,
+                    window_started_at=now,
+                    hit_count=1,
+                )
+            ).rowcount
+            return bool(inserted)
+        # PostgreSQL: use ON CONFLICT DO NOTHING and check rowcount
         inserted = connection.execute(
-            insert_stmt.values(
+            pg_insert(table)
+            .values(
                 scope="login",
                 bucket=bucket,
                 window_started_at=now,
                 hit_count=1,
-            ).on_conflict_do_nothing(index_elements=["scope", "bucket"])
+            )
+            .on_conflict_do_nothing(index_elements=["scope", "bucket"])
         ).rowcount
         return bool(inserted)
 
