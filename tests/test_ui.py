@@ -9,6 +9,7 @@ from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
+from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes.common import resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.auditoria import core as auditoria
@@ -26,6 +28,7 @@ from xtreme_system.database.core import _invoke_post_commit, get_session
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
+from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -1187,6 +1190,93 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Compra" not in csv_resp.text
+
+
+def test_ctx_lista_compras_busca_comprovantes_em_lote(db_session: Session) -> None:
+    inv = investidor.create(db_session, investidor.InvestidorCreate(nome="Lote"))
+    cliente_obj = cliente.create(
+        db_session,
+        cliente.ClienteCreate(
+            nome="Cliente Lote",
+            documento="98765432100",
+            tipo=cliente.TipoCliente.pessoa_fisica,
+        ),
+    )
+    compras: list[compra.Compra] = []
+    for idx in range(3):
+        veiculo_obj = veiculo.create(
+            db_session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo=f"Modelo {idx}",
+                cor="Prata",
+                ano=2024,
+                placa=f"LOT{idx}123",
+                km=1000 + idx,
+                preco=80000,
+                investidor_id=inv.id,
+            ),
+        )
+        compras.append(
+            compra.create(
+                db_session,
+                compra.CompraCreate(
+                    cliente_id=cliente_obj.id,
+                    veiculo_id=veiculo_obj.id,
+                    data_compra="2026-07-09",
+                    valor_compra=79000,
+                ),
+            )
+        )
+    imagem_comprovante_compra.create(
+        db_session,
+        imagem_comprovante_compra.ImagemComprovanteCompraCreate(
+            compra_id=compras[0].id,
+            url="/static/uploads/compras/1/comprovantes/a.pdf",
+        ),
+    )
+    imagem_comprovante_compra.create(
+        db_session,
+        imagem_comprovante_compra.ImagemComprovanteCompraCreate(
+            compra_id=compras[2].id,
+            url="/static/uploads/compras/3/comprovantes/c.pdf",
+        ),
+    )
+    db_session.flush()
+    engine = db_session.get_bind()
+    assert isinstance(engine, Engine)
+    selects = 0
+
+    def count_comprovantes_selects(
+        _conn: Any,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        nonlocal selects
+        if (
+            statement.lstrip().upper().startswith("SELECT")
+            and "imagem_comprovante_compra" in statement
+        ):
+            selects += 1
+
+    event.listen(engine, "before_cursor_execute", count_comprovantes_selects)
+    try:
+        ctx = compras_ui._ctx_lista_compras(db_session, compras)  # noqa: SLF001
+    finally:
+        event.remove(engine, "before_cursor_execute", count_comprovantes_selects)
+
+    comprovantes_por_compra = ctx["comprovantes_por_compra"]
+    assert selects == 1
+    assert [item.url for item in comprovantes_por_compra[compras[0].id]] == [
+        "/static/uploads/compras/1/comprovantes/a.pdf"
+    ]
+    assert comprovantes_por_compra[compras[1].id] == []
+    assert [item.url for item in comprovantes_por_compra[compras[2].id]] == [
+        "/static/uploads/compras/3/comprovantes/c.pdf"
+    ]
 
 
 def test_ui_compras_rollback_em_integrityerror_de_veiculo(

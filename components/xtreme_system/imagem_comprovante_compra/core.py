@@ -41,6 +41,19 @@ def list_by_compra(session: Session, compra_id: int) -> list[ImagemComprovanteCo
     )
 
 
+def list_by_compra_ids(
+    session: Session, compra_ids: list[int]
+) -> list[ImagemComprovanteCompra]:
+    if not compra_ids:
+        return []
+    return list(
+        session.query(ImagemComprovanteCompra)
+        .filter(ImagemComprovanteCompra.compra_id.in_(compra_ids))
+        .order_by(ImagemComprovanteCompra.compra_id, ImagemComprovanteCompra.id)
+        .all()
+    )
+
+
 def get(session: Session, imagem_id: int) -> ImagemComprovanteCompra | None:
     return crud.get(session, ImagemComprovanteCompra, imagem_id)
 
