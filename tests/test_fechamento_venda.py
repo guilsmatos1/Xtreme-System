@@ -200,6 +200,30 @@ def test_schema_disponivel_e_cacheada_por_engine(
     assert chamadas == ["fechamento_venda", "participacao_fechamento_venda"]
 
 
+def test_schema_indisponivel_nao_e_cacheado(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    disponiveis = iter([False, True, True])
+    chamadas: list[str] = []
+
+    class InspectorStub:
+        def has_table(self, table_name: str) -> bool:
+            chamadas.append(table_name)
+            return next(disponiveis)
+
+    fechamento_venda._SCHEMA_DISPONIVEL_POR_ENGINE.clear()  # noqa: SLF001
+    monkeypatch.setattr(fechamento_venda, "inspect", lambda _conn: InspectorStub())
+
+    assert fechamento_venda._schema_disponivel(session) is False  # noqa: SLF001
+    assert fechamento_venda._schema_disponivel(session) is True  # noqa: SLF001
+    assert fechamento_venda._schema_disponivel(session) is True  # noqa: SLF001
+    assert chamadas == [
+        "fechamento_venda",
+        "fechamento_venda",
+        "participacao_fechamento_venda",
+    ]
+
+
 @pytest.mark.parametrize(
     ("status", "pagamento_pendente"),
     [
