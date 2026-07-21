@@ -42,7 +42,7 @@ def upgrade() -> None:
     )
     op.execute(
         "UPDATE usuario SET perfil_id = (SELECT id FROM perfil WHERE nome = 'Leitor') "
-        "WHERE papel = 'vendedor'"
+        "WHERE papel::text = 'vendedor'"
     )
 
 
