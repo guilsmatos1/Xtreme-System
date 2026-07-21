@@ -101,11 +101,16 @@ def _filtrar_campos_ocultos_compra(
 def _ctx_lista_compras(
     session: Session, compras: list[compra.Compra]
 ) -> dict[str, Any]:
+    compra_ids = [item.id for item in compras]
+    comprovantes_por_compra: dict[
+        int, list[imagem_comprovante_compra.ImagemComprovanteCompra]
+    ] = {compra_id: [] for compra_id in compra_ids}
+    for comprovante in imagem_comprovante_compra.list_by_compra_ids(
+        session, compra_ids
+    ):
+        comprovantes_por_compra[comprovante.compra_id].append(comprovante)
     return {
-        "comprovantes_por_compra": {
-            item.id: imagem_comprovante_compra.list_by_compra(session, item.id)
-            for item in compras
-        }
+        "comprovantes_por_compra": comprovantes_por_compra,
     }
 
 
