@@ -14,7 +14,6 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-      - run: uv sync
       - run: make lint
 
   test:
@@ -50,10 +49,12 @@ jobs:
       - name: Run DB migrations
         env:
           TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
         run: uv run alembic upgrade head
       - name: Run tests against migrated Postgres
         env:
           TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
           PGUSER: postgres
           PGPASSWORD: postgres
         run: uv run pytest tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing
@@ -93,10 +94,12 @@ jobs:
       - name: Run DB migrations
         env:
           TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
         run: uv run alembic upgrade head
       - name: Run e2e tests against migrated Postgres
         env:
           TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test
           PGUSER: postgres
           PGPASSWORD: postgres
         run: make test-e2e-headless
