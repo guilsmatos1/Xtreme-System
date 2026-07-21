@@ -103,7 +103,9 @@ Estado compartilhado do rate limiter da API.
 | Coluna | Tipo | Nullable | Default | Observações |
 |--------|------|----------|---------|-------------|
 | `bucket` | `VARCHAR(255)` | Não | - | PK; chave do limiter, ex.: `login:203.0.113.10` |
-| `hits` | `JSON` | Não | - | Lista de timestamps Unix dos hits na janela |
+| `window_started_at` | `FLOAT` | Não | - | Timestamp Unix do início da janela atual |
+| `hit_count` | `INTEGER` | Não | - | Quantidade de hits na janela atual |
+| `updated_at` | `FLOAT` | Não | - | Timestamp Unix da última atualização; usado para limpeza de buckets antigos |
 
 ### `venda`
 

@@ -1,11 +1,17 @@
 """Rate limiting: tentativas de login e requests gerais da API."""
 
+import time as time_module
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.setup import _GERAL_LIMIT, _LOGIN_LIMIT
+from xtreme_system.database.core import DatabaseRateLimiterStore, rate_limit_state
 
 
 @pytest.fixture
@@ -95,3 +101,33 @@ def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
 
     resp = client.get("/investidores", headers=ip_b)
     assert resp.status_code == 401
+
+
+def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:
+    store = DatabaseRateLimiterStore(cast(Engine, db_session.get_bind()))
+
+    assert store.allow("203.0.113.10", limit=2, window_seconds=60) == (True, 0.0)
+    assert store.allow("203.0.113.10", limit=2, window_seconds=60) == (True, 0.0)
+
+    allowed, retry_after = store.allow("203.0.113.10", limit=2, window_seconds=60)
+
+    assert allowed is False
+    assert retry_after > 0
+    row = db_session.execute(select(rate_limit_state)).mappings().one()
+    assert row["bucket"] == "203.0.113.10"
+    assert row["hit_count"] == 2
+
+
+def test_database_rate_limiter_limpa_buckets_antigos(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    engine = cast(Engine, db_session.get_bind())
+    store = DatabaseRateLimiterStore(engine)
+    times = iter([100.0, 300.0])
+    monkeypatch.setattr(time_module, "time", lambda: next(times))
+
+    assert store.allow("antigo", limit=1, window_seconds=60) == (True, 0.0)
+    assert store.allow("novo", limit=1, window_seconds=60) == (True, 0.0)
+
+    buckets = db_session.execute(select(rate_limit_state.c.bucket)).scalars().all()
+    assert buckets == ["novo"]
