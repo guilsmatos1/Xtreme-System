@@ -43,7 +43,7 @@ def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
 
 
 def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
-    v = veiculo.get(session, veiculo_id)
+    v = session.get(veiculo.Veiculo, veiculo_id, with_for_update=True)
     if v is None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
     if v.status != veiculo.StatusVeiculo.disponivel:

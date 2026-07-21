@@ -1,11 +1,16 @@
 """API vendas: CRUD via TestClient."""
 
 from collections.abc import Callable
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
+from xtreme_system.api.routes.workflows import validate_veiculo_disponivel_para_venda
 from xtreme_system.usuario import core as usuario
+from xtreme_system.veiculo import core as veiculo
 
 
 @pytest.fixture
@@ -276,6 +281,15 @@ def test_cria_venda_para_veiculo_vendido_retorna_409(client: TestClient) -> None
     )
     assert resp.status_code == 409
     assert "indisponível" in resp.json()["detail"]
+
+
+def test_validacao_de_venda_bloqueia_linha_do_veiculo() -> None:
+    session = Mock(spec=Session)
+    session.get.return_value = SimpleNamespace(status=veiculo.StatusVeiculo.disponivel)
+
+    validate_veiculo_disponivel_para_venda(session, 123)
+
+    session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
 
 
 def test_atualizar_venda_para_veiculo_indisponivel_retorna_409(
