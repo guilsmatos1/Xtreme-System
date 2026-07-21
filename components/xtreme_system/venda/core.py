@@ -244,7 +244,7 @@ def search(session: Session, term: str, column: str | None = None) -> list[Venda
                 Cliente.documento.ilike(pattern),
                 Veiculo.modelo.ilike(pattern),
                 Veiculo.placa.ilike(pattern),
-                Venda.status.ilike(pattern),
+                cast(Venda.status, String).ilike(pattern),
                 Venda.observacoes.ilike(pattern),
             )
         )
