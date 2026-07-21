@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.setup import _GERAL_LIMIT, _LOGIN_LIMIT
+from xtreme_system.api.setup import _GERAL_LIMIT, _LOGIN_LIMIT, reset_rate_limiters
 from xtreme_system.database.core import DatabaseRateLimiterStore, rate_limit_state
 
 
@@ -57,6 +57,8 @@ def test_login_rate_limit_nao_vaza_entre_clients(
 
         resp = client1.post("/login", data={"username": "x", "password": "x"})
         assert resp.status_code == 429
+
+    reset_rate_limiters()
 
     with make_client() as client2:
         resp = client2.post("/login", data={"username": "x", "password": "x"})

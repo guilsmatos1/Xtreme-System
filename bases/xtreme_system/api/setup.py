@@ -42,8 +42,6 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/login",
-    "/ui/login",
 }
 
 
