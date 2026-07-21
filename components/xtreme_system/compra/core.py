@@ -36,8 +36,8 @@ class Compra(Base):
     observacoes: Mapped[str | None]
     status: Mapped[StatusCompra] = mapped_column(default=StatusCompra.pendente)
 
-    cliente: Mapped[Cliente] = relationship(lazy="joined")
-    veiculo: Mapped[Veiculo] = relationship(lazy="joined")
+    cliente: Mapped[Cliente] = relationship(lazy="selectin")
+    veiculo: Mapped[Veiculo] = relationship(lazy="selectin")
 
 
 class CompraCreate(BaseModel):

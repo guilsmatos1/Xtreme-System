@@ -52,12 +52,12 @@ class FechamentoVenda(Base):
     debitos: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     lucro_liquido: Mapped[Decimal] = mapped_column(Numeric(12, 2))
 
-    venda: Mapped[Venda] = relationship(lazy="joined")
-    usuario: Mapped[Usuario | None] = relationship(lazy="joined")
+    venda: Mapped[Venda] = relationship(lazy="selectin")
+    usuario: Mapped[Usuario | None] = relationship(lazy="selectin")
     participacoes: Mapped[list["ParticipacaoFechamentoVenda"]] = relationship(
         back_populates="fechamento",
         cascade="all, delete-orphan",
-        lazy="joined",
+        lazy="selectin",
     )
 
 
@@ -80,7 +80,7 @@ class ParticipacaoFechamentoVenda(Base):
     valor: Mapped[Decimal] = mapped_column(Numeric(12, 2))
 
     fechamento: Mapped[FechamentoVenda] = relationship(back_populates="participacoes")
-    investidor: Mapped[Investidor] = relationship(lazy="joined")
+    investidor: Mapped[Investidor] = relationship(lazy="selectin")
 
 
 class ParticipacaoFechamentoVendaCreate(BaseModel):

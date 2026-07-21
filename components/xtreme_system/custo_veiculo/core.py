@@ -25,7 +25,7 @@ class CustoVeiculo(Base):
     data_custo: Mapped[date] = mapped_column(Date)
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    veiculo: Mapped[Veiculo] = relationship(lazy="joined")
+    veiculo: Mapped[Veiculo] = relationship(lazy="selectin")
 
 
 class CustoVeiculoCreate(BaseModel):

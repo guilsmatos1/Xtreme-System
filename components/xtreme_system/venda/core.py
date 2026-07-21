@@ -61,12 +61,12 @@ class Venda(Base):
     valor_pendente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     datas_pagamento: Mapped[str | None]
 
-    cliente: Mapped[Cliente] = relationship(lazy="joined")
-    veiculo: Mapped[Veiculo] = relationship(lazy="joined", foreign_keys=[veiculo_id])
+    cliente: Mapped[Cliente] = relationship(lazy="selectin")
+    veiculo: Mapped[Veiculo] = relationship(lazy="selectin", foreign_keys=[veiculo_id])
     veiculo_troca: Mapped[Veiculo | None] = relationship(
-        lazy="joined", foreign_keys=[veiculo_troca_id]
+        lazy="selectin", foreign_keys=[veiculo_troca_id]
     )
-    vendedor: Mapped[Usuario | None] = relationship(lazy="joined")
+    vendedor: Mapped[Usuario | None] = relationship(lazy="selectin")
 
 
 class VendaCreate(BaseModel):

@@ -54,7 +54,7 @@ class Veiculo(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)
 
-    investidor: Mapped[Investidor] = relationship(lazy="joined")
+    investidor: Mapped[Investidor] = relationship(lazy="selectin")
     imagens: Mapped[list["ImagemVeiculo"]] = relationship(cascade="all, delete-orphan")
     documentos: Mapped[list["DocumentoVeiculo"]] = relationship(
         cascade="all, delete-orphan"
