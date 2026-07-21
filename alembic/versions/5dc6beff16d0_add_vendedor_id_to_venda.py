@@ -30,6 +30,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint('fk_venda_vendedor_id_usuario', 'venda', type_='foreignkey')
+    op.drop_constraint('fk_venda_vendedor_id_usuario', 'venda', type_='foreignkey', if_exists=True)
     op.drop_index(op.f('ix_venda_vendedor_id'), table_name='venda')
     op.drop_column('venda', 'vendedor_id')

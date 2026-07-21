@@ -59,5 +59,5 @@ def downgrade() -> None:
     op.drop_column("venda", "pagamento_pendente")
     op.drop_column("venda", "valor_diferenca")
     op.drop_index("ix_venda_veiculo_troca_id", table_name="venda")
-    op.drop_constraint("fk_venda_veiculo_troca_id_veiculo", "venda", type_="foreignkey")
+    op.drop_constraint("fk_venda_veiculo_troca_id_veiculo", "venda", type_="foreignkey", if_exists=True)
     op.drop_column("venda", "veiculo_troca_id")

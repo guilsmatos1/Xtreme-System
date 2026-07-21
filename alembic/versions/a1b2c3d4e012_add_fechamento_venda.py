@@ -114,6 +114,7 @@ def downgrade() -> None:
         "fk_lancamento_investimento_fechamento_venda_id",
         "lancamento_investimento",
         type_="foreignkey",
+        if_exists=True,
     )
     op.drop_index(
         op.f("ix_lancamento_investimento_fechamento_venda_id"),

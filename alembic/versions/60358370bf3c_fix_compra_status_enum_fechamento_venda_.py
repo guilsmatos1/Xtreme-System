@@ -28,12 +28,12 @@ def upgrade() -> None:
                existing_type=sa.DATE(),
                nullable=False,
                existing_server_default=sa.text('CURRENT_DATE'))
-    op.drop_constraint(op.f('fk_venda_vendedor_id_usuario'), 'venda', type_='foreignkey')
+    op.drop_constraint(op.f('fk_venda_vendedor_id_usuario'), 'venda', type_='foreignkey', if_exists=True)
     op.create_foreign_key(None, 'venda', 'usuario', ['vendedor_id'], ['id'])
 
 
 def downgrade() -> None:
-    op.drop_constraint(None, 'venda', type_='foreignkey')
+    op.drop_constraint(None, 'venda', type_='foreignkey', if_exists=True)
     op.create_foreign_key(op.f('fk_venda_vendedor_id_usuario'), 'venda', 'usuario', ['vendedor_id'], ['id'], ondelete='SET NULL')
     op.alter_column('fechamento_venda', 'data_fechamento',
                existing_type=sa.DATE(),

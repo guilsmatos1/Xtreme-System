@@ -48,7 +48,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint('fk_auditoria_usuario_id_usuario', 'auditoria', type_='foreignkey')
+    op.drop_constraint('fk_auditoria_usuario_id_usuario', 'auditoria', type_='foreignkey', if_exists=True)
     op.drop_index(op.f('ix_auditoria_usuario_id'), table_name='auditoria')
     op.drop_index(op.f('ix_auditoria_registro_id'), table_name='auditoria')
     op.drop_index(op.f('ix_auditoria_tabela'), table_name='auditoria')
