@@ -4,7 +4,7 @@ o singleton global de deps.py) — permite registrar rotas com templates de stub
 from collections.abc import Callable
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi import FastAPI
@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
-from xtreme_system.api.crud_ui.query import sorted_list
+from xtreme_system.api.crud_ui.query import query_list, sorted_list
 from xtreme_system.api.deps import get_ui_user
 from xtreme_system.api.route_factories import (
     _sort_key,
@@ -228,6 +228,21 @@ def test_sorted_list_sem_spec_retorna_lista_original() -> None:
     ordenados = sorted_list(itens, "inexistente", "asc", {})
 
     assert ordenados is itens
+
+
+def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
+    def search_func(_session: Session, _term: str) -> list[investidor.Investidor]:
+        raise TypeError("bug interno")
+
+    with pytest.raises(TypeError, match="bug interno"):
+        query_list(
+            session=cast(Session, object()),
+            module=investidor,
+            q="ana",
+            searchable=False,
+            list_func=None,
+            search_func=search_func,
+        )
 
 
 def test_ordenar_investidores_por_nome() -> None:
