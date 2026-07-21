@@ -80,8 +80,8 @@ Use `make help` para a lista completa. Atalhos:
 ```bash
 make format      # ruff format .
 make lint        # ruff check + format --check, pylint, xenon, vulture, mypy
-make test        # pytest
-make test-postgres  # pytest usando TEST_DATABASE_URL e migrations Alembic
+make test        # pytest contra Postgres migrado via Alembic
+make test-postgres  # mesmo caminho explícito de banco/migrations
 make watch       # rerun pytest on file change
 make coverage    # pytest with coverage, fail under 75%
 make ci          # lint + coverage
@@ -102,7 +102,7 @@ uv run pylint bases components development projects
 uv run mypy                     # strict mode, package xtreme_system
 uv run xenon src bases components development projects  # complexidade
 uv run vulture                  # detecção de código morto
-uv run pytest
+make test
 TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test uv run pytest
 ```
 
@@ -117,7 +117,7 @@ Workspace Polylith (`workspace.toml`):
 | `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `custo_veiculo`, `perfil`, `crud` e submódulos de imagens/documentos |
 | `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                                |
 | `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                                        |
-| `tests/`                    | Suite de testes com SQLite in-memory                                                                                                                                         |
+| `tests/`                    | Suite de testes; `make test` usa PostgreSQL migrado via Alembic, e `uv run pytest` ainda funciona com SQLite in-memory para ciclos locais rápidos                            |
 | `alembic/`                  | Configuração do Alembic + migrations em `versions/`                                                                                                                          |
 | `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                           |
 
