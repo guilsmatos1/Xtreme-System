@@ -202,6 +202,8 @@ def pode_ver_campo(user: Any, pagina: str, campo: str) -> bool:
         return True
     if not user.perfil:
         return False
+    if pagina not in user.perfil.paginas:
+        return False
     ocultos = (user.perfil.restricoes or {}).get(pagina, {}).get("campos_ocultos", [])
     return campo not in ocultos
 

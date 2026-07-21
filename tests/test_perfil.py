@@ -94,6 +94,14 @@ def test_campos_ocultos_sao_negados_e_o_resto_permanece_visivel(
     assert perfil.pode_ver_campo(vendedor, "veiculos", "revisao")
 
 
+def test_campos_de_pagina_fora_do_perfil_sao_negados(db_session: Session) -> None:
+    vendedores = perfil.Perfil(nome="Vendedores", paginas=["veiculos"])
+    db_session.add(vendedores)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
+    assert not perfil.pode_ver_campo(vendedor, "vendas", "lucro")
+
+
 def test_operacoes_sao_opt_in(db_session: Session) -> None:
     vendedores = perfil.Perfil(
         nome="Vendedores",
