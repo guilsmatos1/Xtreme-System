@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.api.deps import (
     SessionDep,
     _found,
@@ -311,15 +312,19 @@ async def _criar_compra(  # noqa: PLR0911
         try:
             cliente_obj = cliente.create(session, novo_cliente_data, user.id)
         except IntegrityError:
-            session.rollback()
-            return _erro_compra(request, session, user, "Cliente já existe")
+            return rollback_integrity_error_response(
+                session,
+                lambda: _erro_compra(request, session, user, "Cliente já existe"),
+            )
 
     if novo_veiculo_data is not None:
         try:
             veiculo_obj = veiculo.create(session, novo_veiculo_data, user.id)
         except IntegrityError:
-            session.rollback()
-            return _erro_compra(request, session, user, "Veículo já existe")
+            return rollback_integrity_error_response(
+                session,
+                lambda: _erro_compra(request, session, user, "Veículo já existe"),
+            )
 
     assert cliente_obj is not None  # noqa: S101
     assert veiculo_obj is not None  # noqa: S101
@@ -356,8 +361,9 @@ async def _criar_compra(  # noqa: PLR0911
             actor_id=user.id,
         )
     except IntegrityError:
-        session.rollback()
-        return _erro_compra(request, session, user, "Compra já existe")
+        return rollback_integrity_error_response(
+            session, lambda: _erro_compra(request, session, user, "Compra já existe")
+        )
     return _ok_compra(request, session, user)
 
 

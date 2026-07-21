@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import CrudModule
 from xtreme_system.api.crud_ui.query import sort_key
-from xtreme_system.api.crud_ui.responses import csv_response
+from xtreme_system.api.crud_ui.responses import (
+    csv_response,
+    rollback_integrity_error_response,
+)
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found
 from xtreme_system.usuario import core as usuario
 
@@ -101,12 +104,14 @@ def register_ui_simples(
         try:
             module.create(session, create_schema(nome=nome), user.id)
         except IntegrityError:
-            session.rollback()
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(None, f"{titulo} já existe"),
-                status_code=409,
+            return rollback_integrity_error_response(
+                session,
+                lambda: templates.TemplateResponse(
+                    request,
+                    "_form_simples.html",
+                    _form_ctx(None, f"{titulo} já existe"),
+                    status_code=409,
+                ),
             )
         return templates.TemplateResponse(
             request, "_simples_ok.html", _ctx(user, session)
@@ -128,12 +133,14 @@ def register_ui_simples(
         try:
             module.update(session, obj, update_schema(nome=nome), user.id)
         except IntegrityError:
-            session.rollback()
-            return templates.TemplateResponse(
-                request,
-                "_form_simples.html",
-                _form_ctx(obj, f"{titulo} já existe"),
-                status_code=409,
+            return rollback_integrity_error_response(
+                session,
+                lambda: templates.TemplateResponse(
+                    request,
+                    "_form_simples.html",
+                    _form_ctx(obj, f"{titulo} já existe"),
+                    status_code=409,
+                ),
             )
         return templates.TemplateResponse(
             request, "_simples_ok.html", _ctx(user, session)
@@ -148,8 +155,14 @@ def register_ui_simples(
         try:
             module.delete(session, obj, user.id)
         except IntegrityError:
-            session.rollback()
-            msg = f"{titulo} possui veículos vinculados"
+            return rollback_integrity_error_response(
+                session,
+                lambda: templates.TemplateResponse(
+                    request,
+                    "_linhas_simples.html",
+                    _ctx(user, session, msg=f"{titulo} possui veículos vinculados"),
+                ),
+            )
         return templates.TemplateResponse(
             request, "_linhas_simples.html", _ctx(user, session, msg=msg)
         )

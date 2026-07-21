@@ -9,6 +9,13 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import query_list
+from xtreme_system.api.crud_ui.responses import (
+    delete_conflict_detail,
+    list_response,
+    rollback_integrity_error_response,
+)
+from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
@@ -218,6 +225,9 @@ register_crud_ui_routes(
 )
 
 _EditarDep = Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))]
+_ExcluirDep = Annotated[
+    usuario.Usuario, Depends(require_operacao("veiculos", "excluir"))
+]
 
 
 @app.get("/ui/veiculos/{item_id}/editar")
@@ -261,6 +271,63 @@ def _detalhe_veiculo(
             "documentos_vendedor": documentos_vendedor,
             "pending_upload_paths": pending_upload_paths(session),
         },
+    )
+
+
+@app.post("/ui/veiculos/{item_id}/excluir")
+def _excluir_veiculo(
+    item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
+) -> HTMLResponse:
+    session.info["usuario_id"] = user.id
+    obj = _found(veiculo.get(session, item_id), "Veículo")
+    try:
+        delete_with_hook(
+            veiculo,
+            session,
+            obj,
+            caixa.deletar_lancamento_veiculo,
+            user.id,
+        )
+    except IntegrityError:
+
+        def build_conflict_response() -> HTMLResponse:
+            lista = query_list(
+                session,
+                veiculo,
+                q="",
+                searchable=True,
+                list_func=_listar_veiculos,
+                search_func=_buscar_veiculos,
+            )
+            return list_response(
+                templates,
+                request,
+                "_linhas_veiculos.html",
+                user=user,
+                list_key="veiculos",
+                lista=lista,
+                ctx_list=_ctx_lista_veiculos(session, lista),
+                erro=delete_conflict_detail("Veículo"),
+                status_code=409,
+            )
+
+        return rollback_integrity_error_response(session, build_conflict_response)
+    lista = query_list(
+        session,
+        veiculo,
+        q="",
+        searchable=True,
+        list_func=_listar_veiculos,
+        search_func=_buscar_veiculos,
+    )
+    return list_response(
+        templates,
+        request,
+        "_linhas_veiculos.html",
+        user=user,
+        list_key="veiculos",
+        lista=lista,
+        ctx_list=_ctx_lista_veiculos(session, lista),
     )
 
 
@@ -333,6 +400,7 @@ async def _atualizar_veiculo(
             )
         caixa.sincronizar_lancamento_veiculo(session, atualizado, user.id)
     except IntegrityError:
-        session.rollback()
-        return _erro_veiculo(request, session, user, "Veículo já existe")
+        return rollback_integrity_error_response(
+            session, lambda: _erro_veiculo(request, session, user, "Veículo já existe")
+        )
     return _ok_veiculo(request, session, user)

@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.api.deps import (
     SessionDep,
     UIAdmin,
@@ -201,12 +202,14 @@ async def ui_investidor_criar(
             session, investidor.InvestidorCreate(nome=nome), user.id
         )
     except IntegrityError:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "_form_simples.html",
-            _form_ctx_investidor(None, "Investidores já existe"),
-            status_code=409,
+        return rollback_integrity_error_response(
+            session,
+            lambda: templates.TemplateResponse(
+                request,
+                "_form_simples.html",
+                _form_ctx_investidor(None, "Investidores já existe"),
+                status_code=409,
+            ),
         )
     valor_str = str(form.get("valor_investido") or "").strip()
     if valor_str:
@@ -251,12 +254,14 @@ async def ui_investidor_atualizar(
     try:
         investidor.update(session, obj, investidor.InvestidorUpdate(nome=nome), user.id)
     except IntegrityError:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "_form_simples.html",
-            _form_ctx_investidor(obj, "Investidores já existe"),
-            status_code=409,
+        return rollback_integrity_error_response(
+            session,
+            lambda: templates.TemplateResponse(
+                request,
+                "_form_simples.html",
+                _form_ctx_investidor(obj, "Investidores já existe"),
+                status_code=409,
+            ),
         )
     return templates.TemplateResponse(
         request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}

@@ -1,10 +1,12 @@
 import csv
 import io
+from collections.abc import Callable
 from typing import Any
 
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import EntityT
 
@@ -93,6 +95,13 @@ def conflict_form_response(
         status_code=409,
         user=user,
     )
+
+
+def rollback_integrity_error_response(
+    session: Session, build_response: Callable[[], HTMLResponse]
+) -> HTMLResponse:
+    session.rollback()
+    return build_response()
 
 
 def list_response(
