@@ -9,7 +9,7 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
-from xtreme_system.venda.core import veiculo_tem_outra_venda_concluida
+from xtreme_system.venda import core as venda
 
 
 def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -> None:
@@ -53,10 +53,12 @@ def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) ->
 def recompute_vehicle_status_on_delete(
     session: Session, venda_obj: Any, _actor_id: int | None = None
 ) -> None:
+    if venda_obj.status != venda.StatusVenda.concluido:
+        return
     veiculo_id = venda_obj.veiculo_id
     v = veiculo.get(session, veiculo_id)
     if v is not None:
-        if veiculo_tem_outra_venda_concluida(
+        if venda.veiculo_tem_outra_venda_concluida(
             session, veiculo_id, excluir_venda_id=venda_obj.id
         ):
             v.status = veiculo.StatusVeiculo.vendido
