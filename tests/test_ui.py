@@ -49,6 +49,11 @@ def _seed_investidor_e_veiculo(session: Session) -> None:
     )
 
 
+class _FakeSession:
+    def __init__(self) -> None:
+        self.info: dict[str, Any] = {}
+
+
 @pytest.fixture
 def client(make_client: Callable[..., TestClient]) -> TestClient:
     return make_client(
@@ -2336,7 +2341,7 @@ def test_salvar_documentos_cliente_remove_arquivo_se_create_falha(
 
     with pytest.raises(RuntimeError, match="db indisponivel"):
         salvar_arquivos(
-            cast(Session, object()),
+            cast(Session, _FakeSession()),
             upload_dir=tmp_path,
             url_prefix="/static/uploads/clientes/1/documentos",
             create_fn=cast(Callable[[Session, Any], Any], falha_create),
@@ -2357,7 +2362,7 @@ def test_salvar_documento_veiculo_remove_arquivo_se_create_falha(
 
     with pytest.raises(RuntimeError, match="db indisponivel"):
         salvar_arquivos(
-            cast(Session, object()),
+            cast(Session, _FakeSession()),
             upload_dir=tmp_path,
             url_prefix="/static/uploads/veiculos/1/documentos",
             create_fn=cast(Callable[[Session, Any], Any], falha_create),

@@ -19,7 +19,6 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     remover_orfaos,
     salvar_arquivos,
 )
-from xtreme_system.database.core import _invoke_post_commit
 
 
 class _FakeFile:
@@ -89,10 +88,6 @@ def test_salvar_arquivos_happy_path(tmp_path: Path) -> None:
     assert calls[0].url.startswith("/static/uploads/veiculos/1/")
     assert calls[0].url.endswith(".jpg")
     assert calls[1].url.endswith(".pdf")
-    assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
-
-    _invoke_post_commit(cast(Session, session))
-
     files_on_disk = sorted(tmp_path.iterdir(), key=lambda p: p.suffix)
     assert len(files_on_disk) == 2
     assert files_on_disk[0].read_bytes() == b"dados-foto"
@@ -121,6 +116,34 @@ def test_salvar_arquivos_ignora_arquivo_sem_filename(tmp_path: Path) -> None:
     assert not list(tmp_path.iterdir())
 
 
+def test_salvar_arquivos_falha_write_nao_cria_registro(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[Any] = []
+
+    def create_fn(_session: Session, data: Any) -> Any:
+        calls.append(data)
+
+    def falha_write_bytes(_path: Path, _data: bytes) -> int:
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(Path, "write_bytes", falha_write_bytes)
+
+    with pytest.raises(OSError, match="disco cheio"):
+        salvar_arquivos(
+            cast(Session, _FakeSession()),
+            upload_dir=tmp_path,
+            url_prefix="/static/uploads/veiculos/1",
+            create_fn=create_fn,
+            schema=_FakeSchema,
+            fk_field="veiculo_id",
+            fk_id=1,
+            arquivos=[_FakeUpload("foto.jpg", b"dados")],  # type: ignore[list-item]
+        )
+
+    assert calls == []
+
+
 def test_salvar_arquivos_falha_create_remove_arquivo(tmp_path: Path) -> None:
     def falha_create(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("db indisponivel")
@@ -136,6 +159,33 @@ def test_salvar_arquivos_falha_create_remove_arquivo(tmp_path: Path) -> None:
             fk_id=1,
             arquivos=[_FakeUpload("foto.jpg", b"dados")],  # type: ignore[list-item]
         )
+
+    assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
+
+
+def test_salvar_arquivos_rollback_remove_arquivo(tmp_path: Path) -> None:
+    session = _FakeSession()
+
+    def create_fn(_session: Session, _data: Any) -> None:
+        return
+
+    salvar_arquivos(
+        cast(Session, session),
+        upload_dir=tmp_path,
+        url_prefix="/static/uploads/veiculos/1",
+        create_fn=create_fn,
+        schema=_FakeSchema,
+        fk_field="veiculo_id",
+        fk_id=1,
+        arquivos=[_FakeUpload("foto.jpg", b"dados")],  # type: ignore[list-item]
+    )
+
+    files_on_disk = [p for p in tmp_path.rglob("*") if p.is_file()]
+    assert len(files_on_disk) == 1
+
+    callbacks = session.info["_post_rollback_callbacks"]
+    for callback in callbacks:
+        callback()
 
     assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
 

@@ -143,6 +143,7 @@ def register_post_rollback(session: Session, callback: Callable[[], None]) -> No
 
 def _invoke_post_commit(session: Session) -> None:
     callbacks: list[Callable[[], None]] = session.info.pop(_POST_COMMIT_KEY, [])
+    session.info.pop(_POST_ROLLBACK_KEY, None)
     for cb in callbacks:
         try:
             cb()
