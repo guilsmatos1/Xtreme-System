@@ -1,5 +1,6 @@
 """API auth: login, proteção por autenticação e por papel."""
 
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -14,6 +15,12 @@ from xtreme_system.auth import core as auth
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
+
+
+@pytest.fixture
+def unique_plate() -> str:
+    """Generate unique license plates for parallel test execution."""
+    return uuid.uuid4().hex[:7].upper()
 
 
 @pytest.fixture
@@ -121,7 +128,7 @@ def test_admin_escreve(client: TestClient) -> None:
 
 
 def test_remover_investidor_com_veiculo_vinculado_retorna_409(
-    client: TestClient,
+    client: TestClient, unique_plate: str
 ) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
@@ -134,7 +141,7 @@ def test_remover_investidor_com_veiculo_vinculado_retorna_409(
             "modelo": "Gol",
             "cor": "Branco",
             "ano": 2018,
-            "placa": "AAA1B22",
+            "placa": unique_plate,
             "km": 70000,
             "preco": "32000.00",
             "investidor_id": inv_id,
