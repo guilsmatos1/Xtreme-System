@@ -142,7 +142,8 @@ def _schema_disponivel(session: Session) -> bool:
     disponivel = inspector.has_table(
         FechamentoVenda.__tablename__
     ) and inspector.has_table(ParticipacaoFechamentoVenda.__tablename__)
-    _SCHEMA_DISPONIVEL_POR_ENGINE[engine] = disponivel
+    if disponivel:
+        _SCHEMA_DISPONIVEL_POR_ENGINE[engine] = True
     return disponivel
 
 
