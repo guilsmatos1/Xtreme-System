@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% import "_macros.html" as ui %}
-{% block titulo %}Vendas{% endblock %}
+{% block titulo %}Vendas de veiculos{% endblock %}
 {% block content %}
 <div class="page-head">
   <div class="page-head__title">
-    <h1>Vendas</h1>
+    <h1>Vendas de veiculos</h1>
     <p class="page-head__subtitle">Registre e acompanhe as vendas de veículos</p>
   </div>
   <div class="page-head__actions">
@@ -28,7 +28,7 @@
 {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}{% set _ = search_colunas.append({"key": "divida", "label": "Dívida"}) %}{% endif %}
 {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}{% set _ = search_colunas.append({"key": "pagamento", "label": "Pagamento"}) %}{% endif %}
 {% if pode_ver_campo(user, 'vendas', 'parcelas') %}{% set _ = search_colunas.append({"key": "parcelas", "label": "Parcelas"}) %}{% endif %}
-{% if pode_ver_campo(user, 'vendas', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Status"}) %}{% endif %}
+{% if pode_ver_campo(user, 'vendas', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
 
 <div class="toolbar" id="busca-vendas">
   <div class="search-filter-group">
@@ -71,7 +71,7 @@
         {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}<th data-col="divida" data-col-label="Dívida">{{ ui.sortable("divida", "Dívida", sort, order, "/ui/vendas", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}<th data-col="pagamento" data-col-label="Pagamento">{{ ui.sortable("pagamento", "Pagamento", sort, order, "/ui/vendas", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'vendas', 'parcelas') %}<th data-col="parcelas" data-col-label="Parcelas">{{ ui.sortable("parcelas", "Parcelas", sort, order, "/ui/vendas", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'vendas', 'status') %}<th data-col="status" data-col-label="Status">{{ ui.sortable("status", "Status", sort, order, "/ui/vendas", extra_qs=sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'vendas', 'status') %}<th data-col="status" data-col-label="Estado">{{ ui.sortable("status", "Estado", sort, order, "/ui/vendas", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_operacao(user, 'vendas', 'baixar_contrato') or pode_operacao(user, 'vendas', 'editar') or pode_operacao(user, 'vendas', 'excluir') or pode_operacao(user, 'vendas', 'fechar') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

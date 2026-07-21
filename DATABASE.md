@@ -87,6 +87,7 @@ Usuários do sistema para autenticação e controle de acesso.
 |--------|------|----------|---------|-------------|
 | `id` | `INTEGER` | Não | - | PK |
 | `username` | `VARCHAR` | Não | - | Único, indexado |
+| `nome` | `VARCHAR` | Sim | - | |
 | `senha_hash` | `VARCHAR` | Não | - | Hash da senha |
 | `papel` | `papel` | Não | `funcionario` | `admin` ou `funcionario` |
 | `ativo` | `BOOLEAN` | Não | `true` | |

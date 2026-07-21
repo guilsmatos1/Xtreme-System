@@ -15,6 +15,10 @@
             <input class="input" name="username" value="{{ usuario.username }}" required autocomplete="off" autofocus>
           </label>
           <label class="field">
+            <span class="field__label">Nome</span>
+            <input class="input" name="nome" value="{{ usuario.nome or '' }}" autocomplete="off">
+          </label>
+          <label class="field">
             <span class="field__label">Nova senha</span>
             <input class="input" name="senha" type="password" autocomplete="new-password" placeholder="Deixe em branco para manter">
           </label>

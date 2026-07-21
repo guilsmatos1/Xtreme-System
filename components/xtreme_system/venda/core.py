@@ -48,7 +48,7 @@ class Venda(Base):
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     km: Mapped[int | None] = mapped_column()
     forma_pagamento: Mapped[str]
-    parcelas: Mapped[int]
+    parcelas: Mapped[int | None]
     status: Mapped[StatusVenda] = mapped_column(default=StatusVenda.pendente)
     observacoes: Mapped[str | None]
     veiculo_troca_id: Mapped[int | None] = mapped_column(
@@ -79,7 +79,7 @@ class VendaCreate(BaseModel):
     debitos: Decimal | None = None
     km: int | None = None
     forma_pagamento: str
-    parcelas: int
+    parcelas: int | None = None
     status: StatusVenda = StatusVenda.pendente
     observacoes: str | None = None
     veiculo_troca_id: int | None = None
@@ -123,7 +123,7 @@ class VendaRead(BaseModel):
     debitos: Decimal | None
     km: int | None
     forma_pagamento: str
-    parcelas: int
+    parcelas: int | None
     status: StatusVenda
     observacoes: str | None
     valor_diferenca: Decimal | None

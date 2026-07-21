@@ -1,474 +1,525 @@
-# Codebase Analysis — Top 10 Improvement Opportunities
+# Análise de Codebase — 10 Oportunidades de Melhoria
 
-Scope: FastAPI + HTMX + Polylith application (`bases/xtreme_system`, `components/xtreme_system`).
-Ordered from highest to lowest impact. Findings prioritize correctness, reliability, and
-operational risk over style.
+Gerado em 2026-07-20. Ordenado da maior para a menor prioridade.
 
 ---
 
-## 1. Login rate limiter keys on the raw socket IP — behind a proxy it locks out every user
+## A API JSON ignora o modelo de permissões por perfil que a UI aplica
 
-Location: bases/xtreme_system/api/routes/json.py:62; bases/xtreme_system/api/routes/ui_routes/auth.py:32
-
+Location: bases/xtreme_system/api/route_factories.py:62-68 (`register_crud_routes._list` / `_get`)
 Impact: High
-
 Category: Architecture and design
-
-Estimated effort: Low
-
-Description:
-Both login handlers derive the throttling bucket with
-`client_ip = request.client.host if request.client else "desconhecido"` and pass it to
-`allow_login_attempt(session, client_ip, 5, 60)`. The general-purpose limiter in the middleware
-uses a *different* helper, `_client_ip` (setup.py:153-159), which honors `X-Forwarded-For`. The
-project ships a Docker/CasaOS/GHCR deployment and `make run` starts uvicorn with
-`--proxy-headers`, so the intended topology is behind a reverse proxy. In that topology
-`request.client.host` is the proxy's address for *every* request, and the 5-attempt window
-becomes global: five bad passwords from anyone lock out the entire dealership for 60 seconds.
-
-A second defect compounds it: `allow_login_attempt` is called before credentials are checked and
-is never reset on success, so successful logins consume the same 5/minute budget. Even without a
-proxy, a shared office NAT hits the limit during normal morning sign-in.
-
-Why it matters:
-A security control silently converts into a self-inflicted denial of service on the one endpoint
-that has no alternative path — nobody can get into the system, including admins.
-
-Concrete fix suggestion:
-Use the same client-identity helper the middleware uses, and scope the login bucket by username
-in addition to IP so one account's failures cannot lock the tenant. Clear the counter on a
-successful authentication.
-
-Example:
-```python
-from xtreme_system.api.setup import _client_ip
-
-client_ip = _client_ip(request)
-bucket = f"{client_ip}|{form.username.lower()}"
-retry_after = allow_login_attempt(session, bucket, _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS)
-...
-# after a successful verify_password:
-reset_login_attempts(session, bucket)
-```
-
-Tradeoff worth naming: honoring `X-Forwarded-For` unconditionally (which `_client_ip` already
-does) is itself spoofable when the app is reachable directly. The correct end state is a single
-helper that trusts the header only from a configured set of proxy hops, used by both limiters.
-
----
-
-## 2. Two independent rate-limiting subsystems, one of which is unreachable dead code
-
-Location: bases/xtreme_system/api/setup.py:40-47 and 162-190; components/xtreme_system/auth/rate_limit.py:36
-
-Impact: High
-
-Category: Maintainability
-
 Estimated effort: Medium
 
 Description:
-`_rate_limit` exempts a fixed path set before doing anything else:
+As rotas HTMX aplicam três camadas de autorização: `pagina_da_rota` + `pode_acessar`
+em `get_ui_user` (bases/xtreme_system/api/deps.py:107), `require_operacao` por
+operação, e `pode_ver_campo` para mascarar campos sensíveis (colunas do CSV em
+crud_ui/routes.py:297-304 e campos de formulário em crud_ui/routes.py:508-511).
+
+As rotas JSON criadas por `register_crud_routes` só exigem `CurrentUser`:
 
 ```python
-_ROTAS_ISENTAS_RATE_LIMIT = {"/health", "/docs", "/redoc", "/openapi.json", "/login", "/ui/login"}
-...
-if path.startswith("/static/") or path in _ROTAS_ISENTAS_RATE_LIMIT:
-    return await call_next(request)
-
-if request.method == "POST" and path.endswith("/login"):   # unreachable
-    allowed, retry_after = store.allow(f"login:{client_ip}", _LOGIN_LIMIT, ...)
+@app.get(prefix, response_model=list[read_schema])
+def _list(session: SessionDep, _: CurrentUser) -> list[EntityT]:
+    return module.list_all(session)
 ```
 
-Because `/login` and `/ui/login` are in the exemption set, the login branch below can never
-execute. Login throttling actually happens inside the route handlers via
-`auth/rate_limit.allow_login_attempt`, backed by a *second* table (`login_attempt_rate_limit`)
-with a *different* algorithm (fixed window with a counter) than the middleware store
-(`rate_limit_state`, sliding window of timestamps in JSON). `ARCHITECTURE.md` documents only the
-middleware version, describing behavior the code does not have.
+Isso vale para `/veiculos`, `/vendas`, `/clientes`, `/investidores` e
+`/lancamentos-caixa` (bases/xtreme_system/api/routes/json.py:122-274). Qualquer
+usuário autenticado e ativo — inclusive um funcionário cujo perfil oculta
+`preco`, `valor_venda`, `valor_entrada` ou nem sequer dá acesso à página — recebe
+o `VeiculoRead`/`VendaRead` completo, com `preco` (veiculo/core.py:122) e todos os
+valores financeiros.
+
+O padrão correto já existe no mesmo arquivo: `/compras` faz `_compra_json` com
+`pode_ver_campo` e `_require_compra_operacao` com `pode_operacao`
+(json.py:280-346). Ou seja, a regra foi implementada uma vez, à mão, para uma
+entidade, e as outras cinco ficaram de fora.
 
 Why it matters:
-Two tables, two algorithms, and one dead branch for a single concern. A future change to
-"the rate limiter" has a better-than-even chance of landing in the half that never runs, and the
-architecture doc actively misleads anyone auditing the control. The `login:` bucket prefix in the
-dead branch also means the two systems would not even share state if it were reactivated.
+É um bypass real de controle de acesso, não uma inconsistência estética. As
+restrições de perfil são a funcionalidade que separa admin de funcionário no
+produto, e elas valem apenas para quem usa o navegador. Além disso, cada nova
+entidade registrada via `register_crud_routes` herda o problema silenciosamente.
 
 Concrete fix suggestion:
-Pick one. The simplest surgical change: delete the dead branch and the `/login` entries from
-`_ROTAS_ISENTAS_RATE_LIMIT` are *not* the fix — removing the exemption would double-throttle.
-Instead, delete lines 171-181 and the `_LOGIN_LIMIT` import cycle from `setup.py`, keep
-`allow_login_attempt` as the single login limiter, and correct the middleware section of
-`ARCHITECTURE.md` to say login throttling lives in the handlers. If consolidation is preferred,
-drop `login_attempt_rate_limit` and route login through `RateLimiterStore.allow` — but then item 1
-must be fixed at the same time, since the two paths disagree on client identity.
+Mover a checagem para a factory, com `pagina` e mapa de campos protegidos como
+parâmetros — mesmo contrato já usado em `register_crud_ui_routes`
+(`pagina=`, `campos_form_map=`). Menor correção útil:
+
+```python
+def register_crud_routes(app, module, prefix, label, *, pagina: str | None = None,
+                         campos_protegidos: list[str] | None = None, ...):
+    def _mask(obj, user):
+        data = jsonable_encoder(read_schema.model_validate(obj))
+        for campo in campos_protegidos or []:
+            if not perfil.pode_ver_campo(user, pagina, campo):
+                data.pop(campo, None)
+        return data
+
+    @app.get(prefix)
+    def _list(session: SessionDep, user: CurrentUser) -> list[dict[str, Any]]:
+        if pagina and not perfil.pode_acessar(user, pagina):
+            raise HTTPException(status_code=403, detail="Acesso negado")
+        return [_mask(obj, user) for obj in module.list_all(session)]
+```
+
+Tradeoff: mudar `response_model` para `dict` perde a documentação automática do
+OpenAPI. Alternativa mais conservadora, se aceitável para o produto: exigir
+`AdminUser` também em `_list`/`_get`, restringindo a API JSON a admins.
 
 ---
 
-## 3. `remover_orfaos` deletes document rows whenever the file is missing from disk
+## Toda listagem carrega a tabela inteira e ordena/filtra em Python
 
-Location: bases/xtreme_system/api/routes/ui_routes/uploads.py:77-93; called at compras.py:128, clientes.py:121, veiculos_imagens.py:43, veiculos_procuracao.py:43, veiculos_cliente_vendedor.py:46
-
+Location: bases/xtreme_system/api/crud_ui/query.py:70-94 e crud_ui/routes.py:237-268, 453-460, 553-560, 607-614
 Impact: High
+Category: Performance
+Estimated effort: High
 
+Description:
+`query_list` termina sempre em `module.list_all(session)`, que é
+`session.query(model_cls).all()` (components/xtreme_system/crud/core.py:14-15).
+Não há `LIMIT`, `OFFSET` nem `WHERE` na maioria dos caminhos. Ordenação
+(`sorted_list`) e filtro (`filter_list`) rodam em Python sobre a lista completa.
+
+O custo se multiplica porque a lista é recarregada após cada escrita: `_criar`
+(routes.py:453), `_atualizar` (routes.py:553) e `_excluir` (routes.py:607) todos
+chamam `query_list` de novo para renderizar o parcial HTMX.
+
+Em vendas o efeito é pior. `Venda` tem quatro relacionamentos `lazy="joined"`
+(cliente, veiculo, veiculo_troca, vendedor — venda/core.py:64-69), então cada
+listagem faz um join de cinco tabelas sobre o conjunto inteiro. Em cima disso,
+`_ctx_lista_vendas` (ui_routes/vendas.py:134-136) chama
+`fechamento_venda.list_all`, que por sua vez carrega `FechamentoVenda` com
+`venda`, `usuario` e `participacoes` todos `lazy="joined"`
+(fechamento_venda/core.py:55-61) — e o resultado é usado apenas para montar um
+dicionário `{venda_id: fechamento}`.
+
+Há ainda um N+1 clássico em `_atividades_recentes`
+(ui_routes/dashboard.py:121-136): um `usuario.get` por linha de auditoria.
+
+Why it matters:
+O comportamento é aceitável com dezenas de registros e degrada de forma
+não linear. Vendas e veículos são exatamente as tabelas que crescem com o uso do
+produto; a página de vendas é a mais cara e a mais acessada. O `/exportar`
+(routes.py:285-305) tem o mesmo perfil sem nem o alívio de um `LIMIT`.
+
+Concrete fix suggestion:
+Empurrar ordenação, filtro e paginação para o banco. `sort_fields` já é um mapa
+declarativo; estendê-lo para aceitar colunas SQLAlchemy permite gerar
+`order_by` real. Passo intermediário barato e de baixo risco, que resolve os dois
+piores casos sem reescrever a factory:
+
+```python
+# ui_routes/vendas.py
+def _ctx_lista_vendas(session: Session, vendas: list[Venda]) -> dict[str, Any]:
+    ids = [v.id for v in vendas]
+    if not ids:
+        return {"fechamentos_by_venda": {}}
+    fechamentos = (
+        session.query(FechamentoVenda)
+        .filter(FechamentoVenda.venda_id.in_(ids))
+        .all()
+    )
+    return {"fechamentos_by_venda": {f.venda_id: f for f in fechamentos}}
+```
+
+E em `_atividades_recentes`, carregar os usuários em uma query só
+(`Usuario.id.in_(ids)`).
+
+Tradeoff: a paginação completa é um refactor grande e mexe nos templates HTMX.
+Vale medir antes: se as tabelas ainda estão na casa das centenas de linhas, faça
+os dois ajustes pontuais acima e adie a paginação.
+
+---
+
+## Atualizações de venda pela UI perdem o autor no log de auditoria
+
+Location: bases/xtreme_system/api/routes/ui_routes/vendas.py:386
+Impact: High
 Category: Error handling and logging
-
-Estimated effort: Medium
-
-Description:
-Every time a user merely *opens* an attachments modal, the handler runs:
-
-```python
-for doc in list(docs):
-    path = _uploaded_file_path(doc.url or "")
-    if path is not None and str(path) in pending_paths:
-        continue
-    if path is not None and not path.exists():
-        delete_fn(session, doc)
-```
-
-The premise is that a missing file means a stale row. But `path.exists()` returning `False` has
-several causes that are not "the row is stale": the uploads volume was not mounted, the container
-was rebuilt without the bind mount, the app runs on a different replica than the one that wrote
-the file, or the post-commit write in `salvar_arquivos` failed and only logged a warning
-(`database/core.py:144-150`). In any of those cases, a read-only user action silently issues
-audited `DELETE`s for every attachment record on the page, and `get_session` commits them.
-
-Why it matters:
-This is unrecoverable data loss triggered by an infrastructure hiccup, performed by a GET-shaped
-interaction, with no confirmation and no way to distinguish "file genuinely gone" from "storage
-temporarily unavailable". The blast radius is every document of every entity a user browses while
-the volume is detached.
-
-Concrete fix suggestion:
-Do not mutate on read. Render missing files as unavailable and leave the row alone; move
-reconciliation to an explicit, admin-triggered (or scheduled) cleanup that also verifies the
-uploads root is present before deleting anything.
-
-Example:
-```python
-def marcar_orfaos(session, docs):
-    """Flags docs whose file is missing — does not delete."""
-    uploads_root = (_ui_dir / "static" / "uploads")
-    if not uploads_root.is_dir():
-        return {}          # storage unavailable: assume nothing is orphaned
-    return {doc.id: not _existe(doc) for doc in docs}
-```
-
----
-
-## 4. Vehicle-availability validation on venda diverges between the JSON API and the HTMX UI
-
-Location: bases/xtreme_system/api/routes/json.py:252-275 vs bases/xtreme_system/api/routes/ui_routes/vendas.py:146-148
-
-Impact: High
-
-Category: Code quality
-
 Estimated effort: Low
 
 Description:
-The JSON registration validates both FKs and availability on create *and* update:
+`venda.update` é chamado sem `actor_id`:
 
 ```python
-def _validate_venda_update(session, obj, data):
-    validate_cliente_veiculo_fks(session, data)
-    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
-        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
+try:
+    venda.update(session, obj, data)   # actor_id fica None
+except IntegrityError:
 ```
 
-The UI registration passes only `before_update=validate_cliente_veiculo_fks`. The create path is
-consistent (the UI hand-rolls `_criar_venda` and calls
-`validate_veiculo_disponivel_para_venda` at vendas.py:337), but on **update** the UI has no
-availability check at all: editing a sale to point at a vehicle already marked `vendido` succeeds
-through `/ui/vendas/{id}` and is rejected through `PATCH /vendas/{id}`.
+O parâmetro é opcional (`actor_id: int | None = None`, venda/core.py:202-204) e
+chega direto em `auditar(..., actor_id=actor_id)` via `crud.update`
+(crud/core.py:41-57). A linha de auditoria fica com `usuario_id = NULL`.
 
-Two related smells sit in the same registration: `after_create=whatsapp.notificar_venda`
-(vendas.py:149) is dead configuration because `register_create=False` disables that route, and
-`compras.py:203-241` carries a near-verbatim copy of `common.resolver_cliente` — the two have
-already drifted apart in their error strings.
+A criação, quatro linhas acima, faz certo: `venda.create(session, data, user.id)`
+(vendas.py:359). E `session.info["usuario_id"] = user.id` na linha 372 não ajuda —
+nada em `auditar` lê `session.info`.
+
+O mesmo defeito aparece em ui_routes/veiculos.py:392:
+`caixa.sincronizar_lancamento_veiculo(session, atualizado)` sem `user.id`, o que
+grava o UPDATE de `lancamento_investimento` como anônimo.
 
 Why it matters:
-The same business rule has two answers depending on which door the request came through. Whoever
-adds the next rule has no signal that a second copy exists, so the divergence widens.
+A auditoria é a única trilha de quem alterou valores financeiros. O dashboard já
+renderiza esses registros como "Sistema" (dashboard.py:122-126), então uma edição
+manual de `valor_venda` aparece indistinguível de uma ação automática. É perda
+silenciosa de dado — não há erro, teste falhando ou log.
 
 Concrete fix suggestion:
-Pass the same hook to both registrations, and delete the dead `after_create`.
 
-Example:
 ```python
-# vendas.py
-before_update=_validate_venda_update,   # imported from the shared workflows module
-# remove: after_create=whatsapp.notificar_venda   (register_create=False)
+venda.update(session, obj, data, user.id)
 ```
-Move `_validate_venda_create` / `_validate_venda_update` out of `routes/json.py` into
-`routes/workflows.py`, which is already the designated home for cross-router rules, and delete
-`compras._resolver_cliente` in favor of `common.resolver_cliente`.
+
+e
+
+```python
+caixa.sincronizar_lancamento_veiculo(session, atualizado, user.id)
+```
+
+Depois, um teste que trave a regra:
+
+```python
+def test_update_venda_ui_registra_autor(client_admin, venda_existente, admin):
+    client_admin.post(f"/ui/vendas/{venda_existente.id}", data={...})
+    row = ultima_auditoria(session, tabela="venda", tipo_acao="UPDATE")
+    assert row.usuario_id == admin.id
+```
+
+Vale ainda considerar tornar `actor_id` obrigatório (posicional sem default) em
+`crud.update`/`crud.create`, para que a omissão vire erro de tipo em vez de dado
+faltando.
 
 ---
 
-## 5. Vehicle availability is a check-then-act with no lock and no constraint — two sales can win
+## `query_list` engole `TypeError` e mascara bugs dentro das funções de busca
 
-Location: bases/xtreme_system/api/routes/workflows.py:45-50; components/xtreme_system/venda/core.py:154-183
-
+Location: bases/xtreme_system/api/crud_ui/query.py:80-86
 Impact: Medium
-
-Category: Architecture and design
-
-Estimated effort: Medium
+Category: Error handling and logging
+Estimated effort: Low
 
 Description:
-`validate_veiculo_disponivel_para_venda` reads `veiculo.status` and raises 409 if it is not
-`disponivel`; the write that flips the status to `vendido` happens afterwards in
-`_sincronizar_status_veiculo`. Nothing serializes the two steps: no `SELECT ... FOR UPDATE`, no
-unique index preventing a second `venda` row with `status = concluido` for the same
-`veiculo_id`. Two concurrent requests both read `disponivel`, both pass validation, and both
-commit. The `venda` table has no constraint that would catch it, so the `IntegrityError`
-handlers in the routes never fire.
+
+```python
+if q and search_func is not None:
+    try:
+        return list(search_func(session, q, column=search_column))
+    except TypeError:
+        return list(search_func(session, q))
+```
+
+O `except TypeError` foi escrito para detectar assinaturas sem `column`, mas ele
+captura qualquer `TypeError` levantado em qualquer ponto da execução de
+`search_func` — inclusive dentro do SQLAlchemy ou na comparação de tipos
+incompatíveis. Nesse caso a busca é executada uma segunda vez, com semântica
+diferente (busca global em vez de por coluna), e o usuário recebe resultados
+plausíveis mas errados, sem nenhum log.
+
+Na prática o fallback é código morto: todas as sete implementações registradas
+(`venda.search`, `veiculo.search`, `cliente.search`, `compra.search`,
+`custo_veiculo.search`, `cliente.search_compradores`, `cliente.search_vendedores`)
+já aceitam `column`.
 
 Why it matters:
-The same car can be sold twice, and the resulting state is not detectable after the fact —
-`veiculo_tem_outra_venda_concluida` will simply see both. Downstream `fechamento_venda` will then
-happily book receita twice against the same vehicle cost.
+É um try/except que transforma uma exceção diagnosticável em resultado
+silenciosamente incorreto — a pior categoria de tratamento de erro. E o custo de
+remover é praticamente zero, já que o caminho de fallback nunca é exercitado.
 
 Concrete fix suggestion:
-Lock the vehicle row inside the validation, so the second transaction blocks and then fails the
-status check.
+Remover o `try/except` e chamar com `column` diretamente. Se o suporte a
+assinaturas antigas for mesmo necessário, decidir por inspeção em vez de exceção:
 
-Example:
 ```python
-def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
-    v = session.get(veiculo.Veiculo, veiculo_id, with_for_update=True)
-    if v is None:
-        raise HTTPException(status_code=400, detail="veiculo_id inexistente")
-    if v.status != veiculo.StatusVeiculo.disponivel:
-        raise HTTPException(status_code=409, detail="veículo indisponível")
+if q and search_func is not None:
+    params = inspect.signature(search_func).parameters
+    if "column" in params:
+        return list(search_func(session, q, column=search_column))
+    return list(search_func(session, q))
 ```
-A partial unique index (`veiculo_id WHERE status = 'concluido'`) would be the belt-and-braces
-version, but it needs a migration and a data audit first, so the row lock is the smaller useful
-fix.
 
 ---
 
-## 6. `_sincronizar_status_veiculo` recomputes vehicle status from scratch, erasing `reservado`
+## Rate limiter em banco: uma transação de escrita por request e tabela que só cresce
 
-Location: components/xtreme_system/venda/core.py:136-139 and 154-183
-
+Location: components/xtreme_system/database/core.py:64-114 (`DatabaseRateLimiterStore.allow`)
 Impact: Medium
-
-Category: Code quality
-
-Estimated effort: Medium
-
-Description:
-The mapping is binary:
-
-```python
-def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
-    if status == StatusVenda.concluido:
-        return StatusVeiculo.vendido
-    return StatusVeiculo.disponivel
-```
-
-and `_sincronizar_status_veiculo` applies it unconditionally on every venda create and update.
-`StatusVeiculo.reservado` is a declared enum value (veiculo/core.py:26), has its own badge styling
-in `_macros.html:44`, and shipped in its own migration
-(`d9babf49fd9b_add_vendedor_and_reservado.py`) — yet nothing in the codebase ever *sets* it, and
-if it were set manually the next save of any sale touching that vehicle would overwrite it with
-`disponivel`. Likewise a `pendente` sale forces the vehicle back to `disponivel`, so a car with a
-deal in progress stays advertised as available.
-
-Why it matters:
-A modeled business state is unreachable and, worse, actively destroyed — the migration and the
-template promise a feature the domain layer silently undoes. Anyone implementing "reserve a
-vehicle" will hit this only after shipping.
-
-Concrete fix suggestion:
-Make the mapping total and treat `reservado` as a state the sync must not stomp.
-
-Example:
-```python
-_STATUS_POR_VENDA = {
-    StatusVenda.concluido: StatusVeiculo.vendido,
-    StatusVenda.pendente:  StatusVeiculo.reservado,
-    StatusVenda.aprovado:  StatusVeiculo.reservado,
-    StatusVenda.cancelado: StatusVeiculo.disponivel,
-}
-```
-If `pendente → reservado` is not the desired business rule, decide explicitly and encode it —
-the current code decides by omission. Either way, remove `reservado` from the enum or start
-producing it; leaving it dead is the worst of the three options.
-
----
-
-## 7. Compras list page issues one query per row for its comprovantes (N+1)
-
-Location: bases/xtreme_system/api/routes/ui_routes/compras.py:97-105
-
-Impact: Medium
-
 Category: Performance
-
-Estimated effort: Low
+Estimated effort: Medium
 
 Description:
-```python
-def _ctx_lista_compras(session, compras):
-    return {
-        "comprovantes_por_compra": {
-            item.id: imagem_comprovante_compra.list_by_compra(session, item.id)
-            for item in compras
-        }
-    }
-```
-`ctx_list` runs on every list render, every search, every create, every update, and every delete
-(`crud_ui/routes.py:261, 465, 565, 619`). With N compras that is N+1 round trips. It compounds
-with the fact that the list route has no pagination at all — `query_list` returns
-`module.list_all(session)` (crud_ui/query.py:63) and `sorted_list` then sorts the entire table in
-Python (query.py:33-42), so the row count is unbounded and the per-row query count tracks it.
+O store padrão é o de banco (`RATE_LIMIT_STORE` default `"database"`,
+bases/xtreme_system/api/setup.py:80-84), e o middleware `_rate_limit` chama
+`store.allow` em toda requisição não isenta (setup.py:162-190). Cada chamada abre
+uma conexão própria e executa, em uma transação: um `INSERT ... ON CONFLICT DO
+NOTHING`, um `SELECT ... FOR UPDATE` e um `UPDATE`.
+
+Dois efeitos:
+
+1. Todo GET de página vira três statements de escrita extras, serializados pelo
+   `FOR UPDATE` no bucket do IP. Requisições concorrentes do mesmo cliente —
+   exatamente o padrão do HTMX, que dispara vários fragmentos por tela — ficam em
+   fila umas atrás das outras.
+2. `rate_limit_state` nunca é limpa. `reset()` só é chamado por
+   `reset_rate_limiters()`, usado em testes (setup.py:141-143). Um `bucket` é
+   criado por IP e por `login:{IP}`, e a linha permanece indefinidamente, com a
+   lista JSON de hits dentro dela.
 
 Why it matters:
-The cost is quadratic in user-visible latency terms: more compras means both a bigger list and
-more queries per page load. It is the cheapest real performance win in the codebase.
+É custo fixo em toda a aplicação, não em um endpoint específico, e a contenção só
+aparece sob carga — quando é mais difícil diagnosticar. O crescimento da tabela é
+lento mas monotônico e não tem nenhum processo que o interrompa.
 
 Concrete fix suggestion:
-Fetch all comprovantes for the visible ids in one query and group in Python.
+Adicionar uma coluna `atualizado_em` e uma limpeza periódica (job, ou uma
+varredura probabilística barata dentro do próprio `allow`):
 
-Example:
 ```python
-def _ctx_lista_compras(session, compras):
-    ids = [c.id for c in compras]
-    rows = imagem_comprovante_compra.list_by_compras(session, ids)  # one IN (...) query
-    agrupado: dict[int, list] = {cid: [] for cid in ids}
-    for row in rows:
-        agrupado[row.compra_id].append(row)
-    return {"comprovantes_por_compra": agrupado}
+Column("atualizado_em", DateTime(timezone=True), server_default=func.now())
+
+# ...em allow(), ocasionalmente:
+conn.execute(
+    delete(rate_limit_state).where(
+        rate_limit_state.c.atualizado_em < datetime.now(UTC) - timedelta(hours=1)
+    )
+)
 ```
-Pagination for the list routes is the larger follow-up; flagging it here rather than proposing it
-as part of this fix, since it changes the HTMX templates too.
+
+Se o deploy é de instância única (o que o `casaos/docker-compose.yml` sugere),
+vale reavaliar o default: `_MemoryRateLimiterStore` já existe, não toca no banco e
+é suficiente nesse cenário. Nota menor no mesmo trecho: em `_ensure_bucket`
+(linha 90) o `statement` inicial é sempre descartado nos ramos postgresql/sqlite.
 
 ---
 
-## 8. `/auditoria` accepts unbounded `limit` and `offset`
+## Cache negativo permanente do schema de fechamento
 
-Location: bases/xtreme_system/api/routes/json.py:353-374
-
+Location: components/xtreme_system/fechamento_venda/core.py:131-146 (`_schema_disponivel`)
 Impact: Medium
-
-Category: Performance
-
-Estimated effort: Low
-
-Description:
-`listar_auditoria` declares `limit: int = 50` and `offset: int = 0` as plain ints with no
-validation. `auditoria.query` applies them directly (`auditoria/core.py:141-142`) and
-materializes the result with `list(session.scalars(stmt))`. The `auditoria` table receives one row
-per write across every entity in the system, so it is the fastest-growing table in the schema, and
-`dados_antes`/`dados_depois` are full JSON snapshots. `GET /auditoria?limit=10000000` will attempt
-to load and serialize all of it.
-
-Why it matters:
-An authenticated admin — or anything holding an admin token, including a misbehaving script — can
-exhaust process memory with a single request. The exposure grows monotonically with the age of the
-deployment.
-
-Concrete fix suggestion:
-Constrain at the boundary with `Query`.
-
-Example:
-```python
-from fastapi import Query
-
-limit: Annotated[int, Query(ge=1, le=200)] = 50,
-offset: Annotated[int, Query(ge=0)] = 0,
-```
-Worth applying the same bound to the `/ui/auditoria` route, which shares the underlying
-`auditoria.query`.
-
----
-
-## 9. `_schema_disponivel` caches table existence per engine for the process lifetime
-
-Location: components/xtreme_system/fechamento_venda/core.py:31 and 131-146
-
-Impact: Medium
-
 Category: Maintainability
-
-Estimated effort: Medium
+Estimated effort: Low
 
 Description:
-Every fechamento read and write is gated on a runtime `has_table` probe whose result is memoized
-in a module-level `WeakKeyDictionary` keyed by engine, with no invalidation:
+O resultado da inspeção é memoizado por engine em um `WeakKeyDictionary`, sem
+distinguir resultado positivo de negativo:
 
 ```python
-_SCHEMA_DISPONIVEL_POR_ENGINE: WeakKeyDictionary[Engine, bool] = WeakKeyDictionary()
+disponivel = inspector.has_table(...) and inspector.has_table(...)
+_SCHEMA_DISPONIVEL_POR_ENGINE[engine] = disponivel
+return disponivel
 ```
 
-If the app starts before `alembic upgrade head` runs — the normal order in a container that boots
-alongside its database — the first request caches `False`, and `list_all` returns `[]`, `get`
-returns `None`, and `confirmar` raises "Atualize o banco com `make migrate`" for the rest of the
-process's life, even after the migration lands. The failure presents as an empty screen, not an
-error.
+Se o processo subir antes da migração, `False` fica gravado para o tempo de vida
+do engine. Rodar `make migrate` com a aplicação no ar não muda nada: `list_all`
+continua retornando `[]` (linha 150), `get_by_venda` continua retornando `None`
+(linha 163) e `confirmar` continua levantando `ERRO_SCHEMA_DESATUALIZADO`
+(linha 194) — cuja mensagem, ironicamente, é "Atualize o banco com `make
+migrate`", exatamente o que o operador acabou de fazer.
+
+Pior: `preview` e `_motivo_inelegivel` usam `get_by_venda`, que retorna `None`
+quando o schema é tido como ausente. Isso significa "venda ainda não fechada", e
+não "não sei" — então a UI apresenta vendas já fechadas como elegíveis.
 
 Why it matters:
-Domain logic is coupled to schema-introspection state, the guard is scattered across four
-functions, and the sticky cache turns a transient ordering problem into a permanent one that only
-a restart clears. It also normalizes running the app against a schema the code does not expect.
+Transforma um erro de operação recuperável (esqueci de migrar) em um estado
+travado que só um restart resolve, com uma mensagem de erro que aponta para a
+ação errada.
 
 Concrete fix suggestion:
-Treat migrations as a hard precondition and delete the gate — a missing table should be a loud
-startup failure, not four silent `if` statements. If a transitional guard is genuinely required
-during rollout, at minimum stop caching a negative result:
+Só cachear o resultado positivo — a tabela pode passar a existir, mas nunca
+desaparece em operação normal:
 
 ```python
-if disponivel:                       # only memoize the terminal state
+disponivel = inspector.has_table(...) and inspector.has_table(...)
+if disponivel:
     _SCHEMA_DISPONIVEL_POR_ENGINE[engine] = True
 return disponivel
 ```
 
+O custo é uma inspeção por chamada apenas enquanto o schema estiver
+desatualizado — ou seja, no cenário já degradado.
+
 ---
 
-## 10. The default test run never exercises Alembic, and the Polylith `test/` tree is never collected
+## Falha na gravação pós-commit deixa registros apontando para arquivos inexistentes
 
-Location: pyproject.toml:52-58; tests/database.py:56-70; Makefile (`test` target); test/components/xtreme_system/*/test_core.py
-
+Location: bases/xtreme_system/api/routes/ui_routes/uploads.py:58-78 e components/xtreme_system/database/core.py:144-150
 Impact: Medium
-
-Category: Testing
-
+Category: Error handling and logging
 Estimated effort: Medium
 
 Description:
-Two gaps in the harness:
+`salvar_arquivos` cria a linha no banco e agenda a escrita em disco para depois do
+commit. A execução dos callbacks engole qualquer exceção:
 
-1. `create_test_engine` builds the schema with `Base.metadata.create_all(engine)` on in-memory
-   SQLite unless `TEST_DATABASE_URL` is set. Only `make test-postgres` runs
-   `command.upgrade(cfg, "head")`. So the default `make test` and `make ci` (which calls
-   `coverage`, also SQLite) validate the *models*, never the *migrations*. Any drift between an
-   ORM change and its migration passes CI. The repo has already paid for this once —
-   commit c9a6da6 is "reconcile audit actor contract gaps and diverging alembic heads". SQLite
-   also does not enforce the native enum types, `ondelete` semantics, or `JSON`/`Numeric`
-   behavior that production depends on.
-2. `testpaths = ["tests"]` and `pytest tests/ -q -n auto` mean `test/components/…`, the
-   Polylith-conventional component test tree, is never collected. Its five files are placeholders
-   (`assert core is not None`), so nothing is currently lost — but the directory reads as covered
-   component tests and is not.
+```python
+def _invoke_post_commit(session: Session) -> None:
+    callbacks = session.info.pop(_POST_COMMIT_KEY, [])
+    for cb in callbacks:
+        try:
+            cb()
+        except Exception:
+            logger.warning("post_commit_callback_failed", exc_info=True)
+```
+
+Se `path.write_bytes` falhar — disco cheio, permissão, volume desmontado — a
+transação já foi commitada. Sobra um `ImagemVeiculo`/`ImagemComprovanteCompra`
+com `url` para um arquivo que não existe, e o usuário vê a tela de sucesso. A
+única pista é um `warning` no log.
+
+A ordem é deliberada (não gravar arquivo se o commit falhar) e está correta; o
+problema é o lado sem compensação. Existe um `arquivo_disponivel`
+(ui_routes/common.py:98) que a template usa para não quebrar a renderização, ou
+seja, o sintoma é conhecido — mas nada reconcilia os órfãos. E `remover_orfaos`
+(uploads.py:81-91) foi explicitamente esvaziado, com o comentário dizendo que a
+reconciliação "deve ocorrer em um processo explícito de limpeza" — processo que
+não existe no repositório.
 
 Why it matters:
-Migration correctness is the single riskiest thing in this codebase (13 tables, hand-written
-enum `ALTER TYPE` statements, a merge-heads history) and it is the one thing the default test
-command cannot catch. The dead `test/` tree gives a false impression of where component coverage
-lives.
+Não há erro para o usuário, nem alerta, nem caminho de recuperação. O dado fica
+inconsistente e ninguém descobre até alguém tentar abrir o documento.
 
 Concrete fix suggestion:
-Make Postgres-with-migrations the CI path rather than an opt-in target, and delete or populate the
-orphan tree.
+Duas opções, em ordem de esforço:
 
-Example:
-```make
-ci: lint test-postgres coverage
+1. Elevar a severidade e tornar detectável: `logger.error` com `registro_id` e
+   `url` no contexto, para dar um gancho de alerta.
+2. Compensar: registrar a falha em uma tabela de pendências, ou marcar a linha
+   com um flag `arquivo_ok=False` em uma sessão nova, para que uma rotina de
+   limpeza possa remover ou reprocessar.
+
+O mínimo útil é (1) — hoje o evento é indistinguível de ruído.
+
+---
+
+## `_resolver_cliente` duplicado em compras, com o helper compartilhado ao lado
+
+Location: bases/xtreme_system/api/routes/ui_routes/compras.py:208-246 vs bases/xtreme_system/api/routes/ui_routes/common.py:112-157
+Impact: Medium
+Category: Code quality
+Estimated effort: Low
+
+Description:
+`common.resolver_cliente` foi extraído justamente para ser compartilhado e é
+parametrizado para isso (`cliente_field`, `required_msg`, `invalid_selected_msg`,
+`invalid_new_msg`). `vendas.py` o importa e usa (vendas.py:25, 332).
+
+`compras.py` mantém uma cópia privada de 38 linhas, idêntica em comportamento —
+mesma leitura de `cliente_id`, mesmo `int()` protegido por `try`, mesma checagem
+de CPF duplicado, mesmos dez campos `cli_*` montando o `ClienteCreate`, mesmas
+mensagens de erro literais.
+
+Why it matters:
+São dois lugares para corrigir todo bug de parsing de cliente e para adicionar
+todo campo novo. As duas cópias hoje concordam por acaso, não por construção —
+qualquer ajuste feito em um dos fluxos de cadastro passa a divergir do outro sem
+que nada acuse. E o custo de convergir é baixo justamente porque o helper já foi
+parametrizado para este caso.
+
+Concrete fix suggestion:
+Apagar `compras._resolver_cliente` e usar o compartilhado — os defaults já batem
+com as mensagens da cópia:
+
+```python
+from xtreme_system.api.routes.ui_routes.common import resolver_cliente
+...
+cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
 ```
-Plus a focused test that the migration chain and the models agree — run
-`alembic upgrade head` then assert `compare_metadata(MigrationContext.configure(conn), Base.metadata)`
-is empty. That single test would have caught the drift the recent fix commit had to repair.
-Keep SQLite for the fast local loop; just stop letting it be the only thing CI sees.
+
+`_resolver_veiculo` (compras.py:249-290) não tem equivalente compartilhado e deve
+ficar onde está.
+
+---
+
+## `limit`/`offset` sem teto em `/auditoria`
+
+Location: bases/xtreme_system/api/routes/json.py:352-373
+Impact: Low
+Category: Performance
+Estimated effort: Low
+
+Description:
+
+```python
+def listar_auditoria(..., limit: int = 50, offset: int = 0) -> list[auditoria.Auditoria]:
+```
+
+Os valores vão direto para `stmt.limit(limit).offset(offset)`
+(auditoria/core.py:141), sem validação. `limit=100000000` materializa a tabela de
+auditoria inteira — que é a tabela que mais cresce no sistema, já que recebe uma
+linha por escrita com dois snapshots JSON completos. Valores negativos também
+passam.
+
+A rota exige `AdminUser`, o que limita bastante o alcance. Mas `dados_antes` e
+`dados_depois` são JSON serializados por linha, então o custo por linha é alto e
+um valor grande escolhido sem má intenção já é suficiente para derrubar o worker.
+
+Why it matters:
+Impacto contido pelo requisito de admin, mas a correção é uma linha e remove uma
+forma trivial de exaurir memória.
+
+Concrete fix suggestion:
+
+```python
+from fastapi import Query
+
+limit: Annotated[int, Query(ge=1, le=500)] = 50,
+offset: Annotated[int, Query(ge=0)] = 0,
+```
+
+O FastAPI passa a rejeitar com 422 antes de tocar no banco. Vale conferir se a UI
+de auditoria (ui_routes/auditoria.py) usa os mesmos limites.
+
+---
+
+## Cobertura de testes concentrada na UI, com o enforcement de perfil na API quase sem teste
+
+Location: tests/test_ui.py (2622 linhas, 74 testes) e tests/test_api_compras.py:128
+Impact: Medium
+Category: Testing
+Estimated effort: Medium
+
+Description:
+A suíte é substancial (~190 testes) e cobre bem os fluxos HTMX. Mas a distribuição
+esconde uma lacuna alinhada com o achado nº 1:
+
+`test_api_compras.py:128` (`test_api_compras_respeita_perfil_em_leitura_e_mutacao`)
+é o único teste que verifica perfil na API JSON — e cobre justamente a única
+entidade cujas rotas foram escritas à mão com essa checagem. Nenhum teste
+equivalente existe para `/veiculos`, `/vendas`, `/clientes`, `/investidores` ou
+`/lancamentos-caixa`, que são exatamente as que passam por
+`register_crud_routes` e não têm checagem alguma. A suíte não falha porque o
+comportamento ausente nunca foi afirmado.
+
+Secundariamente, `test_ui.py` concentra 2622 linhas — quase 40% do código de
+teste em um arquivo. Isso torna difícil localizar a cobertura existente antes de
+escrever um teste novo, e é um dos motivos plausíveis da lacuna acima ter
+passado despercebida.
+
+Why it matters:
+A cobertura ausente é precisamente a de controle de acesso, onde um teste vale
+mais do que em qualquer outro lugar: a falha é silenciosa (dado a mais na
+resposta, não exceção) e não aparece em uso normal.
+
+Concrete fix suggestion:
+Um teste parametrizado sobre as rotas geradas pela factory, que falha hoje e
+passa a valer como especificação depois da correção do nº 1:
+
+```python
+@pytest.mark.parametrize(
+    ("rota", "campo"),
+    [("/veiculos", "preco"), ("/vendas", "valor_venda")],
+)
+def test_api_oculta_campos_restritos_por_perfil(client, funcionario_sem_campo, rota, campo):
+    resp = client.get(rota, headers=auth_header(funcionario_sem_campo))
+    assert resp.status_code == 200
+    assert all(campo not in item for item in resp.json())
+```
+
+Sobre `test_ui.py`: dividir por domínio (`test_ui_vendas.py`, `test_ui_veiculos.py`,
+…) espelhando `ui_routes/`. É mecânico e de baixo risco, mas só vale como
+follow-up — não antes do teste de permissão acima.

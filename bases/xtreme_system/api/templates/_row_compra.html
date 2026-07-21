@@ -22,7 +22,7 @@
       {% include "_action_compra_comprovantes.html" %}
       {% endif %}
       {% if pode_excluir %}
-      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/compras/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta compra?" aria-label="Excluir compra {{ c.id }}">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/compras/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta compra?\n\nAtenção: O veículo {{ c.veiculo.modelo }} ({{ c.veiculo.placa }}) também será deletado." aria-label="Excluir compra {{ c.id }}">{{ ui.icon("trash") }}</button>
       {% endif %}
     </div>
   </td>

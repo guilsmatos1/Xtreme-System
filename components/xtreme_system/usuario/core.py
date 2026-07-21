@@ -23,6 +23,7 @@ class Usuario(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True, index=True)
+    nome: Mapped[str | None] = mapped_column(default=None)
     senha_hash: Mapped[str]
     papel: Mapped[Papel] = mapped_column(default=Papel.funcionario)
     ativo: Mapped[bool] = mapped_column(default=True)
@@ -36,6 +37,7 @@ def is_admin(user: Usuario) -> bool:
 
 class UsuarioCreate(BaseModel):
     username: str
+    nome: str | None = None
     senha: str
     papel: Papel = Papel.funcionario
     perfil_id: int | None = None
@@ -43,6 +45,7 @@ class UsuarioCreate(BaseModel):
 
 class UsuarioUpdate(BaseModel):
     username: str
+    nome: str | None = None
     papel: Papel = Papel.funcionario
     ativo: bool = True
     perfil_id: int | None = None
@@ -53,6 +56,7 @@ class UsuarioRead(BaseModel):
 
     id: int
     username: str
+    nome: str | None
     papel: Papel
     ativo: bool
     perfil_id: int | None
@@ -71,6 +75,7 @@ def create(
 ) -> Usuario:
     obj = Usuario(
         username=data.username,
+        nome=data.nome,
         senha_hash=hash_password(data.senha),
         papel=data.papel,
         perfil_id=data.perfil_id,
@@ -95,6 +100,7 @@ def update(
 ) -> None:
     antes = snapshot(obj)
     obj.username = data.username
+    obj.nome = data.nome
     obj.papel = data.papel
     obj.ativo = data.ativo
     obj.perfil_id = data.perfil_id

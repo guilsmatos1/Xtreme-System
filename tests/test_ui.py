@@ -1557,7 +1557,7 @@ def test_ui_custos_veiculos_respeita_permissao_de_perfil(
 
     permitido = client.get("/ui/custos-veiculos")
     assert permitido.status_code == 200
-    assert "Custos de Veículos" in permitido.text
+    assert "Custos de veículos" in permitido.text
 
     bloqueado = client.get("/ui/veiculos")
     assert bloqueado.status_code == 403

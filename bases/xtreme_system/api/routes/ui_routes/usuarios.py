@@ -21,6 +21,7 @@ logger = structlog.get_logger(__name__)
 _USUARIO_SORT_FIELDS: dict[str, str] = {
     "id": "id",
     "username": "username",
+    "nome": "nome",
     "papel": "papel",
     "ativo": "ativo",
 }
@@ -72,9 +73,9 @@ def ui_usuarios_exportar(session: SessionDep, _: UIAdmin) -> Response:
     usuarios = usuario.list_all(session)
     return _csv_response(
         "usuarios.csv",
-        ["ID", "Usuario", "Papel", "Ativo"],
+        ["ID", "Usuario", "Nome", "Papel", "Ativo"],
         [
-            [u.id, u.username, u.papel.value, "sim" if u.ativo else "nao"]
+            [u.id, u.username, u.nome or "", u.papel.value, "sim" if u.ativo else "nao"]
             for u in usuarios
         ],
     )
@@ -94,6 +95,7 @@ def ui_usuario_criar(
     user: UIAdmin,
     username: Annotated[str, Form()],
     senha: Annotated[str, Form()],
+    nome: Annotated[str | None, Form()] = None,
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
@@ -108,7 +110,7 @@ def ui_usuario_criar(
     usuario.create(
         session,
         usuario.UsuarioCreate(
-            username=username, senha=senha, papel=papel, perfil_id=perfil_id
+            username=username, nome=nome, senha=senha, papel=papel, perfil_id=perfil_id
         ),
         user.id,
     )
@@ -208,6 +210,7 @@ def ui_usuario_editar(
     user: UIAdmin,
     username: Annotated[str, Form()],
     senha: Annotated[str | None, Form()] = None,
+    nome: Annotated[str | None, Form()] = None,
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     ativo: Annotated[bool, Form()] = True,
     perfil_id: Annotated[int | None, Form()] = None,
@@ -232,7 +235,7 @@ def ui_usuario_editar(
         session,
         obj,
         usuario.UsuarioUpdate(
-            username=username, papel=papel, ativo=ativo, perfil_id=perfil_id
+            username=username, nome=nome, papel=papel, ativo=ativo, perfil_id=perfil_id
         ),
         user.id,
     )

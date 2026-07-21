@@ -61,7 +61,6 @@ _EnviarComprovanteDep = Annotated[
 def _ctx_form_compra(session: Session) -> dict[str, Any]:
     return {
         "clientes": cliente.list_all(session),
-        "veiculos": veiculo.list_all(session),
         "data_atual": datetime.now(UTC).date().isoformat(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos": list(veiculo.TipoVeiculo),
@@ -117,6 +116,15 @@ def _remover_arquivos_comprovantes(
         path = _uploaded_file_path(comprovante.url or "")
         if path is not None:
             _remover_upload(path)
+
+
+def _deletar_compra_e_veiculo(
+    session: Session, obj: compra.Compra, actor_id: int | None = None
+) -> None:
+    _remover_arquivos_comprovantes(session, obj, actor_id)
+    veiculo_obj = veiculo.get(session, obj.veiculo_id)
+    if veiculo_obj:
+        veiculo.delete(session, veiculo_obj, actor_id)
 
 
 def _comprovantes_modal(
@@ -237,7 +245,7 @@ def _resolver_veiculo(
                 "km": str(form.get("vei_km") or "").strip() or None,
                 "chassi": str(form.get("vei_chassi") or "").strip() or None,
                 "renavam": str(form.get("vei_renavam") or "").strip() or None,
-                "preco": str(form.get("vei_preco") or "").strip(),
+                "preco": str(form.get("valor_compra") or "").strip(),
                 "proprietario_registrado": str(
                     form.get("vei_proprietario_registrado") or ""
                 ).strip()
@@ -374,7 +382,7 @@ register_crud_ui_routes(
     parse_form=_parse_compra_form,
     before_create=validate_cliente_veiculo_fks,
     before_update=validate_cliente_veiculo_fks,
-    before_delete=_remover_arquivos_comprovantes,
+    before_delete=_deletar_compra_e_veiculo,
     register_create=False,
     cadastrar_dep=require_operacao("compras", "cadastrar"),
     sort_fields={

@@ -12,9 +12,17 @@
   {% if pode_ver_campo(user, 'vendas', 'status') %}
   <td data-col="status">
     {% if fechamento and pode_operacao(user, 'vendas', 'ver_fechamento') %}
-      <button class="badge badge--success" hx-get="/ui/fechamentos-vendas/{{ fechamento.id }}" hx-target="#modal" hx-swap="innerHTML">Fechada</button>
+      <button class="badge badge--success badge--plain" hx-get="/ui/fechamentos-vendas/{{ fechamento.id }}" hx-target="#modal" hx-swap="innerHTML">Fechada</button>
     {% elif fechamento %}
-      <span class="badge badge--success">Fechada</span>
+      <span class="badge badge--success badge--plain">Fechada</span>
+    {% elif v.status.value == 'pendente' %}
+      <span class="badge badge--warning badge--plain">Pendente</span>
+    {% elif v.status.value == 'aprovado' %}
+      <span class="badge badge--info badge--plain">Aprovado</span>
+    {% elif v.status.value == 'cancelado' %}
+      <span class="badge badge--danger badge--plain">Cancelado</span>
+    {% elif v.status.value == 'concluido' %}
+      <span class="badge badge--success badge--plain">Concluído</span>
     {% else %}
       <span class="badge badge--plain">{{ v.status.value | replace("_", " ") | title }}</span>
     {% endif %}

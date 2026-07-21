@@ -9,11 +9,12 @@
       {{ u.username }}
     </span>
   </td>
+  <td data-col="nome">{{ u.nome or '-' }}</td>
   <td data-col="papel">{{ ui.papel_badge(u.papel) }}</td>
   <td data-col="perfil">{{ u.perfil.nome if u.perfil else '-' }}</td>
   <td data-col="ativo">
-    {% if u.ativo %}<span class="badge badge--success">Ativo</span>
-    {% else %}<span class="badge badge--neutral">Inativo</span>{% endif %}
+    {% if u.ativo %}<span class="badge badge--success badge--plain">Ativo</span>
+    {% else %}<span class="badge badge--neutral badge--plain">Inativo</span>{% endif %}
   </td>
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
@@ -36,7 +37,7 @@
   </td>
 </tr>
 {% else %}
-<tr class="empty-row"><td colspan="6">
+<tr class="empty-row"><td colspan="7">
   {% call ui.empty("users", "Nenhum usuário encontrado", "Cadastre um novo usuário para começar.") %}{% endcall %}
 </td></tr>
 {% endfor %}

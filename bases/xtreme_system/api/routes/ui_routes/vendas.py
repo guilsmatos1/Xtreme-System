@@ -80,6 +80,8 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
         data["debitos"] = None
     if data.get("km") == "":
         data["km"] = None
+    if data.get("parcelas") == "":
+        data["parcelas"] = None
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if data.get("veiculo_troca_id") == "":
