@@ -1,6 +1,8 @@
-.PHONY: help hooks format lint test test-postgres test-e2e watch coverage ci pre-commit migrate revision run db-up db-down
+.PHONY: help hooks format lint test test-postgres test-e2e watch coverage ci pre-commit migrate revision run db-up db-test db-down
 
 PYTHON := uv run python
+COMPOSE := $(shell docker compose version >/dev/null 2>&1 && printf 'docker compose' || printf 'docker-compose')
+PYTEST_ARGS ?= tests/ -q -n auto
 
 help:
 	@printf '%s\n' \
@@ -8,7 +10,7 @@ help:
 		'  make hooks       Install pre-commit hooks' \
 		'  make format      Format Python files with ruff' \
 		'  make lint        Run ruff, pylint, xenon, vulture, and mypy' \
-		'  make test        Run pytest' \
+		'  make test        Run pytest against migrated Postgres' \
 		'  make test-postgres  Run pytest against migrated Postgres' \
 		'  make test-e2e    Run Playwright browser tests (headed)' \
 		'  make watch       Rerun pytest when Python files change' \
@@ -36,11 +38,10 @@ lint:
 	uv run mypy
 	uv run lint-imports
 
-test:
-	$(PYTHON) -m pytest tests/ -q -n auto
+test: test-postgres
 
-test-postgres:
-	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/ -q -n auto
+test-postgres: db-test
+	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest $(PYTEST_ARGS)
 
 test-e2e:
 	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium --headed -p pytest_playwright
@@ -52,7 +53,7 @@ watch:
 	uv run ptw --runner "python -m pytest tests/ -q"
 
 coverage:
-	$(PYTHON) -m pytest tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing --cov-fail-under=75
+	$(MAKE) test-postgres PYTHON="$(PYTHON)" PYTEST_ARGS="tests/ -q -n auto --cov=xtreme_system --cov-report=term-missing --cov-fail-under=75"
 
 ci: lint coverage
 
@@ -69,7 +70,11 @@ run:
 	uv run uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000 --proxy-headers
 
 db-up:
-	docker compose up -d
+	$(COMPOSE) up -d
+
+db-test:
+	$(COMPOSE) up -d db
+	$(COMPOSE) exec -T db sh -c 'createdb -U postgres xtreme_test 2>/dev/null || true'
 
 db-down:
-	docker compose down
+	$(COMPOSE) down
