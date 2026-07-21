@@ -144,12 +144,6 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Venda]:
     return list(session.query(Venda).filter_by(cliente_id=cliente_id).all())
 
 
-def _status_veiculo_para_venda(status: StatusVenda) -> StatusVeiculo:
-    if status == StatusVenda.concluido:
-        return StatusVeiculo.vendido
-    return StatusVeiculo.disponivel
-
-
 def veiculo_tem_outra_venda_concluida(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> bool:
@@ -169,7 +163,6 @@ def _sincronizar_status_veiculo(
     veiculo_anterior_id: int | None = None,
     status_anterior: StatusVenda | None = None,
 ) -> Venda:
-    status_veiculo = _status_veiculo_para_venda(obj.status)
     if (
         veiculo_anterior_id is not None
         and veiculo_anterior_id != obj.veiculo_id
@@ -183,12 +176,15 @@ def _sincronizar_status_veiculo(
                 veiculo_anterior.status = StatusVeiculo.vendido
             else:
                 veiculo_anterior.status = StatusVeiculo.disponivel
-    if status_veiculo == StatusVeiculo.disponivel and veiculo_tem_outra_venda_concluida(
-        session, obj.veiculo_id, excluir_venda_id=obj.id
-    ):
+    if obj.status == StatusVenda.concluido:
         obj.veiculo.status = StatusVeiculo.vendido
-    else:
-        obj.veiculo.status = status_veiculo
+    elif status_anterior == StatusVenda.concluido:
+        if veiculo_tem_outra_venda_concluida(
+            session, obj.veiculo_id, excluir_venda_id=obj.id
+        ):
+            obj.veiculo.status = StatusVeiculo.vendido
+        else:
+            obj.veiculo.status = StatusVeiculo.disponivel
     crud.flush(session)
     session.refresh(obj)
     return obj
