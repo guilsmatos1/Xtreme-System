@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.api.deps import (
     SessionDep,
     _found,
@@ -336,8 +337,10 @@ async def _criar_venda(
         try:
             cliente_obj = cliente.create(session, novo_cliente_data, user.id)
         except IntegrityError:
-            session.rollback()
-            return _erro_venda(request, session, user, "Cliente já existe")
+            return rollback_integrity_error_response(
+                session,
+                lambda: _erro_venda(request, session, user, "Cliente já existe"),
+            )
     assert cliente_obj is not None  # noqa: S101 -- invariante interna: erro is None garante cliente_obj definido
 
     try:
@@ -359,8 +362,9 @@ async def _criar_venda(
         _persistir_contrato_venda(session, obj, user.id)
         whatsapp.notificar_venda(session, obj)
     except IntegrityError:
-        session.rollback()
-        return _erro_venda(request, session, user, "Venda já existe")
+        return rollback_integrity_error_response(
+            session, lambda: _erro_venda(request, session, user, "Venda já existe")
+        )
     return _ok_venda(request, session, user)
 
 
@@ -384,8 +388,12 @@ async def _atualizar_venda(
     try:
         venda.update(session, obj, data)
     except IntegrityError:
-        session.rollback()
-        return _erro_venda(request, session, user, "Venda já existe", venda_obj=obj)
+        return rollback_integrity_error_response(
+            session,
+            lambda: _erro_venda(
+                request, session, user, "Venda já existe", venda_obj=obj
+            ),
+        )
     return _ok_venda(request, session, user)
 
 

@@ -10,7 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import query_list
-from xtreme_system.api.crud_ui.responses import delete_conflict_detail, list_response
+from xtreme_system.api.crud_ui.responses import (
+    delete_conflict_detail,
+    list_response,
+    rollback_integrity_error_response,
+)
 from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.route_factories import register_crud_ui_routes
@@ -177,8 +181,6 @@ def _excluir_veiculo(
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(veiculo.get(session, item_id), "Veículo")
-    erro = None
-    status_code = 200
     try:
         delete_with_hook(
             veiculo,
@@ -188,9 +190,29 @@ def _excluir_veiculo(
             user.id,
         )
     except IntegrityError:
-        session.rollback()
-        erro = delete_conflict_detail("Veículo")
-        status_code = 409
+
+        def build_conflict_response() -> HTMLResponse:
+            lista = query_list(
+                session,
+                veiculo,
+                q="",
+                searchable=True,
+                list_func=None,
+                search_func=None,
+            )
+            return list_response(
+                templates,
+                request,
+                "_linhas_veiculos.html",
+                user=user,
+                list_key="veiculos",
+                lista=lista,
+                ctx_list=_ctx_lista_veiculos(session, lista),
+                erro=delete_conflict_detail("Veículo"),
+                status_code=409,
+            )
+
+        return rollback_integrity_error_response(session, build_conflict_response)
     lista = query_list(
         session, veiculo, q="", searchable=True, list_func=None, search_func=None
     )
@@ -202,8 +224,6 @@ def _excluir_veiculo(
         list_key="veiculos",
         lista=lista,
         ctx_list=_ctx_lista_veiculos(session, lista),
-        erro=erro,
-        status_code=status_code,
     )
 
 
@@ -276,6 +296,7 @@ async def _atualizar_veiculo(
             )
         caixa.sincronizar_lancamento_veiculo(session, atualizado)
     except IntegrityError:
-        session.rollback()
-        return _erro_veiculo(request, session, user, "Veículo já existe")
+        return rollback_integrity_error_response(
+            session, lambda: _erro_veiculo(request, session, user, "Veículo já existe")
+        )
     return _ok_veiculo(request, session, user)

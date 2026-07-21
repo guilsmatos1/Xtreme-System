@@ -33,6 +33,7 @@ from xtreme_system.api.crud_ui.responses import (
     form_response,
     list_response,
     ok_response,
+    rollback_integrity_error_response,
     write_conflict_detail,
 )
 from xtreme_system.api.crud_writes import (
@@ -423,29 +424,33 @@ def register_create_route(
                 status_code=400,
             )
         except IntegrityError:
-            session.rollback()
-            return conflict_form_response(
-                templates,
-                request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
-                item=None,
-                erro=write_conflict_detail(label),
+            return rollback_integrity_error_response(
+                session,
+                lambda: conflict_form_response(
+                    templates,
+                    request,
+                    form_template,
+                    ctx_form=ctx_form(session),
+                    item_key=item_key,
+                    item=None,
+                    erro=write_conflict_detail(label),
+                ),
             )
         try:
             create_with_hook(module, session, data, after_create, user.id)
         except IntegrityError:
-            session.rollback()
-            return conflict_form_response(
-                templates,
-                request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
-                item=None,
-                user=user,
-                erro=write_conflict_detail(label),
+            return rollback_integrity_error_response(
+                session,
+                lambda: conflict_form_response(
+                    templates,
+                    request,
+                    form_template,
+                    ctx_form=ctx_form(session),
+                    item_key=item_key,
+                    item=None,
+                    user=user,
+                    erro=write_conflict_detail(label),
+                ),
             )
         lista = query_list(
             session,
@@ -536,16 +541,18 @@ def register_update_route(
         try:
             update_with_hook(module, session, obj, data, after_update, user.id)
         except IntegrityError:
-            session.rollback()
-            return conflict_form_response(
-                templates,
-                request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
-                item=obj,
-                user=user,
-                erro=write_conflict_detail(label),
+            return rollback_integrity_error_response(
+                session,
+                lambda: conflict_form_response(
+                    templates,
+                    request,
+                    form_template,
+                    ctx_form=ctx_form(session),
+                    item_key=item_key,
+                    item=obj,
+                    user=user,
+                    erro=write_conflict_detail(label),
+                ),
             )
         lista = query_list(
             session,
@@ -593,14 +600,35 @@ def register_delete_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         obj = _found(module.get(session, item_id), label)
-        erro = None
-        status_code = 200
         try:
             delete_with_hook(module, session, obj, before_delete, user.id)
         except IntegrityError:
-            session.rollback()
-            erro = delete_conflict_detail(label)
-            status_code = 409
+
+            def build_conflict_response() -> HTMLResponse:
+                lista = query_list(
+                    session,
+                    module,
+                    q="",
+                    searchable=searchable,
+                    list_func=list_func,
+                    search_func=search_func,
+                )
+                return list_response(
+                    templates,
+                    request,
+                    list_partial_template,
+                    user=user,
+                    list_key=list_key,
+                    lista=lista,
+                    ctx_list=ctx_list(session, lista),
+                    erro=delete_conflict_detail(label),
+                    status_code=409,
+                )
+
+            return rollback_integrity_error_response(
+                session,
+                build_conflict_response,
+            )
         lista = query_list(
             session,
             module,
@@ -617,6 +645,4 @@ def register_delete_route(
             list_key=list_key,
             lista=lista,
             ctx_list=ctx_list(session, lista),
-            erro=erro,
-            status_code=status_code,
         )

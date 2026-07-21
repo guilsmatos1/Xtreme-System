@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.route_factories import _sort_key
 from xtreme_system.api.setup import app
@@ -115,16 +116,18 @@ async def ui_perfil_criar(
     try:
         perfil.create(session, data, user.id)
     except IntegrityError:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "_form_perfil.html",
-            {
-                "perfil": None,
-                "paginas_disponiveis": perfil.PAGINAS,
-                "erro": "Perfil já existe",
-            },
-            status_code=409,
+        return rollback_integrity_error_response(
+            session,
+            lambda: templates.TemplateResponse(
+                request,
+                "_form_perfil.html",
+                {
+                    "perfil": None,
+                    "paginas_disponiveis": perfil.PAGINAS,
+                    "erro": "Perfil já existe",
+                },
+                status_code=409,
+            ),
         )
     return templates.TemplateResponse(
         request, "_perfis_ok.html", _perfis_ctx(session, user)
@@ -146,16 +149,18 @@ async def ui_perfil_atualizar(
     try:
         perfil.update(session, obj, data, user.id)
     except IntegrityError:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "_form_perfil.html",
-            {
-                "perfil": obj,
-                "paginas_disponiveis": perfil.PAGINAS,
-                "erro": "Perfil já existe",
-            },
-            status_code=409,
+        return rollback_integrity_error_response(
+            session,
+            lambda: templates.TemplateResponse(
+                request,
+                "_form_perfil.html",
+                {
+                    "perfil": obj,
+                    "paginas_disponiveis": perfil.PAGINAS,
+                    "erro": "Perfil já existe",
+                },
+                status_code=409,
+            ),
         )
     return templates.TemplateResponse(
         request, "_perfis_ok.html", _perfis_ctx(session, user)
@@ -171,12 +176,17 @@ def ui_perfil_excluir(
     try:
         perfil.delete(session, obj, user.id)
     except IntegrityError:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "_linhas_perfis.html",
-            {**_perfis_ctx(session, user), "msg": "Perfil possui usuários vinculados"},
-            status_code=409,
+        return rollback_integrity_error_response(
+            session,
+            lambda: templates.TemplateResponse(
+                request,
+                "_linhas_perfis.html",
+                {
+                    **_perfis_ctx(session, user),
+                    "msg": "Perfil possui usuários vinculados",
+                },
+                status_code=409,
+            ),
         )
     return templates.TemplateResponse(
         request, "_linhas_perfis.html", _perfis_ctx(session, user)
