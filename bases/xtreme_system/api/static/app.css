@@ -313,6 +313,19 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .card--pad { padding: var(--s-4); }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); flex-wrap: wrap; }
 
+/* ---- Abas ---------------------------------------------------------------- */
+.tabs { display: flex; gap: var(--s-1); margin-bottom: var(--s-4); border-bottom: 1px solid var(--border); }
+.tabs__btn {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-2) var(--s-3); margin-bottom: -1px;
+  border: 0; border-bottom: 2px solid transparent; background: none;
+  color: var(--text-secondary); font-size: .86rem; font-weight: 550; cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.tabs__btn:hover { color: var(--text); }
+.tabs__btn.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs__btn svg { width: 16px; height: 16px; }
+
 /* ---- 9. Stat cards ------------------------------------------------------- */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s-3); margin-bottom: var(--s-5); }
 .stat { padding: var(--s-4); }
