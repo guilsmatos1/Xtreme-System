@@ -2532,3 +2532,87 @@ def test_ui_usuario_management_atribui_admin_na_auditoria(
     assert all(r["usuario_id"] == admin_id for r in por_acao["UPDATE"])
     assert por_acao["DELETE"]
     assert all(r["usuario_id"] == admin_id for r in por_acao["DELETE"])
+
+
+def _upload_logo(client: TestClient, conteudo: bytes = b"\x89PNG\r\n\x1a\nlogo") -> str:
+    resp = client.post(
+        "/ui/configuracoes/empresa/logo",
+        files={"logo": ("logo.png", conteudo, "image/png")},
+    )
+    assert resp.status_code == 200
+    match = re.search(r'src="(/static/uploads/empresa/[^"]+)"', resp.text)
+    assert match is not None
+    return match.group(1)
+
+
+def test_empresa_logo_upload_salva_url_estatica_acessivel(client: TestClient) -> None:
+    _login_admin(client)
+
+    url = _upload_logo(client)
+
+    try:
+        arquivo = client.get(url)
+        assert arquivo.status_code == 200
+        assert arquivo.content == b"\x89PNG\r\n\x1a\nlogo"
+        assert url in client.get("/ui/configuracoes").text
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
+
+
+def test_empresa_logo_novo_upload_substitui_o_anterior(client: TestClient) -> None:
+    _login_admin(client)
+    antigo = _upload_logo(client)
+    novo = _upload_logo(client, b"\x89PNG\r\n\x1a\noutro")
+
+    try:
+        assert novo != antigo
+        assert not Path("bases/xtreme_system/api").joinpath(antigo.lstrip("/")).exists()
+        assert novo in client.get("/ui/configuracoes").text
+        assert antigo not in client.get("/ui/configuracoes").text
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            Path("bases/xtreme_system/api").joinpath(novo.lstrip("/")).unlink()
+
+
+def test_empresa_logo_excluir_remove_registro_e_arquivo(client: TestClient) -> None:
+    _login_admin(client)
+    url = _upload_logo(client)
+
+    resp = client.post("/ui/configuracoes/empresa/logo/excluir")
+
+    assert resp.status_code == 200
+    assert "Nenhum logo" in resp.text
+    assert not Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).exists()
+    assert url not in client.get("/ui/configuracoes").text
+
+
+def test_empresa_logo_rejeita_pdf(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/configuracoes/empresa/logo",
+        files={"logo": ("logo.pdf", b"%PDFconteudo", "application/pdf")},
+    )
+
+    assert resp.status_code == 400
+    assert "Tipo não permitido" in resp.text
+    assert "Nenhum logo" in resp.text
+
+
+def test_empresa_logo_exige_admin(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "logo_user", "senha": "abc", "papel": "funcionario"},
+    )
+    client.post("/ui/login", data={"username": "logo_user", "password": "abc"})
+
+    upload = client.post(
+        "/ui/configuracoes/empresa/logo",
+        files={"logo": ("logo.png", b"\x89PNG\r\n\x1a\nlogo", "image/png")},
+    )
+    excluir = client.post("/ui/configuracoes/empresa/logo/excluir")
+
+    assert upload.status_code == 403
+    assert excluir.status_code == 403

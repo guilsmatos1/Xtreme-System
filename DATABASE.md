@@ -286,6 +286,15 @@ Configuração da notificação de vendas via WhatsApp (Evolution API). Linha ú
 | `evolution_group_id` | `VARCHAR` | Não | `''` | ID do grupo do WhatsApp |
 | `mensagem_template` | `VARCHAR` | Não | template padrão | Corpo da mensagem enviada na notificação de venda, com placeholders `{cliente}`, `{veiculo}`, `{valor}`, `{forma_pagamento}`, `{parcelas}`, `{vendedor}` |
 
+### `empresa_config`
+
+Dados da empresa gerenciados na aba Empresa da tela de Configurações. Linha única (`id` fixo em `1`).
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `logo_url` | `VARCHAR` | Não | `''` | URL do logo em `/static/uploads/empresa/`; vazio quando não há logo |
+
 ---
 
 ## Relacionamentos

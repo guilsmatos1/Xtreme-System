@@ -3,6 +3,7 @@
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
 {% set configurado = config.evolution_api_url and config.evolution_instance %}
+{% set aba_whatsapp = sucesso or erro %}
 
 <div class="page-head">
   <div class="page-head__title">
@@ -11,7 +12,25 @@
   </div>
 </div>
 
-<div class="stack">
+<div class="tabs" role="tablist">
+  <button class="tabs__btn{% if not aba_whatsapp %} is-active{% endif %}" type="button" role="tab" data-aba="empresa"
+          onclick="selecionarAba('empresa')">{{ ui.icon("image") }} Empresa</button>
+  <button class="tabs__btn{% if aba_whatsapp %} is-active{% endif %}" type="button" role="tab" data-aba="whatsapp"
+          onclick="selecionarAba('whatsapp')">{{ ui.icon("megaphone") }} WhatsApp</button>
+</div>
+
+<div class="stack" data-painel="empresa" {% if aba_whatsapp %}hidden{% endif %}>
+  <section class="card">
+    <div class="toolbar" style="padding:var(--s-4);padding-bottom:0">
+      <h3 style="display:flex;align-items:center;gap:var(--s-2)">
+        {{ ui.icon("image") }} Logo da empresa
+      </h3>
+    </div>
+    {% include "_empresa_logo.html" %}
+  </section>
+</div>
+
+<div class="stack" data-painel="whatsapp" {% if not aba_whatsapp %}hidden{% endif %}>
   <section class="card card--pad">
     <div class="toolbar" style="margin-bottom:var(--s-3)">
       <h3 style="display:flex;align-items:center;gap:var(--s-2)">
@@ -75,4 +94,15 @@
     </form>
   </section>
 </div>
+
+<script>
+  function selecionarAba(aba) {
+    document.querySelectorAll('.tabs__btn').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.dataset.aba === aba);
+    });
+    document.querySelectorAll('[data-painel]').forEach(function (painel) {
+      painel.hidden = painel.dataset.painel !== aba;
+    });
+  }
+</script>
 {% endblock %}

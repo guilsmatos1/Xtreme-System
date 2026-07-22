@@ -1,0 +1,42 @@
+{% import "_macros.html" as ui %}
+<div id="empresa-logo">
+  <div style="padding:var(--s-4)">
+    {% if erro %}{{ ui.alert(erro) }}{% endif %}
+    {% if empresa.logo_url %}
+    <div class="mmgr__grid">
+      <div class="mmgr__card">
+        {% if arquivo_disponivel(empresa.logo_url, pending_upload_paths) %}
+        <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar logo">
+          <img src="{{ empresa.logo_url }}" alt="Logo da empresa" loading="lazy">
+        </button>
+        <dialog class="image-preview" onclick="if (event.target === this) this.close()">
+          <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
+          <img src="{{ empresa.logo_url }}" alt="Logo da empresa">
+        </dialog>
+        {% else %}
+        <div class="mmgr__doc mmgr__doc--missing" aria-disabled="true">
+          <span class="mmgr__doc-icon">{{ ui.icon("image") }}</span>
+          <span class="mmgr__doc-badge">Indisponível</span>
+          <span class="mmgr__doc-name">{{ empresa.logo_url.split("/") | last }}</span>
+        </div>
+        {% endif %}
+        <button class="mmgr__del" type="button" hx-post="/ui/configuracoes/empresa/logo/excluir" hx-target="#empresa-logo" hx-swap="outerHTML" hx-confirm="Excluir o logo da empresa?" aria-label="Excluir logo">{{ ui.icon("trash") }}</button>
+      </div>
+    </div>
+    {% else %}
+      {{ ui.empty("image", "Nenhum logo", "Envie o logo da empresa usando a área abaixo.") }}
+    {% endif %}
+  </div>
+  <form class="mmgr__upload" hx-post="/ui/configuracoes/empresa/logo" hx-target="#empresa-logo" hx-swap="outerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+    <label class="mmgr__drop">
+      <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp" required
+             onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste o logo aqui ou clique para selecionar'">
+      <span class="mmgr__drop-icon">{{ ui.icon("image") }}</span>
+      <span class="mmgr__drop-text">Arraste o logo aqui ou clique para selecionar</span>
+      <span class="mmgr__drop-hint">JPG, PNG ou WEBP — o envio substitui o logo atual</span>
+    </label>
+    <div class="mmgr__upload-actions">
+      <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar logo</button>
+    </div>
+  </form>
+</div>
