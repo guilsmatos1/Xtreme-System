@@ -6,6 +6,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Callable
+from ipaddress import ip_address, ip_network
 from pathlib import Path
 from typing import Any
 
@@ -148,8 +149,39 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
     return JSONResponse({"detail": mensagem}, status_code=429, headers=headers)
 
 
+def _trusted_proxy_ips() -> list[str]:
+    return [
+        ip.strip()
+        for ip in os.environ.get("TRUSTED_PROXY_IPS", "").split(",")
+        if ip.strip()
+    ]
+
+
+def _is_trusted_proxy(client_host: str) -> bool:
+    try:
+        client_ip = ip_address(client_host)
+    except ValueError:
+        return client_host in _trusted_proxy_ips()
+
+    for trusted_ip in _trusted_proxy_ips():
+        try:
+            if client_ip in ip_network(trusted_ip, strict=False):
+                return True
+        except ValueError:
+            if client_host == trusted_ip:
+                return True
+    return False
+
+
 def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "desconhecido"
+    if not request.client:
+        return "desconhecido"
+
+    client_host = request.client.host
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for and _is_trusted_proxy(client_host):
+        return forwarded_for.split(",", maxsplit=1)[0].strip() or client_host
+    return client_host
 
 
 @app.middleware("http")
