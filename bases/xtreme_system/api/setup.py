@@ -196,7 +196,7 @@ app.mount("/static", StaticFiles(directory=_ui_dir / "static"), name="static")
 
 @app.get("/")
 def raiz() -> RedirectResponse:
-    return RedirectResponse("/docs")
+    return RedirectResponse("/ui/dashboard")
 
 
 @app.exception_handler(_NaoAutenticadoError)
