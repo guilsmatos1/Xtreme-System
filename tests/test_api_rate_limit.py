@@ -47,6 +47,26 @@ def test_login_rate_limit_ignora_x_forwarded_for_spoof(
     assert resp.status_code == 429
 
 
+def test_login_rate_limit_usa_x_forwarded_for_de_proxy_confiavel(
+    make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "testclient")
+    headers_a = {"X-Forwarded-For": "203.0.113.10"}
+    headers_b = {"X-Forwarded-For": "203.0.113.11"}
+
+    with make_client() as client:
+        for _ in range(_LOGIN_LIMIT):
+            resp = client.post(
+                "/login", data={"username": "x", "password": "x"}, headers=headers_a
+            )
+            assert resp.status_code == 401
+
+        resp = client.post(
+            "/login", data={"username": "x", "password": "x"}, headers=headers_b
+        )
+        assert resp.status_code == 401
+
+
 def test_login_rate_limit_nao_vaza_entre_clients(
     make_client: Callable[..., TestClient],
 ) -> None:
@@ -103,6 +123,24 @@ def test_rate_limit_ignora_x_forwarded_for_spoof(client: TestClient) -> None:
 
     resp = client.get("/investidores", headers=ip_b)
     assert resp.status_code == 429
+
+
+def test_rate_limit_usa_x_forwarded_for_de_proxy_confiavel(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "testclient")
+    ip_a = {"X-Forwarded-For": "203.0.113.10"}
+    ip_b = {"X-Forwarded-For": "203.0.113.11"}
+
+    for _ in range(_GERAL_LIMIT):
+        resp = client.get("/investidores", headers=ip_a)
+        assert resp.status_code == 401
+
+    resp = client.get("/investidores", headers=ip_a)
+    assert resp.status_code == 429
+
+    resp = client.get("/investidores", headers=ip_b)
+    assert resp.status_code == 401
 
 
 def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:
