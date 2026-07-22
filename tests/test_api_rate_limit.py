@@ -29,7 +29,7 @@ def test_login_bloqueia_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
-def test_login_rate_limit_isolates_clients_behind_proxy(
+def test_login_rate_limit_ignora_x_forwarded_for_spoof(
     client: TestClient,
 ) -> None:
     headers_a = {"X-Forwarded-For": "203.0.113.10"}
@@ -44,7 +44,7 @@ def test_login_rate_limit_isolates_clients_behind_proxy(
     resp = client.post(
         "/login", data={"username": "x", "password": "x"}, headers=headers_b
     )
-    assert resp.status_code == 401
+    assert resp.status_code == 429
 
 
 def test_login_rate_limit_nao_vaza_entre_clients(
@@ -90,7 +90,7 @@ def test_requests_gerais_bloqueiam_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
-def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
+def test_rate_limit_ignora_x_forwarded_for_spoof(client: TestClient) -> None:
     ip_a = {"X-Forwarded-For": "203.0.113.10"}
     ip_b = {"X-Forwarded-For": "203.0.113.11"}
 
@@ -102,7 +102,7 @@ def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
     assert resp.status_code == 429
 
     resp = client.get("/investidores", headers=ip_b)
-    assert resp.status_code == 401
+    assert resp.status_code == 429
 
 
 def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:
