@@ -3,12 +3,15 @@
 import os
 import subprocess
 import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy.engine import make_url
 
 from xtreme_system.database.core import get_settings
 
 _POSTGRES_REQUIRED = "Exportação/importação exige DATABASE_URL PostgreSQL"
+_TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "compra"})
 
 
 class ExportacaoError(Exception):
@@ -48,11 +51,47 @@ def dump_database() -> bytes:
     return result.stdout
 
 
+def _listar_tabelas_do_dump(tmp_path: str) -> set[str]:
+    cmd = ["pg_restore", "--list", tmp_path]
+    result = subprocess.run(cmd, capture_output=True, check=False)  # noqa: S603
+    if result.returncode != 0:
+        stderr = result.stderr.decode() if result.stderr else "pg_restore --list falhou"
+        raise ExportacaoError(f"Arquivo de backup inválido: {stderr}")  # noqa: TRY003
+    tabelas = set()
+    for linha in result.stdout.decode(errors="replace").splitlines():
+        partes = linha.split()
+        if "TABLE" in partes and "public" in partes:
+            idx = partes.index("public")
+            if idx + 1 < len(partes):
+                tabelas.add(partes[idx + 1])
+    return tabelas
+
+
+def _validar_dump(tmp_path: str) -> None:
+    tabelas = _listar_tabelas_do_dump(tmp_path)
+    faltando = sorted(_TABELAS_ESSENCIAIS - tabelas)
+    if faltando:
+        raise ExportacaoError(  # noqa: TRY003
+            "Arquivo não parece ser um backup válido do xtreme-system "
+            f"(tabelas ausentes: {', '.join(faltando)})."
+        )
+
+
+def _salvar_backup_pre_restore() -> None:
+    dump = dump_database()
+    backup_dir = Path(get_settings().backup_dir)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    (backup_dir / f"pre_restore_{ts}.dump").write_bytes(dump)
+
+
 def restore_database(dump: bytes) -> None:
     with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
         f.write(dump)
         tmp_path = f.name
     try:
+        _validar_dump(tmp_path)
+        _salvar_backup_pre_restore()
         cmd = [
             "pg_restore",
             *_pg_args(),

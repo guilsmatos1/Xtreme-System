@@ -3,6 +3,7 @@
 import subprocess
 from collections.abc import Callable
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -65,36 +66,54 @@ def test_dump_database_usa_pg_dump_custom_format(
     assert chamadas[0][1]["PGPASSWORD"] == "secret"
 
 
+_TOC_TABELAS_ESSENCIAIS = "\n".join(
+    f"{i}; 1259 0 TABLE public {tabela} postgres"
+    for i, tabela in enumerate(("usuario", "veiculo", "cliente", "venda", "compra"))
+).encode()
+
+
 def test_restore_database_usa_pg_restore_com_replace(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
 ) -> None:
     chamadas: list[list[str]] = []
 
     def fake_run(
         cmd: list[str],
         *,
-        env: dict[str, str],
+        env: dict[str, str] | None = None,
         capture_output: bool,
         check: bool,
     ) -> subprocess.CompletedProcess[bytes]:
         assert capture_output is True
         assert check is False
         chamadas.append(cmd)
+        if cmd[0] == "pg_restore" and "--list" in cmd:
+            return subprocess.CompletedProcess(
+                cmd, 0, stdout=_TOC_TABELAS_ESSENCIAIS, stderr=b""
+            )
+        assert env is not None
         assert env["PGPASSWORD"] == "secret"
+        if cmd[0] == "pg_dump":
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"backup", stderr=b"")
         return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
 
     monkeypatch.setattr(
         exportacao,
         "get_settings",
         lambda: SimpleNamespace(
-            database_url="postgresql+psycopg://user:secret@db:5433/appdb"
+            database_url="postgresql+psycopg://user:secret@db:5433/appdb",
+            backup_dir=str(tmp_path),
         ),
     )
     monkeypatch.setattr("xtreme_system.exportacao.core.subprocess.run", fake_run)
 
     exportacao.restore_database(b"dump")
 
-    assert chamadas[0][:-1] == [
+    chamadas_restore = [
+        c for c in chamadas if c[0] == "pg_restore" and "--list" not in c
+    ]
+    assert chamadas_restore[0][:-1] == [
         "pg_restore",
         "-h",
         "db",
@@ -110,6 +129,43 @@ def test_restore_database_usa_pg_restore_com_replace(
         "--no-acl",
         "--single-transaction",
     ]
+    backups = list(tmp_path.glob("pre_restore_*.dump"))
+    assert len(backups) == 1
+    assert backups[0].read_bytes() == b"backup"
+
+
+def test_restore_database_rejeita_dump_sem_tabelas_essenciais(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+) -> None:
+    def fake_run(
+        cmd: list[str],
+        *,
+        env: dict[str, str] | None = None,
+        capture_output: bool,
+        check: bool,
+    ) -> subprocess.CompletedProcess[bytes]:
+        assert env is None
+        assert capture_output is True
+        assert check is False
+        assert cmd[0] == "pg_restore"
+        assert "--list" in cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(
+        exportacao,
+        "get_settings",
+        lambda: SimpleNamespace(
+            database_url="postgresql+psycopg://user:secret@db:5433/appdb",
+            backup_dir=str(tmp_path),
+        ),
+    )
+    monkeypatch.setattr("xtreme_system.exportacao.core.subprocess.run", fake_run)
+
+    with pytest.raises(exportacao.ExportacaoError, match="tabelas ausentes"):
+        exportacao.restore_database(b"dump")
+
+    assert list(tmp_path.glob("pre_restore_*.dump")) == []
 
 
 def test_dump_database_rejeita_database_url_nao_postgres(
