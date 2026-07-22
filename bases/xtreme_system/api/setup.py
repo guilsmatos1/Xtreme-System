@@ -149,11 +149,6 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
 
 
 def _client_ip(request: Request) -> str:
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",", 1)[0].strip()
-        if client_ip:
-            return client_ip
     return request.client.host if request.client else "desconhecido"
 
 
