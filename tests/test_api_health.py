@@ -24,6 +24,12 @@ def test_health_retorna_ok_sem_auth(client: TestClient) -> None:
     assert resp.json() == {"status": "ok", "database": "ok"}
 
 
+def test_raiz_redireciona_para_dashboard_ui(client: TestClient) -> None:
+    resp = client.get("/", follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"] == "/ui/dashboard"
+
+
 def test_health_degradado_quando_banco_indisponivel(client: TestClient) -> None:
     mock: Session = MagicMock(spec=Session)
     cast(Any, mock.execute).side_effect = SQLAlchemyError("indisponivel")
