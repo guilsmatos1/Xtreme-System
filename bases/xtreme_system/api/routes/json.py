@@ -278,6 +278,7 @@ register_crud_routes(
     before_delete=recompute_vehicle_status_on_delete,
     after_create=whatsapp.notificar_venda,
     pagina="vendas",
+    actor_field="vendedor_id",
     campos_protegidos=(
         "cliente",
         "veiculo",
@@ -333,6 +334,7 @@ def criar_compra(
 ) -> dict[str, Any]:
     _require_compra_operacao(user, "cadastrar")
     session.info["usuario_id"] = user.id
+    data.usuario_id = user.id
     validate_cliente_veiculo_fks(session, data)
     obj = _safe_write(
         lambda: compra.create(session, data, user.id), conflict_msg="Compra já existe"

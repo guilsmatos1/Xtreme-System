@@ -87,8 +87,8 @@
   <table class="table--wide" data-table="veiculos">
     {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead><tr>
-      {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'placa') %}<th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<th data-col="modelo" data-col-label="Modelo">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'ano') %}<th data-col="ano" data-col-label="Ano">{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'km') %}<th data-col="km" data-col-label="KM">{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}

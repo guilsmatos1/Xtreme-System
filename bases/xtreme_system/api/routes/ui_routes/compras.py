@@ -342,6 +342,7 @@ async def _criar_compra(  # noqa: PLR0911
                     **_parse_compra_form(form),
                     "cliente_id": cliente_obj.id,
                     "veiculo_id": veiculo_obj.id,
+                    "usuario_id": user.id,
                 },
             )
         )
@@ -405,6 +406,9 @@ register_crud_ui_routes(
         "valor": "valor_compra",
         "status": "status",
         "observacoes": lambda c: _sort_key(c.observacoes or ""),
+        "usuario": lambda c: _sort_key(
+            (c.usuario.nome or c.usuario.username) if c.usuario else ""
+        ),
     },
     csv_filename="compras.csv",
     csv_headers=[
@@ -417,6 +421,7 @@ register_crud_ui_routes(
         "Veiculo",
         "Valor Compra",
         "Observacoes",
+        "Usuario",
     ],
     csv_fields=[
         None,
@@ -428,6 +433,7 @@ register_crud_ui_routes(
         "veiculo",
         "valor_compra",
         "observacoes",
+        "usuario",
     ],
     csv_row=lambda c: [
         c.id,
@@ -439,6 +445,7 @@ register_crud_ui_routes(
         c.veiculo.modelo,
         f"{c.valor_compra:.2f}",
         c.observacoes or "",
+        (c.usuario.nome or c.usuario.username) if c.usuario else "",
     ],
     editar_dep=require_operacao("compras", "editar"),
     excluir_dep=require_operacao("compras", "excluir"),

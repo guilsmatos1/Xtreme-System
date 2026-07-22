@@ -30,6 +30,10 @@ def _uploads_compra_dir(compra_id: int) -> Path:
     return _ui_dir / "static" / "uploads" / "compras" / str(compra_id) / "comprovantes"
 
 
+def _uploads_empresa_dir() -> Path:
+    return _ui_dir / "static" / "uploads" / "empresa"
+
+
 def _uploads_contrato_venda_dir(venda_id: int) -> Path:
     return _ui_dir / "static" / "uploads" / "vendas" / str(venda_id) / "contrato"
 

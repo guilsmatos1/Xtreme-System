@@ -9,7 +9,7 @@ from xtreme_system.database.core import Base
 _CONFIG_ID = 1
 
 
-class EmpresaConfig(Base):
+class EmpresaConfig(Base):  # pylint: disable=too-many-instance-attributes
     __tablename__ = "empresa_config"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -18,8 +18,12 @@ class EmpresaConfig(Base):
     bairro: Mapped[str] = mapped_column(default="")
     cidade: Mapped[str] = mapped_column(default="")
     uf: Mapped[str] = mapped_column(default="")
+    cep: Mapped[str] = mapped_column(default="", server_default="")
+    telefone: Mapped[str] = mapped_column(default="", server_default="")
     cnpj: Mapped[str] = mapped_column(default="")
     signatario: Mapped[str] = mapped_column(default="")
+    # Fora de EmpresaConfigUpdate: o form de texto não envia o logo e apagaria a URL.
+    logo_url: Mapped[str] = mapped_column(default="", server_default="")
 
 
 class EmpresaConfigUpdate(BaseModel):
@@ -28,6 +32,8 @@ class EmpresaConfigUpdate(BaseModel):
     bairro: str = ""
     cidade: str = ""
     uf: str = ""
+    cep: str = ""
+    telefone: str = ""
     cnpj: str = ""
     signatario: str = ""
 
@@ -49,8 +55,22 @@ def atualizar_config(session: Session, data: EmpresaConfigUpdate) -> EmpresaConf
     config.bairro = data.bairro
     config.cidade = data.cidade
     config.uf = data.uf
+    config.cep = data.cep
+    config.telefone = data.telefone
     config.cnpj = data.cnpj
     config.signatario = data.signatario
     crud.flush(session)
     session.refresh(config)
     return config
+
+
+def definir_logo(session: Session, url: str) -> EmpresaConfig:
+    config = get_config(session)
+    config.logo_url = url
+    crud.flush(session)
+    session.refresh(config)
+    return config
+
+
+def remover_logo(session: Session) -> EmpresaConfig:
+    return definir_logo(session, "")

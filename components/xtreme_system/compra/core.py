@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.usuario.core import Usuario, UsuarioRead
 from xtreme_system.veiculo.core import Veiculo, VeiculoRead
 
 
@@ -30,6 +31,9 @@ class Compra(Base):
     veiculo_id: Mapped[int] = mapped_column(
         ForeignKey("veiculo.id", ondelete="CASCADE"), index=True
     )
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuario.id", ondelete="SET NULL"), index=True
+    )
     data_compra: Mapped[date] = mapped_column(Date)
     valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
@@ -38,11 +42,13 @@ class Compra(Base):
 
     cliente: Mapped[Cliente] = relationship(lazy="selectin")
     veiculo: Mapped[Veiculo] = relationship(lazy="selectin")
+    usuario: Mapped[Usuario | None] = relationship(lazy="selectin")
 
 
 class CompraCreate(BaseModel):
     cliente_id: int
     veiculo_id: int
+    usuario_id: int | None = None
     data_compra: date | None = None
     valor_compra: Decimal
     debitos: Decimal | None = None
@@ -66,6 +72,7 @@ class CompraRead(BaseModel):
     id: int
     cliente: ClienteRead
     veiculo: VeiculoRead
+    usuario: UsuarioRead | None
     data_compra: date
     valor_compra: Decimal
     debitos: Decimal | None

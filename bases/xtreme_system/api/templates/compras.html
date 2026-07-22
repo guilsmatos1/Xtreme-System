@@ -69,6 +69,7 @@
         {% if pode_ver_campo(user, 'compras', 'placa') %}<th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'veiculo') %}<th data-col="modelo" data-col-label="Veículo">{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<th data-col="valor" data-col-label="Valor">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'usuario') %}<th data-col="usuario" data-col-label="Usuário">{{ ui.sortable("usuario", "Usuário", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'observacoes') %}<th data-col="observacoes" data-col-label="Observações">{{ ui.sortable("observacoes", "Observações", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_operacao(user, 'compras', 'abrir_comprovante') or pode_operacao(user, 'compras', 'editar') or pode_operacao(user, 'compras', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>

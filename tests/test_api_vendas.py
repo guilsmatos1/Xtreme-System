@@ -92,6 +92,7 @@ def test_admin_cria_venda(client: TestClient) -> None:
     assert data["status"] == "pendente"
     assert data["cliente"]["nome"] == "João Silva"
     assert data["veiculo"]["modelo"] == "Gol"
+    assert data["vendedor"]["username"] == "admin"
 
 
 def test_api_json_respeita_perfil_em_veiculos_e_vendas(

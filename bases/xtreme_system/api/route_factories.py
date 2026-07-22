@@ -94,6 +94,7 @@ def register_crud_routes(
     handle_delete_error: bool = True,
     pagina: str | None = None,
     campos_protegidos: tuple[str, ...] = (),
+    actor_field: str | None = None,
 ) -> None:
     response_model = None if pagina else list[read_schema]  # type: ignore[valid-type]
 
@@ -123,6 +124,8 @@ def register_crud_routes(
     ) -> EntityT | Any:
         if pagina is not None:
             _require_json_operacao(user, pagina, "cadastrar")
+        if actor_field:
+            setattr(data, actor_field, user.id)
         obj = _create_atomic(data, session, user.id)
         return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 

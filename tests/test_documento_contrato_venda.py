@@ -4,9 +4,13 @@ import re
 import zlib
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
+
+from PIL import Image
 
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
+from xtreme_system.empresa import core as empresa
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
@@ -20,6 +24,21 @@ def _extract_pdf_text(data: bytes) -> str:
         except zlib.error:
             continue
     return "\n".join(parts)
+
+
+def _build_empresa() -> empresa.EmpresaConfig:
+    obj = empresa.EmpresaConfig()
+    obj.id = 1
+    obj.nome = "XTREME MOTORS"
+    obj.endereco = "Avenida do Cursino, 3247"
+    obj.bairro = "Vila da Saude"
+    obj.cidade = "Sao Paulo"
+    obj.uf = "SP"
+    obj.cep = "04133-300"
+    obj.telefone = "(11)99135-2467"
+    obj.cnpj = "44.237.309.0001-75"
+    obj.signatario = "XTREME MOTORS"
+    return obj
 
 
 def _build_cliente() -> cliente.Cliente:
@@ -38,6 +57,7 @@ def _build_veiculo(modelo: str = "Gol", placa: str = "ABC1D23") -> veiculo.Veicu
     obj.id = 1
     obj.tipo = veiculo.TipoVeiculo.carro
     obj.modelo = modelo
+    obj.marca = "Volkswagen"
     obj.cor = "Branco"
     obj.ano = 2018
     obj.placa = placa
@@ -81,7 +101,7 @@ def _build_venda(
 
 
 def test_gerar_pdf_retorna_pdf_valido() -> None:
-    pdf = documento_contrato_venda.gerar_pdf(_build_venda())
+    pdf = documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     assert pdf.startswith(b"%PDF")
 
 
@@ -96,22 +116,70 @@ def test_gerar_pdf_campos_opcionais_nulos_nao_quebram() -> None:
         observacoes=None,
         veiculo_troca=None,
     )
-    pdf = documento_contrato_venda.gerar_pdf(obj)
+    pdf = documento_contrato_venda.gerar_pdf(obj, _build_empresa())
     assert pdf.startswith(b"%PDF")
 
 
 def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
-    texto = _extract_pdf_text(documento_contrato_venda.gerar_pdf(_build_venda()))
+    texto = _extract_pdf_text(
+        documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
+    )
     assert "Silva" in texto
     assert "Gol" in texto
+    assert "Volkswagen" in texto
     assert "12345678901" in texto
     assert "ABC1D23" in texto
 
 
-def test_gerar_pdf_renderiza_veiculo_troca() -> None:
-    troca = _build_veiculo(modelo="Uno", placa="XYZ9W87")
+def test_gerar_pdf_renderiza_cabecalho_da_empresa() -> None:
     texto = _extract_pdf_text(
-        documento_contrato_venda.gerar_pdf(_build_venda(veiculo_troca=troca))
+        documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     )
-    assert "Uno" in texto
-    assert "XYZ9W87" in texto
+    assert "Contrato de Venda" in texto
+    assert "XTREME MOTORS" in texto
+    assert "Avenida do Cursino, 3247 - Vila da Saude" in texto
+    assert "04133-300" in texto
+    assert "99135-2467" in texto  # parênteses saem escapados no stream do PDF
+    assert "44.237.309.0001-75" in texto
+
+
+def test_gerar_pdf_assinaturas_na_mesma_pagina() -> None:
+    pdf = documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
+    assert pdf.count(b"/Type /Page\n") == 1
+    assert "De acordo," in _extract_pdf_text(pdf)
+
+
+def test_gerar_pdf_segue_secoes_do_modelo() -> None:
+    texto = _extract_pdf_text(
+        documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
+    )
+    for rotulo in (
+        "Recebemos de:",
+        "CNH:",
+        "Telefone 3:",
+        "No. Chassi:",
+        "Opcionais:",
+        "Forma de Pagamento",
+        "Valor do Documento:",
+        "Consultor de Vendas:",
+        "Gerais do Contrato",
+        "De acordo,",
+    ):
+        assert rotulo in texto
+
+
+def test_gerar_pdf_com_logo_mantem_cabecalho(tmp_path: Path) -> None:
+    logo = tmp_path / "logo.png"
+    Image.new("RGB", (120, 60), "black").save(logo)
+    pdf = documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa(), logo)
+    assert pdf.startswith(b"%PDF")
+    texto = _extract_pdf_text(pdf)
+    assert "XTREME MOTORS" in texto
+    assert "Recebemos de:" in texto
+
+
+def test_gerar_pdf_formata_valor_em_reais() -> None:
+    texto = _extract_pdf_text(
+        documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
+    )
+    assert "R$ 40.000,00" in texto

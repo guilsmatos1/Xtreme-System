@@ -22,6 +22,7 @@ from xtreme_system.api.deps import (
 )
 from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
+    _uploaded_file_path,
     _uploads_contrato_venda_dir,
     resolver_cliente,
 )
@@ -34,6 +35,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import register_post_rollback
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
+from xtreme_system.empresa import core as empresa
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -171,6 +173,9 @@ register_crud_ui_routes(
         "pagamento": "forma_pagamento",
         "parcelas": "parcelas",
         "status": "status",
+        "vendedor": lambda v: _sort_key(
+            (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+        ),
     },
     csv_filename="vendas.csv",
     csv_headers=[
@@ -191,6 +196,7 @@ register_crud_ui_routes(
         "Parcelas",
         "Status",
         "Observacoes",
+        "Usuario",
     ],
     csv_fields=[
         None,
@@ -210,6 +216,7 @@ register_crud_ui_routes(
         "parcelas",
         "status",
         "observacoes",
+        "vendedor",
     ],
     csv_row=lambda v: [
         v.id,
@@ -233,6 +240,7 @@ register_crud_ui_routes(
         v.parcelas,
         v.status.value,
         v.observacoes or "",
+        (v.vendedor.nome or v.vendedor.username) if v.vendedor else "",
     ],
     cadastrar_dep=require_operacao("vendas", "cadastrar"),
     editar_dep=require_operacao("vendas", "editar"),
@@ -297,7 +305,15 @@ def _persistir_contrato_venda(
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
     tmp_path = upload_dir / f".{filename}.tmp"
-    pdf = documento_contrato_venda.gerar_pdf(obj)
+    config_empresa = empresa.get_config(session)
+    logo_path = (
+        _uploaded_file_path(config_empresa.logo_url)
+        if config_empresa.logo_url
+        else None
+    )
+    if logo_path is not None and not logo_path.exists():
+        logo_path = None
+    pdf = documento_contrato_venda.gerar_pdf(obj, config_empresa, logo_path)
     upload_dir.mkdir(parents=True, exist_ok=True)
     try:
         tmp_path.write_bytes(pdf)
@@ -349,7 +365,12 @@ async def _criar_venda(
     try:
         data = venda.VendaCreate.model_validate(
             _filtrar_campos_ocultos_venda(
-                user, {**_parse_venda_form(form), "cliente_id": cliente_obj.id}
+                user,
+                {
+                    **_parse_venda_form(form),
+                    "cliente_id": cliente_obj.id,
+                    "vendedor_id": user.id,
+                },
             )
         )
         validate_cliente_veiculo_fks(session, data)
@@ -409,6 +430,22 @@ def _baixar_contrato_venda(
     if not documentos:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
     return RedirectResponse(documentos[-1].url)
+
+
+@app.post("/ui/vendas/{item_id}/contrato/regerar")
+def _regerar_contrato_venda(
+    item_id: int, session: SessionDep, user: _EditarVendaDep
+) -> RedirectResponse:
+    """Recria o PDF do contrato com o layout e os dados atuais da venda.
+
+    Necessário para vendas cujo contrato foi gerado antes de uma mudança no
+    layout ou nos dados cadastrais da empresa — o PDF salvo não é atualizado
+    sozinho quando esses dados mudam.
+    """
+    obj = _found(venda.get(session, item_id), "Venda")
+    session.info["usuario_id"] = user.id
+    _persistir_contrato_venda(session, obj, user.id)
+    return RedirectResponse(f"/ui/vendas/{item_id}/contrato", status_code=303)
 
 
 _FecharVendaDep = Annotated[

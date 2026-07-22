@@ -22,10 +22,10 @@
 {% set search_colunas = [
   {"key": "nome", "label": "Nome"},
   {"key": "documento", "label": "Documento"},
-  {"key": "telefone", "label": "Telefone"},
   {"key": "tipo", "label": "Tipo"},
+  {"key": "telefone", "label": "Telefone"},
   {"key": "cidade", "label": "Cidade"},
-  {"key": "estado", "label": "Estado"},
+  {"key": "estado", "label": "UF"},
 ] %}
 
 <div class="toolbar" id="busca-clientes">
@@ -63,10 +63,10 @@
       <tr>
         <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         <th data-col="documento" data-col-label="Documento">{{ ui.sortable("documento", "Documento", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="telefone" data-col-label="Telefone">{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="telefone" data-col-label="Telefone">{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         <th data-col="cidade" data-col-label="Cidade">{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="estado" data-col-label="Estado">{{ ui.sortable("estado", "Estado", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        <th data-col="estado" data-col-label="UF">{{ ui.sortable("estado", "UF", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         {% if pode_operacao(user, 'clientes', 'editar') or pode_operacao(user, 'clientes', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

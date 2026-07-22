@@ -124,7 +124,7 @@ Registro de vendas de veículos.
 | `id` | `INTEGER` | Não | - | PK |
 | `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (CASCADE), indexado |
 | `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
-| `vendedor_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado |
+| `vendedor_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
 | `data_venda` | `DATE` | Sim | - | |
 | `valor_venda` | `NUMERIC(12,2)` | Não | - | |
 | `valor_entrada` | `NUMERIC(12,2)` | Sim | - | |
@@ -179,6 +179,7 @@ Registro de compras de veículos.
 | `id` | `INTEGER` | Não | - | PK |
 | `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (CASCADE), indexado |
 | `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
+| `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
 | `data_compra` | `DATE` | Não | - | |
 | `valor_compra` | `NUMERIC(12,2)` | Não | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
@@ -308,7 +309,10 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 | `bairro` | `VARCHAR` | Não | `''` | Bairro |
 | `cidade` | `VARCHAR` | Não | `''` | Cidade |
 | `uf` | `VARCHAR` | Não | `''` | UF |
+| `cep` | `VARCHAR` | Não | `''` | CEP (cabeçalho do contrato de venda) |
+| `telefone` | `VARCHAR` | Não | `''` | Telefone (cabeçalho do contrato de venda) |
 | `cnpj` | `VARCHAR` | Não | `''` | CNPJ |
+| `logo_url` | `VARCHAR` | Não | `''` | URL do logo (`/static/uploads/empresa/...`), usado no cabeçalho do contrato de venda. Fora de `EmpresaConfigUpdate`: gravado só por `definir_logo`/`remover_logo` |
 | `signatario` | `VARCHAR` | Não | `''` | Nome do signatário |
 
 ---
@@ -328,6 +332,7 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 - Um **veículo** pode estar em várias **compras** (historicamente).
 - Um **veículo** pode ter vários **custos operacionais**.
 - Um **usuário** (vendedor) pode estar em várias **vendas**.
+- Um **usuário** (operador) pode estar em várias **compras**.
 - Uma **venda** pode ter vários **comprovantes**.
 - Uma **venda** pode ter vários **contratos** (PDF gerado ao concluir a venda).
 - Uma **venda** pode ter no máximo um **fechamento de venda**.
@@ -360,6 +365,7 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 | `documento_contrato_venda` | `ix_documento_contrato_venda_venda_id` | `venda_id` | Não |
 | `compra` | `ix_compra_cliente_id` | `cliente_id` | Não |
 | `compra` | `ix_compra_veiculo_id` | `veiculo_id` | Não |
+| `compra` | `ix_compra_usuario_id` | `usuario_id` | Não |
 | `custo_veiculo` | `ix_custo_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_veiculo_id` | `veiculo_id` | Sim |

@@ -82,6 +82,7 @@ def test_admin_crud_compras(client: TestClient) -> None:
     assert create_resp.json()["valor_compra"] == "35000.00"
     assert create_resp.json()["cliente"]["nome"] == "João Silva"
     assert create_resp.json()["veiculo"]["modelo"] == "Gol"
+    assert create_resp.json()["usuario"]["username"] == "admin"
 
     list_resp = client.get("/compras", headers=headers)
     assert list_resp.status_code == 200

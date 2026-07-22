@@ -51,6 +51,7 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("valor_compra", "Valor da Compra"),
         ("debitos", "Débitos"),
         ("observacoes", "Observações"),
+        ("usuario", "Usuário"),
     ],
     "custos-veiculos": [
         ("valor", "Valor"),
@@ -72,6 +73,7 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("parcelas", "Parcelas"),
         ("status", "Status"),
         ("observacoes", "Observações"),
+        ("vendedor", "Usuário"),
         ("lucro", "Lucro Líquido (fechamento)"),
         ("participacao", "Participação por Investidor (fechamento)"),
     ],

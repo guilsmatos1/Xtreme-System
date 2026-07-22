@@ -1,7 +1,9 @@
 """HTMX routes for configuracoes."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated
+from uuid import uuid4
 
 import structlog
 from fastapi import File, Form, Request, UploadFile
@@ -9,7 +11,14 @@ from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
+from xtreme_system.api.routes.ui_routes.common import (
+    _remover_upload,
+    _uploaded_file_path,
+    _uploads_empresa_dir,
+    _validar_uploads,
+)
 from xtreme_system.api.setup import app
+from xtreme_system.database.core import register_post_rollback
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.usuario import core as usuario
@@ -88,6 +97,8 @@ def ui_configuracoes_empresa_salvar(
     bairro: Annotated[str, Form()] = "",
     cidade: Annotated[str, Form()] = "",
     uf: Annotated[str, Form()] = "",
+    cep: Annotated[str, Form()] = "",
+    telefone: Annotated[str, Form()] = "",
     cnpj: Annotated[str, Form()] = "",
     signatario: Annotated[str, Form()] = "",
 ) -> HTMLResponse:
@@ -99,6 +110,8 @@ def ui_configuracoes_empresa_salvar(
             bairro=bairro,
             cidade=cidade,
             uf=uf,
+            cep=cep,
+            telefone=telefone,
             cnpj=cnpj,
             signatario=signatario,
         ),
@@ -113,6 +126,98 @@ def ui_configuracoes_empresa_salvar(
             "sucesso": "Dados da empresa salvos.",
             "aba": "empresa",
         },
+    )
+
+
+_EXTENSOES_LOGO = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def _pagina_empresa(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    config_empresa: empresa.EmpresaConfig,
+    *,
+    erro: str | None = None,
+    sucesso: str | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "configuracoes.html",
+        {
+            "user": user,
+            "config": whatsapp.get_config(session),
+            "config_empresa": config_empresa,
+            "erro": erro,
+            "sucesso": sucesso,
+            "aba": "empresa",
+        },
+    )
+
+
+@app.post("/ui/configuracoes/empresa/logo")
+def ui_configuracoes_empresa_logo_enviar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    logo: Annotated[UploadFile, File()],
+) -> HTMLResponse:
+    sufixo = Path(logo.filename or "").suffix.lower()
+    if sufixo not in _EXTENSOES_LOGO:
+        exts = ", ".join(sorted(_EXTENSOES_LOGO))
+        return _pagina_empresa(
+            request,
+            session,
+            user,
+            empresa.get_config(session),
+            erro=f"O logo deve ser uma imagem (aceitos: {exts})",
+        )
+    erro = _validar_uploads([logo])
+    if erro:
+        return _pagina_empresa(
+            request, session, user, empresa.get_config(session), erro=erro
+        )
+
+    url_anterior = empresa.get_config(session).logo_url
+    filename = f"{uuid4().hex}{sufixo}"
+    upload_dir = _uploads_empresa_dir()
+    path = upload_dir / filename
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(logo.file.read())
+
+    def _remover_novo_logo(*, path: Path = path) -> None:
+        path.unlink(missing_ok=True)
+
+    register_post_rollback(session, _remover_novo_logo)
+    try:
+        config_empresa = empresa.definir_logo(
+            session, f"/static/uploads/empresa/{filename}"
+        )
+    except Exception:
+        _remover_novo_logo()
+        raise
+
+    anterior = _uploaded_file_path(url_anterior) if url_anterior else None
+    if anterior is not None and anterior != path:
+        _remover_upload(anterior)
+    return _pagina_empresa(
+        request, session, user, config_empresa, sucesso="Logo atualizado."
+    )
+
+
+@app.post("/ui/configuracoes/empresa/logo/excluir")
+def ui_configuracoes_empresa_logo_excluir(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+) -> HTMLResponse:
+    url_anterior = empresa.get_config(session).logo_url
+    config_empresa = empresa.remover_logo(session)
+    anterior = _uploaded_file_path(url_anterior) if url_anterior else None
+    if anterior is not None:
+        _remover_upload(anterior)
+    return _pagina_empresa(
+        request, session, user, config_empresa, sucesso="Logo removido."
     )
 
 
