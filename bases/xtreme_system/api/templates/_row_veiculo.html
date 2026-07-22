@@ -3,6 +3,7 @@
 <tr id="veiculo-{{ v.id }}">
   {% if pode_ver_campo(user, 'veiculos', 'placa') %}<td class="cell-mono" data-col="placa">{{ v.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<td class="cell-strong" data-col="modelo">{{ v.modelo }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'marca') %}<td data-col="marca">{{ v.marca or "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<td data-col="tipo">{{ ui.tipo_badge(v.tipo) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'ano') %}<td class="cell-num" data-col="ano">{{ v.ano }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'km') %}<td class="cell-num" data-col="km">{{ "{:,}".format(v.km) | replace(",", ".") }}</td>{% endif %}

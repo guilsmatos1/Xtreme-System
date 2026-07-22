@@ -18,6 +18,7 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/xtreme
+      AUTH_SECRET_KEY: your-secret-key-minimum-32-bytes-long-change-this-in-production
 
 volumes:
   db_data:
