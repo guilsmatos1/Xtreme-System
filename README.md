@@ -50,7 +50,13 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 Preencha `AUTH_SECRET_KEY` no `.env` com o valor gerado.
 
-### Usuário admin
+### Usuário admin padrão
+
+Ao aplicar as migrations em uma instalação nova, o sistema cria o usuário
+`admin` com senha `admin` caso ele ainda não exista. Use esse acesso inicial
+para trocar a senha e criar os demais usuários.
+
+Para criar outro admin manualmente:
 
 ```bash
 uv run python development/create_admin.py <usuario> <senha>
