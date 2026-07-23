@@ -305,7 +305,7 @@ register_crud_routes(
 
 def _compra_json(obj: compra.Compra, user: usuario.Usuario) -> dict[str, Any]:
     data: dict[str, Any] = jsonable_encoder(compra.CompraRead.model_validate(obj))
-    for campo in ("valor_compra", "debitos"):
+    for campo, _label in perfil.CAMPOS_PROTEGIDOS["compras"]:
         if not perfil.pode_ver_campo(user, "compras", campo):
             data.pop(campo, None)
     return data
