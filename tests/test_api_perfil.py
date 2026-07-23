@@ -49,9 +49,11 @@ def _seed(client: TestClient, headers: dict[str, str]) -> dict[str, int]:
         json={
             "tipo": "carro",
             "modelo": "Gol",
+            "marca": "VW",
             "cor": "Branco",
             "ano": 2018,
             "placa": "ABC1D23",
+            "chassi": "9BWZZZ377VT004251",
             "km": 50000,
             "preco": "40000.00",
             "investidor_id": investidor_id,
@@ -70,11 +72,23 @@ def _seed(client: TestClient, headers: dict[str, str]) -> dict[str, int]:
         },
         headers=headers,
     ).json()["id"]
+    compra_id = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-06-01",
+            "valor_compra": "39000.00",
+            "observacoes": "compra com margem sensivel",
+        },
+        headers=headers,
+    ).json()["id"]
     return {
         "investidor": investidor_id,
         "cliente": cliente_id,
         "veiculo": veiculo_id,
         "venda": venda_id,
+        "compra": compra_id,
     }
 
 
@@ -96,6 +110,8 @@ def _perfil_vendedor(
     ("pagina", "path", "campo_oculto"),
     [
         ("veiculos", "/veiculos", "preco"),
+        ("veiculos", "/veiculos", "chassi"),
+        ("compras", "/compras", "observacoes"),
         ("vendas", "/vendas", "valor_venda"),
     ],
 )

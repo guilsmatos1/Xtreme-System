@@ -62,7 +62,11 @@ def _json_visible(
         return obj
     _require_json_page(user, pagina)
     data: dict[str, Any] = jsonable_encoder(read_schema.model_validate(obj))
-    for campo in campos:
+    campos_ocultaveis = {
+        campo for campo, _label in perfil.CAMPOS_PROTEGIDOS.get(pagina, [])
+    }
+    campos_ocultaveis.update(campos)
+    for campo in campos_ocultaveis:
         if not perfil.pode_ver_campo(user, pagina, campo):
             data.pop(campo, None)
     return data
