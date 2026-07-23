@@ -38,8 +38,8 @@ class FiltroAuditoria(PeriodoFiltro):
         auditoria.TipoAcao | None, BeforeValidator(_vazio_para_none)
     ] = None
 
-    @classmethod
-    def _periodo_padrao(cls) -> tuple[date, date]:
+    @staticmethod
+    def _periodo_padrao() -> tuple[date, date]:
         hoje = datetime.now(UTC).date()
         return hoje - timedelta(days=1), hoje
 

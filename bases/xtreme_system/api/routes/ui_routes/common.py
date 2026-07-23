@@ -45,8 +45,8 @@ class PeriodoFiltro(BaseModel):
     data_de: DataFiltro = None
     data_ate: DataFiltro = None
 
-    @classmethod
-    def _periodo_padrao(cls) -> tuple[date, date]:
+    @staticmethod
+    def _periodo_padrao() -> tuple[date, date]:
         raise NotImplementedError
 
     @model_validator(mode="after")

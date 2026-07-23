@@ -1,13 +1,9 @@
 ---
 name: 0001-linear-duplicate-triage
 description: >-
-  Find duplicate Linear issues across a team's open backlog and mark the
-  redundant ones, using Orca's `orca linear ...` CLI. Lists open issues at the
-  maximum page size, restricts to the Backlog, Todo, In Progress, and In Review
-  states, clusters likely duplicates by comparing titles and descriptions, keeps
-  one canonical issue per cluster, and closes the rest to the `Canceled` state
-  with a back-reference comment. Use when asked to detect, triage, or clean up
-  duplicate Linear tickets. Defaults to team `GUI`.
+  Detects and closes duplicate Linear issues in a team's open backlog, keeping
+  one canonical issue per cluster. Use when asked to triage or clean up
+  duplicate tickets. Defaults to team `GUI`.
 ---
 
 # Linear Duplicate Triage
@@ -27,7 +23,7 @@ If Orca is not running, start it with `orca open --json` and re-check `orca stat
 
 ## Target Team
 
-The default target is team `GUI` (workspace `Guilherme Matos`, id `e7ff0c6a-7f22-4abd-85fe-153bb2c72687`), whose `Duplicate` state exists with type `duplicate`. If the user names another team, discover it and confirm it has a `Duplicate` state before marking anything:
+The default target is team `GUI` (workspace `Guilherme Matos`, workspace id `e7ff0c6a-7f22-4abd-85fe-153bb2c72687`), whose `Duplicate` state exists with type `duplicate`. If the user names another team, discover it and confirm it has a `Duplicate` state before marking anything:
 
 ```bash
 orca linear team list --workspace all --json
@@ -36,7 +32,7 @@ orca linear team states --team <key-or-id> --workspace <workspaceId> --json
 
 ## Flow
 
-1. Pull the full open backlog at the maximum supported page size (216 is the CLI cap):
+1. Pull the open backlog at the maximum page size (216, the CLI cap):
 
 ```bash
 orca linear list --filter open --team GUI --limit 216 --workspace all --json
@@ -51,7 +47,7 @@ orca linear list --filter open --team GUI --limit 216 --workspace all --json
 5. Close each redundant issue. Note the Linear constraint: moving an issue into a `duplicate`-type state is rejected with `Missing duplicate relation` unless a duplicate issue relation already exists, and the `orca linear` CLI cannot create that relation (it only reads relations via `--relations`). So use `Canceled`, which needs no relation:
 
 ```bash
-orca linear status set <id> --to "Canceled" --workspace e7ff0c6a-7f22-4abd-85fe-153bb2c72687 --json
+orca linear status set <id> --to "Canceled" --workspace <gui-workspace-id> --json
 ```
 
 If the user specifically needs the native `Duplicate` state, tell them to run "Mark as duplicate" in the Linear UI on that issue — that creates the relation and moves it automatically. The CLI cannot do this.
@@ -59,7 +55,7 @@ If the user specifically needs the native `Duplicate` state, tell them to run "M
 6. On each issue you close, add one comment pointing to the canonical issue so the link stays traceable:
 
 ```bash
-orca linear comment add <id> --body "Duplicate of <CANONICAL-ID>." --workspace e7ff0c6a-7f22-4abd-85fe-153bb2c72687 --json
+orca linear comment add <id> --body "Duplicate of <CANONICAL-ID>." --workspace <gui-workspace-id> --json
 ```
 
 Run one `orca` write per shell invocation — do not batch multiple `orca` calls in a loop or a compound `a && b` line, since some shells/hooks drop everything after the first call. Trust each write's own JSON response (`ok`, returned id) as confirmation; a follow-up `--comments` read can be cached and lag behind a just-posted comment.

@@ -28,8 +28,8 @@ class FiltroDre(PeriodoFiltro):
     investidor_id: IdFiltro = None
     vendedor_id: IdFiltro = None
 
-    @classmethod
-    def _periodo_padrao(cls) -> tuple[date, date]:
+    @staticmethod
+    def _periodo_padrao() -> tuple[date, date]:
         hoje = datetime.now(UTC).date()
         total = hoje.year * 12 + hoje.month - 1 - MESES_PADRAO
         return date(total // 12, total % 12 + 1, 1), hoje
