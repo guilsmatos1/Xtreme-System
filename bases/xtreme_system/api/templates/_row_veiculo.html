@@ -1,5 +1,5 @@
 {% import "_macros.html" as ui %}
-{% set compra_v = compras_por_veiculo.get(v.id) if compras_por_veiculo else none %}
+{% set debitos_v = debitos_por_veiculo.get(v.id) if debitos_por_veiculo else none %}
 <tr id="veiculo-{{ v.id }}">
   {% if pode_ver_campo(user, 'veiculos', 'placa') %}<td class="cell-mono" data-col="placa">{{ v.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<td class="cell-strong" data-col="modelo">{{ v.modelo }}</td>{% endif %}
@@ -19,7 +19,7 @@
   {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<td class="muted" data-col="investidor">{{ v.investidor.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<td class="cell-center" data-col="revisao">{% if v.revisao %}✓{% else %}-{% endif %}</td>{% endif %}
-  {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if compra_v and compra_v.debitos is not none %}R$ {{ "{:,.2f}".format(compra_v.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if debitos_v is not none %}R$ {{ "{:,.2f}".format(debitos_v) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}<td class="cell-num" data-col="tempo_estoque">{{ v.tempo_estoque }} dia{% if v.tempo_estoque != 1 %}s{% endif %}</td>{% endif %}
   {% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
   {% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}

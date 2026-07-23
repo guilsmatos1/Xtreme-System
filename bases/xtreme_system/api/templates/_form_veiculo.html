@@ -80,10 +80,10 @@
           {% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
-          {% set compra_veiculo = compras_por_veiculo.get(veiculo.id) if compras_por_veiculo else none %}
+          {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
           <label class="field">
             <span class="field__label">Débito (R$)</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ compra_veiculo.debitos if compra_veiculo and compra_veiculo.debitos is not none else '' }}">
+            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
           </label>
           {% endif %}
 

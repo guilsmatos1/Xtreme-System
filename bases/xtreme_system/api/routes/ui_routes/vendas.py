@@ -137,8 +137,11 @@ def _validate_venda_update(
 
 
 def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
-    fechamentos = fechamento_venda.list_all(session)
-    return {"fechamentos_by_venda": {f.venda_id: f for f in fechamentos}}
+    return {
+        "fechamentos_by_venda": fechamento_venda.ids_by_venda_ids(
+            session, [item.id for item in _vendas]
+        )
+    }
 
 
 register_crud_ui_routes(

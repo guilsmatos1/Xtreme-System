@@ -153,6 +153,17 @@ def list_all(session: Session) -> list[FechamentoVenda]:
     return list(session.query(FechamentoVenda).order_by(FechamentoVenda.id).all())
 
 
+def ids_by_venda_ids(session: Session, venda_ids: list[int]) -> dict[int, int]:
+    if not venda_ids or not _schema_disponivel(session):
+        return {}
+    rows = (
+        session.query(FechamentoVenda.venda_id, FechamentoVenda.id)
+        .filter(FechamentoVenda.venda_id.in_(venda_ids))
+        .all()
+    )
+    return {row.venda_id: row.id for row in rows}
+
+
 def get(session: Session, fechamento_id: int) -> FechamentoVenda | None:
     if not _schema_disponivel(session):
         return None
