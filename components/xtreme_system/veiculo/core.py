@@ -132,6 +132,10 @@ def list_all(session: Session) -> list[Veiculo]:
     return crud.list_all(session, Veiculo)
 
 
+def list_ids(session: Session) -> list[int]:
+    return [row.id for row in session.query(Veiculo.id).order_by(Veiculo.id).all()]
+
+
 def get(session: Session, veiculo_id: int) -> Veiculo | None:
     return crud.get(session, Veiculo, veiculo_id)
 

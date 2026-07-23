@@ -62,8 +62,8 @@ _CAMPO_FORM_MAP = {
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
-    compras_por_veiculo = compra.latest_by_veiculo_ids(
-        session, [item.id for item in veiculo.list_all(session)]
+    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
+        session, veiculo.list_ids(session)
     )
     return {
         "tipos": list(veiculo.TipoVeiculo),
@@ -71,7 +71,7 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
         "investidores": investidor.list_all(session),
         "clientes": cliente.list_all(session),
         "tipos_cliente": list(cliente.TipoCliente),
-        "compras_por_veiculo": compras_por_veiculo,
+        "debitos_por_veiculo": debitos_por_veiculo,
     }
 
 
@@ -80,16 +80,22 @@ _STATUS_LABELS = {
     "vendido": "Vendido",
     "reservado": "Reservado",
 }
+_DEBITOS_SORT_ATTR = "debitos_sort"
 
 
 def _ctx_lista_veiculos(
     session: Session, veiculos: list[veiculo.Veiculo]
 ) -> dict[str, Any]:
-    compras_por_veiculo = compra.latest_by_veiculo_ids(
-        session, [item.id for item in veiculos]
-    )
+    if all(hasattr(item, _DEBITOS_SORT_ATTR) for item in veiculos):
+        debitos_por_veiculo = {
+            item.id: getattr(item, _DEBITOS_SORT_ATTR) for item in veiculos
+        }
+    else:
+        debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
+            session, [item.id for item in veiculos]
+        )
     return {
-        "compras_por_veiculo": compras_por_veiculo,
+        "debitos_por_veiculo": debitos_por_veiculo,
         "filtro_tipos": [(t.value, t.value.capitalize()) for t in veiculo.TipoVeiculo],
         "filtro_status": [
             (s.value, _STATUS_LABELS[s.value]) for s in veiculo.StatusVeiculo
@@ -101,16 +107,16 @@ def _ctx_lista_veiculos(
 
 
 def _preparar_veiculos_lista(
-    session: Session, itens: list[veiculo.Veiculo]
+    session: Session,
+    itens: list[veiculo.Veiculo],
+    debitos_por_veiculo: dict[int, Decimal | None] | None = None,
 ) -> list[veiculo.Veiculo]:
-    compras_por_veiculo = compra.latest_by_veiculo_ids(
-        session, [item.id for item in itens]
-    )
-    for item in itens:
-        compra_item = compras_por_veiculo.get(item.id)
-        object.__setattr__(
-            item, "debitos_sort", compra_item.debitos if compra_item else None
+    if debitos_por_veiculo is None:
+        debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
+            session, [item.id for item in itens]
         )
+    for item in itens:
+        object.__setattr__(item, "debitos_sort", debitos_por_veiculo.get(item.id))
     return itens
 
 

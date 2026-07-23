@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Date, ForeignKey, Numeric, String, cast, or_
+from sqlalchemy import Date, ForeignKey, Numeric, String, cast, func, or_, select
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -108,6 +108,31 @@ def latest_by_veiculo_ids(
     for item in compras:
         latest.setdefault(item.veiculo_id, item)
     return latest
+
+
+def latest_debitos_by_veiculo_ids(
+    session: Session, veiculo_ids: list[int]
+) -> dict[int, Decimal | None]:
+    if not veiculo_ids:
+        return {}
+    ranked = (
+        select(
+            Compra.veiculo_id,
+            Compra.debitos,
+            func.row_number()
+            .over(
+                partition_by=Compra.veiculo_id,
+                order_by=(Compra.data_compra.desc(), Compra.id.desc()),
+            )
+            .label("row_number"),
+        )
+        .where(Compra.veiculo_id.in_(veiculo_ids))
+        .subquery()
+    )
+    rows = session.execute(
+        select(ranked.c.veiculo_id, ranked.c.debitos).where(ranked.c.row_number == 1)
+    ).all()
+    return {row.veiculo_id: row.debitos for row in rows}
 
 
 def get(session: Session, compra_id: int) -> Compra | None:
