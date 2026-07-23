@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping
+from inspect import Parameter, signature
 from typing import Any, cast
 
 from sqlalchemy.orm import Session
@@ -67,6 +68,18 @@ def sorted_list(
     return sorted(lista, key=sort_key_fn(spec), reverse=order == "desc")
 
 
+def _accepts_search_column(search_func: SearchFunc[EntityT]) -> bool:
+    parameters = signature(search_func).parameters.values()
+    return any(
+        parameter.kind is Parameter.VAR_KEYWORD
+        or (
+            parameter.name == "column"
+            and parameter.kind is not Parameter.POSITIONAL_ONLY
+        )
+        for parameter in parameters
+    )
+
+
 def query_list(
     session: Session,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
@@ -78,12 +91,9 @@ def query_list(
     search_column: str | None = None,
 ) -> list[EntityT]:
     if q and search_func is not None:
-        # Se search_func aceitar column, passar como kwarg
-        try:
+        if _accepts_search_column(search_func):
             return list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
-        except TypeError:
-            # Fallback para functions que não aceitam column
-            return list(search_func(session, q))
+        return list(search_func(session, q))
     if searchable and q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module
