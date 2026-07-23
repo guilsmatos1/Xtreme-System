@@ -115,6 +115,18 @@ def test_operacoes_sao_opt_in(db_session: Session) -> None:
     assert not perfil.pode_operacao(vendedor, "veiculos", "excluir")
 
 
+def test_operacoes_de_pagina_fora_do_perfil_sao_negadas(db_session: Session) -> None:
+    vendedores = perfil.Perfil(
+        nome="Vendedores",
+        paginas=["veiculos"],
+        restricoes={"vendas": {"operacoes": ["ver_fechamento"]}},
+    )
+    db_session.add(vendedores)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
+    assert not perfil.pode_operacao(vendedor, "vendas", "ver_fechamento")
+
+
 def test_catalogos_cobrem_as_seis_paginas_do_rollout() -> None:
     for pagina in (
         "veiculos",
@@ -164,6 +176,7 @@ def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil.pagina_da_rota("/ui/veiculos/1/imagens") == "veiculos"
     assert perfil.pagina_da_rota("/ui/compras/1/comprovantes") == "compras"
     assert perfil.pagina_da_rota("/ui/custos-veiculos") == "custos-veiculos"
+    assert perfil.pagina_da_rota("/ui/fechamentos-vendas/1") == "vendas"
     assert perfil.pagina_da_rota("/ui/usuarios") is None
     assert perfil.pagina_da_rota("/ui/dashboard") is None
     assert perfil.pagina_da_rota("/static/app.css") is None
