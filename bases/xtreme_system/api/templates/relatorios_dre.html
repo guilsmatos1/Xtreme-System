@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}DRE{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>DRE</h1>
+    <p class="page-head__subtitle">Resultado por período, a partir dos fechamentos de venda</p>
+  </div>
+  <a class="btn btn--ghost" href="/ui/relatorios/dre/exportar?{{ filtros_qs }}">
+    {{ ui.icon("download") }} Exportar CSV
+  </a>
+</div>
+
+<section class="card card--pad" style="margin-bottom:var(--s-4)">
+  <form class="form-grid"
+        hx-get="/ui/relatorios/dre" hx-target="#dre-resultado" hx-swap="outerHTML"
+        hx-trigger="submit, change" hx-include="this" data-omit-empty-params>
+    <label class="field">
+      <span class="field__label">De</span>
+      <input class="input" type="date" name="data_de" value="{{ f_data_de.isoformat() if f_data_de else '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Até</span>
+      <input class="input" type="date" name="data_ate" value="{{ f_data_ate.isoformat() if f_data_ate else '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Investidor</span>
+      <select class="select" name="investidor_id">
+        <option value="">Todos</option>
+        {% for inv in investidores %}
+        <option value="{{ inv.id }}" {{ 'selected' if f_investidor_id == inv.id }}>{{ inv.nome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Vendedor</span>
+      <select class="select" name="vendedor_id">
+        <option value="">Todos</option>
+        {% for v in vendedores %}
+        <option value="{{ v.id }}" {{ 'selected' if f_vendedor_id == v.id }}>{{ v.username }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="field" style="justify-content:flex-end;flex-direction:row;gap:var(--s-2)">
+      <button class="btn btn--primary" type="submit">{{ ui.icon("search") }} Filtrar</button>
+      <a class="btn btn--ghost" href="/ui/relatorios/dre">Limpar</a>
+    </div>
+  </form>
+</section>
+
+{% include "_dre_resultado.html" %}
+{% endblock %}

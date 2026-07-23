@@ -143,6 +143,11 @@
 <div class="alert" role="alert">{{ icon("close") }}<span>{{ msg }}</span></div>
 {%- endmacro %}
 
+{% macro moeda(valor) -%}
+{%- set v = valor or 0 -%}
+{{- "R$ %s" | format("{:,.2f}".format(v) | replace(",", "@") | replace(".", ",") | replace("@", ".")) -}}
+{%- endmacro %}
+
 {% macro empty(icon_name, title, text) -%}
 <div class="empty">
   <div class="empty__icon">{{ icon(icon_name) }}</div>

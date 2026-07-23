@@ -2,16 +2,23 @@
 
 import json
 from datetime import UTC, date, datetime, timedelta
-from typing import Any, cast
+from typing import Annotated, Any, cast
 from urllib.parse import urlencode
 
 import structlog
-from fastapi import HTTPException, Request, Response
+from fastapi import Query, Request, Response
 from fastapi.responses import HTMLResponse
+from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.route_factories import _csv_response
+from xtreme_system.api.routes.ui_routes.common import (
+    IdFiltro,
+    PeriodoFiltro,
+    TextoFiltro,
+    _vazio_para_none,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
@@ -20,23 +27,30 @@ logger = structlog.get_logger(__name__)
 
 # ---- Auditoria (consulta, admin-only) ----
 
-
-def _usuario_id_filtro(value: str | None) -> int | None:
-    if not value:
-        return None
-    try:
-        return int(value)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail="usuario_id inválido") from exc
+LIMIT_MAX = 200
+LIMIT_EXPORT = 10_000
 
 
-def _data_filtro(value: str | None) -> date | None:
-    if not value:
-        return None
-    try:
-        return date.fromisoformat(value)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail="data inválida") from exc
+class FiltroAuditoria(PeriodoFiltro):
+    usuario_id: IdFiltro = None
+    tabela: TextoFiltro = None
+    tipo_acao: Annotated[
+        auditoria.TipoAcao | None, BeforeValidator(_vazio_para_none)
+    ] = None
+
+    @classmethod
+    def _periodo_padrao(cls) -> tuple[date, date]:
+        hoje = datetime.now(UTC).date()
+        return hoje - timedelta(days=1), hoje
+
+
+class FiltroAuditoriaPagina(FiltroAuditoria):
+    limit: int = Field(50, ge=1, le=LIMIT_MAX)
+    offset: int = Field(0, ge=0)
+
+
+FiltroAuditoriaDep = Annotated[FiltroAuditoria, Query()]
+FiltroAuditoriaPaginaDep = Annotated[FiltroAuditoriaPagina, Query()]
 
 
 def _nomes_usuarios(
@@ -55,47 +69,45 @@ def _nomes_usuarios(
     return dict(cast("list[tuple[int, str]]", rows))
 
 
-def _ctx_auditoria(
-    session: Session,
-    user: usuario.Usuario,
-    *,
-    usuario_id: int | None,
-    tabela: str | None,
-    tipo_acao: str | None,
-    data_de: date | None,
-    data_ate: date | None,
-    limit: int,
-    offset: int,
-) -> dict[str, Any]:
-    registros = auditoria.query(
+def _query(
+    session: Session, f: FiltroAuditoria, *, limit: int, offset: int
+) -> list[auditoria.Auditoria]:
+    data_de, data_ate = f.periodo
+    return auditoria.query(
         session,
-        usuario_id=usuario_id,
-        tabela=tabela,
-        tipo_acao=tipo_acao,
+        usuario_id=f.usuario_id,
+        tabela=f.tabela,
+        tipo_acao=f.tipo_acao,
         data_de=data_de,
         data_ate=data_ate,
         limit=limit,
         offset=offset,
     )
+
+
+def _ctx_auditoria(
+    session: Session, user: usuario.Usuario, f: FiltroAuditoriaPagina
+) -> dict[str, Any]:
+    data_de, data_ate = f.periodo
+    registros = _query(session, f, limit=f.limit, offset=f.offset)
     total = auditoria.count(
         session,
-        usuario_id=usuario_id,
-        tabela=tabela,
-        tipo_acao=tipo_acao,
+        usuario_id=f.usuario_id,
+        tabela=f.tabela,
+        tipo_acao=f.tipo_acao,
         data_de=data_de,
         data_ate=data_ate,
     )
-    filtros: dict[str, Any] = {}
-    if data_de is not None:
-        filtros["data_de"] = data_de.isoformat()
-    if data_ate is not None:
-        filtros["data_ate"] = data_ate.isoformat()
-    if usuario_id is not None:
-        filtros["usuario_id"] = usuario_id
-    if tabela:
-        filtros["tabela"] = tabela
-    if tipo_acao:
-        filtros["tipo_acao"] = tipo_acao
+    filtros: dict[str, Any] = {
+        "data_de": data_de.isoformat(),
+        "data_ate": data_ate.isoformat(),
+    }
+    if f.usuario_id is not None:
+        filtros["usuario_id"] = f.usuario_id
+    if f.tabela:
+        filtros["tabela"] = f.tabela
+    if f.tipo_acao:
+        filtros["tipo_acao"] = f.tipo_acao
     return {
         "user": user,
         "registros": registros,
@@ -103,15 +115,15 @@ def _ctx_auditoria(
         "usuarios": usuario.list_all(session),
         "tabelas": auditoria.tabelas(session),
         "tipos": auditoria.TIPO_ACOES,
-        "f_usuario_id": usuario_id,
-        "f_tabela": tabela,
-        "f_tipo_acao": tipo_acao,
+        "f_usuario_id": f.usuario_id,
+        "f_tabela": f.tabela,
+        "f_tipo_acao": f.tipo_acao,
         "f_data_de": data_de,
         "f_data_ate": data_ate,
         "filtros_qs": urlencode(filtros),
         "total": total,
-        "limit": limit,
-        "offset": offset,
+        "limit": f.limit,
+        "offset": f.offset,
     }
 
 
@@ -120,31 +132,9 @@ def ui_auditoria(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
-    usuario_id: str | None = None,
-    tabela: str | None = None,
-    tipo_acao: str | None = None,
-    data_de: str | None = None,
-    data_ate: str | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    filtros: FiltroAuditoriaPaginaDep,
 ) -> HTMLResponse:
-    data_de_filtro = _data_filtro(data_de)
-    data_ate_filtro = _data_filtro(data_ate)
-    if data_de_filtro is None:
-        data_de_filtro = datetime.now(UTC).date() - timedelta(days=1)
-    if data_ate_filtro is None:
-        data_ate_filtro = datetime.now(UTC).date()
-    ctx = _ctx_auditoria(
-        session,
-        user,
-        usuario_id=_usuario_id_filtro(usuario_id),
-        tabela=tabela,
-        tipo_acao=tipo_acao,
-        data_de=data_de_filtro,
-        data_ate=data_ate_filtro,
-        limit=limit,
-        offset=offset,
-    )
+    ctx = _ctx_auditoria(session, user, filtros)
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_auditoria_resultado.html", ctx)
     return templates.TemplateResponse(request, "auditoria.html", ctx)
@@ -154,23 +144,10 @@ def ui_auditoria(
 def ui_auditoria_exportar(
     session: SessionDep,
     _: UIAdmin,
-    usuario_id: str | None = None,
-    tabela: str | None = None,
-    tipo_acao: str | None = None,
-    data_de: str | None = None,
-    data_ate: str | None = None,
+    filtros: FiltroAuditoriaDep,
 ) -> Response:
     # Teto de 10k linhas no export; paginar se crescer além disso.
-    registros = auditoria.query(
-        session,
-        usuario_id=_usuario_id_filtro(usuario_id),
-        tabela=tabela,
-        tipo_acao=tipo_acao,
-        data_de=_data_filtro(data_de),
-        data_ate=_data_filtro(data_ate),
-        limit=10_000,
-        offset=0,
-    )
+    registros = _query(session, filtros, limit=LIMIT_EXPORT, offset=0)
     nomes = _nomes_usuarios(session, registros)
     return _csv_response(
         "auditoria.csv",

@@ -361,6 +361,24 @@ Side effects:
 - `GET /fechamentos-vendas`
 - `GET /fechamentos-vendas/{id}`
 
+#### DRE por período (UI)
+
+Página HTMX admin-only que agrega os fechamentos por competência
+(`data_fechamento`): totais do período, quebra mês a mês com margem e detalhe
+dos fechamentos.
+
+- `GET /ui/relatorios/dre` — filtros `data_de`, `data_ate` (default: últimos 12
+  meses), `investidor_id` (investidor do veículo), `vendedor_id`. Com o header
+  `HX-Request` devolve apenas o fragmento de resultado.
+- `GET /ui/relatorios/dre/exportar` — mesmos filtros, devolve `text/csv`
+  (`dre.csv`) com uma linha por fechamento.
+
+Validação dos filtros (compartilhada com `/ui/auditoria`, em
+`ui_routes/common.py`): campos vazios (`?data_de=`) contam como ausentes; ids
+devem ser `> 0`; `data_de` não pode ser maior que `data_ate` e o intervalo não
+pode exceder 732 dias. Qualquer violação retorna `422` no formato padrão do
+Pydantic (com `loc` do campo). Usuário não-admin recebe `403`.
+
 ### Compras (Purchases)
 
 **Validation**:
@@ -374,6 +392,12 @@ Side effects:
 **Endpoint**: `GET /auditoria`
 
 **Permissions**: Requires admin role
+
+**UI**: `GET /ui/auditoria` e `GET /ui/auditoria/exportar` — filtros
+`usuario_id`, `tabela`, `tipo_acao` (`CREATE` | `UPDATE` | `DELETE`), `data_de`
+e `data_ate` (default: ontem até hoje, aplicado também no export). A página
+aceita `limit` (1–200, default 50) e `offset` (≥ 0); o export usa teto fixo de
+10k linhas. Mesma validação de período do DRE — violações retornam `422`.
 
 ---
 
@@ -431,5 +455,8 @@ Authorization: Bearer {access_token}
 ## UI Layer
 
 In addition to the JSON API, the application provides a server-rendered HTML UI with HTMX for dynamic interactions. The UI is accessible at the root path (`/`) and authenticated via HTTP-only cookies.
+
+Páginas admin-only fora do catálogo de `perfil`: `/ui/dashboard`, `/ui/auditoria`,
+`/ui/perfis`, `/ui/usuarios`, `/ui/configuracoes` e `/ui/relatorios/dre`.
 
 **Note**: The UI reuses the same JWT in an HTTP-only cookie and applies page access rules based on the user's `perfil`. Beyond pages, a `perfil` can also restrict specific fields (hidden in the UI, denylist — visible by default) and write operations (allowlist — denied by default for non-admins) on a per-page basis via `Perfil.restricoes`. Applied across all 6 pages (`veiculos`, `investidores`, `clientes`, `compras`, `custos-veiculos`, `vendas`), including page-specific operations like `excluir_comprovante`, `excluir_documento`, and `fechar` (venda closing, which also hides profit/investor-payout fields). In `veiculos`, the restricted field catalog includes `preco`, `investidor`, `revisao`, and `debitos`.

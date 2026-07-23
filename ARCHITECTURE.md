@@ -126,6 +126,8 @@ para autenticação (httpOnly, mesmo segredo JWT) e `perfil` para autorização 
 | `/ui/usuarios/{id}/perfil` | Alteração rápida do perfil do usuário |
 | `/ui/conta` | Perfil do usuário logado + troca da própria senha |
 | `/ui/investidores[/{id}/lancamentos]` | Gestão de investidores + lançamentos de caixa por investidor |
+| `/ui/relatorios/dre` | DRE por período (admin), agregado de `fechamento_venda` |
+| `/ui/relatorios/dre/exportar` | CSV do DRE com os filtros ativos (admin) |
 
 Templates em `bases/xtreme_system/api/templates/`, estáticos em `static/`.
 

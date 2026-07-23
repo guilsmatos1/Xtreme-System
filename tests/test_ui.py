@@ -2726,6 +2726,37 @@ def test_ui_auditoria_vendedor_recebe_403(client: TestClient) -> None:
     assert "admin" in resp.text.lower()
 
 
+def test_ui_auditoria_limit_acima_do_teto_retorna_422(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria?limit=100000")
+    assert resp.status_code == 422
+    assert resp.json()["detail"][0]["loc"] == ["query", "limit"]
+
+
+def test_ui_auditoria_offset_negativo_retorna_422(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria?offset=-1")
+    assert resp.status_code == 422
+
+
+def test_ui_auditoria_tipo_acao_invalido_retorna_422(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria?tipo_acao=DROP")
+    assert resp.status_code == 422
+
+
+def test_ui_auditoria_filtros_vazios_sao_ignorados(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria?tipo_acao=&usuario_id=&tabela=&data_de=")
+    assert resp.status_code == 200
+
+
+def test_ui_auditoria_periodo_invertido_retorna_422(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/auditoria?data_de=2026-12-31&data_ate=2026-01-01")
+    assert resp.status_code == 422
+
+
 def test_ui_auditoria_exportar_csv(client: TestClient) -> None:
     _login_admin(client)
     resp = client.get("/ui/auditoria/exportar")

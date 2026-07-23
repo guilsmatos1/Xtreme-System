@@ -27,6 +27,7 @@ for _module_name in (
     "investidores",
     "lancamentos",
     "perfis",
+    "relatorios",
     "usuarios",
     "veiculos_cliente_vendedor",
     "veiculos_documentos",

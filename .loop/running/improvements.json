@@ -1,0 +1,369 @@
+{
+  "analysis_timestamp": "2026-07-23T00:00:00Z",
+  "repository": "xtreme-system",
+  "branch": "master",
+  "total_opportunities": 10,
+  "test_baseline": "285 passed, 0 failed, 1 skipped (uv run pytest -q)",
+  "opportunities": [
+    {
+      "id": "imp-20260723-001",
+      "rank": 1,
+      "short_title": "Perfil sem a página 'vendas' ainda acessa o fechamento financeiro",
+      "location": {
+        "file": "components/xtreme_system/perfil/core.py",
+        "line": 213,
+        "function": "pode_operacao",
+        "context": "pode_operacao lê user.perfil.restricoes[pagina]['operacoes'] sem antes exigir que `pagina` esteja em user.perfil.paginas — ao contrário de pode_ver_campo (linha 200), que faz essa checagem."
+      },
+      "impact": "High",
+      "category": "Architecture and design",
+      "estimated_effort": "Low",
+      "description": "Três peças combinam para produzir um bypass de autorização real.\n\n(1) `pode_ver_campo` (perfil/core.py:207) rejeita quando `pagina not in user.perfil.paginas`. `pode_operacao` (perfil/core.py:213) NÃO faz essa checagem — vai direto em `restricoes[pagina]['operacoes']`.\n\n(2) `get_ui_user` (api/deps.py:107) só aplica `pode_acessar` quando `perfil.pagina_da_rota(path)` devolve uma página válida, e `pagina_da_rota` (perfil/core.py:185) só olha o primeiro segmento após `/ui/` e o compara com `PAGINAS_VALIDAS`. A rota `GET /ui/fechamentos-vendas/{fechamento_id}` (ui_routes/vendas.py:521) tem primeiro segmento `fechamentos-vendas`, que não está em `PAGINAS_VALIDAS` — logo `pagina_da_rota` devolve None e nenhum `pode_acessar` roda. A única guarda restante é `require_operacao('vendas', 'ver_fechamento')`, que chama justamente o `pode_operacao` furado.\n\n(3) O formulário de perfil (`templates/_form_perfil.html:46`) itera `operacoes_disponiveis.items()` — TODAS as páginas — independentemente de quais páginas foram marcadas em `paginas` (linha 21). E `_parse_restricoes` (ui_routes/perfis.py:24) grava qualquer `op__{pagina}__{operacao}` marcado. Ou seja, a própria UI permite (e ao editar um perfil, preserva) `operacoes: ['ver_fechamento']` para 'vendas' enquanto 'vendas' não está em `paginas`.\n\nResultado: um perfil configurado assim — seja por engano do admin, seja por resíduo de quando a página era concedida — dá acesso de leitura ao modal de fechamento, que expõe receita, custo do veículo, custos operacionais, débitos, lucro líquido e a participação por investidor.",
+      "why_it_matters": "É vazamento de dado financeiro para usuário que o sistema acredita ter bloqueado. O admin que remove a página 'Vendas' de um perfil tem toda razão em supor que o acesso acabou — mas as operações marcadas continuam gravadas em `restricoes` e continuam valendo. Além disso, a divergência entre `pode_ver_campo` e `pode_operacao` é exatamente o tipo de regra duplicada que já divergiu uma vez e vai divergir de novo a cada operação nova.",
+      "concrete_fix": "Fazer `pode_operacao` respeitar a mesma pré-condição de `pode_ver_campo` (2 linhas). Como defesa em profundidade, mapear as rotas satélite de volta para a página dona — `/ui/fechamentos-vendas` → `vendas` — em `pagina_da_rota`, para que `pode_acessar` volte a rodar. Depois, esconder no `_form_perfil.html` os blocos de operação das páginas não marcadas (ou filtrar em `_parse_restricoes` as páginas fora de `data.paginas`), para não permitir gravar a combinação inconsistente.",
+      "example": "# components/xtreme_system/perfil/core.py\ndef pode_operacao(user: Any, pagina: str, operacao: str) -> bool:\n    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415\n\n    if is_admin(user):\n        return True\n    if not user.perfil:\n        return False\n+   if pagina not in user.perfil.paginas:\n+       return False\n    permitidas = (user.perfil.restricoes or {}).get(pagina, {}).get(\"operacoes\", [])\n    return operacao in permitidas\n\n\n# defesa em profundidade: rotas satélite herdam a página dona\n+ROTAS_DERIVADAS = {\"fechamentos-vendas\": \"vendas\"}\n+\n def pagina_da_rota(path: str) -> str | None:\n     if not path.startswith(\"/ui/\"):\n         return None\n     segmento = path.removeprefix(\"/ui/\").split(\"/\", 1)[0]\n+    segmento = ROTAS_DERIVADAS.get(segmento, segmento)\n     return segmento if segmento in PAGINAS_VALIDAS else None",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "low",
+        "tags": ["security", "authorization", "permissions", "data-leak", "backend"],
+        "files_affected": [
+          "components/xtreme_system/perfil/core.py",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/templates/_form_perfil.html",
+          "bases/xtreme_system/api/routes/ui_routes/perfis.py"
+        ],
+        "suggested_branch": "fix/pode-operacao-exige-pagina",
+        "related_opportunities": ["imp-20260723-008"],
+        "self_critique": {
+          "strengths": "Cada elo foi verificado na fonte: a assimetria entre pode_ver_campo:207 e pode_operacao:213, o retorno None de pagina_da_rota para 'fechamentos-vendas' (confirmado enumerando todos os primeiros segmentos de rota /ui/), e o template de perfil renderizando operações de todas as páginas sem condicionar às páginas marcadas. O fix é de duas linhas e não muda comportamento de admin nem de perfil bem configurado.",
+          "weaknesses": "Depende de o perfil ter a combinação (operação marcada + página não marcada). Não confirmei se algum perfil em produção está nesse estado — pode ser hoje um risco latente e não uma exposição ativa. A checagem extra pode quebrar perfis que hoje dependem, sem saber, do comportamento permissivo; vale conferir os dados de `perfil.restricoes` antes de subir.",
+          "confidence_score": 8.5
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-002",
+      "rank": 2,
+      "short_title": "Atrás de proxy, rate limit vira balde único e cookie perde Secure",
+      "location": {
+        "file": "bases/xtreme_system/api/setup.py",
+        "line": 176,
+        "function": "_client_ip",
+        "context": "_client_ip só honra X-Forwarded-For quando o peer está em TRUSTED_PROXY_IPS — variável que não aparece em .env.example, docker-compose.yml nem casaos/docker-compose.yml."
+      },
+      "impact": "High",
+      "category": "Error handling and logging",
+      "estimated_effort": "Low",
+      "description": "`_client_ip` (setup.py:176) devolve o IP do peer ASGI quando `TRUSTED_PROXY_IPS` está vazio. Essa variável não está em `.env.example`, nem em `docker-compose.yml`, nem em `casaos/docker-compose.yml` — os três lugares que descrevem o deploy. Num deploy atrás de reverse proxy (o cenário que o próprio `--proxy-headers` no Dockerfile:29 pressupõe), o peer é sempre o container do proxy.\n\nDuas consequências:\n\n(a) Rate limit global. `_rate_limit` (setup.py:208) usa `store.allow(client_ip, 100, 60.0)`. Com um único `client_ip` para todo mundo, os 100 req/min passam a ser compartilhados pela empresa inteira. A UI é HTMX e dispara várias requisições por interação (listar, ordenar, buscar, abrir modal) — dois ou três usuários ativos estouram o balde e todos passam a receber 429.\n\n(b) Cookie sem Secure. `ui_login` (ui_routes/auth.py:50) faz `secure=request.url.scheme == 'https'`. `--proxy-headers` no uvicorn usa por padrão `--forwarded-allow-ips=127.0.0.1`; num Docker o proxy tem IP de bridge, não loopback, então o uvicorn descarta `X-Forwarded-Proto`, `request.url.scheme` continua `http` e o cookie de sessão sai sem `Secure`.\n\nNote que são dois mecanismos de confiança em proxy independentes: o `TRUSTED_PROXY_IPS` da aplicação e o `--forwarded-allow-ips` do uvicorn. Nenhum dos dois está configurado nos arquivos de deploy.",
+      "why_it_matters": "(a) é uma auto-negação de serviço no uso normal do produto interno — e o sintoma (429 aleatório) não aponta para a causa. (b) permite que o cookie de sessão trafegue em claro num downgrade para http, o que anula parte da proteção de um cookie httpOnly. Ambos só se manifestam em produção; nenhum teste pega, porque o conftest força `RATE_LIMIT_STORE=memory` e o TestClient sempre usa o mesmo IP.",
+      "concrete_fix": "Documentar e definir as duas variáveis nos arquivos de deploy: `TRUSTED_PROXY_IPS` (rede/IP do proxy) no `.env.example` e nos dois compose, e `FORWARDED_ALLOW_IPS` no ambiente do container app (o uvicorn lê essa env). Se o proxy tiver IP dinâmico numa rede Docker, usar o CIDR da rede — `_is_trusted_proxy` já aceita CIDR via `ip_network(..., strict=False)` (setup.py:166). Como rede de segurança, logar um warning no startup quando `--proxy-headers` estiver ativo e `TRUSTED_PROXY_IPS` estiver vazio.",
+      "example": "# casaos/docker-compose.yml e docker-compose.yml, serviço app\n  environment:\n    DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/xtreme\n    AUTH_SECRET_KEY: changeme\n+   # IP/CIDR do reverse proxy — sem isso o rate limit vira um balde só\n+   # e o cookie de sessão sai sem Secure.\n+   TRUSTED_PROXY_IPS: \"172.16.0.0/12\"\n+   FORWARDED_ALLOW_IPS: \"172.16.0.0/12\"\n\n# .env.example\n+# Proxies confiáveis para X-Forwarded-For/Proto (CSV de IPs ou CIDRs).\n+# Vazio = ignora os headers e usa o IP do peer.\n+TRUSTED_PROXY_IPS=",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["deployment", "rate-limiting", "security", "cookies", "operations", "configuration"],
+        "files_affected": [
+          "bases/xtreme_system/api/setup.py",
+          "bases/xtreme_system/api/routes/ui_routes/auth.py",
+          "docker-compose.yml",
+          "casaos/docker-compose.yml",
+          ".env.example",
+          "Dockerfile"
+        ],
+        "suggested_branch": "fix/configurar-proxy-confiavel-deploy",
+        "related_opportunities": [],
+        "self_critique": {
+          "strengths": "A ausência de TRUSTED_PROXY_IPS nos arquivos de deploy foi confirmada por grep nos três (.env.example, docker-compose.yml, casaos/docker-compose.yml) — só aparece no código e no ARCHITECTURE.md. O default 127.0.0.1 do --forwarded-allow-ips do uvicorn é comportamento documentado do uvicorn e casa com o --proxy-headers presente no Dockerfile:29 e no Makefile:70. O fix é só configuração.",
+          "weaknesses": "O impacto real depende da topologia de produção, que não consegui inspecionar. Se hoje o app é exposto direto na porta 8000 sem proxy (o que os compose sugerem — publicam 8000 diretamente), nenhum dos dois problemas se manifesta ainda, e isto é uma armadilha para o dia em que um proxy for colocado na frente, não um bug ativo. Não consegui confirmar a topologia real; por isso o item é 'configuração ausente para o deploy documentado' e não 'falha em produção comprovada'.",
+          "confidence_score": 7.5
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-003",
+      "rank": 3,
+      "short_title": "Nenhuma listagem tem paginação: tabela inteira carregada e ordenada em Python",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/routes.py",
+        "line": 238,
+        "function": "register_list_route._list",
+        "context": "sorted_list(query_list(...)) — query_list cai em module.list_all(session) e sorted_list ordena a lista inteira em memória."
+      },
+      "impact": "High",
+      "category": "Performance",
+      "estimated_effort": "High",
+      "description": "Nenhuma rota de listagem aceita `limit`/`offset`. O caminho padrão é `query_list` (crud_ui/query.py:92-94) → `module.list_all(session)` → `crud.list_all` (crud/core.py:15) → `session.query(model_cls).all()`, sem LIMIT. A ordenação vem depois, em Python, via `sorted_list` (query.py:58) sobre a lista completa.\n\nO agravante é o `lazy=\"selectin\"` nos relacionamentos: `Venda` (venda/core.py:64-69) carrega `cliente`, `veiculo`, `veiculo_troca` e `vendedor`; `Veiculo` (veiculo/core.py:57) carrega `investidor`. Listar vendas hidrata o grafo inteiro de todas as vendas já registradas, mesmo que a tela mostre as primeiras dezenas.\n\nO mesmo vale para as rotas de exportação (`register_export_route`, routes.py:288), que percorrem `lista` inteira montando linhas de CSV em memória — aceitável para exportação, mas é o mesmo custo pago também na navegação normal.\n\nAs chaves de ordenação reforçam o acoplamento a Python: `sort_fields` em vendas.py:170-181 usa lambdas (`_sort_key(v.cliente.nome)`), que não têm tradução direta para ORDER BY sem JOIN explícito.",
+      "why_it_matters": "O custo cresce linearmente com o histórico e nunca diminui — é o tipo de degradação que não aparece em dev nem nos testes e só se manifesta quando o cliente já depende do sistema. Com o rate limit de 100 req/min e páginas HTMX que disparam várias requisições, listagens lentas também consomem o balde mais rápido.",
+      "concrete_fix": "Não dá para resolver tudo de uma vez, e não vale tentar. O menor passo útil: introduzir `limit`/`offset` em `query_list` e `register_list_route`, empurrar a ordenação para o banco nos `sort_fields` que são nomes de coluna (`isinstance(spec, str)` — a maioria), e manter o caminho atual em Python só para as lambdas. As rotas de exportação continuam sem limite, de propósito. Fazer isso primeiro em vendas e veículos, que são as maiores, antes de generalizar.",
+      "example": "# crud_ui/query.py — ordenação no banco quando o spec é nome de coluna\ndef sorted_query(\n    query: Query[EntityT], sort: str, order: str,\n    sort_fields: Mapping[str, SortSpec[EntityT]], model: type[EntityT],\n) -> Query[EntityT] | None:\n    spec = sort_fields.get(sort)\n    if not isinstance(spec, str):\n        return None  # lambda: cai no caminho antigo, em Python\n    col = getattr(model, spec)\n    return query.order_by(col.desc() if order == \"desc\" else col.asc())\n\n# crud_ui/routes.py\n@app.get(prefix)\ndef _list(..., page: int = 1, per_page: int = 50) -> HTMLResponse:\n    ...",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "high",
+        "tags": ["performance", "database", "scalability", "n-plus-one", "backend"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/crud_ui/query.py",
+          "components/xtreme_system/crud/core.py",
+          "bases/xtreme_system/api/templates/_macros.html"
+        ],
+        "suggested_branch": "perf/paginacao-listagens-ui",
+        "related_opportunities": ["imp-20260723-009"],
+        "self_critique": {
+          "strengths": "O caminho sem LIMIT foi seguido linha a linha de _list até session.query(model_cls).all(). O efeito multiplicador do selectin está declarado nos models e é verificável. É um problema estrutural, não uma suspeita.",
+          "weaknesses": "É o item de maior esforço da lista e toca templates, macros de UI e testes de rota — o risco de regressão é real. Também não sei o volume atual de dados: numa revenda com poucos milhares de veículos isso pode ser perfeitamente tolerável por mais tempo. Priorizei alto pela trajetória, não por lentidão medida; sem uma medição de produção, o rank 3 é discutível e o item poderia legitimamente ficar abaixo dos de correção.",
+          "confidence_score": 8.0
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-004",
+      "rank": 4,
+      "short_title": "except TypeError em query_list devolve busca sem filtro de coluna em vez de erro",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/query.py",
+        "line": 84,
+        "function": "query_list",
+        "context": "try: search_func(session, q, column=...) / except TypeError: return list(search_func(session, q))"
+      },
+      "impact": "Medium",
+      "category": "Error handling and logging",
+      "estimated_effort": "Low",
+      "description": "`query_list` usa TypeError como teste de assinatura: tenta `search_func(session, q, column=search_column)` e, se der TypeError, assume que a função não aceita `column` e repete sem ele.\n\nO problema é que TypeError não distingue \"assinatura incompatível\" de \"erro dentro da função\". `venda.search` (venda/core.py:216) e `veiculo.search` (veiculo/core.py:163) aceitam `column` e fazem `cast(col, String).ilike(pattern)` sobre um `columns_map`. Qualquer TypeError originado lá dentro — uma coluna nova mapeada para um tipo que o `cast` não aceita, um `None` chegando onde SQLAlchemy espera expressão — é engolido, e o usuário recebe silenciosamente o resultado da busca AMPLA (todas as colunas padrão) em vez de um erro.\n\nRepare que `veiculo.search` mapeia `\"investidor\": Veiculo.investidor` (veiculo/core.py:179) — um relacionamento, não uma coluna. `cast(Veiculo.investidor, String)` é justamente o tipo de expressão que pode levantar TypeError em tempo de compilação da query.\n\nO efeito visível: o usuário filtra por uma coluna, recebe linhas que não batem com o filtro, e nada é logado.",
+      "why_it_matters": "Resultado errado apresentado como certo é pior que erro. Numa tela de vendas ou veículos, uma busca que devolve silenciosamente mais do que foi pedido leva a decisão errada, e não há rastro no log para diagnosticar depois. A ausência de log torna o bug efetivamente invisível até alguém conferir na mão.",
+      "concrete_fix": "Trocar a introspecção por exceção pela decisão explícita. As duas únicas funções com `column` são `venda.search` e `veiculo.search`; basta padronizar a assinatura de `SearchFunc` com `column: str | None = None` e chamar sempre com o kwarg, eliminando o try/except. Se preferir manter compatibilidade com search_funcs de terceiros, usar `inspect.signature` uma vez em vez de capturar TypeError.",
+      "example": "# antes\ntry:\n    return list(search_func(session, q, column=search_column))\nexcept TypeError:\n    return list(search_func(session, q))\n\n# depois — SearchFunc passa a declarar column: str | None = None\nreturn list(search_func(session, q, column=search_column))",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "low",
+        "tags": ["correctness", "error-handling", "search", "observability", "backend"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/query.py",
+          "bases/xtreme_system/api/crud_types.py",
+          "components/xtreme_system/venda/core.py",
+          "components/xtreme_system/veiculo/core.py"
+        ],
+        "suggested_branch": "fix/query-list-sem-except-typeerror",
+        "related_opportunities": [],
+        "self_critique": {
+          "strengths": "O padrão anti-idiomático está lá, literal, e o conjunto de search_funcs é pequeno e fechado (duas funções) — o que torna o fix seguro e de baixo risco. O mapeamento de um relacionamento (Veiculo.investidor) dentro do columns_map é um gatilho plausível e concreto, não hipotético.",
+          "weaknesses": "Não consegui produzir um TypeError real por essa via — não escrevi um teste que dispare o fallback. É uma falha latente por construção, não um bug observado. Se na prática nenhum cast levanta TypeError, o item vale como robustez e clareza, não como correção de defeito ativo, e o impacto Medium seria generoso.",
+          "confidence_score": 7.0
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-005",
+      "rank": 5,
+      "short_title": "Nenhum teste exercita o commit/rollback real de get_session",
+      "location": {
+        "file": "tests/conftest.py",
+        "line": 85,
+        "function": "make_client.override",
+        "context": "def override(): yield session; if invoke_post_commit: _invoke_post_commit(session) — sem commit() e sem rollback()."
+      },
+      "impact": "Medium",
+      "category": "Testing",
+      "estimated_effort": "Medium",
+      "description": "O override de `get_session` no conftest (linha 85-88) faz `yield session` e, opcionalmente, dispara callbacks de post-commit. Ele nunca chama `session.commit()` nem `session.rollback()`.\n\nO `get_session` real (database/core.py:212-222) faz exatamente isso: `commit()` no caminho feliz, `rollback()` no caminho de exceção, `close()` sempre. Nenhum dos 285 testes passa por essa lógica.\n\nIsso é especialmente relevante porque o CLAUDE.md §6 documenta um contrato sutil de transação: quando um handler captura `IntegrityError` internamente e devolve resposta direto, ele PRECISA chamar `session.rollback()` para resetar a sessão antes de `get_session` tentar o commit; quando o handler re-lança como `HTTPException`, não deve chamar. Esse contrato é implementado em vários pontos — `rollback_integrity_error_response` (crud_ui/responses.py:100), `_criar_venda` (ui_routes/vendas.py:383), `_criar_compra` (ui_routes/compras.py:352) — e nenhum teste verifica que ele é respeitado, porque no ambiente de teste não existe commit final para quebrar.\n\nNa prática: se alguém remover um `session.rollback()` de um desses caminhos, a suíte continua verde e a falha aparece só em produção, como `PendingRollbackError` ou como commit parcial.",
+      "why_it_matters": "É a área do código com a regra mais fácil de errar e a única sem rede de proteção. `register_post_commit`/`register_post_rollback` (database/core.py:192-199) coordenam efeitos colaterais em disco (PDF de contrato, uploads, logo da empresa) com o destino da transação — se o rollback não acontecer como esperado, ficam arquivos órfãos ou registros apontando para arquivos inexistentes.",
+      "concrete_fix": "Adicionar um modo ao `make_client` que replique `get_session` de verdade (commit no sucesso, rollback na exceção, invocação dos callbacks correspondentes) e usá-lo em alguns testes-alvo de escrita: criação de venda com IntegrityError, criação de compra com upload, e o fluxo de fechamento. Não é preciso migrar os 285 testes — bastam os que exercitam os caminhos de conflito.",
+      "example": "# tests/conftest.py\ndef _make(..., transacao_real: bool = False) -> TestClient:\n    ...\n    def override() -> Iterator[Session]:\n        if not transacao_real:\n            yield session\n            if invoke_post_commit:\n                _invoke_post_commit(session)\n            return\n        try:                      # espelha database.core.get_session\n            yield session\n            session.commit()\n            _invoke_post_commit(session)\n        except Exception:\n            session.rollback()\n            raise",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["testing", "transactions", "test-coverage", "database", "backend"],
+        "files_affected": [
+          "tests/conftest.py",
+          "components/xtreme_system/database/core.py",
+          "bases/xtreme_system/api/crud_ui/responses.py"
+        ],
+        "suggested_branch": "test/get-session-commit-rollback-real",
+        "related_opportunities": [],
+        "self_critique": {
+          "strengths": "A lacuna é objetiva: o override do conftest está à vista e não tem commit nem rollback. O contrato que fica sem cobertura está escrito no próprio CLAUDE.md do projeto, então não é uma exigência inventada por mim. O fix é aditivo — não mexe nos testes existentes.",
+          "weaknesses": "Adicionar commit real ao fixture pode expor testes que hoje dependem de a sessão nunca ser commitada (isolamento entre casos, IDs reutilizados). Provavelmente exige ajustes no create_test_engine/limpeza entre testes, o que é mais trabalho do que o 'Medium' sugere. É melhoria de rede de segurança: não corrige nenhum defeito conhecido hoje.",
+          "confidence_score": 8.0
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-006",
+      "rank": 6,
+      "short_title": "Restore de banco limitado a 20 MB e rodando no thread da requisição",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/configuracoes.py",
+        "line": 263,
+        "function": "ui_configuracoes_importar",
+        "context": "conteudo = arquivo.file.read() → exportacao.restore_database(conteudo), síncrono, com o dump inteiro em memória."
+      },
+      "impact": "Medium",
+      "category": "Maintainability",
+      "estimated_effort": "Medium",
+      "description": "O fluxo de restore tem três limites que se acumulam e nenhum deles é comunicado ao usuário.\n\n(1) Teto de 20 MB. O middleware `_limite_request_size` (setup.py:131-137) rejeita com 413 qualquer request com `content-length` acima de `_MAX_REQUEST_BYTES` (20 MB). O dump é gerado com `pg_dump -Fc -Z 6` (exportacao/core.py:46) — comprimido, mas um banco com histórico de vendas, auditoria e uploads passa de 20 MB sem dificuldade. A partir daí o botão de importar simplesmente devolve 413, sem explicar por quê. É a funcionalidade de recuperação de desastre parando de funcionar exatamente quando o banco fica grande o bastante para importar.\n\n(2) Tudo em memória. `arquivo.file.read()` (linha 263) materializa o dump inteiro, e `restore_database` (exportacao/core.py:89) grava esse buffer num NamedTemporaryFile — duas cópias completas.\n\n(3) Síncrono no request. `ui_configuracoes_importar` é `def`, então roda no threadpool, mas o `subprocess.run` do `pg_restore` (exportacao/core.py:105) bloqueia até terminar, e antes dele `_salvar_backup_pre_restore` (linha 80) roda um `pg_dump` completo. Em bancos reais isso passa de qualquer timeout de proxy, e o usuário perde a conexão sem saber se o restore terminou — numa operação `--clean --if-exists` que já derrubou as tabelas.",
+      "why_it_matters": "É o caminho de recuperação de desastre. Falhar aqui é falhar no momento em que o sistema mais precisa funcionar, e a falha (2) e (3) deixam o banco num estado que o usuário não consegue observar pela UI. O 413 silencioso em (1) é o pior tipo de limite: nada no código nem na tela conecta 'importação falhou' a '20 MB'.",
+      "concrete_fix": "Menor passo útil: isentar a rota de importação do teto de 20 MB (ou elevar o teto só para ela) e fazer o upload ir direto para arquivo temporário em streaming, em vez de `.read()`. Isso resolve (1) e (2) sem mudar arquitetura. (3) é a parte cara — mover o restore para um job em background com status consultável é a solução correta, mas só vale se (1) e (2) já estiverem resolvidos.",
+      "example": "# setup.py — isentar a rota de importação do teto genérico\n_ROTAS_SEM_LIMITE_TAMANHO = {\"/ui/configuracoes/importar\"}\n\n@app.middleware(\"http\")\nasync def _limite_request_size(request, call_next):\n    if request.url.path in _ROTAS_SEM_LIMITE_TAMANHO:\n        return await call_next(request)\n    ...\n\n# configuracoes.py — streaming para disco, sem carregar tudo em memória\nwith tempfile.NamedTemporaryFile(suffix=\".dump\", delete=False) as tmp:\n    shutil.copyfileobj(arquivo.file, tmp)\n    tmp_path = tmp.name",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["operations", "backup-restore", "memory", "reliability", "backend"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/configuracoes.py",
+          "components/xtreme_system/exportacao/core.py",
+          "bases/xtreme_system/api/setup.py"
+        ],
+        "suggested_branch": "fix/restore-banco-streaming-sem-teto"
+        ,
+        "related_opportunities": [],
+        "self_critique": {
+          "strengths": "A interação entre o teto de 20 MB do middleware e o tamanho de um dump real é concreta e verificável nos dois arquivos. A dupla cópia em memória e o subprocess bloqueante estão explícitos no código. O fix proposto para (1) e (2) é pequeno e independente da parte cara.",
+          "weaknesses": "Não medi o tamanho de um dump real deste banco — a afirmação de que passa de 20 MB é inferência a partir das tabelas de auditoria e histórico, não medição. Se o banco for pequeno, (1) é problema futuro e não atual. Isentar uma rota do limite de tamanho tem seu próprio custo: abre um caminho para upload sem teto, ainda que restrito a admin.",
+          "confidence_score": 7.5
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-007",
+      "rank": 7,
+      "short_title": "Sem a migration aplicada, DRE e fechamentos mostram zero em vez de erro",
+      "location": {
+        "file": "components/xtreme_system/fechamento_venda/core.py",
+        "line": 147,
+        "function": "_schema_disponivel",
+        "context": "list_all, ids_by_venda_ids, get, get_by_venda e listar_para_dre retornam vazio/None quando _schema_disponivel é False."
+      },
+      "impact": "Medium",
+      "category": "Error handling and logging",
+      "estimated_effort": "Low",
+      "description": "`_schema_disponivel` (linha 147) inspeciona em runtime se as tabelas `fechamento_venda` e `participacao_fechamento_venda` existem. Cinco funções de leitura tratam ausência como \"não há dados\":\n\n- `list_all` (linha 166) → `[]`\n- `ids_by_venda_ids` (linha 172) → `{}`\n- `get` (linha 183) → `None`\n- `get_by_venda` (linha 189) → `None`\n- `listar_para_dre` (linha 195) → `[]`\n\nSó `confirmar` (linha 279) levanta `FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)` — ou seja, a escrita avisa, a leitura mente.\n\nO efeito prático: num ambiente onde `make migrate` não rodou, `/ui/relatorios/dre` renderiza normalmente com receita 0,00, lucro 0,00 e margem 0,00. Nada distingue \"nenhuma venda fechada no período\" de \"a tabela não existe\". Pior, `_motivo_inelegivel` (linha 366) chama `get_by_venda`, que devolve None, então toda venda parece elegível para fechamento — até `confirmar` falhar.\n\nHá também um detalhe de cache: `_SCHEMA_DISPONIVEL_POR_ENGINE[engine] = True` só é gravado quando disponível é True (linha 161-163). Enquanto a tabela não existir, cada chamada refaz o `inspector.has_table` — dois round-trips por chamada, em todas as listagens de venda (via `ids_by_venda_ids` no `_ctx_lista_vendas`).",
+      "why_it_matters": "Relatório financeiro que exibe zero com aparência de resultado legítimo é pior que erro: alguém pode tomar decisão em cima. E o modo de falha é justamente o de um deploy incompleto — o cenário em que a pessoa está menos atenta a números estranhos.",
+      "concrete_fix": "Fazer a leitura falhar como a escrita já falha. O menor passo: em `listar_para_dre` (a superfície de relatório), levantar `FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)` em vez de devolver `[]`, e tratar no route de relatórios exibindo a mensagem. As demais funções podem manter o retorno vazio (são usadas em listagens onde degradar é aceitável), mas devem registrar um `logger.warning` para deixar rastro. Cachear também o resultado negativo, com TTL curto, elimina o custo repetido.",
+      "example": "# fechamento_venda/core.py\ndef listar_para_dre(session, *, data_de=None, ...) -> list[FechamentoVenda]:\n-    if not _schema_disponivel(session):\n-        return []\n+    if not _schema_disponivel(session):\n+        raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)\n     query = session.query(FechamentoVenda)\n\n# ui_routes/relatorios.py — trata e mostra em vez de renderizar zeros\ntry:\n    ctx = _ctx_dre(session, user, filtros)\nexcept fechamento_venda.FechamentoVendaError as exc:\n    return templates.TemplateResponse(\n        request, \"relatorios_dre.html\", {\"user\": user, \"erro\": str(exc)},\n        status_code=503,\n    )",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["correctness", "observability", "migrations", "reporting", "backend"],
+        "files_affected": [
+          "components/xtreme_system/fechamento_venda/core.py",
+          "bases/xtreme_system/api/routes/ui_routes/relatorios.py",
+          "bases/xtreme_system/api/templates/relatorios_dre.html"
+        ],
+        "suggested_branch": "fix/dre-falha-explicita-sem-migration",
+        "related_opportunities": ["imp-20260723-009"],
+        "self_critique": {
+          "strengths": "A assimetria é objetiva e está toda no mesmo arquivo: confirmar levanta ERRO_SCHEMA_DESATUALIZADO, as cinco funções de leitura devolvem vazio. O cache só-positivo está explícito nas linhas 161-163. O fix é localizado.",
+          "weaknesses": "Só acontece com migrations pendentes — num deploy disciplinado (o Makefile tem `make migrate`) a janela é pequena e transitória. O retorno vazio pode ter sido escolha deliberada para permitir subir a aplicação antes da migration; se for esse o caso, transformar em exceção muda um comportamento intencional e deveria ser confirmado com quem escreveu. Tratei como defeito, mas admito a leitura alternativa.",
+          "confidence_score": 7.0
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-008",
+      "rank": 8,
+      "short_title": "Mapa campo→input de vendas duplicado três vezes, todas obrigadas a concordar",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+        "line": 107,
+        "function": "_filtrar_campos_ocultos_venda",
+        "context": "campos_form_map local, idêntico ao passado em register_crud_ui_routes(campos_form_map=..., linha 252) e espelhado em CAMPOS_PROTEGIDOS['vendas']."
+      },
+      "impact": "Medium",
+      "category": "Code quality",
+      "estimated_effort": "Low",
+      "description": "O mesmo mapeamento campo-de-perfil → nome-de-input aparece três vezes, e as três precisam concordar para que a proteção de campo funcione:\n\n1. `_filtrar_campos_ocultos_venda` (vendas.py:107-124) — dicionário literal de 16 entradas, usado pelos handlers manuais `_criar_venda` (linha 370) e `_atualizar_venda` (linha 408).\n2. `register_crud_ui_routes(..., campos_form_map=...)` (vendas.py:252-269) — o MESMO dicionário de 16 entradas, literalmente copiado, consumido por `register_update_route` (crud_ui/routes.py:513-516).\n3. `perfil.CAMPOS_PROTEGIDOS['vendas']` (perfil/core.py:59-79) — a lista de campos que podem ser ocultados, e portanto o conjunto de chaves que (1) e (2) precisam cobrir.\n\nCompras tem a mesma estrutura duplicada (`_filtrar_campos_ocultos_compra` em compras.py + `campos_form_map` no registro).\n\nA duplicação (1)/(2) existe porque vendas registra `register_create=False, register_update=False` e implementa create/update à mão — mas ainda passa `campos_form_map` para a fábrica, que só o usa no update que não foi registrado. Ou seja: a cópia (2) provavelmente está morta hoje, e continua sendo mantida como se estivesse viva.\n\nO modo de falha é silencioso e direcional: um campo que existe em `CAMPOS_PROTEGIDOS` mas falta no mapa não é removido do form, então um usuário sem permissão consegue gravá-lo.",
+      "why_it_matters": "É uma regra de permissão mantida por convenção manual entre três listas. O erro típico — adicionar um campo em `CAMPOS_PROTEGIDOS` e esquecer um dos mapas — não quebra teste nenhum e produz exatamente o tipo de furo do item imp-20260723-001. Além disso, a cópia aparentemente morta em (2) desperdiça atenção de quem for mexer.",
+      "concrete_fix": "Duas ações independentes. Primeiro, confirmar que `campos_form_map` no registro de vendas está mesmo morto (register_update=False) e, se estiver, remover a cópia (2) — corte puro, sem mudança de comportamento. Segundo, derivar o mapa de uma fonte única: como a maioria das chaves de `CAMPOS_PROTEGIDOS['vendas']` já é igual ao nome do input, basta declarar as exceções (`cliente→cliente_id`, `veiculo→veiculo_id`, `veiculo_troca→veiculo_troca_id`, `vendedor→vendedor_id`) e gerar o resto.",
+      "example": "# ui_routes/common.py\nEXCECOES_CAMPO_INPUT = {\n    \"vendas\": {\"cliente\": \"cliente_id\", \"veiculo\": \"veiculo_id\",\n               \"veiculo_troca\": \"veiculo_troca_id\", \"vendedor\": \"vendedor_id\"},\n}\n\ndef campos_form_map(pagina: str, ignorar: set[str] = frozenset()) -> dict[str, str]:\n    excecoes = EXCECOES_CAMPO_INPUT.get(pagina, {})\n    return {\n        campo: excecoes.get(campo, campo)\n        for campo, _label in perfil.CAMPOS_PROTEGIDOS[pagina]\n        if campo not in ignorar\n    }\n\n# vendas.py — uma fonte só; 'lucro' e 'participacao' são de leitura (fechamento)\n_CAMPOS_FORM_VENDA = campos_form_map(\"vendas\", ignorar={\"lucro\", \"participacao\", \"vendedor\"})",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["duplication", "maintainability", "permissions", "dead-code", "backend"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/routes/ui_routes/compras.py",
+          "bases/xtreme_system/api/routes/ui_routes/common.py",
+          "components/xtreme_system/perfil/core.py"
+        ],
+        "suggested_branch": "refactor/campos-form-map-fonte-unica",
+        "related_opportunities": ["imp-20260723-001"],
+        "self_critique": {
+          "strengths": "As três cópias foram lidas e comparadas entrada por entrada — são literalmente os mesmos 16 pares em vendas.py:107 e vendas.py:252. A conexão com a regra de permissão (e portanto com o item 1) é direta, o que eleva isto acima de uma queixa estética sobre duplicação.",
+          "weaknesses": "Afirmo que a cópia (2) está morta com base em register_update=False, mas não executei um teste que prove que register_update_route não é alcançado por outro caminho — é preciso confirmar antes de remover. O 'ignorar' no exemplo depende de saber quais campos de CAMPOS_PROTEGIDOS são só de leitura (lucro, participacao vêm do fechamento); errar esse conjunto quebra o formulário. O fix é menos mecânico do que o 'Low' sugere.",
+          "confidence_score": 7.5
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-009",
+      "rank": 9,
+      "short_title": "DRE carrega o grafo inteiro de cada venda e filtra por coluna sem índice",
+      "location": {
+        "file": "components/xtreme_system/fechamento_venda/core.py",
+        "line": 195,
+        "function": "listar_para_dre",
+        "context": "session.query(FechamentoVenda) com relationships lazy='selectin' em cascata, filtrando e ordenando por data_fechamento — que não tem índice."
+      },
+      "impact": "Medium",
+      "category": "Performance",
+      "estimated_effort": "Low",
+      "description": "O DRE precisa de colunas escalares (receita, custo_veiculo, custos_operacionais, debitos, lucro_liquido, data_fechamento) mais alguns rótulos para o CSV. O que ele carrega é bem mais.\n\n`FechamentoVenda` declara `venda`, `usuario` e `participacoes` como `lazy=\"selectin\"` (linhas 57-63). `Venda` por sua vez declara `cliente`, `veiculo`, `veiculo_troca` e `vendedor` como selectin (venda/core.py:64-69), e `Veiculo` declara `investidor` (veiculo/core.py:57). Uma consulta ao DRE dispara toda essa cascata — e materializa cliente, veículo de troca e participações de cada fechamento, mesmo quando a tela só soma números.\n\nO `dre_totais` (linha 224) e `dre_por_mes` (linha 242) agregam em Python, percorrendo a lista repetidamente: `dre_por_mes` chama `dre_totais` uma vez por mês, e `dre_totais` faz cinco `sum()` independentes sobre a mesma lista.\n\nAgravante de banco: o filtro principal e a ordenação são por `data_fechamento` (linhas 216-220), e essa coluna não tem índice. Conferi as migrations (`a1b2c3d4e012_add_fechamento_venda.py:40`) e o DATABASE.md:248 — só `venda_id` e `usuario_id` são indexados. A janela padrão do relatório é de 11 meses e o máximo permitido é 732 dias (common.py:19), então a varredura é grande por construção.\n\nA exportação (`ui_relatorio_dre_exportar`, relatorios.py:99-132) acessa `f.venda.veiculo.investidor.nome` e `f.venda.vendedor.username` — servidos pelo selectin, então não é N+1, mas confirma que só 4 atributos do grafo são realmente usados.",
+      "why_it_matters": "É o relatório que o gestor abre; a latência é percebida diretamente. E é o tipo de custo que cresce com o histórico de vendas fechadas — exatamente o dado que só aumenta. O índice ausente é o item de melhor relação custo/benefício da lista inteira.",
+      "concrete_fix": "Duas mudanças pequenas e independentes. (1) Criar índice em `fechamento_venda.data_fechamento` — uma migration de uma linha, resolve filtro e ordenação. (2) Em `listar_para_dre`, sobrepor o selectin com `lazy(\"raiseload\")` para o que o DRE não usa (`participacoes`, `venda.cliente`, `venda.veiculo_troca`) e carregar explicitamente só `venda.veiculo.investidor` e `venda.vendedor`. Fazer (1) primeiro e medir antes de mexer em (2).",
+      "example": "# alembic: índice na coluna que filtra e ordena\nop.create_index(\n    \"ix_fechamento_venda_data_fechamento\",\n    \"fechamento_venda\", [\"data_fechamento\"],\n)\n\n# fechamento_venda/core.py — carregar só o que o DRE usa\nfrom sqlalchemy.orm import lazyload, selectinload\n\nquery = session.query(FechamentoVenda).options(\n    lazyload(FechamentoVenda.participacoes),\n    selectinload(FechamentoVenda.venda).selectinload(Venda.veiculo)\n                                       .selectinload(Veiculo.investidor),\n    selectinload(FechamentoVenda.venda).selectinload(Venda.vendedor),\n)",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["performance", "database", "index", "reporting", "eager-loading"],
+        "files_affected": [
+          "components/xtreme_system/fechamento_venda/core.py",
+          "bases/xtreme_system/api/routes/ui_routes/relatorios.py",
+          "alembic/versions/"
+        ],
+        "suggested_branch": "perf/dre-indice-e-carga-seletiva",
+        "related_opportunities": ["imp-20260723-003", "imp-20260723-007"],
+        "self_critique": {
+          "strengths": "A ausência do índice em data_fechamento foi confirmada nas migrations e no DATABASE.md, e essa é a coluna do WHERE e do ORDER BY — o índice é ganho garantido e custo quase zero. A cascata de selectin está declarada nos três models e é rastreável.",
+          "weaknesses": "Chamei de N+1 na primeira leitura e estava errado: selectin agrupa as cargas, então o número de queries é constante, não linear. O problema real é volume de dados por query, que é menos grave. Sem medição do tempo real do DRE, não sei se a parte (2) vale o risco de mexer nas estratégias de carga; se for para fazer só uma coisa, faça o índice.",
+          "confidence_score": 8.0
+        }
+      }
+    },
+    {
+      "id": "imp-20260723-010",
+      "rank": 10,
+      "short_title": "route_factories replica assinatura de 40 parâmetros só para repassar",
+      "location": {
+        "file": "bases/xtreme_system/api/route_factories.py",
+        "line": 221,
+        "function": "register_crud_ui_routes",
+        "context": "Declara 40 parâmetros e os repassa um a um para _register_crud_ui_routes_impl — 83 linhas sem nenhuma lógica."
+      },
+      "impact": "Low",
+      "category": "Maintainability",
+      "estimated_effort": "Low",
+      "description": "`route_factories.register_crud_ui_routes` (linhas 221-303) declara 40 parâmetros nomeados e não faz nada além de repassá-los, na mesma ordem, para `crud_ui.routes.register_crud_ui_routes` importado como `_register_crud_ui_routes_impl` (linha 33). São 83 linhas sem uma decisão sequer.\n\nO mesmo padrão aparece em `register_ui_simples` (linhas 199-218) e nos aliases `_sort_key = sort_key` / `_csv_response = csv_response` (linhas 44-45).\n\nO custo é concreto: qualquer parâmetro novo na fábrica precisa ser escrito em três lugares — a assinatura real em `crud_ui/routes.py`, a assinatura duplicada aqui, e a chamada de repasse. Esquecer o terceiro produz um `TypeError` claro; esquecer o segundo produz o silêncio de um parâmetro que simplesmente não chega.\n\nO arquivo tem conteúdo próprio e legítimo — `register_crud_routes` (JSON) e os helpers `_json_visible`/`_require_json_operacao` (linhas 49-81). O problema é só a camada de repasse.",
+      "why_it_matters": "Não causa bug hoje; causa atrito em toda mudança na fábrica de CRUD, que é o ponto por onde passam sete entidades. É o tipo de duplicação que se paga a cada feature nova, em vez de uma vez só.",
+      "concrete_fix": "Substituir o wrapper por re-export direto e ajustar os imports nos módulos de rota. `_sort_key` e `_csv_response` também podem virar re-export explícito. Vale conferir antes se `lint-imports` (Makefile:39, import-linter) impõe que `ui_routes/*` só importe de `route_factories` — se impuser, ajustar o contrato junto, ou manter o repasse como fronteira arquitetural deliberada e documentar isso no ARCHITECTURE.md.",
+      "example": "# bases/xtreme_system/api/route_factories.py\nfrom xtreme_system.api.crud_ui.routes import register_crud_ui_routes\nfrom xtreme_system.api.crud_ui.simple import register_ui_simples\nfrom xtreme_system.api.crud_ui.query import sort_key as _sort_key\nfrom xtreme_system.api.crud_ui.responses import csv_response as _csv_response\n\n__all__ = [\n    \"register_crud_routes\", \"register_crud_ui_routes\",\n    \"register_ui_simples\", \"_csv_response\", \"_sort_key\",\n]\n# — 83 linhas de repasse removidas; nenhuma mudança de comportamento",
+      "additional_fields": {
+        "priority": "low",
+        "risk_level": "low",
+        "tags": ["duplication", "maintainability", "architecture", "refactoring", "backend"],
+        "files_affected": [
+          "bases/xtreme_system/api/route_factories.py",
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/routes/ui_routes/compras.py",
+          "bases/xtreme_system/api/routes/ui_routes/clientes.py"
+        ],
+        "suggested_branch": "refactor/remover-repasse-route-factories",
+        "related_opportunities": ["imp-20260723-008"],
+        "self_critique": {
+          "strengths": "Verificável em segundos: as duas assinaturas são idênticas parâmetro a parâmetro e o corpo é só a chamada. A remoção é mecânica e o conjunto de testes (285) cobre bem as rotas geradas, então uma regressão apareceria.",
+          "weaknesses": "O mais fraco da lista, e classifiquei como Low justamente por isso — é preferência estrutural, não defeito. Existe a leitura de que o wrapper é uma fronteira arquitetural deliberada (ui_routes não deve conhecer crud_ui), e o projeto usa import-linter, o que sugere que fronteiras importam aqui. Não li os contratos do .importlinter para confirmar; se houver um contrato dependendo disso, a recomendação muda de 'remover' para 'documentar'.",
+          "confidence_score": 6.5
+        }
+      }
+    }
+  ]
+}

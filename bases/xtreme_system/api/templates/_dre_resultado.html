@@ -1,0 +1,116 @@
+{% import "_macros.html" as ui %}
+<div id="dre-resultado">
+
+<section class="stats" aria-label="Resultado do período">
+  <article class="card stat stat--success">
+    <div class="stat__label">{{ ui.icon("cash") }} Receita</div>
+    <div class="stat__value cell-num">{{ ui.moeda(totais.receita) }}</div>
+    <div class="stat__hint">{{ totais.quantidade }} fechamento{{ '' if totais.quantidade == 1 else 's' }}</div>
+  </article>
+  <article class="card stat stat--info">
+    <div class="stat__label">{{ ui.icon("car") }} Custo dos veículos</div>
+    <div class="stat__value cell-num">{{ ui.moeda(totais.custo_veiculo) }}</div>
+    <div class="stat__hint">preço de custo no fechamento</div>
+  </article>
+  <article class="card stat stat--accent">
+    <div class="stat__label">{{ ui.icon("wallet") }} Custos operacionais</div>
+    <div class="stat__value cell-num">{{ ui.moeda(totais.custos_operacionais) }}</div>
+    <div class="stat__hint">custos lançados por veículo</div>
+  </article>
+  <article class="card stat stat--warning">
+    <div class="stat__label">{{ ui.icon("alert-triangle") }} Débitos</div>
+    <div class="stat__value cell-num">{{ ui.moeda(totais.debitos) }}</div>
+    <div class="stat__hint">débitos abatidos na venda</div>
+  </article>
+  <article class="card stat {{ 'stat--success' if totais.lucro_liquido >= 0 else 'stat--warning' }}">
+    <div class="stat__label">{{ ui.icon("zap") }} Lucro líquido</div>
+    <div class="stat__value cell-num">{{ ui.moeda(totais.lucro_liquido) }}</div>
+    <div class="stat__hint">margem de {{ totais.margem }}%</div>
+  </article>
+</section>
+
+<h2 style="margin:var(--s-6) 0 var(--s-4)">Mês a mês</h2>
+<div class="table-wrap">
+  <table data-table="dre-mensal">
+    <thead><tr>
+      <th data-col="mes" data-col-label="Mês">Mês</th>
+      <th data-col="fechamentos" data-col-label="Fechamentos">Fech.</th>
+      <th data-col="receita" data-col-label="Receita">Receita</th>
+      <th data-col="custo_veiculo" data-col-label="Custo veíc.">Custo veíc.</th>
+      <th data-col="custos_operacionais" data-col-label="Custos op.">Custos op.</th>
+      <th data-col="debitos" data-col-label="Débitos">Débitos</th>
+      <th data-col="lucro" data-col-label="Lucro">Lucro</th>
+      <th data-col="margem" data-col-label="Margem">Margem</th>
+    </tr></thead>
+    <tbody>
+      {% for linha in linhas_mes %}
+      <tr>
+        <td class="cell-mono" data-col="mes">{{ linha.mes.strftime('%m/%Y') }}</td>
+        <td class="cell-num" data-col="fechamentos">{{ linha.quantidade }}</td>
+        <td class="cell-num" data-col="receita">{{ ui.moeda(linha.receita) }}</td>
+        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda(linha.custo_veiculo) }}</td>
+        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda(linha.custos_operacionais) }}</td>
+        <td class="cell-num" data-col="debitos">{{ ui.moeda(linha.debitos) }}</td>
+        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda(linha.lucro_liquido) }}</td>
+        <td class="cell-num" data-col="margem">{{ linha.margem }}%</td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="8">
+        {% call ui.empty("receipt", "Sem fechamentos", "Nenhuma venda foi fechada no período selecionado.") %}{% endcall %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+    {% if linhas_mes %}
+    <tfoot><tr>
+      <td class="cell-strong">Total</td>
+      <td class="cell-num cell-strong">{{ totais.quantidade }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda(totais.receita) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda(totais.custo_veiculo) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda(totais.custos_operacionais) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda(totais.debitos) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda(totais.lucro_liquido) }}</td>
+      <td class="cell-num cell-strong">{{ totais.margem }}%</td>
+    </tr></tfoot>
+    {% endif %}
+  </table>
+</div>
+
+{% if fechamentos %}
+<h2 style="margin:var(--s-6) 0 var(--s-4)">Detalhe dos fechamentos</h2>
+<div class="table-wrap">
+  <table data-table="dre-fechamentos">
+    <thead><tr>
+      <th style="width:1%" data-col="id" data-col-label="Fechamento">#</th>
+      <th data-col="data" data-col-label="Data">Data</th>
+      <th data-col="venda" data-col-label="Venda">Venda</th>
+      <th data-col="veiculo" data-col-label="Veículo">Veículo</th>
+      <th data-col="investidor" data-col-label="Investidor">Investidor</th>
+      <th data-col="vendedor" data-col-label="Vendedor">Vendedor</th>
+      <th data-col="receita" data-col-label="Receita">Receita</th>
+      <th data-col="custo_veiculo" data-col-label="Custo veíc.">Custo veíc.</th>
+      <th data-col="custos_operacionais" data-col-label="Custos op.">Custos op.</th>
+      <th data-col="debitos" data-col-label="Débitos">Débitos</th>
+      <th data-col="lucro" data-col-label="Lucro">Lucro</th>
+    </tr></thead>
+    <tbody>
+      {% for f in fechamentos %}
+      <tr>
+        <td class="cell-mono" data-col="id">{{ f.id }}</td>
+        <td class="cell-mono" data-col="data">{{ f.data_fechamento.strftime('%d/%m/%Y') }}</td>
+        <td class="cell-mono" data-col="venda">#{{ f.venda_id }}</td>
+        <td class="cell-strong" data-col="veiculo">{{ f.venda.veiculo.modelo }} · {{ f.venda.veiculo.placa }}</td>
+        <td data-col="investidor">{{ f.venda.veiculo.investidor.nome }}</td>
+        <td data-col="vendedor">{{ f.venda.vendedor.username if f.venda.vendedor else '—' }}</td>
+        <td class="cell-num" data-col="receita">{{ ui.moeda(f.receita) }}</td>
+        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda(f.custo_veiculo) }}</td>
+        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda(f.custos_operacionais) }}</td>
+        <td class="cell-num" data-col="debitos">{{ ui.moeda(f.debitos) }}</td>
+        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda(f.lucro_liquido) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+</div>

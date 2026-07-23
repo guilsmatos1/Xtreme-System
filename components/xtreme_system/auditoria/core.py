@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, func, select
@@ -12,7 +12,8 @@ from xtreme_system.database.core import Base
 
 AUDIT_SKIP = {"auditoria"}
 MASK = {"senha_hash", "evolution_api_key"}
-TIPO_ACOES: tuple[str, ...] = ("CREATE", "UPDATE", "DELETE")
+TipoAcao = Literal["CREATE", "UPDATE", "DELETE"]
+TIPO_ACOES: tuple[TipoAcao, ...] = get_args(TipoAcao)
 
 
 class AuditError(ValueError):

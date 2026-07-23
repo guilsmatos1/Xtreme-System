@@ -5,7 +5,7 @@ description: >-
   redundant ones, using Orca's `orca linear ...` CLI. Lists open issues at the
   maximum page size, restricts to the Backlog, Todo, In Progress, and In Review
   states, clusters likely duplicates by comparing titles and descriptions, keeps
-  one canonical issue per cluster, and moves the rest to the `Duplicate` state
+  one canonical issue per cluster, and closes the rest to the `Canceled` state
   with a back-reference comment. Use when asked to detect, triage, or clean up
   duplicate Linear tickets. Defaults to team `GUI`.
 ---
@@ -46,7 +46,7 @@ orca linear list --filter open --team GUI --limit 216 --workspace all --json
 
 3. Group the remaining issues into duplicate clusters by comparing titles and descriptions semantically (same feature, bug, or request), not just exact string matches.
 
-4. For each cluster, pick one canonical issue to keep — the one furthest along the workflow (`In Review` > `In Progress` > `Todo` > `Backlog`), breaking ties by oldest creation date, then by most complete description. Every other issue in the cluster is a duplicate.
+4. For each cluster, pick one canonical issue to keep — the one furthest along the workflow (`In Review` > `In Progress` > `Todo` > `Backlog`), breaking ties by most recently created (newest). Every other issue in the cluster is a duplicate.
 
 5. Close each redundant issue. Note the Linear constraint: moving an issue into a `duplicate`-type state is rejected with `Missing duplicate relation` unless a duplicate issue relation already exists, and the `orca linear` CLI cannot create that relation (it only reads relations via `--relations`). So use `Canceled`, which needs no relation:
 

@@ -16,9 +16,11 @@ from xtreme_system.custo_veiculo.core import CustoVeiculo
 from xtreme_system.database.core import Base
 from xtreme_system.investidor.core import Investidor, InvestidorRead
 from xtreme_system.usuario.core import Usuario, UsuarioRead
+from xtreme_system.veiculo.core import Veiculo
 from xtreme_system.venda.core import StatusVenda, Venda, VendaRead
 
 CENTAVO = Decimal("0.01")
+ZERO = Decimal("0.00")
 PERCENTUAL_TOTAL = Decimal("100")
 ERRO_SEM_DISTRIBUICAO = "Venda sem lucro positivo não aceita distribuição"
 ERRO_RATEIO_OBRIGATORIO = "Informe o rateio do lucro"
@@ -116,6 +118,20 @@ class FechamentoVendaRead(BaseModel):
     participacoes: list[ParticipacaoFechamentoVendaRead]
 
 
+class DreTotais(BaseModel):
+    quantidade: int
+    receita: Decimal
+    custo_veiculo: Decimal
+    custos_operacionais: Decimal
+    debitos: Decimal
+    lucro_liquido: Decimal
+    margem: Decimal
+
+
+class DreLinhaMes(DreTotais):
+    mes: date
+
+
 class FechamentoVendaPreview(BaseModel):
     elegivel: bool
     motivo: str | None
@@ -174,6 +190,64 @@ def get_by_venda(session: Session, venda_id: int) -> FechamentoVenda | None:
     if not _schema_disponivel(session):
         return None
     return session.query(FechamentoVenda).filter_by(venda_id=venda_id).one_or_none()
+
+
+def listar_para_dre(
+    session: Session,
+    *,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+    investidor_id: int | None = None,
+    vendedor_id: int | None = None,
+) -> list[FechamentoVenda]:
+    if not _schema_disponivel(session):
+        return []
+    query = session.query(FechamentoVenda)
+    if investidor_id is not None:
+        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id).join(
+            Veiculo, Venda.veiculo_id == Veiculo.id
+        )
+        query = query.filter(Veiculo.investidor_id == investidor_id)
+    elif vendedor_id is not None:
+        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id)
+    if vendedor_id is not None:
+        query = query.filter(Venda.vendedor_id == vendedor_id)
+    if data_de is not None:
+        query = query.filter(FechamentoVenda.data_fechamento >= data_de)
+    if data_ate is not None:
+        query = query.filter(FechamentoVenda.data_fechamento <= data_ate)
+    return list(
+        query.order_by(FechamentoVenda.data_fechamento, FechamentoVenda.id).all()
+    )
+
+
+def dre_totais(fechamentos: list[FechamentoVenda]) -> DreTotais:
+    receita = sum((f.receita for f in fechamentos), Decimal("0"))
+    lucro = sum((f.lucro_liquido for f in fechamentos), Decimal("0"))
+    return DreTotais(
+        quantidade=len(fechamentos),
+        receita=_quantizar(receita),
+        custo_veiculo=_quantizar(
+            sum((f.custo_veiculo for f in fechamentos), Decimal("0"))
+        ),
+        custos_operacionais=_quantizar(
+            sum((f.custos_operacionais for f in fechamentos), Decimal("0"))
+        ),
+        debitos=_quantizar(sum((f.debitos for f in fechamentos), Decimal("0"))),
+        lucro_liquido=_quantizar(lucro),
+        margem=_quantizar(lucro / receita * PERCENTUAL_TOTAL) if receita else ZERO,
+    )
+
+
+def dre_por_mes(fechamentos: list[FechamentoVenda]) -> list[DreLinhaMes]:
+    por_mes: dict[date, list[FechamentoVenda]] = {}
+    for item in fechamentos:
+        mes = item.data_fechamento.replace(day=1)
+        por_mes.setdefault(mes, []).append(item)
+    return [
+        DreLinhaMes(mes=mes, **dre_totais(itens).model_dump())
+        for mes, itens in sorted(por_mes.items())
+    ]
 
 
 def preview(session: Session, venda_obj: Venda) -> FechamentoVendaPreview:
