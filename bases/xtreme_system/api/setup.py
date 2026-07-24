@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import Any
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
+    FileResponse,
     HTMLResponse,
     JSONResponse,
     RedirectResponse,
@@ -22,6 +23,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from xtreme_system.api.deps import (
+    UIUser,
     _NaoAdminError,
     _NaoAutenticadoError,
     _NaoAutorizadoError,
@@ -250,6 +252,17 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
 
 
 _ui_dir = Path(__file__).parent
+
+
+@app.get("/static/uploads/{path:path}")
+def uploads_autenticados(path: str, _: UIUser) -> FileResponse:
+    uploads_root = (_ui_dir / "static" / "uploads").resolve()
+    file_path = (uploads_root / path).resolve()
+    if not file_path.is_relative_to(uploads_root) or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    return FileResponse(file_path)
+
+
 app.mount("/static", StaticFiles(directory=_ui_dir / "static"), name="static")
 
 

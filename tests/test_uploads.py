@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ from xtreme_system.compra.core import Compra
 from xtreme_system.database.core import _invoke_post_commit
 from xtreme_system.imagem_comprovante_compra.core import ImagemComprovanteCompra
 from xtreme_system.investidor.core import Investidor
+from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo.core import TipoEntrada, TipoVeiculo, Veiculo
 
 
@@ -571,3 +573,55 @@ def test_uploaded_file_path_bloqueia_escapar_via_symlink(
     monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", fake_ui)
 
     assert _uploaded_file_path("/static/uploads/link_escapando") is None
+
+
+def test_static_upload_exige_login(
+    make_client: Callable[..., TestClient],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    fake_ui = tmp_path / "ui"
+    upload = fake_ui / "static" / "uploads" / "veiculos" / "1" / "foto.jpg"
+    upload.parent.mkdir(parents=True)
+    upload.write_bytes(b"imagem")
+    monkeypatch.setattr("xtreme_system.api.setup._ui_dir", fake_ui)
+
+    client = make_client()
+
+    response = client.get("/static/uploads/veiculos/1/foto.jpg", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/ui/login"
+
+
+def test_static_upload_autenticado_retorna_arquivo(
+    make_client: Callable[..., TestClient],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    fake_ui = tmp_path / "ui"
+    upload = fake_ui / "static" / "uploads" / "veiculos" / "1" / "foto.jpg"
+    upload.parent.mkdir(parents=True)
+    upload.write_bytes(b"imagem")
+    monkeypatch.setattr("xtreme_system.api.setup._ui_dir", fake_ui)
+    client = make_client(usuarios=[("admin", usuario.Papel.admin)])
+    client.post(
+        "/ui/login",
+        data={"username": "admin", "password": "senha"},
+        follow_redirects=False,
+    )
+
+    response = client.get("/static/uploads/veiculos/1/foto.jpg")
+
+    assert response.status_code == 200
+    assert response.content == b"imagem"
+
+
+def test_static_asset_publico_continua_aberto(
+    make_client: Callable[..., TestClient],
+) -> None:
+    client = make_client()
+
+    response = client.get("/static/app.css")
+
+    assert response.status_code == 200
