@@ -52,6 +52,16 @@ After successfully sending all opportunities to Linear:
 
 This creates an archive of completed opportunity batches, one per loop run.
 
+## Required: Invoke Next Skill
+
+**After successfully completing this skill**, you MUST invoke the `0002-linear-sequential-worktree` skill to process the newly created Linear issues sequentially.
+
+```bash
+/0002-linear-sequential-worktree
+```
+
+This ensures that created opportunities flow directly into the sequential processing pipeline without manual intervention.
+
 ## When Sending from Chat Requests
 
 - Set the title from the request, keeping it as close to the original source as possible.
