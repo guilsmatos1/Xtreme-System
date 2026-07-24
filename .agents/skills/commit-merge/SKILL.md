@@ -6,6 +6,12 @@ description: Stage, commit, and merge the current branch into master with --no-f
 
 Flow for stage + commit + merge into master with `--no-ff`.
 
+## Fast path (check first)
+
+- Run `git status --porcelain --branch` first.
+- If there is nothing to commit AND `git merge-base --is-ancestor HEAD master` is true → it's a no-op: master already contains HEAD. Respond compactly (e.g. "No pending changes; master already contains HEAD. Nothing to do.") and stop — do NOT run `git worktree list`, diff, or log.
+- Only fall through to the full Flow below when there is a real change to integrate.
+
 ## Triggers
 
 - "commit and merge"

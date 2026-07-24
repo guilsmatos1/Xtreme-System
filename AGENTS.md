@@ -15,6 +15,12 @@ Shortcuts by intent:
 - Running, testing, or configuring the environment → read `README.md`.
 - Placing validation → business invariants go in `components/*/core.py`; FK existence / availability checks in `workflows.py`; route-specific 400/409 in `bases/api/routes/`. Ex: `FechamentoVendaError` raised in `fechamento_venda/core.py`, caught at the route layer.
 
+Minimal, on-demand reading:
+
+- Grep/graphify first — open only the files the issue names. Don't read docs out of habit.
+- Read `README.md` / `ARCHITECTURE.md` / `API.md` / `DATABASE.md` only when the change is ambiguous about contract, architecture, auth, or schema. A bug fix that already carries `file:line` does NOT trigger reading those 4 docs.
+- When the issue gives `file:line`, read `line-30..line+30` in a single call — never the whole file in multiple chunks.
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
@@ -56,7 +62,15 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
-## 4. Goal-Driven Execution
+## 4. Lean Diff by Default
+
+**Inspect diffs cheaply. Read the full diff at most once.**
+
+- After editing, inspect with `git diff --stat` + `git diff --name-only` (via RTK) — don't read the full diff by default.
+- Read the full `git diff` at most once, only right before a sensitive commit or when genuinely in doubt.
+- When `git status` is clean, skip `diff`/`log` entirely.
+
+## 5. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
@@ -87,4 +101,19 @@ RTK is active — every shell command is auto-rewritten for token savings. See .
 ## 7. Others
 
 - Changing transaction boundaries, commits, or rollbacks → read `bases/xtreme_system/api/crud_writes.py` (safe_write) and `components/xtreme_system/database/core.py` (get_session). Find all callers of `session.rollback()` with `rg "session\.rollback\(\)" --include "*.py"` before editing. Rollback is centralized in `get_session()`. If a handler re-raises an `IntegrityError` as `HTTPException`, `get_session` will rollback on its own — do not call `session.rollback()` in that path. When a handler catches `IntegrityError` internally and returns a response directly, the handler must call `session.rollback()` to reset the session state before `get_session` attempts its commit.
+
+## 8. Direct Commands & Linear Verbosity
+
+**Run exact commands as given. Keep Linear reads summary-first.**
+
+- If the user gives an exact command (e.g. `orca linear issue GUI-XXX --full`), run exactly that command and skip `orca status`/discovery and loading the whole skill — unless the command mutates Linear.
+- For unspecified Linear reads, default to `--json` (summary); use `--full` only when comments/attachments are actually needed.
+
+## 9. Fewer Intermediate Updates
+
+**Speak when it changes a decision. Otherwise, work quietly.**
+
+- Silent-unless-blocked for small/medium tasks.
+- Limit progress updates to 2–4 total: start/criteria, before a substantial edit, when blocked, final verification.
+- Don't emit an update for read/test/status steps that aren't blocking (e.g. "I'll run the tests", "I'll check the diff").
 
