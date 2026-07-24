@@ -43,10 +43,13 @@ export const WorktreeFinish = async ({ client, directory, worktree }) => ({
           {
             type: "text",
             text: [
-              "Estamos num worktree linkado e o trabalho terminou.",
-              "Use a skill commit-merge para: stage + commit das mudancas pendentes",
+              "Estamos num worktree linkado e o trabalho terminou. Faca, em ordem:",
+              "1) Use a skill commit-merge para: stage + commit das mudancas pendentes",
               "(mensagem concisa no estilo do repo) e merge --no-ff desta branch no master.",
-              "Se nao houver nada para commitar e o master ja contiver a branch, apenas pare.",
+              "Se nao houver nada para commitar e o master ja contiver a branch, pule este passo.",
+              "2) SEMPRE ao final (mesmo que o passo 1 seja pulado), rode a skill",
+              `0005-analyze-token-efficiency para esta sessao (SID=${sessionID}),`,
+              "gravando os 5 blocos de melhoria no .loop do checkout principal.",
             ].join(" "),
           },
         ],
