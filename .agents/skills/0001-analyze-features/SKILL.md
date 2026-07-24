@@ -1,5 +1,5 @@
 ---
-name: 0004-analyze-features
+name: 0001-analyze-features
 description: Analyze the system from the product/functionality angle and identify the 10 highest-impact functional improvements, prioritized by value to the end user. Use when asked what features are missing, what workflows are incomplete or awkward, what business rules are unenforced, or for a prioritized roadmap of functional improvements tied to specific routes, components, and screens.
 ---
 
@@ -116,10 +116,10 @@ Close the report with a short section:
 
 ## Persistence
 
-- Write the final report to `docs/0004-feature-analysis.md`.
+- Write the final report to `docs/0001-feature-analysis.md`.
 - Overwrite the file if it already exists, unless the user asks for another filename.
 - Markdown only, no tables, matching the format above item by item.
 
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-The report is the deliverable and it goes to `docs/0004-feature-analysis.md` ONLY.
+The report is the deliverable and it goes to `docs/0001-feature-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.

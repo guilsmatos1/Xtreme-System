@@ -1,5 +1,5 @@
 ---
-name: 0005-analyze-ui-ux
+name: 0001-analyze-ui-ux
 description: Analyze the system's UI/UX and visual design and identify the 10 highest-impact interface improvements, prioritized by how much friction they remove for the daily user. Use when asked for a UX review, design audit, interface critique, accessibility check, visual consistency review, form/table usability analysis, or a prioritized list of concrete UI improvements tied to specific templates, CSS rules, and screens.
 ---
 
@@ -141,10 +141,10 @@ type scale, palette, component set — and the concrete gaps in it>
 
 ## Persistence
 
-- Write the final report to `docs/0005-ui-ux-analysis.md`.
+- Write the final report to `docs/0001-ui-ux-analysis.md`.
 - Overwrite the file if it already exists, unless the user asks for another filename.
 - Markdown only, no tables, matching the format above item by item.
 
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-The report is the deliverable and it goes to `docs/0005-ui-ux-analysis.md` ONLY.
+The report is the deliverable and it goes to `docs/0001-ui-ux-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.

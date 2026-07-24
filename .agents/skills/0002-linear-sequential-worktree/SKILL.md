@@ -1,5 +1,5 @@
 ---
-name: 0007-linear-sequential-worktree
+name: 0002-linear-sequential-worktree
 description: >-
   Ordena todas as issues do Backlog do time Linear GUI por prioridade e
   resolve uma de cada vez: cria um worktree Orca + task de orquestração para
@@ -56,7 +56,7 @@ Se o usuário indicar outro time ou repo, use o deles. Descubra repos com `orca 
 
 ## Estimated effort → model variant
 
-Algumas issues (geradas pela `0001-analyze-codebase`/`0001-send-to-linear`) têm a `description` inteira em **JSON**, com uma chave `estimated_effort` (`"Low"`, `"Medium"` ou `"High"`). Outras issues têm descrição em texto livre (markdown) sem essa chave. Use isso para escolher o `--variant` do worker:
+Algumas issues (geradas pela `0001-analyze-codebase`/`0002-send-to-linear`) têm a `description` inteira em **JSON**, com uma chave `estimated_effort` (`"Low"`, `"Medium"` ou `"High"`). Outras issues têm descrição em texto livre (markdown) sem essa chave. Use isso para escolher o `--variant` do worker:
 
 | `estimated_effort` (case-insensitive) | comando do worker |
 | --- | --- |

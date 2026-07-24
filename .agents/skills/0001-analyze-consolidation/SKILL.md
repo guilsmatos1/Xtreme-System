@@ -1,5 +1,5 @@
 ---
-name: 0006-analyze-consolidation
+name: 0001-analyze-consolidation
 description: Analyze the codebase for code consolidation opportunities — duplicated, near-duplicated, and redundant code that can be unified without losing any functionality. Use when asked to find duplication, copy-paste, repeated logic, parallel implementations of the same rule, redundant helpers/templates/queries, or a prioritized list of safe behavior-preserving merges.
 ---
 
@@ -144,10 +144,10 @@ especially the ones that only look like duplication>
 
 ## Persistence
 
-- Write the final report to `docs/0006-consolidation-analysis.md`.
+- Write the final report to `docs/0001-consolidation-analysis.md`.
 - Overwrite the file if it already exists, unless the user asks for another filename.
 - Markdown only, no tables, matching the format above item by item.
 
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-The report is the deliverable and it goes to `docs/0006-consolidation-analysis.md` ONLY.
+The report is the deliverable and it goes to `docs/0001-consolidation-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.

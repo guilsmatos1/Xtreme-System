@@ -1,5 +1,5 @@
 ---
-name: 0001-send-to-linear
+name: 0002-send-to-linear
 description: Create Linear issues from chat requests, analyzed codebases, or from JSON batch data files.
 ---
 # Send to Linear

@@ -1,5 +1,5 @@
 ---
-name: 0001-linear-duplicate-triage
+name: 0002-linear-duplicate-triage
 description: >-
   Detects and closes duplicate Linear issues in a team's open backlog, keeping
   one canonical issue per cluster. Use when asked to triage or clean up
