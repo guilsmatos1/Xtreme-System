@@ -68,11 +68,13 @@ def _is_trusted_proxy(peer_host: str | None) -> bool:
 class _MemoryRateLimiterStore:
     def __init__(self) -> None:
         self._hits: dict[str, deque[float]] = {}
+        self._last_cleanup = 0.0
 
     def allow(
         self, bucket: str, limit: int, window_seconds: float
     ) -> tuple[bool, float]:
         now = time.time()
+        self._cleanup_old_buckets(now, window_seconds)
         hits = self._hits.pop(bucket, deque())
         cutoff = now - window_seconds
         while hits and hits[0] < cutoff:
@@ -87,6 +89,19 @@ class _MemoryRateLimiterStore:
 
     def reset(self) -> None:
         self._hits.clear()
+        self._last_cleanup = 0.0
+
+    def _cleanup_old_buckets(self, now: float, window_seconds: float) -> None:
+        cleanup_interval = max(window_seconds, 60.0)
+        if now - self._last_cleanup < cleanup_interval:
+            return
+        self._last_cleanup = now
+        cutoff = now - window_seconds
+        for bucket, hits in list(self._hits.items()):
+            while hits and hits[0] < cutoff:
+                hits.popleft()
+            if not hits:
+                del self._hits[bucket]
 
 
 _rate_limit_store_state: dict[str, RateLimiterStore | None] = {"store": None}

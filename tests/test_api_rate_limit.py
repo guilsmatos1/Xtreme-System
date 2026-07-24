@@ -10,7 +10,12 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.setup import _GERAL_LIMIT, _LOGIN_LIMIT, reset_rate_limiters
+from xtreme_system.api.setup import (
+    _GERAL_LIMIT,
+    _LOGIN_LIMIT,
+    _MemoryRateLimiterStore,
+    reset_rate_limiters,
+)
 from xtreme_system.database.core import DatabaseRateLimiterStore, rate_limit_state
 
 
@@ -145,6 +150,19 @@ def test_rate_limit_ignora_x_forwarded_for_de_proxy_nao_confiavel(
 
     resp = client.get("/investidores", headers={"X-Forwarded-For": "203.0.113.200"})
     assert resp.status_code == 429
+
+
+def test_memory_rate_limiter_limpa_buckets_antigos(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _MemoryRateLimiterStore()
+    times = iter([100.0, 300.0])
+    monkeypatch.setattr(time_module, "time", lambda: next(times))
+
+    assert store.allow("antigo", limit=1, window_seconds=60) == (True, 0.0)
+    assert store.allow("novo", limit=1, window_seconds=60) == (True, 0.0)
+
+    assert list(vars(store)["_hits"]) == ["novo"]
 
 
 def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:
