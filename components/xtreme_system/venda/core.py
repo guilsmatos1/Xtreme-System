@@ -17,7 +17,7 @@ from sqlalchemy import (
     func,
     or_,
 )
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
@@ -146,6 +146,15 @@ def list_all(
     return crud.list_all(session, Venda, limit=limit, offset=offset)
 
 
+def query(session: Session) -> Query[Venda]:
+    return (
+        session.query(Venda)
+        .join(Cliente, Venda.cliente_id == Cliente.id)
+        .join(Veiculo, Venda.veiculo_id == Veiculo.id)
+        .outerjoin(Usuario, Venda.vendedor_id == Usuario.id)
+    )
+
+
 def get(session: Session, venda_id: int) -> Venda | None:
     return crud.get(session, Venda, venda_id)
 
@@ -157,13 +166,13 @@ def list_by_cliente(session: Session, cliente_id: int) -> list[Venda]:
 def veiculo_tem_outra_venda_concluida(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> bool:
-    query = session.query(Venda).filter(
+    sql_query = session.query(Venda).filter(
         Venda.veiculo_id == veiculo_id,
         Venda.status == StatusVenda.concluido,
     )
     if excluir_venda_id is not None:
-        query = query.filter(Venda.id != excluir_venda_id)
-    return query.first() is not None
+        sql_query = sql_query.filter(Venda.id != excluir_venda_id)
+    return sql_query.first() is not None
 
 
 def _sincronizar_status_veiculo(
@@ -224,11 +233,18 @@ def delete(session: Session, obj: Venda, actor_id: int | None = None) -> None:
 
 
 def search(session: Session, term: str, column: str | None = None) -> list[Venda]:
+    return list(search_query(session, term, column).all())
+
+
+def search_query(
+    session: Session, term: str, column: str | None = None
+) -> Query[Venda]:
     pattern = f"%{term}%"
-    query = (
+    sql_query = (
         session.query(Venda)
         .join(Cliente, Venda.cliente_id == Cliente.id)
         .join(Veiculo, Venda.veiculo_id == Veiculo.id)
+        .outerjoin(Usuario, Venda.vendedor_id == Usuario.id)
     )
 
     columns_map = {
@@ -241,25 +257,22 @@ def search(session: Session, term: str, column: str | None = None) -> list[Venda
         "pagamento": Venda.forma_pagamento,
         "parcelas": Venda.parcelas,
         "status": Venda.status,
+        "vendedor": Usuario.nome,
     }
 
     if column and column in columns_map:
         col = columns_map[column]
-        return list(query.where(cast(col, String).ilike(pattern)).distinct().all())
+        return sql_query.where(cast(col, String).ilike(pattern))
 
-    return list(
-        query.where(
-            or_(
-                Cliente.nome.ilike(pattern),
-                Cliente.documento.ilike(pattern),
-                Veiculo.modelo.ilike(pattern),
-                Veiculo.placa.ilike(pattern),
-                cast(Venda.status, String).ilike(pattern),
-                Venda.observacoes.ilike(pattern),
-            )
+    return sql_query.where(
+        or_(
+            Cliente.nome.ilike(pattern),
+            Cliente.documento.ilike(pattern),
+            Veiculo.modelo.ilike(pattern),
+            Veiculo.placa.ilike(pattern),
+            cast(Venda.status, String).ilike(pattern),
+            Venda.observacoes.ilike(pattern),
         )
-        .distinct()
-        .all()
     )
 
 

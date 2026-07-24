@@ -23,8 +23,10 @@ from xtreme_system.api.crud_types import (
     EntityT,
     ListFunc,
     ParseForm,
+    QueryFunc,
     ReadSchemaT,
     SearchFunc,
+    SearchQueryFunc,
     SortSpec,
     UpdateSchemaT,
 )
@@ -259,6 +261,9 @@ def register_crud_ui_routes(
     campos_form_map: dict[str, str] | None = None,
     list_func: ListFunc[EntityT] | None = None,
     search_func: SearchFunc[EntityT] | None = None,
+    sql_sort_fields: dict[str, object] | None = None,
+    query_func: QueryFunc[EntityT] | None = None,
+    search_query_func: SearchQueryFunc[EntityT] | None = None,
 ) -> None:
     _register_crud_ui_routes_impl(
         app,
@@ -300,4 +305,7 @@ def register_crud_ui_routes(
         campos_form_map=campos_form_map,
         list_func=list_func,
         search_func=search_func,
+        sql_sort_fields=sql_sort_fields,
+        query_func=query_func,
+        search_query_func=search_query_func,
     )

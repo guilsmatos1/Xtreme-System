@@ -410,6 +410,19 @@ register_crud_ui_routes(
             (c.usuario.nome or c.usuario.username) if c.usuario else ""
         ),
     },
+    sql_sort_fields={
+        "cliente": cliente.Cliente.nome,
+        "documento": cliente.Cliente.documento,
+        "modelo": veiculo.Veiculo.modelo,
+        "placa": veiculo.Veiculo.placa,
+        "data": compra.Compra.data_compra,
+        "valor": compra.Compra.valor_compra,
+        "status": compra.Compra.status,
+        "observacoes": compra.Compra.observacoes,
+        "usuario": usuario.Usuario.nome,
+    },
+    query_func=compra.query,
+    search_query_func=compra.search_query,
     csv_filename="compras.csv",
     csv_headers=[
         "ID",

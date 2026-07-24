@@ -20,7 +20,9 @@ from xtreme_system.api.crud_types import (
     EntityT,
     ListFunc,
     ParseForm,
+    QueryFunc,
     SearchFunc,
+    SearchQueryFunc,
     SortSpec,
     UpdateSchemaT,
 )
@@ -96,6 +98,9 @@ def register_crud_ui_routes(
     campos_form_map: dict[str, str] | None = None,
     list_func: ListFunc[EntityT] | None = None,
     search_func: SearchFunc[EntityT] | None = None,
+    sql_sort_fields: dict[str, object] | None = None,
+    query_func: QueryFunc[EntityT] | None = None,
+    search_query_func: SearchQueryFunc[EntityT] | None = None,
 ) -> None:
     register_list_route(
         app,
@@ -110,6 +115,9 @@ def register_crud_ui_routes(
         searchable=searchable,
         list_func=list_func,
         search_func=search_func,
+        sql_sort_fields=sql_sort_fields,
+        query_func=query_func,
+        search_query_func=search_query_func,
     )
     register_export_route(
         app,
@@ -118,6 +126,8 @@ def register_crud_ui_routes(
         searchable=searchable,
         list_func=list_func,
         search_func=search_func,
+        query_func=query_func,
+        search_query_func=search_query_func,
         csv_filename=csv_filename,
         csv_headers=csv_headers,
         csv_row=csv_row,
@@ -165,6 +175,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
             cadastrar_dep=cadastrar_dep,
         )
     if register_update:
@@ -187,6 +199,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
             editar_dep=editar_dep,
             pagina=pagina,
             campos_form_map=campos_form_map,
@@ -206,6 +220,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
             excluir_dep=excluir_dep,
         )
 
@@ -224,6 +240,9 @@ def register_list_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    sql_sort_fields: dict[str, object] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
 ) -> None:
     @app.get(prefix)
     def _list(
@@ -248,10 +267,15 @@ def register_list_route(
                 search_column=search_column or None,
                 limit=limit,
                 offset=offset,
+                sort=sort,
+                order=order,
+                sql_sort_fields=sql_sort_fields,
+                query_func=query_func,
+                search_query_func=search_query_func,
             ),
             sort,
             order,
-            sort_fields,
+            {} if sql_sort_fields is not None else sort_fields,
         )
         template = (
             list_partial_template
@@ -283,6 +307,8 @@ def register_export_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
     csv_filename: str,
     csv_headers: list[str],
     csv_row: CsvRow[EntityT],
@@ -298,6 +324,8 @@ def register_export_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
         )
         headers = csv_headers
         rows = [csv_row(obj) for obj in lista]
@@ -394,6 +422,8 @@ def register_create_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
     cadastrar_dep: DepFactory | None = None,
 ) -> None:
     dep = cadastrar_dep or require_ui_admin
@@ -468,6 +498,8 @@ def register_create_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
         )
         return ok_response(
             templates,
@@ -500,6 +532,8 @@ def register_update_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
     editar_dep: DepFactory | None = None,
     pagina: str | None = None,
     campos_form_map: dict[str, str] | None = None,
@@ -570,6 +604,8 @@ def register_update_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
         )
         return ok_response(
             templates,
@@ -597,6 +633,8 @@ def register_delete_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
     excluir_dep: DepFactory | None = None,
 ) -> None:
     dep = excluir_dep or (require_ui_admin if delete_requires_admin else get_ui_user)
@@ -621,6 +659,8 @@ def register_delete_route(
                     searchable=searchable,
                     list_func=list_func,
                     search_func=search_func,
+                    query_func=query_func,
+                    search_query_func=search_query_func,
                 )
                 return list_response(
                     templates,
@@ -645,6 +685,8 @@ def register_delete_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            query_func=query_func,
+            search_query_func=search_query_func,
         )
         return list_response(
             templates,
