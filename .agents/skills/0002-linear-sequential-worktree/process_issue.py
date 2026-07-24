@@ -26,12 +26,13 @@ import json
 import re
 import subprocess
 import sys
+import time
 
 DEFAULT_WORKSPACE = "e7ff0c6a-7f22-4abd-85fe-153bb2c72687"
 DEFAULT_REPO = "xtreme-system"
 DEFAULT_MODEL = "openai/gpt-5.5"
 
-VARIANT_PRESSES = {"low": 0, "medium": 1, "high": 2}
+VARIANT_CYCLE = ("low", "medium", "high", "xhigh", "none")
 CTRL_T = "\x14"
 # Not anchored to end-of-line: at narrow terminal widths the variant token can
 # land mid-line, sharing a row with unrelated chrome (e.g. the branch/version bar).
@@ -122,26 +123,45 @@ def preflight(identifier):
     return None
 
 
-def cycle_variant(handle, target_variant, warnings):
-    presses = VARIANT_PRESSES[target_variant]
-    for _ in range(presses):
-        orca(["terminal", "send", "--terminal", handle, "--text", CTRL_T])
+def read_variant(handle):
+    read = orca(["terminal", "read", "--terminal", handle])
+    tail = read.get("result", {}).get("terminal", {}).get("tail", [])
+    # The variant token can land on a different wrapped line than the
+    # "GPT-5.5 OpenAI" label itself -- scan every line, don't assume adjacency.
+    for line in tail:
+        match = VARIANT_RE.search(line)
+        if match:
+            return match.group(1).lower()
+    return None
 
-    for attempt in range(6):
-        read = orca(["terminal", "read", "--terminal", handle])
-        tail = read.get("result", {}).get("terminal", {}).get("tail", [])
-        # The variant token can land on a different wrapped line than the
-        # "GPT-5.5 OpenAI" label itself -- scan every line, don't assume adjacency.
-        seen = None
-        for line in tail:
-            match = VARIANT_RE.search(line)
-            if match:
-                seen = match.group(1).lower()
-                break
+
+def wait_for_variant_change(handle, previous):
+    deadline = time.monotonic() + 2.0
+    seen = previous
+    while time.monotonic() < deadline:
+        time.sleep(0.1)
+        seen = read_variant(handle)
+        if seen and seen != previous:
+            return seen
+    return seen
+
+
+def cycle_variant(handle, target_variant, warnings):
+    seen = read_variant(handle)
+    if seen == target_variant:
+        return True
+
+    # Drive the real TUI state one keypress at a time. The old implementation
+    # sent several ctrl+t presses back-to-back, then read immediately; opencode
+    # updates the footer asynchronously, so stale reads could over-cycle back to
+    # the starting label and fail even though ctrl+t worked.
+    for _ in range(len(VARIANT_CYCLE)):
+        previous = seen
+        orca(["terminal", "send", "--terminal", handle, "--text", CTRL_T])
+        seen = wait_for_variant_change(handle, previous)
         if seen == target_variant:
             return True
-        if attempt < 5:
-            orca(["terminal", "send", "--terminal", handle, "--text", CTRL_T])
+
     warnings.append(
         f"variant label never matched '{target_variant}' after retries (last seen: {seen!r})"
     )

@@ -72,14 +72,14 @@ opencode --model openai/gpt-5.5 --auto
 
 Esse modo não aceita `--variant` na linha de comando (esse flag só existe em `opencode run`, que esta skill não usa). A variant (reasoning effort) é escolhida **depois que a sessão sobe**, ciclando com `ctrl+t` (byte `0x14`, testado como `orca terminal send --terminal <handle> --text $'\x14' --json`) — é o mesmo atalho do comando "Variant cycle" da paleta (`ctrl+p` → buscar "variant"). Confirmado por teste manual nesta instalação que, para `openai/gpt-5.5`, o ciclo segue `low → medium → high → xhigh → none → low`. O estado inicial ao abrir o TUI foi observado como `low` numa rodada e `medium` em outra (provável deriva entre versões do `opencode`) — **não assuma um estado inicial fixo**; o helper sempre confere o rótulo real antes de prosseguir e, como o ciclo é fechado (5 estados), consegue alcançar qualquer variant alvo dentro do teto de retries independentemente de onde começou.
 
-Algumas issues (geradas pela `0001-analyze-codebase`/`0002-send-to-linear`) têm a `description` inteira em **JSON**, com uma chave `estimated_effort` (`"Low"`, `"Medium"` ou `"High"`). Outras issues têm descrição em texto livre (markdown) sem essa chave. Use isso para decidir quantas vezes ciclar:
+Algumas issues (geradas pela `0001-analyze-codebase`/`0002-send-to-linear`) têm a `description` inteira em **JSON**, com uma chave `estimated_effort` (`"Low"`, `"Medium"` ou `"High"`). Outras issues têm descrição em texto livre (markdown) sem essa chave. Use isso para decidir a variant alvo; o helper lê o rótulo atual e cicla um `ctrl+t` por vez, aguardando o rodapé atualizar após cada tecla:
 
-| `estimated_effort` (case-insensitive)                    | variant alvo           | presses de `ctrl+t` após tui-idle |
-| --------------------------------------------------------- | ----------------------- | ---------------------------------- |
-| `Low`                                                      | `low`                    | 0 (presses iniciais — corrigido depois via retry se o rótulo não bater) |
-| `Medium`                                                   | `medium`                 | 1                                   |
-| `High`                                                     | `high`                   | 2                                   |
-| ausente / description não é JSON válido / chave ausente   | **default:** `medium`   | 1                                   |
+| `estimated_effort` (case-insensitive)                    | variant alvo           |
+| --------------------------------------------------------- | ----------------------- |
+| `Low`                                                      | `low`                   |
+| `Medium`                                                   | `medium`                |
+| `High`                                                     | `high`                  |
+| ausente / description não é JSON válido / chave ausente   | **default:** `medium`   |
 
 Para obter o valor, o helper busca a issue completa e tenta parsear a descrição como JSON:
 
