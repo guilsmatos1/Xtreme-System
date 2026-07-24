@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session
 
+from xtreme_system.auditoria import core as auditoria
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
@@ -57,11 +58,19 @@ def test_delete_desvincula_usuarios_do_perfil(db_session: Session) -> None:
     db_session.flush()
     vendedor = _usuario(db_session, usuario.Papel.funcionario, leitor)
 
-    perfil.delete(db_session, leitor)
+    perfil.delete(db_session, leitor, u.id)
 
     db_session.refresh(vendedor)
     assert vendedor.perfil_id is None
     assert perfil.list_all(db_session) == []
+    rows = auditoria.query(db_session, tabela="usuario", tipo_acao="UPDATE")
+    assert len(rows) == 1
+    assert rows[0].registro_id == vendedor.id
+    assert rows[0].usuario_id == u.id
+    assert rows[0].dados_antes is not None
+    assert rows[0].dados_depois is not None
+    assert rows[0].dados_antes["perfil_id"] == leitor.id
+    assert rows[0].dados_depois["perfil_id"] is None
 
 
 def test_admin_ve_todos_campos_e_operacoes_mesmo_sem_perfil(
