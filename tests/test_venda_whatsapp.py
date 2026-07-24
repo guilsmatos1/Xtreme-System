@@ -1,5 +1,6 @@
 """Notificação de venda via WhatsApp: disparo best-effort no after_create."""
 
+import threading
 import time
 from collections.abc import Callable
 from typing import Any
@@ -119,6 +120,36 @@ def test_falha_no_envio_nao_impede_criacao_da_venda(
     )
 
     assert resp.status_code == 201
+
+
+def test_envio_lento_nao_bloqueia_criacao_da_venda(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    envio_iniciado = threading.Event()
+    liberar_envio = threading.Event()
+
+    def _envio_lento(_config: whatsapp.WhatsappConfig, _texto: str) -> None:
+        envio_iniciado.set()
+        liberar_envio.wait(timeout=2)
+
+    monkeypatch.setattr(whatsapp, "_enviar", _envio_lento)
+    _configurar(client)
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    inicio = time.perf_counter()
+    try:
+        resp = client.post(
+            "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+        )
+        duracao = time.perf_counter() - inicio
+
+        assert resp.status_code == 201
+        assert duracao < 1
+        assert envio_iniciado.wait(timeout=1)
+    finally:
+        liberar_envio.set()
 
 
 def test_configuracoes_salva_e_recarrega(client: TestClient) -> None:
