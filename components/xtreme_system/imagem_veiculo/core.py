@@ -2,9 +2,9 @@
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey, event
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-from xtreme_system.crud import core as crud
+from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
 from xtreme_system.upload_file.core import schedule_uploaded_file_delete
 
@@ -43,34 +43,9 @@ class ImagemVeiculoRead(BaseModel):
     url: str
 
 
-def list_all(
-    session: Session, *, limit: int | None = None, offset: int = 0
-) -> list[ImagemVeiculo]:
-    return crud.list_all(session, ImagemVeiculo, limit=limit, offset=offset)
-
-
-def list_by_veiculo(session: Session, veiculo_id: int) -> list[ImagemVeiculo]:
-    return list(session.query(ImagemVeiculo).filter_by(veiculo_id=veiculo_id).all())
-
-
-def get(session: Session, imagem_id: int) -> ImagemVeiculo | None:
-    return crud.get(session, ImagemVeiculo, imagem_id)
-
-
-def create(
-    session: Session, data: ImagemVeiculoCreate, actor_id: int | None = None
-) -> ImagemVeiculo:
-    return crud.create(session, ImagemVeiculo, data, actor_id)
-
-
-def update(
-    session: Session,
-    obj: ImagemVeiculo,
-    data: ImagemVeiculoUpdate,
-    actor_id: int | None = None,
-) -> ImagemVeiculo:
-    return crud.update(session, obj, data, actor_id)
-
-
-def delete(session: Session, obj: ImagemVeiculo, actor_id: int | None = None) -> None:
-    crud.delete(session, obj, actor_id)
+list_all = attachment.make_list_all(ImagemVeiculo)
+list_by_veiculo = attachment.make_list_by_field(ImagemVeiculo, "veiculo_id")
+get = attachment.make_get(ImagemVeiculo)
+create = attachment.make_create(ImagemVeiculo, ImagemVeiculoCreate)
+update = attachment.make_update(ImagemVeiculo, ImagemVeiculoUpdate)
+delete = attachment.make_delete(ImagemVeiculo)
