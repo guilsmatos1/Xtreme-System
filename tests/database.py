@@ -51,6 +51,10 @@ def create_test_engine() -> Engine:
             _truncate_all_tables(engine)
         return engine
 
+    if not os.environ.get("XTREME_ALLOW_SQLITE_TEST_DB"):
+        msg = "TEST_DATABASE_URL is required unless XTREME_ALLOW_SQLITE_TEST_DB=1"
+        raise RuntimeError(msg)
+
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
