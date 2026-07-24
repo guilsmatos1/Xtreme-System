@@ -32,17 +32,21 @@ orca linear team states --team <key-or-id> --workspace <workspaceId> --json
 
 ## Flow
 
-1. Pull the open backlog at the maximum page size (216, the CLI cap):
+1. Run the helper to pull the backlog, drop non-candidate states, group likely duplicates, and fetch the descriptions you need — all as one compact JSON payload instead of dumping the full list into context:
 
 ```bash
-orca linear list --filter open --team GUI --limit 216 --workspace all --json
+python3 .agents/skills/0002-linear-duplicate-triage/triage_backlog.py fetch-candidates
 ```
 
-2. Keep only issues whose state `name` is one of `Backlog`, `Todo`, `In Progress`, or `In Review`. Discard anything already `Done`, `Canceled`, or `Duplicate` — those are never candidates.
+Defaults to team `GUI` and the `GUI` workspace id. Pass `--team`/`--workspace`/`--limit` for another team. Modes: the default two-stage run blocks on titles, then fetches (truncated) descriptions only for issues in a multi-issue block; `--titles-only` skips all description reads (cheapest, lower recall); `--deep` fetches every candidate's description and blocks on title+description (max recall, more over-grouping to prune). Tune `--threshold` (lower = more recall-safe, groups more) if clusters look too tight or too loose.
 
-3. Group the remaining issues into duplicate clusters by comparing titles and descriptions semantically (same feature, bug, or request), not just exact string matches.
+The payload gives you `clusters` (each with `suggested_canonical` and its member issues, carrying truncated `desc` + `createdAt`), a compact `singletons` list, `counts`, and `warnings`. Steps 2–4 below are already applied by the helper — your job is the judgment on top of them.
 
-4. For each cluster, pick one canonical issue to keep — the one furthest along the workflow (`In Review` > `In Progress` > `Todo` > `Backlog`), breaking ties by most recently created (newest). Every other issue in the cluster is a duplicate.
+2. The helper already keeps only `Backlog`, `Todo`, `In Progress`, `In Review` and discards `Done`/`Canceled`/`Duplicate`. (Field reference: `orca linear list` returns `state.name`, `title`, `priority`, `updatedAt` but **no** description or `createdAt`; those come only from `orca linear issue <id>`, which the helper calls for you.)
+
+3. Each `cluster` is a *recall-safe candidate block*, not a verdict — the helper over-groups on purpose. Confirm each block semantically (same feature, bug, or request) and **split or drop** any issues that only share wording. Also scan `singletons`: if two of them are truly the same request but the helper's text similarity missed them, form that cluster yourself (raise recall with `--deep` or a lower `--threshold` if this happens often).
+
+4. `suggested_canonical` already applies the fixed rule — furthest along the workflow (`In Review` > `In Progress` > `Todo` > `Backlog`), tie-broken by newest `createdAt`. Confirm it per cluster; override only when your semantic read says a different issue is the real canonical. Every other issue in a confirmed cluster is a duplicate.
 
 5. Close each redundant issue. Note the Linear constraint: moving an issue into a `duplicate`-type state is rejected with `Missing duplicate relation` unless a duplicate issue relation already exists, and the `orca linear` CLI cannot create that relation (it only reads relations via `--relations`). So use `Canceled`, which needs no relation:
 
