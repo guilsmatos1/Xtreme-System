@@ -199,7 +199,7 @@ públicas (CRUD e helpers), `models.py` define os modelos SQLAlchemy, e
 - **Alembic** para migrations em `alembic/versions/`
   - `make migrate` → `alembic upgrade head`
   - `make revision m="msg"` → autogenerate
-- Testes usam **SQLite in-memory** (`sqlite://`) via fixture `db_session`, sem dependência de Postgres
+- Testes padrão usam **PostgreSQL** via `TEST_DATABASE_URL`, com schema criado por Alembic; SQLite in-memory (`sqlite://`) existe só como fallback explícito com `XTREME_ALLOW_SQLITE_TEST_DB=1`
 
 ## Autenticação
 
@@ -242,7 +242,7 @@ Docker Compose (`docker-compose.yml`) define dois serviços:
 ## Testes
 
 - Suite em `tests/` organizada por componente
-- **pytest** com fixture `db_session` — recria tabelas em SQLite in-memory a cada teste
+- **pytest** com fixture `db_session` — usa PostgreSQL migrado por Alembic quando `TEST_DATABASE_URL` está definido; SQLite in-memory é opt-in com `XTREME_ALLOW_SQLITE_TEST_DB=1`
 - Cobertura via `pytest-cov`, fail under 75% (`make coverage`)
 - Watch mode: `make watch` (usa `pytest-watch`)
 - Lint + coverage em CI: `make ci`
@@ -250,7 +250,8 @@ Docker Compose (`docker-compose.yml`) define dois serviços:
 Para rodar:
 
 ```bash
-uv run pytest                          # todos os testes
-uv run pytest tests/test_package.py    # arquivo específico
-uv run pytest -k "test_name_pattern"   # teste específico
+make test                                   # todos os testes contra Postgres/Alembic
+XTREME_ALLOW_SQLITE_TEST_DB=1 uv run pytest # fallback SQLite explícito
+make test PYTEST_ARGS="tests/test_package.py -q"  # arquivo específico
+make test PYTEST_ARGS='-k "test_name_pattern" -q' # teste específico
 ```

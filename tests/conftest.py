@@ -19,6 +19,15 @@ def pytest_configure() -> None:
     # do lru_cache de get_settings() ser populado por qualquer rota de login.
     os.environ.setdefault("AUTH_SECRET_KEY", "test-secret-key")
     os.environ.setdefault("RATE_LIMIT_STORE", "memory")
+    if not os.environ.get("TEST_DATABASE_URL") and not os.environ.get(
+        "XTREME_ALLOW_SQLITE_TEST_DB"
+    ):
+        msg = (
+            "TEST_DATABASE_URL is required so tests run against an "
+            "Alembic-migrated PostgreSQL database. Use `make test` or set "
+            "XTREME_ALLOW_SQLITE_TEST_DB=1 for the explicit SQLite fallback."
+        )
+        raise pytest.UsageError(msg)
 
 
 @pytest.fixture(autouse=True)

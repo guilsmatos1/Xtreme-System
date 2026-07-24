@@ -110,6 +110,7 @@ uv run xenon src bases components development projects  # complexidade
 uv run vulture                  # detecção de código morto
 make test
 TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test uv run pytest
+XTREME_ALLOW_SQLITE_TEST_DB=1 uv run pytest  # fallback rápido sem migrations
 ```
 
 ## Estrutura do projeto
@@ -123,7 +124,7 @@ Workspace Polylith (`workspace.toml`):
 | `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `custo_veiculo`, `perfil`, `crud` e submódulos de imagens/documentos |
 | `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                                |
 | `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                                        |
-| `tests/`                    | Suite de testes; `make test` usa PostgreSQL migrado via Alembic, e `uv run pytest` ainda funciona com SQLite in-memory para ciclos locais rápidos                            |
+| `tests/`                    | Suite de testes; `make test` usa PostgreSQL migrado via Alembic; SQLite in-memory é fallback explícito para ciclos locais rápidos                                          |
 | `alembic/`                  | Configuração do Alembic + migrations em `versions/`                                                                                                                          |
 | `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                           |
 
