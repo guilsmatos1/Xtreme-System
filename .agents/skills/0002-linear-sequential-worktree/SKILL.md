@@ -75,7 +75,7 @@ Extraia `result.issue.description`, tente `json.loads` nela (ou equivalente) e l
 
 ## Flow
 
-Repita os passos 1–9 até esvaziar a fila local (Backlog zerado). É uma execução única — ao esvaziar, a skill termina e reporta um resumo; ela não se reagenda via `orca automations create`.
+Repita os passos 1–13 até esvaziar a fila local (Backlog zerado). É uma execução única — ao esvaziar, a skill termina e reporta um resumo; ela não se reagenda via `orca automations create`.
 
 1. **Apenas na primeira rodada** (ou quando a fila local do passo 2 esvaziar antes do esperado), liste o Backlog completo:
 
@@ -186,7 +186,24 @@ orca linear status set <identifier> --to "In Review" \
 
 Cheque o `ok`; se falhar, reporte mas continue.
 
-11. Volte ao passo 2 para a próxima issue elegível.
+11. Invoque a skill `commit-merge` para confirmar e fazer merge das mudanças do worktree de volta ao branch principal:
+
+```bash
+/commit-merge
+```
+
+Aguarde a conclusão. Se falhar, reporte o erro mas continue — a issue será marcada como In Review, e o worktree permanecerá disponível para investigação/retry manual.
+
+12. Após o `commit-merge` concluir com sucesso, marque a issue como **Done**:
+
+```bash
+orca linear status set <identifier> --to "Done" \
+  --workspace e7ff0c6a-7f22-4abd-85fe-153bb2c72687 --json
+```
+
+Cheque o `ok`; se falhar, reporte mas continue.
+
+13. Volte ao passo 2 para a próxima issue elegível.
 
 ## Notes / Guardrails
 
