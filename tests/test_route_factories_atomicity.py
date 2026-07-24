@@ -3,6 +3,7 @@ from collections.abc import Iterator
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
@@ -102,6 +103,68 @@ def test_json_update_rolls_back_when_after_update_fails(
     )
 
     assert resp.status_code == 500
+    assert investidor.get(session, existing.id).nome == "Ana"  # type: ignore[union-attr]
+
+
+def test_json_create_integrity_error_in_after_create_returns_409(
+    atomic_client: tuple[TestClient, FastAPI, Session],
+) -> None:
+    client, app, session = atomic_client
+
+    def fail_after_create(
+        _session: Session, _obj: object, _actor_id: int | None = None
+    ) -> None:
+        raise IntegrityError("", {}, Exception())
+
+    register_crud_routes(
+        app,
+        investidor,
+        "/atomic-create-hook-conflict-investidores",
+        "Investidor",
+        read_schema=investidor.InvestidorRead,
+        create_schema=investidor.InvestidorCreate,
+        update_schema=investidor.InvestidorUpdate,
+        after_create=fail_after_create,
+    )
+
+    resp = client.post(
+        "/atomic-create-hook-conflict-investidores", json={"nome": "Ana"}
+    )
+
+    assert resp.status_code == 409
+    assert resp.json() == {"detail": "Investidor já existe"}
+    assert investidor.list_all(session) == []
+
+
+def test_json_update_integrity_error_in_after_update_returns_409(
+    atomic_client: tuple[TestClient, FastAPI, Session],
+) -> None:
+    client, app, session = atomic_client
+    existing = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    session.commit()
+
+    def fail_after_update(
+        _session: Session, _obj: object, _actor_id: int | None = None
+    ) -> None:
+        raise IntegrityError("", {}, Exception())
+
+    register_crud_routes(
+        app,
+        investidor,
+        "/atomic-update-hook-conflict-investidores",
+        "Investidor",
+        read_schema=investidor.InvestidorRead,
+        create_schema=investidor.InvestidorCreate,
+        update_schema=investidor.InvestidorUpdate,
+        after_update=fail_after_update,
+    )
+
+    resp = client.patch(
+        f"/atomic-update-hook-conflict-investidores/{existing.id}", json={"nome": "Bia"}
+    )
+
+    assert resp.status_code == 409
+    assert resp.json() == {"detail": "Investidor já existe"}
     assert investidor.get(session, existing.id).nome == "Ana"  # type: ignore[union-attr]
 
 

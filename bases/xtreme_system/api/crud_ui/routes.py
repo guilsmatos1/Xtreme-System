@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -40,6 +40,7 @@ from xtreme_system.api.crud_writes import (
     create_with_hook,
     delete_with_hook,
     run_hook,
+    safe_write,
     update_with_hook,
 )
 from xtreme_system.api.deps import (
@@ -401,7 +402,6 @@ def register_create_route(
         form = await request.form()
         try:
             data = create_schema.model_validate(parse_form(form))
-            run_hook(before_create, session, data)
         except ValidationError:
             return error_response(
                 templates,
@@ -414,7 +414,34 @@ def register_create_route(
                 erro="Dados inválidos",
                 status_code=400,
             )
+        try:
+            safe_write(
+                lambda: create_with_hook(
+                    module,
+                    session,
+                    data,
+                    after_create,
+                    user.id,
+                    before_create=before_create,
+                ),
+                conflict_msg=write_conflict_detail(label),
+            )
         except HTTPException as exc:
+            erro = str(exc.detail)
+            if exc.status_code == status.HTTP_409_CONFLICT:
+                return rollback_integrity_error_response(
+                    session,
+                    lambda: conflict_form_response(
+                        templates,
+                        request,
+                        form_template,
+                        ctx_form=ctx_form(session),
+                        item_key=item_key,
+                        item=None,
+                        user=user,
+                        erro=erro,
+                    ),
+                )
             return error_response(
                 templates,
                 request,
@@ -423,37 +450,8 @@ def register_create_route(
                 item_key=item_key,
                 item=None,
                 user=user,
-                erro=str(exc.detail),
+                erro=erro,
                 status_code=400,
-            )
-        except IntegrityError:
-            return rollback_integrity_error_response(
-                session,
-                lambda: conflict_form_response(
-                    templates,
-                    request,
-                    form_template,
-                    ctx_form=ctx_form(session),
-                    item_key=item_key,
-                    item=None,
-                    erro=write_conflict_detail(label),
-                ),
-            )
-        try:
-            create_with_hook(module, session, data, after_create, user.id)
-        except IntegrityError:
-            return rollback_integrity_error_response(
-                session,
-                lambda: conflict_form_response(
-                    templates,
-                    request,
-                    form_template,
-                    ctx_form=ctx_form(session),
-                    item_key=item_key,
-                    item=None,
-                    user=user,
-                    erro=write_conflict_detail(label),
-                ),
             )
         lista = query_list(
             session,
@@ -542,8 +540,16 @@ def register_update_route(
                 status_code=400,
             )
         try:
-            update_with_hook(module, session, obj, data, after_update, user.id)
-        except IntegrityError:
+            safe_write(
+                lambda: update_with_hook(
+                    module, session, obj, data, after_update, user.id
+                ),
+                conflict_msg=write_conflict_detail(label),
+            )
+        except HTTPException as exc:
+            if exc.status_code != status.HTTP_409_CONFLICT:
+                raise
+            erro = str(exc.detail)
             return rollback_integrity_error_response(
                 session,
                 lambda: conflict_form_response(
@@ -554,7 +560,7 @@ def register_update_route(
                     item_key=item_key,
                     item=obj,
                     user=user,
-                    erro=write_conflict_detail(label),
+                    erro=erro,
                 ),
             )
         lista = query_list(
