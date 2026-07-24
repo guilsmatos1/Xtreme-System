@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, event
 from sqlalchemy.exc import IntegrityError
@@ -15,12 +16,14 @@ from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
+from xtreme_system.api.deps import _NaoAutorizadoError, get_ui_user
 from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes.common import resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.auditoria import core as auditoria
+from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -51,6 +54,10 @@ def _seed_investidor_e_veiculo(session: Session) -> None:
             investidor_id=inv.id,
         ),
     )
+
+
+def _request(path: str) -> Request:
+    return Request({"type": "http", "method": "GET", "path": path, "headers": []})
 
 
 class _FakeSession:
@@ -1742,6 +1749,52 @@ def test_ui_conta_funcionario_exibe_pagina(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "Minha conta" in resp.text
     assert "conta_user" in resp.text
+
+
+def test_ui_user_funcionario_sem_perfil_pode_acessar_conta(
+    db_session: Session,
+) -> None:
+    user = usuario.create(
+        db_session,
+        usuario.UsuarioCreate(
+            username="conta_sem_perfil", senha="abc", papel=usuario.Papel.funcionario
+        ),
+    )
+    token = auth.create_access_token(user.username, user.papel)
+
+    autenticado = get_ui_user(_request("/ui/conta"), db_session, token)
+
+    assert autenticado.id == user.id
+
+
+def test_ui_user_funcionario_sem_perfil_nao_acessa_pagina_ui_desconhecida(
+    db_session: Session,
+) -> None:
+    user = usuario.create(
+        db_session,
+        usuario.UsuarioCreate(
+            username="nova_pagina", senha="abc", papel=usuario.Papel.funcionario
+        ),
+    )
+    token = auth.create_access_token(user.username, user.papel)
+
+    with pytest.raises(_NaoAutorizadoError):
+        get_ui_user(_request("/ui/nova-pagina"), db_session, token)
+
+
+def test_ui_user_funcionario_sem_perfil_nao_usa_prefixo_conta_como_excecao(
+    db_session: Session,
+) -> None:
+    user = usuario.create(
+        db_session,
+        usuario.UsuarioCreate(
+            username="contabilidade", senha="abc", papel=usuario.Papel.funcionario
+        ),
+    )
+    token = auth.create_access_token(user.username, user.papel)
+
+    with pytest.raises(_NaoAutorizadoError):
+        get_ui_user(_request("/ui/contabilidade"), db_session, token)
 
 
 def test_ui_conta_troca_propria_senha(client: TestClient) -> None:
