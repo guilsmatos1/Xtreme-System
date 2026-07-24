@@ -1,5 +1,6 @@
 """Helpers de upload: gravar arquivos e persistir metadados no DB."""
 
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -39,31 +40,42 @@ def salvar_arquivos(
     nesta chamada são removidos.
     Arquivos sem ``filename`` são ignorados.
     """
-    for arquivo in arquivos:
-        if not arquivo.filename:
-            continue
-        suffix = Path(arquivo.filename).suffix.lower()
-        filename = f"{uuid4().hex}{suffix}"
-        path = upload_dir / filename
-        content = arquivo.file.read()
-        data = schema.model_validate(
-            {fk_field: fk_id, "url": f"{url_prefix}/{filename}"}
-        )
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(content)
+    cleanup_paths: list[tuple[Path, Path]] = []
+    try:
+        for arquivo in arquivos:
+            if not arquivo.filename:
+                continue
+            suffix = Path(arquivo.filename).suffix.lower()
+            filename = f"{uuid4().hex}{suffix}"
+            path = upload_dir / filename
+            tmp_path = upload_dir / f".{filename}.tmp"
+            content = arquivo.file.read()
+            data = schema.model_validate(
+                {fk_field: fk_id, "url": f"{url_prefix}/{filename}"}
+            )
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            cleanup_paths.append((path, tmp_path))
+            tmp_path.write_bytes(content)
+            with tmp_path.open("rb") as tmp_file:
+                os.fsync(tmp_file.fileno())
+            os.replace(tmp_path, path)
 
-        def _remove_file_on_rollback(*, path: Path = path) -> None:
-            path.unlink(missing_ok=True)
+            def _remove_file_on_rollback(
+                *, path: Path = path, tmp_path: Path = tmp_path
+            ) -> None:
+                path.unlink(missing_ok=True)
+                tmp_path.unlink(missing_ok=True)
 
-        register_post_rollback(session, _remove_file_on_rollback)
-        try:
+            register_post_rollback(session, _remove_file_on_rollback)
             if actor_id is None:
                 create_fn(session, data)
             else:
                 create_fn(session, data, actor_id)
-        except Exception:
-            _remove_file_on_rollback()
-            raise
+    except Exception:
+        for path, tmp_path in cleanup_paths:
+            path.unlink(missing_ok=True)
+            tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def remover_orfaos(

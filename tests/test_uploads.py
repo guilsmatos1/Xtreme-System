@@ -163,6 +163,36 @@ def test_salvar_arquivos_falha_create_remove_arquivo(tmp_path: Path) -> None:
     assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
 
 
+def test_salvar_arquivos_falha_no_lote_remove_arquivos_anteriores(
+    tmp_path: Path,
+) -> None:
+    calls = 0
+
+    def create_fn(_session: Session, _data: Any) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("db indisponivel")
+
+    with pytest.raises(RuntimeError, match="db indisponivel"):
+        salvar_arquivos(
+            cast(Session, _FakeSession()),
+            upload_dir=tmp_path,
+            url_prefix="/static/uploads/veiculos/1",
+            create_fn=create_fn,
+            schema=_FakeSchema,
+            fk_field="veiculo_id",
+            fk_id=1,
+            arquivos=[
+                _FakeUpload("foto.jpg", b"dados"),  # type: ignore[list-item]
+                _FakeUpload("doc.pdf", b"pdf"),  # type: ignore[list-item]
+            ],
+        )
+
+    assert calls == 2
+    assert [p for p in tmp_path.rglob("*") if p.is_file()] == []
+
+
 def test_salvar_arquivos_rollback_remove_arquivo(tmp_path: Path) -> None:
     session = _FakeSession()
 

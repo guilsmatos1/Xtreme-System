@@ -16,7 +16,9 @@ _URL_LOGO = re.compile(r"/static/uploads/empresa/[a-f0-9]+\.png")
 
 @pytest.fixture
 def client(make_client: Callable[..., TestClient]) -> TestClient:
-    client = make_client(usuarios=[("admin", usuario.Papel.admin)])
+    client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)], invoke_post_commit=True
+    )
     resp = client.post("/ui/login", data={"username": "admin", "password": "senha"})
     assert resp.status_code == 200
     return client
