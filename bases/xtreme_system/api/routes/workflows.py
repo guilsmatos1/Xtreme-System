@@ -55,12 +55,10 @@ def recompute_vehicle_status_on_delete(
 ) -> None:
     if venda_obj.status != venda.StatusVenda.concluido:
         return
-    veiculo_id = venda_obj.veiculo_id
-    v = veiculo.get(session, veiculo_id)
-    if v is not None:
-        if venda.veiculo_tem_outra_venda_concluida(
-            session, veiculo_id, excluir_venda_id=venda_obj.id
-        ):
-            v.status = veiculo.StatusVeiculo.vendido
-        else:
-            v.status = veiculo.StatusVeiculo.disponivel
+    venda.recomputar_status_veiculo_por_vendas(
+        session, venda_obj.veiculo_id, excluir_venda_id=venda_obj.id
+    )
+    if venda_obj.veiculo_troca_id is not None:
+        venda.recomputar_status_veiculo_por_vendas(
+            session, venda_obj.veiculo_troca_id, excluir_venda_id=venda_obj.id
+        )

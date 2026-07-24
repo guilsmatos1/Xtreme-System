@@ -156,11 +156,42 @@ def veiculo_tem_outra_venda_concluida(
     return query.first() is not None
 
 
+def veiculo_tem_outra_troca_concluida(
+    session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
+) -> bool:
+    query = session.query(Venda).filter(
+        Venda.veiculo_troca_id == veiculo_id,
+        Venda.status == StatusVenda.concluido,
+    )
+    if excluir_venda_id is not None:
+        query = query.filter(Venda.id != excluir_venda_id)
+    return query.first() is not None
+
+
+def recomputar_status_veiculo_por_vendas(
+    session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
+) -> None:
+    v = session.get(Veiculo, veiculo_id)
+    if v is None:
+        return
+    if veiculo_tem_outra_troca_concluida(
+        session, veiculo_id, excluir_venda_id=excluir_venda_id
+    ):
+        v.status = StatusVeiculo.disponivel
+    elif veiculo_tem_outra_venda_concluida(
+        session, veiculo_id, excluir_venda_id=excluir_venda_id
+    ):
+        v.status = StatusVeiculo.vendido
+    else:
+        v.status = StatusVeiculo.disponivel
+
+
 def _sincronizar_status_veiculo(
     session: Session,
     obj: Venda,
     *,
     veiculo_anterior_id: int | None = None,
+    veiculo_troca_anterior_id: int | None = None,
     status_anterior: StatusVenda | None = None,
 ) -> Venda:
     if (
@@ -168,23 +199,29 @@ def _sincronizar_status_veiculo(
         and veiculo_anterior_id != obj.veiculo_id
         and status_anterior == StatusVenda.concluido
     ):
-        veiculo_anterior = session.get(Veiculo, veiculo_anterior_id)
-        if veiculo_anterior is not None:
-            if veiculo_tem_outra_venda_concluida(
-                session, veiculo_anterior_id, excluir_venda_id=obj.id
-            ):
-                veiculo_anterior.status = StatusVeiculo.vendido
-            else:
-                veiculo_anterior.status = StatusVeiculo.disponivel
+        recomputar_status_veiculo_por_vendas(
+            session, veiculo_anterior_id, excluir_venda_id=obj.id
+        )
     if obj.status == StatusVenda.concluido:
         obj.veiculo.status = StatusVeiculo.vendido
     elif status_anterior == StatusVenda.concluido:
-        if veiculo_tem_outra_venda_concluida(
+        recomputar_status_veiculo_por_vendas(
             session, obj.veiculo_id, excluir_venda_id=obj.id
-        ):
-            obj.veiculo.status = StatusVeiculo.vendido
-        else:
-            obj.veiculo.status = StatusVeiculo.disponivel
+        )
+    if (
+        veiculo_troca_anterior_id is not None
+        and veiculo_troca_anterior_id != obj.veiculo_troca_id
+        and status_anterior == StatusVenda.concluido
+    ):
+        recomputar_status_veiculo_por_vendas(
+            session, veiculo_troca_anterior_id, excluir_venda_id=obj.id
+        )
+    if obj.status == StatusVenda.concluido and obj.veiculo_troca is not None:
+        obj.veiculo_troca.status = StatusVeiculo.disponivel
+    elif status_anterior == StatusVenda.concluido and obj.veiculo_troca_id is not None:
+        recomputar_status_veiculo_por_vendas(
+            session, obj.veiculo_troca_id, excluir_venda_id=obj.id
+        )
     crud.flush(session)
     session.refresh(obj)
     return obj
@@ -199,12 +236,14 @@ def update(
     session: Session, obj: Venda, data: VendaUpdate, actor_id: int | None = None
 ) -> Venda:
     veiculo_anterior_id = obj.veiculo_id
+    veiculo_troca_anterior_id = obj.veiculo_troca_id
     status_anterior = obj.status
     obj = crud.update(session, obj, data, actor_id)
     return _sincronizar_status_veiculo(
         session,
         obj,
         veiculo_anterior_id=veiculo_anterior_id,
+        veiculo_troca_anterior_id=veiculo_troca_anterior_id,
         status_anterior=status_anterior,
     )
 

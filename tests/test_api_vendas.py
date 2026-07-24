@@ -67,6 +67,32 @@ def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
     return cliente_id, veiculo_id
 
 
+def _criar_veiculo(
+    client: TestClient,
+    headers: dict[str, str],
+    investidor_id: int,
+    *,
+    modelo: str,
+    placa: str,
+) -> int:
+    resp = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": modelo,
+            "cor": "Prata",
+            "ano": 2019,
+            "placa": placa,
+            "km": 30000,
+            "preco": "50000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 201, resp.text
+    return int(resp.json()["id"])
+
+
 def test_admin_cria_venda(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     cliente_id, veiculo_id = _seed(client, headers)
@@ -261,6 +287,115 @@ def test_atualizar_venda_concluida_para_pendente_libera_veiculo(
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
     assert veiculo.status_code == 200
     assert veiculo.json()["status"] == "disponivel"
+
+
+def test_venda_concluida_disponibiliza_veiculo_de_troca(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_troca_id = _criar_veiculo(
+        client,
+        headers,
+        investidor_id,
+        modelo="Onix",
+        placa="TRC1D23",
+    )
+
+    venda_anterior = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_troca_id,
+            "data_venda": "2026-06-01",
+            "valor_venda": "50000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    assert venda_anterior.status_code == 201, venda_anterior.text
+
+    troca_vendida = client.get(f"/veiculos/{veiculo_troca_id}", headers=headers)
+    assert troca_vendida.json()["status"] == "vendido"
+
+    venda_com_troca = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "veiculo_troca_id": veiculo_troca_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+
+    assert venda_com_troca.status_code == 201, venda_com_troca.text
+    assert venda_com_troca.json()["veiculo_troca"]["status"] == "disponivel"
+    troca_disponivel = client.get(f"/veiculos/{veiculo_troca_id}", headers=headers)
+    assert troca_disponivel.json()["status"] == "disponivel"
+
+
+def test_cancelar_venda_com_troca_recomputa_status_do_veiculo_de_troca(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_troca_id = _criar_veiculo(
+        client,
+        headers,
+        investidor_id,
+        modelo="HB20",
+        placa="TRC4D56",
+    )
+
+    venda_anterior = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_troca_id,
+            "data_venda": "2026-06-01",
+            "valor_venda": "50000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    assert venda_anterior.status_code == 201, venda_anterior.text
+
+    venda_com_troca = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "veiculo_troca_id": veiculo_troca_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "status": "concluido",
+        },
+        headers=headers,
+    )
+    assert venda_com_troca.status_code == 201, venda_com_troca.text
+
+    cancelada = client.patch(
+        f"/vendas/{venda_com_troca.json()['id']}",
+        json={"status": "cancelado"},
+        headers=headers,
+    )
+
+    assert cancelada.status_code == 200, cancelada.text
+    troca = client.get(f"/veiculos/{veiculo_troca_id}", headers=headers)
+    assert troca.json()["status"] == "vendido"
 
 
 def test_atualizar_venda_pendente_preserva_veiculo_reservado(
