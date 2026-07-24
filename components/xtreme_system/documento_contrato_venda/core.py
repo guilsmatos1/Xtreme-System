@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, cast
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.upload_file.core import schedule_uploaded_file_delete
 
 if TYPE_CHECKING:
     from xtreme_system.cliente.core import Cliente
@@ -28,6 +29,13 @@ class DocumentoContratoVenda(Base):
         ForeignKey("venda.id", ondelete="CASCADE"), index=True
     )
     url: Mapped[str]
+
+
+@event.listens_for(DocumentoContratoVenda, "after_delete")
+def _delete_upload_file(
+    _mapper: object, _connection: object, target: DocumentoContratoVenda
+) -> None:
+    schedule_uploaded_file_delete(target)
 
 
 class DocumentoContratoVendaCreate(BaseModel):

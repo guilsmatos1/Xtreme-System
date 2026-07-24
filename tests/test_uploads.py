@@ -3,6 +3,8 @@
 import io
 import os
 from collections.abc import Callable
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
 
@@ -19,6 +21,12 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     remover_orfaos,
     salvar_arquivos,
 )
+from xtreme_system.cliente.core import Cliente, TipoCliente
+from xtreme_system.compra.core import Compra
+from xtreme_system.database.core import _invoke_post_commit
+from xtreme_system.imagem_comprovante_compra.core import ImagemComprovanteCompra
+from xtreme_system.investidor.core import Investidor
+from xtreme_system.veiculo.core import TipoEntrada, TipoVeiculo, Veiculo
 
 
 class _FakeFile:
@@ -253,6 +261,89 @@ def test_remover_orfaos_mantem_se_arquivo_existe(
     )
 
     assert deleted == []
+
+
+def test_delete_parent_removes_upload_file_after_post_commit(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake_ui = tmp_path / "ui"
+    upload_dir = fake_ui / "static" / "uploads" / "compras" / "1" / "comprovantes"
+    upload_dir.mkdir(parents=True)
+    arquivo = upload_dir / "comprovante.pdf"
+    arquivo.write_bytes(b"%PDF-1.4")
+    monkeypatch.setattr("xtreme_system.upload_file.core._DEFAULT_UI_DIR", fake_ui)
+
+    compra = _compra_com_comprovante(
+        "/static/uploads/compras/1/comprovantes/comprovante.pdf"
+    )
+    db_session.add(compra)
+    db_session.flush()
+
+    db_session.delete(compra)
+    db_session.flush()
+    assert arquivo.exists()
+
+    _invoke_post_commit(db_session)
+
+    assert not arquivo.exists()
+
+
+def test_delete_parent_keeps_upload_file_on_rollback(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake_ui = tmp_path / "ui"
+    upload_dir = fake_ui / "static" / "uploads" / "compras" / "1" / "comprovantes"
+    upload_dir.mkdir(parents=True)
+    arquivo = upload_dir / "comprovante.pdf"
+    arquivo.write_bytes(b"%PDF-1.4")
+    monkeypatch.setattr("xtreme_system.upload_file.core._DEFAULT_UI_DIR", fake_ui)
+
+    compra = _compra_com_comprovante(
+        "/static/uploads/compras/1/comprovantes/comprovante.pdf"
+    )
+    db_session.add(compra)
+    db_session.flush()
+
+    db_session.delete(compra)
+    db_session.flush()
+    db_session.rollback()
+
+    assert arquivo.exists()
+
+
+def _compra_com_comprovante(url: str) -> Compra:
+    investidor = Investidor(nome="Investidor Upload")
+    cliente = Cliente(
+        nome="Cliente Upload",
+        documento="00000000000",
+        tipo=TipoCliente.pessoa_fisica,
+    )
+    veiculo = Veiculo(
+        tipo=TipoVeiculo.carro,
+        modelo="Modelo Upload",
+        marca="Marca",
+        cor="Preto",
+        ano=2020,
+        placa="UPL0001",
+        chassi=None,
+        renavam=None,
+        km=None,
+        preco=Decimal("10000.00"),
+        procuracao=None,
+        proprietario_registrado=None,
+        tipo_entrada=TipoEntrada.compra,
+        investidor=investidor,
+    )
+    compra = Compra(
+        cliente=cliente,
+        veiculo=veiculo,
+        data_compra=date(2024, 1, 1),
+        valor_compra=Decimal("10000.00"),
+        debitos=None,
+        observacoes=None,
+    )
+    compra.comprovantes.append(ImagemComprovanteCompra(url=url))
+    return compra
 
 
 def test_arquivo_disponivel_retorna_false_quando_arquivo_falta(

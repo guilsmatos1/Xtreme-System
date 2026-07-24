@@ -1,11 +1,12 @@
 """Imagem de veículo: model (FK veiculo), schemas e CRUD."""
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.upload_file.core import schedule_uploaded_file_delete
 
 
 class ImagemVeiculo(Base):
@@ -16,6 +17,13 @@ class ImagemVeiculo(Base):
         ForeignKey("veiculo.id", ondelete="CASCADE"), index=True
     )
     url: Mapped[str]
+
+
+@event.listens_for(ImagemVeiculo, "after_delete")
+def _delete_upload_file(
+    _mapper: object, _connection: object, target: ImagemVeiculo
+) -> None:
+    schedule_uploaded_file_delete(target)
 
 
 class ImagemVeiculoCreate(BaseModel):

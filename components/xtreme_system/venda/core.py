@@ -22,6 +22,8 @@ from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.documento_contrato_venda.core import DocumentoContratoVenda
+from xtreme_system.imagem_comprovante_venda.core import ImagemComprovanteVenda
 from xtreme_system.usuario.core import Usuario, UsuarioRead
 from xtreme_system.veiculo.core import StatusVeiculo, TipoVeiculo, Veiculo, VeiculoRead
 
@@ -67,6 +69,12 @@ class Venda(Base):
         lazy="selectin", foreign_keys=[veiculo_troca_id]
     )
     vendedor: Mapped[Usuario | None] = relationship(lazy="selectin")
+    comprovantes: Mapped[list["ImagemComprovanteVenda"]] = relationship(
+        cascade="all, delete-orphan"
+    )
+    contratos: Mapped[list["DocumentoContratoVenda"]] = relationship(
+        cascade="all, delete-orphan"
+    )
 
 
 class VendaCreate(BaseModel):

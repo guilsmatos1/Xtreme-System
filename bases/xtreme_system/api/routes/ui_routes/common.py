@@ -11,6 +11,7 @@ from pydantic import BaseModel, BeforeValidator, Field, ValidationError, model_v
 from sqlalchemy.orm import Session
 
 from xtreme_system.cliente import core as cliente
+from xtreme_system.upload_file.core import uploaded_file_path
 
 _ui_dir = Path(__file__).resolve().parents[2]
 
@@ -144,13 +145,7 @@ def _validar_uploads(arquivos: list[UploadFile]) -> str | None:
 
 
 def _uploaded_file_path(url: str) -> Path | None:
-    if not url.startswith("/static/uploads/"):
-        return None
-    candidate = (_ui_dir / url.lstrip("/")).resolve()
-    uploads_root = (_ui_dir / "static" / "uploads").resolve()
-    if not candidate.is_relative_to(uploads_root):
-        return None
-    return candidate
+    return uploaded_file_path(url, ui_dir=_ui_dir)
 
 
 def arquivo_disponivel(url: str, pending_paths: Iterable[str] | None = None) -> bool:
