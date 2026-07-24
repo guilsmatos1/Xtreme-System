@@ -115,7 +115,9 @@ def test_operacoes_sao_opt_in(db_session: Session) -> None:
     assert not perfil.pode_operacao(vendedor, "veiculos", "excluir")
 
 
-def test_operacoes_de_pagina_fora_do_perfil_sao_negadas(db_session: Session) -> None:
+def test_operacoes_de_pagina_fora_do_perfil_sao_negadas(
+    db_session: Session,
+) -> None:
     vendedores = perfil.Perfil(
         nome="Vendedores",
         paginas=["veiculos"],
