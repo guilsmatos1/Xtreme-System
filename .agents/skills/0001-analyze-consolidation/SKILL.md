@@ -65,8 +65,9 @@ route-specific 400/409 in the routes.
 ## Method
 
 1. Read `ARCHITECTURE.md`, `API.md`, `DATABASE.md`, and `CLAUDE.md`.
-2. Sweep for repetition mechanically before judging: search for repeated function names, repeated
-   literals and messages, repeated query fragments, repeated Jinja blocks. Use `rg` broadly.
+2. Sweep for repetition with `graphify query "duplicated or parallel implementations"` (and similar
+   queries per candidate area) before falling back to broad `rg` searches for repeated function
+   names, literals/messages, query fragments, or Jinja blocks that graphify doesn't surface.
 3. For each candidate, open **every** occurrence and diff them line by line. Write down the exact
    differences — that list is what determines whether consolidation is safe.
 4. Classify the candidate using the categories above.
@@ -151,3 +152,10 @@ especially the ones that only look like duplication>
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 The report is the deliverable and it goes to `docs/0001-consolidation-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.
+
+## Execution
+
+This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
+the raw exploration (graphify queries, file reads, `rg` output) stays out of the caller's context.
+The subagent should write the report to the path above and reply with only the file path — never
+paste the report or exploration output back into the parent conversation.

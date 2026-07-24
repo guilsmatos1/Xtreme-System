@@ -56,7 +56,9 @@ For each domain, evaluate:
 ## Method
 
 1. Read `README.md`, `ARCHITECTURE.md`, `DATABASE.md`, `API.md`.
-2. Enumerate every UI route and the actions it exposes. Build the real feature inventory.
+2. Enumerate UI routes and actions with `graphify query "ui routes and the actions they expose"`
+   (per domain if the first pass is too broad) before falling back to reading route files directly.
+   Build the real feature inventory from that.
 3. For each core domain, trace one complete happy path in the code
    (ex: compra → estoque → custos → venda → fechamento → caixa) and mark exactly where it breaks,
    stops, or requires the user to know something the system doesn't tell them.
@@ -123,3 +125,10 @@ Close the report with a short section:
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 The report is the deliverable and it goes to `docs/0001-feature-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.
+
+## Execution
+
+This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
+the raw exploration (graphify queries, file reads, `rg` output) stays out of the caller's context.
+The subagent should write the report to the path above and reply with only the file path — never
+paste the report or exploration output back into the parent conversation.

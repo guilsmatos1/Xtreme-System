@@ -70,8 +70,9 @@ judging any interaction.
    shadows exist; duplicated or overriding rules; `!important`; dead selectors.
 3. Walk the 5 most-used screens end to end (lista de veículos, cadastro/edição de veículo,
    venda, fechamento de venda, caixa/lançamentos) and describe what the user sees at each step.
-4. For each screen, grep the template for macro usage vs raw HTML. Raw HTML that duplicates a
-   macro is a consistency finding with a concrete fix.
+4. For each screen, check macro usage vs raw HTML with `graphify query "templates using <macro>"` /
+   `graphify explain "<screen or component>"` before falling back to grepping templates directly.
+   Raw HTML that duplicates a macro is a consistency finding with a concrete fix.
 5. Check every destructive or money-changing action for confirmation and feedback.
 6. Check every `hx-` attribute for a matching indicator, target and error path.
 7. If the app can be run, render the main screens with the `playwright-cli` skill and screenshot
@@ -148,3 +149,10 @@ type scale, palette, component set — and the concrete gaps in it>
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 The report is the deliverable and it goes to `docs/0001-ui-ux-analysis.md` ONLY.
 Reply in the terminal with a single line pointing to the file.
+
+## Execution
+
+This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
+the raw exploration (graphify queries, template/CSS reads, screenshots) stays out of the caller's
+context. The subagent should write the report to the path above and reply with only the file path —
+never paste the report or exploration output back into the parent conversation.

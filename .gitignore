@@ -9,6 +9,7 @@ build/
 *.egg-info/
 .coverage
 .DS_Store
+.loop/
 
 # Git worktrees
 .worktrees/

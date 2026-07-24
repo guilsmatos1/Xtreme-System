@@ -62,15 +62,18 @@ For each opportunity, evaluate the relevant dimensions below:
 
 ## Suggested Workflow
 
-Use lightweight inspection first, then deeper reading:
+Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
 
-- project structure: `rg --files`
-- hotspots by size: `find . -name '*.py' -o -name '*.js' -o -name '*.ts' | xargs wc -l | sort -n`
-- definitions: `rg '^(def|class|async def)|function |const .* = \\('`
-- cross-cutting patterns: `rg 'TODO|FIXME|except:|print\\(|logger\\.|raise |selectinload|joinedload|session\\.query|requests\\.|httpx\\.'`
-- test coverage map: `rg --files | rg '(^|/)(test|tests)/|_test\\.|test_.*\\.'`
+- hotspots and god nodes: `graphify query "largest or most central modules"` (or read `graphify-out/GRAPH_REPORT.md` for the full architecture pass)
+- a specific dimension: `graphify query "<dimension, e.g. N+1 queries, swallowed exceptions>"`
+- a concept in isolation: `graphify explain "<concept>"`
+- relationship between two areas: `graphify path "<A>" "<B>"`
+- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
 
-Adjust commands to the stack in the repository.
+Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
+surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
+file tree or definition list by hand when graphify can answer the same question with a fraction of
+the tokens.
 
 ## What Strong Findings Look Like
 
@@ -159,11 +162,18 @@ Deliver results as a JSON file with this comprehensive structure:
 
 ## Persistence
 
-- Write the final report to `.loop/running/improvements.json`.
+- Write the final report to `.loop/running/improvements-codebase.json`.
 - If the directory does not exist, create it.
 - If the file already exists, overwrite it with the latest report.
 - `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
 - Include all analysis data in the JSON structure above, preserving all findings from the review.
+
+## Execution
+
+This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
+the raw exploration (graphify queries, file reads, `rg` output) stays out of the caller's context.
+The subagent should write the report to the path above and reply with only the file path and item
+count — never paste the report or exploration output back into the parent conversation.
 
 ## Review Standard
 

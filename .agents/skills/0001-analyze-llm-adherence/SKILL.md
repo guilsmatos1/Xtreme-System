@@ -29,10 +29,11 @@ Ask: "Can an LLM safely make a small localized change here without editing unrel
 
 ## Workflow
 
-1. Inspect structure first: `rg --files -g '*.py'`, then identify large or central modules.
-2. Measure hotspots with simple commands where useful:
-  - line counts: `wc -l`
-  - large definitions: `rg '^def |^class '`
+1. Inspect structure first with `graphify query "largest or most central python modules"` (or
+   `graphify-out/GRAPH_REPORT.md`) to find large/central modules before touching raw files.
+2. Narrow with targeted graphify queries per concern where possible: `graphify query "god classes"`,
+   `graphify query "circular imports"`, `graphify explain "<module>"`. Fall back to `rg`/`wc -l` only
+   for signals graphify doesn't surface:
   - private access: `rg '\\._[A-Za-z]'`
   - generic contracts: `rg 'dict\\[|: dict|Any|Mapping\\[str, Any\\]'`
   - globals/env/config: `rg 'os\\.getenv|^[A-Z0-9_]+\\s*=|global '`
@@ -166,3 +167,10 @@ Use this checklist while analyzing:
 ## Recommended Tone
 
 Be specific and surgical. Tie every recommendation to a file, risk, interface, and test. Prefer fewer high-confidence opportunities over many speculative ones.
+
+## Execution
+
+This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
+the raw exploration (graphify queries, file reads, `rg` output) stays out of the caller's context.
+The subagent should write the report files to `docs/0001-analyze-llm-adherence/` and reply with only
+the file list — never paste the report or exploration output back into the parent conversation.
