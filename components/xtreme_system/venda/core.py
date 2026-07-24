@@ -132,8 +132,10 @@ class VendaRead(BaseModel):
     datas_pagamento: str | None
 
 
-def list_all(session: Session) -> list[Venda]:
-    return crud.list_all(session, Venda)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Venda]:
+    return crud.list_all(session, Venda, limit=limit, offset=offset)
 
 
 def get(session: Session, venda_id: int) -> Venda | None:

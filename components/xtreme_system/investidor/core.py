@@ -29,8 +29,10 @@ class InvestidorRead(BaseModel):
     nome: str
 
 
-def list_all(session: Session) -> list[Investidor]:
-    return crud.list_all(session, Investidor)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Investidor]:
+    return crud.list_all(session, Investidor, limit=limit, offset=offset)
 
 
 def get(session: Session, investidor_id: int) -> Investidor | None:

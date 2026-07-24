@@ -147,12 +147,6 @@ def _schema_disponivel(session: Session) -> bool:
     return disponivel
 
 
-def list_all(session: Session) -> list[FechamentoVenda]:
-    if not _schema_disponivel(session):
-        return []
-    return list(session.query(FechamentoVenda).order_by(FechamentoVenda.id).all())
-
-
 def get(session: Session, fechamento_id: int) -> FechamentoVenda | None:
     if not _schema_disponivel(session):
         return None
@@ -163,6 +157,19 @@ def get_by_venda(session: Session, venda_id: int) -> FechamentoVenda | None:
     if not _schema_disponivel(session):
         return None
     return session.query(FechamentoVenda).filter_by(venda_id=venda_id).one_or_none()
+
+
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[FechamentoVenda]:
+    if not _schema_disponivel(session):
+        return []
+    query = session.query(FechamentoVenda).order_by(FechamentoVenda.id)
+    if limit is not None:
+        query = query.limit(limit)
+    if offset:
+        query = query.offset(offset)
+    return list(query.all())
 
 
 def preview(session: Session, venda_obj: Venda) -> FechamentoVendaPreview:

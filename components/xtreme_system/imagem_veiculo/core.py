@@ -35,8 +35,10 @@ class ImagemVeiculoRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[ImagemVeiculo]:
-    return crud.list_all(session, ImagemVeiculo)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[ImagemVeiculo]:
+    return crud.list_all(session, ImagemVeiculo, limit=limit, offset=offset)
 
 
 def list_by_veiculo(session: Session, veiculo_id: int) -> list[ImagemVeiculo]:

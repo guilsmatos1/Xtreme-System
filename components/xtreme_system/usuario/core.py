@@ -62,8 +62,10 @@ class UsuarioRead(BaseModel):
     perfil_id: int | None
 
 
-def list_all(session: Session) -> list[Usuario]:
-    return list(session.query(Usuario).all())
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Usuario]:
+    return crud.list_all(session, Usuario, limit=limit, offset=offset)
 
 
 def get_by_username(session: Session, username: str) -> Usuario | None:

@@ -118,8 +118,12 @@ def _debitos_sort(v: veiculo.Veiculo) -> Decimal:
     return getattr(v, "debitos_sort", None) or Decimal("-1")
 
 
-def _listar_veiculos(session: Session) -> list[veiculo.Veiculo]:
-    return _preparar_veiculos_lista(session, veiculo.list_all(session))
+def _listar_veiculos(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[veiculo.Veiculo]:
+    return _preparar_veiculos_lista(
+        session, veiculo.list_all(session, limit=limit, offset=offset)
+    )
 
 
 def _buscar_veiculos(

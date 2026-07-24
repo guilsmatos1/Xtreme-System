@@ -56,8 +56,10 @@ class CustoVeiculoRead(BaseModel):
     criado_em: datetime
 
 
-def list_all(session: Session) -> list[CustoVeiculo]:
-    return crud.list_all(session, CustoVeiculo)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[CustoVeiculo]:
+    return crud.list_all(session, CustoVeiculo, limit=limit, offset=offset)
 
 
 def get(session: Session, custo_id: int) -> CustoVeiculo | None:

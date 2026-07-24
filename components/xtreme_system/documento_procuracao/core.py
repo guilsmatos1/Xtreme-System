@@ -31,8 +31,10 @@ class DocumentoProcuracaoRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[DocumentoProcuracao]:
-    return crud.list_all(session, DocumentoProcuracao)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[DocumentoProcuracao]:
+    return crud.list_all(session, DocumentoProcuracao, limit=limit, offset=offset)
 
 
 def list_by_veiculo(session: Session, veiculo_id: int) -> list[DocumentoProcuracao]:

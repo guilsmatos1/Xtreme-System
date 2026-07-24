@@ -73,8 +73,10 @@ class LancamentoInvestimentoRead(BaseModel):
     criado_em: datetime
 
 
-def list_all(session: Session) -> list[LancamentoInvestimento]:
-    return crud.list_all(session, LancamentoInvestimento)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[LancamentoInvestimento]:
+    return crud.list_all(session, LancamentoInvestimento, limit=limit, offset=offset)
 
 
 def get(session: Session, lancamento_id: int) -> LancamentoInvestimento | None:

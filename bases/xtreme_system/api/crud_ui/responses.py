@@ -2,6 +2,7 @@ import csv
 import io
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
@@ -119,9 +120,24 @@ def list_response(
     filter_col: str = "",
     filter_val: str = "",
     search_column: str = "",
+    limit: int = 50,
+    offset: int = 0,
     erro: str | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
+    qs_params = {
+        chave: valor
+        for chave, valor in {
+            "q": q,
+            "sort": sort or None,
+            "order": order if sort else None,
+            "search_column": search_column or None,
+            "filter_col": filter_col or None,
+            "filter_val": filter_val or None,
+        }.items()
+        if valor not in (None, "")
+    }
+    page_count = len(lista)
     context = {
         "user": user,
         list_key: lista,
@@ -130,6 +146,16 @@ def list_response(
         "filter_col": filter_col,
         "filter_val": filter_val,
         "search_column": search_column,
+        "limit": limit,
+        "offset": offset,
+        "page_count": page_count,
+        "page_start": offset + 1 if page_count else 0,
+        "page_end": offset + page_count,
+        "tem_anterior": offset > 0,
+        "tem_proximo": page_count == limit,
+        "offset_anterior": offset - limit if offset - limit > 0 else 0,
+        "offset_proximo": offset + limit,
+        "qs_base": urlencode(qs_params),
         **ctx_list,
     }
     if q is not None:

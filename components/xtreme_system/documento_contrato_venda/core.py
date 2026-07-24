@@ -43,8 +43,10 @@ class DocumentoContratoVendaRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[DocumentoContratoVenda]:
-    return crud.list_all(session, DocumentoContratoVenda)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[DocumentoContratoVenda]:
+    return crud.list_all(session, DocumentoContratoVenda, limit=limit, offset=offset)
 
 
 def list_by_venda(session: Session, venda_id: int) -> list[DocumentoContratoVenda]:

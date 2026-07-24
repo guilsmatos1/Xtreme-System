@@ -80,8 +80,10 @@ class CompraRead(BaseModel):
     status: StatusCompra
 
 
-def list_all(session: Session) -> list[Compra]:
-    return crud.list_all(session, Compra)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Compra]:
+    return crud.list_all(session, Compra, limit=limit, offset=offset)
 
 
 def get_latest_by_veiculo(session: Session, veiculo_id: int) -> Compra | None:

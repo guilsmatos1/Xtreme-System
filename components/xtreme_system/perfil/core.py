@@ -155,8 +155,10 @@ class PerfilRead(BaseModel):
     restricoes: dict[str, Any]
 
 
-def list_all(session: Session) -> list[Perfil]:
-    return crud.list_all(session, Perfil)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Perfil]:
+    return crud.list_all(session, Perfil, limit=limit, offset=offset)
 
 
 def get(session: Session, perfil_id: int) -> Perfil | None:

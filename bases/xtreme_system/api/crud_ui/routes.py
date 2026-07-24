@@ -234,6 +234,8 @@ def register_list_route(
         sort: str = "",
         order: str = "asc",
         search_column: str = "",
+        limit: int = 50,
+        offset: int = 0,
     ) -> HTMLResponse:
         lista = sorted_list(
             query_list(
@@ -244,6 +246,8 @@ def register_list_route(
                 list_func=list_func,
                 search_func=search_func,
                 search_column=search_column or None,
+                limit=limit,
+                offset=offset,
             ),
             sort,
             order,
@@ -266,6 +270,8 @@ def register_list_route(
             order=order,
             q=q if searchable else None,
             search_column=search_column,
+            limit=limit,
+            offset=offset,
         )
 
 
