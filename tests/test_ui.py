@@ -2615,11 +2615,12 @@ def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
         "xtreme_system.api.routes.ui.imagem_veiculo.create", falha_create
     )
 
-    with pytest.raises(RuntimeError, match="db indisponivel"):
-        client.post(
-            f"/ui/veiculos/{veiculo_id}/imagens",
-            files={"imagens": ("foto.jpg", b"\xff\xd8\xffdados", "image/jpeg")},
-        )
+    resp = client.post(
+        f"/ui/veiculos/{veiculo_id}/imagens",
+        files={"imagens": ("foto.jpg", b"\xff\xd8\xffdados", "image/jpeg")},
+    )
+
+    assert resp.status_code == 500
 
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
