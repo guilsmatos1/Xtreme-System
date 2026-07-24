@@ -57,6 +57,7 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         usuarios: list[tuple[str, usuario.Papel]] | None = None,
         *,
         invoke_post_commit: bool = False,
+        client_addr: tuple[str, int] | None = None,
         seed: Callable[[Session], None] | None = None,
     ) -> TestClient:
         engine = create_test_engine()
@@ -88,7 +89,9 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
                 _invoke_post_commit(session)
 
         app.dependency_overrides[get_session] = override
-        return TestClient(app)
+        if client_addr is None:
+            return TestClient(app)
+        return TestClient(app, client=client_addr)
 
     yield _make
 

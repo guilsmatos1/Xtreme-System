@@ -46,6 +46,23 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
 }
 
 
+def _trusted_proxy_networks() -> list[Any]:
+    raw = os.environ.get("TRUSTED_PROXY_IPS", "")
+    return [
+        ip_network(item.strip(), strict=False)
+        for item in raw.split(",")
+        if item.strip()
+    ]
+
+
+def _is_trusted_proxy(peer_host: str) -> bool:
+    try:
+        peer_ip = ip_address(peer_host)
+    except ValueError:
+        return False
+    return any(peer_ip in network for network in _trusted_proxy_networks())
+
+
 class _MemoryRateLimiterStore:
     def __init__(self) -> None:
         self._hits: dict[str, deque[float]] = {}
@@ -104,6 +121,20 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _warn_proxy_headers_without_trusted_proxies() -> None:
+    if os.environ.get("FORWARDED_ALLOW_IPS") and not os.environ.get(
+        "TRUSTED_PROXY_IPS"
+    ):
+        logger.warning(
+            "trusted_proxy_ips_empty",
+            message=(
+                "FORWARDED_ALLOW_IPS esta configurado, mas TRUSTED_PROXY_IPS esta "
+                "vazio; X-Forwarded-For sera ignorado pelo rate limit."
+            ),
+        )
+
+
 @app.middleware("http")
 async def _request_context(
     request: Request,
@@ -149,39 +180,17 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
     return JSONResponse({"detail": mensagem}, status_code=429, headers=headers)
 
 
-def _trusted_proxy_ips() -> list[str]:
-    return [
-        ip.strip()
-        for ip in os.environ.get("TRUSTED_PROXY_IPS", "").split(",")
-        if ip.strip()
-    ]
-
-
-def _is_trusted_proxy(client_host: str) -> bool:
-    try:
-        client_ip = ip_address(client_host)
-    except ValueError:
-        return client_host in _trusted_proxy_ips()
-
-    for trusted_ip in _trusted_proxy_ips():
-        try:
-            if client_ip in ip_network(trusted_ip, strict=False):
-                return True
-        except ValueError:
-            if client_host == trusted_ip:
-                return True
-    return False
-
-
 def _client_ip(request: Request) -> str:
     if not request.client:
         return "desconhecido"
 
-    client_host = request.client.host
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for and _is_trusted_proxy(client_host):
-        return forwarded_for.split(",", maxsplit=1)[0].strip() or client_host
-    return client_host
+    peer_host = request.client.host if request.client else "desconhecido"
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for and _is_trusted_proxy(peer_host):
+        client_ip = forwarded_for.split(",", 1)[0].strip()
+        if client_ip:
+            return client_ip
+    return peer_host
 
 
 @app.middleware("http")
