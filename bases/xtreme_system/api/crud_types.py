@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any, Protocol, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 EntityT = TypeVar("EntityT")
 ReadSchemaT = TypeVar("ReadSchemaT", bound=BaseModel)
@@ -58,6 +58,8 @@ CtxList = Callable[[Session, list[EntityT]], dict[str, Any]]
 ParseForm = Callable[[Any], dict[str, Any]]
 ListFunc = Callable[[Session], list[EntityT]]
 SearchFunc = Callable[[Session, str], list[EntityT]]
+type QueryFunc[EntityT] = Callable[[Session], Query[EntityT]]
+type SearchQueryFunc[EntityT] = Callable[..., Query[EntityT]]
 CsvRow = Callable[[EntityT], list[Any]]
 BeforeCreateHook = Callable[[Session, CreateSchemaT], None]
 BeforeUpdateHook = Callable[[Session, UpdateSchemaT], None]

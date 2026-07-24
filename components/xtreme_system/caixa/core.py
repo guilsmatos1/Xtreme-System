@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import ForeignKey, Numeric, case, func
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, Query, Session, mapped_column
 
 from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.crud import core as crud
@@ -77,6 +77,10 @@ def list_all(session: Session) -> list[LancamentoInvestimento]:
     return crud.list_all(session, LancamentoInvestimento)
 
 
+def query(session: Session) -> Query[LancamentoInvestimento]:
+    return session.query(LancamentoInvestimento)
+
+
 def get(session: Session, lancamento_id: int) -> LancamentoInvestimento | None:
     return crud.get(session, LancamentoInvestimento, lancamento_id)
 
@@ -108,11 +112,14 @@ def list_by_investidor(
     session: Session, investidor_id: int
 ) -> list[LancamentoInvestimento]:
     return list(
-        session.query(LancamentoInvestimento)
-        .filter_by(investidor_id=investidor_id)
-        .order_by(LancamentoInvestimento.id)
-        .all()
+        query_by_investidor(session, investidor_id).order_by(LancamentoInvestimento.id)
     )
+
+
+def query_by_investidor(
+    session: Session, investidor_id: int
+) -> Query[LancamentoInvestimento]:
+    return session.query(LancamentoInvestimento).filter_by(investidor_id=investidor_id)
 
 
 _SALDO_EXPR = func.sum(

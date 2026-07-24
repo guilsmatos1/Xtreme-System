@@ -177,6 +177,20 @@ register_crud_ui_routes(
             (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
         ),
     },
+    sql_sort_fields={
+        "cliente": cliente.Cliente.nome,
+        "veiculo": veiculo.Veiculo.modelo,
+        "data": venda.Venda.data_venda,
+        "valor": venda.Venda.valor_venda,
+        "entrada": venda.Venda.valor_entrada,
+        "divida": venda.Venda.valor_pendente,
+        "pagamento": venda.Venda.forma_pagamento,
+        "parcelas": venda.Venda.parcelas,
+        "status": venda.Venda.status,
+        "vendedor": usuario.Usuario.nome,
+    },
+    query_func=venda.query,
+    search_query_func=venda.search_query,
     csv_filename="vendas.csv",
     csv_headers=[
         "ID",

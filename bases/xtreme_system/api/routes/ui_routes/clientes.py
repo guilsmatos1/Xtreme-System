@@ -232,6 +232,8 @@ def _register_clientes_page(
     vehicles_label: str,
     list_func: Any,
     search_func: Any,
+    query_func: Any,
+    search_query_func: Any,
     csv_filename: str,
 ) -> None:
     register_crud_ui_routes(
@@ -266,6 +268,14 @@ def _register_clientes_page(
             "cidade": "cidade",
             "estado": "estado",
         },
+        sql_sort_fields={
+            "nome": cliente.Cliente.nome,
+            "documento": cliente.Cliente.documento,
+            "telefone": cliente.Cliente.telefone,
+            "tipo": cliente.Cliente.tipo,
+            "cidade": cliente.Cliente.cidade,
+            "estado": cliente.Cliente.estado,
+        },
         csv_filename=csv_filename,
         csv_headers=["ID", "Nome", "CPF", "Telefone", "Tipo", "Cidade", "Estado"],
         csv_row=lambda c: [
@@ -283,6 +293,8 @@ def _register_clientes_page(
         excluir_dep=require_operacao("clientes", "excluir"),
         list_func=list_func,
         search_func=search_func,
+        query_func=query_func,
+        search_query_func=search_query_func,
     )
 
 
@@ -295,6 +307,8 @@ _register_clientes_page(
     vehicles_label="Veículos comprados",
     list_func=cliente.list_compradores,
     search_func=cliente.search_compradores,
+    query_func=cliente.query_compradores,
+    search_query_func=cliente.search_query_compradores,
     csv_filename="clientes-compradores.csv",
 )
 
@@ -307,5 +321,7 @@ _register_clientes_page(
     vehicles_label="Veículos vendidos",
     list_func=cliente.list_vendedores,
     search_func=cliente.search_vendedores,
+    query_func=cliente.query_vendedores,
+    search_query_func=cliente.search_query_vendedores,
     csv_filename="clientes-vendedores.csv",
 )

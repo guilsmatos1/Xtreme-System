@@ -1,15 +1,18 @@
 from collections.abc import Callable, Mapping
+from inspect import Parameter, signature
 from typing import Any, cast
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from xtreme_system.api.crud_types import (
     CreateSchemaT,
     CrudModule,
     EntityT,
     ListFunc,
+    QueryFunc,
     SearchableCrudModule,
     SearchFunc,
+    SearchQueryFunc,
     SortSpec,
     UpdateSchemaT,
 )
@@ -67,6 +70,29 @@ def sorted_list(
     return sorted(lista, key=sort_key_fn(spec), reverse=order == "desc")
 
 
+def _query_sorted_list(
+    query: Query[EntityT],
+    sort: str,
+    order: str,
+    sort_fields: Mapping[str, Any] | None,
+) -> list[EntityT]:
+    spec = sort_fields.get(sort) if sort_fields is not None else None
+    if spec is None:
+        return list(query.all())
+    order_expr = spec.desc() if order == "desc" else spec.asc()
+    return list(query.order_by(order_expr).all())
+
+
+def _accepts_column(func: Callable[..., Any]) -> bool:
+    params = signature(func).parameters.values()
+    return any(
+        param.kind == Parameter.VAR_KEYWORD
+        or (param.kind == Parameter.KEYWORD_ONLY and param.name == "column")
+        or (param.kind == Parameter.POSITIONAL_OR_KEYWORD and param.name == "column")
+        for param in params
+    )
+
+
 def query_list(
     session: Session,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
@@ -76,19 +102,38 @@ def query_list(
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
     search_column: str | None = None,
+    sort: str = "",
+    order: str = "asc",
+    sql_sort_fields: Mapping[str, Any] | None = None,
+    query_func: QueryFunc[EntityT] | None = None,
+    search_query_func: SearchQueryFunc[EntityT] | None = None,
 ) -> list[EntityT]:
+    if q and search_query_func is not None:
+        if _accepts_column(search_query_func):
+            query = search_query_func(session, q, column=search_column)
+        else:
+            query = search_query_func(session, q)
+        return _query_sorted_list(query, sort, order, sql_sort_fields)
+    if not q and query_func is not None:
+        return _query_sorted_list(query_func(session), sort, order, sql_sort_fields)
     if q and search_func is not None:
-        # Se search_func aceitar column, passar como kwarg
-        try:
-            return list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
-        except TypeError:
-            # Fallback para functions que não aceitam column
-            return list(search_func(session, q))
+        if _accepts_column(search_func):
+            lista = list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
+        else:
+            lista = list(search_func(session, q))
+        return sorted_list(lista, sort, order, sql_sort_fields or {})
     if searchable and q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module
         )
-        return list(searchable_module.search(session, q))
+        return sorted_list(
+            list(searchable_module.search(session, q)),
+            sort,
+            order,
+            sql_sort_fields or {},
+        )
     if list_func is not None:
-        return list(list_func(session))
-    return list(module.list_all(session))
+        return sorted_list(list(list_func(session)), sort, order, sql_sort_fields or {})
+    return sorted_list(
+        list(module.list_all(session)), sort, order, sql_sort_fields or {}
+    )

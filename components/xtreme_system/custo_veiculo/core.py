@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, cast, func, or_
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
@@ -60,6 +60,10 @@ def list_all(session: Session) -> list[CustoVeiculo]:
     return crud.list_all(session, CustoVeiculo)
 
 
+def query(session: Session) -> Query[CustoVeiculo]:
+    return session.query(CustoVeiculo).join(Veiculo)
+
+
 def get(session: Session, custo_id: int) -> CustoVeiculo | None:
     return crud.get(session, CustoVeiculo, custo_id)
 
@@ -86,7 +90,14 @@ def delete(session: Session, obj: CustoVeiculo, actor_id: int | None = None) -> 
 def search(
     session: Session, term: str, column: str | None = None
 ) -> list[CustoVeiculo]:
+    return list(search_query(session, term, column).all())
+
+
+def search_query(
+    session: Session, term: str, column: str | None = None
+) -> Query[CustoVeiculo]:
     pattern = f"%{term}%"
+    sql_query = session.query(CustoVeiculo).join(Veiculo)
 
     columns_map = {
         "veiculo": Veiculo.modelo,
@@ -99,17 +110,13 @@ def search(
 
     if column and column in columns_map:
         col = columns_map[column]
-        return session.query(CustoVeiculo).where(cast(col, String).ilike(pattern)).all()
+        return sql_query.where(cast(col, String).ilike(pattern))
 
-    return (
-        session.query(CustoVeiculo)
-        .where(
-            or_(
-                Veiculo.modelo.ilike(pattern),
-                Veiculo.placa.ilike(pattern),
-                CustoVeiculo.categoria.ilike(pattern),
-                CustoVeiculo.descricao.ilike(pattern),
-            )
+    return sql_query.where(
+        or_(
+            Veiculo.modelo.ilike(pattern),
+            Veiculo.placa.ilike(pattern),
+            CustoVeiculo.categoria.ilike(pattern),
+            CustoVeiculo.descricao.ilike(pattern),
         )
-        .all()
     )

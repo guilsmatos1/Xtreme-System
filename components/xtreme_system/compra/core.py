@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Date, ForeignKey, Numeric, String, cast, or_
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
@@ -84,6 +84,15 @@ def list_all(session: Session) -> list[Compra]:
     return crud.list_all(session, Compra)
 
 
+def query(session: Session) -> Query[Compra]:
+    return (
+        session.query(Compra)
+        .join(Cliente, Compra.cliente_id == Cliente.id)
+        .join(Veiculo, Compra.veiculo_id == Veiculo.id)
+        .outerjoin(Usuario, Compra.usuario_id == Usuario.id)
+    )
+
+
 def get_latest_by_veiculo(session: Session, veiculo_id: int) -> Compra | None:
     return (
         session.query(Compra)
@@ -133,11 +142,18 @@ def delete(session: Session, obj: Compra, actor_id: int | None = None) -> None:
 
 
 def search(session: Session, term: str, column: str | None = None) -> list[Compra]:
+    return list(search_query(session, term, column).all())
+
+
+def search_query(
+    session: Session, term: str, column: str | None = None
+) -> Query[Compra]:
     pattern = f"%{term}%"
-    query = (
+    sql_query = (
         session.query(Compra)
         .join(Cliente, Compra.cliente_id == Cliente.id)
         .join(Veiculo, Compra.veiculo_id == Veiculo.id)
+        .outerjoin(Usuario, Compra.usuario_id == Usuario.id)
     )
 
     columns_map = {
@@ -149,22 +165,19 @@ def search(session: Session, term: str, column: str | None = None) -> list[Compr
         "valor": Compra.valor_compra,
         "status": Compra.status,
         "observacoes": Compra.observacoes,
+        "usuario": Usuario.nome,
     }
 
     if column and column in columns_map:
         col = columns_map[column]
-        return list(query.where(cast(col, String).ilike(pattern)).distinct().all())
+        return sql_query.where(cast(col, String).ilike(pattern))
 
-    return list(
-        query.where(
-            or_(
-                Cliente.nome.ilike(pattern),
-                Cliente.documento.ilike(pattern),
-                Veiculo.modelo.ilike(pattern),
-                Veiculo.placa.ilike(pattern),
-                Compra.observacoes.ilike(pattern),
-            )
+    return sql_query.where(
+        or_(
+            Cliente.nome.ilike(pattern),
+            Cliente.documento.ilike(pattern),
+            Veiculo.modelo.ilike(pattern),
+            Veiculo.placa.ilike(pattern),
+            Compra.observacoes.ilike(pattern),
         )
-        .distinct()
-        .all()
     )

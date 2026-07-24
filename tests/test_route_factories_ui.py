@@ -245,6 +245,38 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
         )
 
 
+def test_query_list_ordena_no_sql_quando_query_func_disponivel(
+    request: pytest.FixtureRequest,
+) -> None:
+    engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
+    session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
+    session.add_all(
+        [
+            investidor.Investidor(nome="Carla"),
+            investidor.Investidor(nome="Ana"),
+            investidor.Investidor(nome="Bruno"),
+        ]
+    )
+    session.flush()
+
+    ordenados = query_list(
+        session,
+        investidor,
+        q="",
+        searchable=False,
+        list_func=None,
+        search_func=None,
+        sort="nome",
+        order="desc",
+        sql_sort_fields={"nome": investidor.Investidor.nome},
+        query_func=lambda sess: sess.query(investidor.Investidor),
+    )
+
+    assert [item.nome for item in ordenados] == ["Carla", "Bruno", "Ana"]
+
+
 def test_ordenar_investidores_por_nome() -> None:
     investidores = [
         investidor.Investidor(id=1, nome="Carla"),

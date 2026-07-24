@@ -71,6 +71,16 @@ register_crud_ui_routes(
         "valor": "valor",
         "descricao": lambda c: _sort_key(c.descricao or ""),
     },
+    sql_sort_fields={
+        "veiculo": veiculo.Veiculo.modelo,
+        "placa": veiculo.Veiculo.placa,
+        "categoria": custo_veiculo.CustoVeiculo.categoria,
+        "data": custo_veiculo.CustoVeiculo.data_custo,
+        "valor": custo_veiculo.CustoVeiculo.valor,
+        "descricao": custo_veiculo.CustoVeiculo.descricao,
+    },
+    query_func=custo_veiculo.query,
+    search_query_func=custo_veiculo.search_query,
     csv_filename="custos_veiculos.csv",
     csv_headers=[
         "ID",

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
-from xtreme_system.api.route_factories import _csv_response, _sort_key
+from xtreme_system.api.route_factories import _csv_response
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
@@ -25,14 +25,11 @@ _LANCAMENTO_SORT_FIELDS: dict[str, str] = {
 def _ctx_lancamentos(
     session: Session, investidor_id: int, sort: str = "", order: str = "asc"
 ) -> dict[str, Any]:
-    lancamentos = caixa.list_by_investidor(session, investidor_id)
-    field = _LANCAMENTO_SORT_FIELDS.get(sort)
-    if field:
-        lancamentos = sorted(
-            lancamentos,
-            key=lambda lanc: _sort_key(getattr(lanc, field)),
-            reverse=order == "desc",
-        )
+    query = caixa.query_by_investidor(session, investidor_id)
+    field = _LANCAMENTO_SORT_FIELDS.get(sort, "id")
+    col = getattr(caixa.LancamentoInvestimento, field)
+    order_expr = col.desc() if order == "desc" else col.asc()
+    lancamentos = list(query.order_by(order_expr).all())
     return {
         "investidor": _found(investidor.get(session, investidor_id), "Investidor"),
         "lancamentos": lancamentos,
