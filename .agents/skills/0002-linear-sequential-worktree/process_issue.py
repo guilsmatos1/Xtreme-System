@@ -16,13 +16,18 @@ Usage:
   process_issue.py start --identifier GUI-123 --coordinator-handle term_xxx [--json]
   process_issue.py wait  --identifier GUI-123 --task-id task_x --dispatch-id ctx_x \\
                           --coordinator-handle term_xxx [--json]
+  process_issue.py run-backlog [--coordinator-handle term_xxx] [--json]
 
-Both subcommands print one JSON object to stdout:
+The start/wait subcommands print one JSON object to stdout:
   {"status": "skipped"|"error"|"escalation"|"pending"|"in_review_done",
    "identifier": "...", "reason": "...", "detail": {...}, "warnings": [...]}
+run-backlog prints compact JSONL progress events plus a final summary object.
 """
 import argparse
+import contextlib
+import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -37,6 +42,8 @@ CTRL_T = "\x14"
 # Not anchored to end-of-line: at narrow terminal widths the variant token can
 # land mid-line, sharing a row with unrelated chrome (e.g. the branch/version bar).
 VARIANT_RE = re.compile(r"·\s*(low|medium|high|xhigh|none)\b", re.IGNORECASE)
+
+PRIORITY_RANK = {1: 0, 2: 1, 3: 2, 4: 3, 0: 4}
 
 
 class OrcaError(RuntimeError):
@@ -315,6 +322,208 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
     return result("in_review_done", identifier, detail=msg, warnings=warnings)
 
 
+def emit_event(payload):
+    print(json.dumps(payload, separators=(",", ":")), flush=True)
+    return payload
+
+
+def _call_helper_silently(func, args):
+    sink = io.StringIO()
+    with contextlib.redirect_stdout(sink):
+        return func(args)
+
+
+def _priority_value(raw):
+    if isinstance(raw, dict):
+        raw = raw.get("value", raw.get("priority", 0))
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_backlog(issue):
+    state = issue.get("state") or {}
+    if isinstance(state, dict):
+        return state.get("type") == "backlog"
+    return str(state).lower() == "backlog"
+
+
+def _backlog_issue(issue):
+    identifier = issue.get("identifier")
+    if not identifier:
+        return None
+    return {
+        "identifier": str(identifier),
+        "priority": _priority_value(issue.get("priority", 0)),
+        "title": str(issue.get("title", "")),
+    }
+
+
+def load_backlog_queue(args, attempted):
+    listing = orca([
+        "linear", "list", "--filter", "open", "--team", args.team,
+        "--limit", str(args.limit), "--workspace", args.workspace,
+    ], timeout=120)
+    issues = listing.get("result", {}).get("issues", [])
+    queue = []
+    for issue in issues:
+        if not _is_backlog(issue):
+            continue
+        compact = _backlog_issue(issue)
+        if not compact or compact["identifier"] in attempted:
+            continue
+        queue.append(compact)
+    queue.sort(key=lambda item: (PRIORITY_RANK.get(item["priority"], len(PRIORITY_RANK)), item["identifier"]))
+    return queue
+
+
+def resolve_coordinator_handle(args, warnings):
+    if args.coordinator_handle:
+        return args.coordinator_handle
+
+    listing = orca(["terminal", "list"], timeout=30)
+    terminals = listing.get("result", {}).get("terminals", [])
+    cwd = os.path.realpath(os.getcwd())
+    candidates = [
+        terminal for terminal in terminals
+        if terminal.get("connected")
+        and terminal.get("writable")
+        and terminal.get("worktreePath")
+        and os.path.realpath(terminal.get("worktreePath")) == cwd
+    ]
+    if not candidates:
+        raise RuntimeError("could not infer coordinator terminal handle; pass --coordinator-handle")
+
+    def is_worker_terminal(terminal):
+        title = str(terminal.get("title") or "")
+        return title == "OpenCode" or title.startswith("OC |")
+
+    preferred = [terminal for terminal in candidates if not is_worker_terminal(terminal)] or candidates
+    preferred.sort(key=lambda terminal: int(terminal.get("lastOutputAt") or 0), reverse=True)
+    if len(preferred) > 1:
+        warnings.append(
+            f"multiple coordinator terminal candidates; selected most recent {preferred[0].get('handle')}"
+        )
+    return preferred[0].get("handle")
+
+
+def run_one_backlog_issue(issue, args, coordinator_handle):
+    identifier = issue["identifier"]
+    started_at = time.monotonic()
+    start_args = argparse.Namespace(
+        identifier=identifier,
+        coordinator_handle=coordinator_handle,
+        repo=args.repo,
+        model=args.model,
+        workspace=args.workspace,
+        wait_timeout_ms=args.wait_timeout_ms,
+    )
+    payload = _call_helper_silently(cmd_start, start_args)
+
+    while payload.get("status") == "pending":
+        detail = payload.get("detail") or {}
+        missing = [key for key in ("task_id", "dispatch_id", "coordinator_handle") if not detail.get(key)]
+        if missing:
+            return {
+                "status": "error",
+                "identifier": identifier,
+                "reason": f"pending result missing {', '.join(missing)}",
+                "detail": detail,
+            }
+
+        remaining = args.issue_timeout_seconds - (time.monotonic() - started_at)
+        if remaining <= 0:
+            return {
+                "status": "stuck",
+                "identifier": identifier,
+                "reason": "issue timeout exceeded",
+                "detail": detail,
+            }
+
+        wait_args = argparse.Namespace(
+            identifier=identifier,
+            task_id=detail["task_id"],
+            dispatch_id=detail["dispatch_id"],
+            coordinator_handle=detail["coordinator_handle"],
+            workspace=args.workspace,
+            wait_timeout_ms=min(args.wait_timeout_ms, max(1000, int(remaining * 1000))),
+        )
+        payload = _call_helper_silently(cmd_wait, wait_args)
+
+    return payload
+
+
+def record_issue(summary, issue, payload):
+    status = payload.get("status")
+    event = {
+        "event": "issue",
+        "identifier": issue["identifier"],
+        "priority": issue["priority"],
+        "status": status,
+    }
+    for key in ("reason", "warnings"):
+        if payload.get(key):
+            event[key] = payload[key]
+    if status in ("error", "escalation", "stuck") and payload.get("detail") is not None:
+        event["detail"] = payload["detail"]
+
+    summary["processed"] += 1
+    if status in ("in_review_done", "skipped", "escalation", "stuck"):
+        summary[status] += 1
+    elif status == "error":
+        summary["errors"].append({
+            "identifier": issue["identifier"],
+            "reason": payload.get("reason"),
+            "detail": payload.get("detail"),
+        })
+    if payload.get("warnings"):
+        summary["warnings"].append({"identifier": issue["identifier"], "warnings": payload["warnings"]})
+
+    emit_event(event)
+    return status
+
+
+def cmd_run_backlog(args):
+    summary = {
+        "event": "summary",
+        "status": "completed",
+        "processed": 0,
+        "in_review_done": 0,
+        "skipped": 0,
+        "escalation": 0,
+        "stuck": 0,
+        "errors": [],
+        "warnings": [],
+    }
+    attempted = set()
+    queue = []
+    processed_since_relist = args.relist_every
+
+    try:
+        coordinator_handle = resolve_coordinator_handle(args, summary["warnings"])
+        while True:
+            if not queue or processed_since_relist >= args.relist_every:
+                queue = load_backlog_queue(args, attempted)
+                processed_since_relist = 0
+                emit_event({"event": "backlog_listed", "count": len(queue)})
+                if not queue:
+                    return emit_event(summary)
+
+            issue = queue.pop(0)
+            attempted.add(issue["identifier"])
+            payload = run_one_backlog_issue(issue, args, coordinator_handle)
+            status = record_issue(summary, issue, payload)
+            processed_since_relist += 1
+            if status == "error":
+                summary["status"] = "error"
+                return emit_event(summary)
+    except (OrcaError, RuntimeError) as exc:
+        summary["status"] = "error"
+        summary["errors"].append({"reason": str(exc)})
+        return emit_event(summary)
+
+
 def build_parser():
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="command", required=True)
@@ -338,6 +547,16 @@ def build_parser():
     wait.add_argument("--dispatch-id", required=True)
     wait.add_argument("--coordinator-handle", required=True)
     wait.set_defaults(func=cmd_wait)
+
+    run_backlog = sub.add_parser("run-backlog", parents=[common])
+    run_backlog.add_argument("--team", default="GUI")
+    run_backlog.add_argument("--repo", default=DEFAULT_REPO)
+    run_backlog.add_argument("--model", default=DEFAULT_MODEL)
+    run_backlog.add_argument("--coordinator-handle")
+    run_backlog.add_argument("--limit", type=int, default=216)
+    run_backlog.add_argument("--relist-every", type=int, default=10)
+    run_backlog.add_argument("--issue-timeout-seconds", type=int, default=7200)
+    run_backlog.set_defaults(func=cmd_run_backlog)
 
     return p
 
