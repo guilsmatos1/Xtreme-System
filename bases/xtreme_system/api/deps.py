@@ -77,6 +77,22 @@ AdminUser = Annotated[usuario.Usuario, Depends(require_admin)]
 
 # ---- Autenticação UI (cookie httpOnly) ----
 
+_UI_UNMAPPED_AUTHORIZED_PATHS = (
+    "/ui/auditoria",
+    "/ui/configuracoes",
+    "/ui/conta",
+    "/ui/dashboard",
+    "/ui/perfis",
+    "/ui/usuarios",
+)
+
+
+def _is_ui_unmapped_authorized_path(path: str) -> bool:
+    return any(
+        path == allowed or path.startswith(f"{allowed}/")
+        for allowed in _UI_UNMAPPED_AUTHORIZED_PATHS
+    )
+
 
 class _NaoAutenticadoError(Exception):
     pass
@@ -105,6 +121,13 @@ def get_ui_user(
     if user is None or not user.ativo:
         raise _NaoAutenticadoError
     pagina = perfil.pagina_da_rota(request.url.path)
+    if (
+        not pagina
+        and request.url.path.startswith("/ui/")
+        and not _is_ui_unmapped_authorized_path(request.url.path)
+        and not usuario.is_admin(user)
+    ):
+        raise _NaoAutorizadoError
     if pagina and not perfil.pode_acessar(user, pagina):
         raise _NaoAutorizadoError
     return _bind_usuario(session, user)
