@@ -16,10 +16,6 @@ TipoAcao = Literal["CREATE", "UPDATE", "DELETE"]
 TIPO_ACOES: tuple[TipoAcao, ...] = get_args(TipoAcao)
 
 
-class AuditError(ValueError):
-    """session.info['usuario_id'] required for audited writes."""
-
-
 class Auditoria(Base):
     __tablename__ = "auditoria"
 
@@ -75,7 +71,7 @@ def auditar(
         tabela=tabela,
         tipo_acao=tipo_acao,
         registro_id=registro_id,
-        usuario_id=actor_id,
+        usuario_id=actor_id if actor_id is not None else session.info.get("usuario_id"),
         dados_antes=dados_antes,
         dados_depois=dados_depois,
     )

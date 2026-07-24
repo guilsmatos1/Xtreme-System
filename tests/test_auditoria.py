@@ -99,6 +99,13 @@ def test_auditar_permite_actor_none(db_session: Session) -> None:
     assert rows[-1].usuario_id is None
 
 
+def test_crud_auditado_sem_usuario_na_sessao_nao_falha(db_session: Session) -> None:
+    investidor.create(db_session, investidor.InvestidorCreate(nome="Sem autor"))
+
+    rows = auditoria.query(db_session, tabela="investidor", tipo_acao="CREATE")
+    assert rows[-1].usuario_id is None
+
+
 def test_auditoria_serializa_tipos_e_mascara_campos_sensiveis() -> None:
     user = usuario.Usuario(
         id=1,
