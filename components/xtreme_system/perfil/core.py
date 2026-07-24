@@ -174,11 +174,10 @@ def update(
 
 
 def delete(session: Session, obj: Perfil, actor_id: int | None = None) -> None:
-    from xtreme_system.usuario.core import Usuario  # noqa: PLC0415 (import circular)
+    from xtreme_system.usuario import core as usuario  # noqa: PLC0415 (import circular)
 
-    for user in session.query(Usuario).filter_by(perfil_id=obj.id):
-        user.perfil_id = None
-    session.flush()
+    for user in session.query(usuario.Usuario).filter_by(perfil_id=obj.id):
+        usuario.set_perfil(session, user, None, actor_id)
     crud.delete(session, obj, actor_id)
 
 
