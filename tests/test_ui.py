@@ -15,10 +15,9 @@ from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
-from xtreme_system.api.routes import ui as ui_routes
-from xtreme_system.api.routes.ui import _validar_uploads
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
-from xtreme_system.api.routes.ui_routes.common import resolver_cliente
+from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
+from xtreme_system.api.routes.ui_routes.common import _validar_uploads, resolver_cliente
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.caixa import core as caixa
@@ -30,6 +29,7 @@ from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
+from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -1492,7 +1492,7 @@ def test_ui_compras_upload_comprovante_invalido_rejeita_lote(
 ) -> None:
     _login_admin(client)
     compra_id = _seed_compra(client, "45678912322")
-    monkeypatch.setattr(ui_routes, "_uploads_compra_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(compras_ui, "_uploads_compra_dir", lambda _id: tmp_path)
 
     resp = client.post(
         f"/ui/compras/{compra_id}/comprovantes",
@@ -2236,7 +2236,7 @@ def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
 def test_ui_compras_nao_grava_comprovante_se_commit_final_falhar(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(ui_routes, "_uploads_compra_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(compras_ui, "_uploads_compra_dir", lambda _id: tmp_path)
 
     with _client_with_failing_final_commit() as (client, session, fail_commit):
         _login_admin(client)
@@ -2588,7 +2588,7 @@ def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
-    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(veiculos_imagens_ui, "_uploads_dir", lambda _id: tmp_path)
 
     resp = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
@@ -2610,10 +2610,8 @@ def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
     def falha_create(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("db indisponivel")
 
-    monkeypatch.setattr(ui_routes, "_uploads_dir", lambda _id: tmp_path)
-    monkeypatch.setattr(
-        "xtreme_system.api.routes.ui.imagem_veiculo.create", falha_create
-    )
+    monkeypatch.setattr(veiculos_imagens_ui, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(imagem_veiculo, "create", falha_create)
 
     with pytest.raises(RuntimeError, match="db indisponivel"):
         client.post(
