@@ -18,51 +18,25 @@ Use `orca linear create` to create issues.
 
 ## When Sending from JSON Batch Files
 
-A JSON file path must be provided via an argument. Iterate over the array of opportunities and create an issue for each item:
-
-**Accepted paths:**
-- Any JSON file path provided as argument
-- Can be absolute or relative path
-
-1. **Extract Linear issue metadata from each opportunity:**
-  - `title` ← `short_title`
-  - `body` ← entire opportunity object as JSON (raw JSON string)
-  - `priority` ← `additional_fields.priority` (must be one of `none`, `low`, `medium`, `high`, `urgent`)
-  - `label` ← infer from `additional_fields.tags` or `category`:
-    - Use `Bug` if tags include "correctness", "security", "bug", or category is "Error handling"
-    - Use `Feature` if tags include "feature" or category is "Features"
-    - Use `Improvement` for all other cases (default)
-  - `assignee` ← use default or from `additional_fields` if available
-2. **Body strategy:**
-  - Copy the entire opportunity JSON object as the issue body/description
-  - This preserves all data (location, description, concrete_fix, example, files_affected, tags, self_critique, etc.) in structured format
-  - No token waste on reformatting — the JSON is already structured and parseable
-  - Implementing agent can parse and access any field directly
-3. **Batch creation:**
-  - Create one issue per opportunity without checking for duplicates
-  - Log progress: "Creating issue N of M for {short_title}"
+A JSON file path (absolute or relative) must be provided via an argument. Process the `opportunities` array (or top-level array). Create one issue per opportunity without checking for duplicates. Body = the entire opportunity object as a raw JSON string (preserves all fields — location, description, concrete_fix, files_affected, tags, etc. — without reformatting token cost).
 
 ### Script automático (preferido)
-
-Use o script `send_improvements.py` incluso nesta pasta:
 
 ```bash
 python3 .claude/skills/0001-send-to-linear/send_improvements.py "<projeto>" <caminho-do-json>
 ```
 
-O script lê o JSON, infere label/priority, cria as issues via `orca linear create` e loga o resultado de cada uma.
+Reads the JSON, infers `label`/`priority` per opportunity, calls `orca linear create` for each, and logs progress ("Creating issue N of M...") and result per issue. See `infer_label()` in that file for the exact label rules. If `additional_fields.priority` is missing, it defaults to `none`.
 
 ### Fallback manual
 
-Se o script falhar (ex.: `orca` CLI indisponível, erro de permissão, JSON mal formatado), crie cada issue manualmente seguindo as regras de extração acima, um `orca linear create --project "<projeto>"` por oportunidade.
+Use only if the script fails (`orca` CLI unavailable, permission error, malformed JSON). Per opportunity, run `orca linear create --project "<projeto>"` with:
+- `title` ← `short_title`
+- `body` ← entire opportunity object as raw JSON string (not a Markdown template — see Body strategy above)
+- `priority` ← `additional_fields.priority`, or `none` if absent (must be one of `none`, `low`, `medium`, `high`, `urgent`)
+- `label` ← `Bug` if tags include "correctness"/"security"/"bug" or category is "Error handling"; `Feature` if tags include "feature" or category is "Features"; `Improvement` otherwise
 
-## Input: JSON File Path
-
-You can receive the JSON file path via:
-- **Skill argument**: Pass the file path as `args` parameter
-- **Validation**: Check file exists and is valid JSON before processing
-
-Process the `opportunities` array from the JSON file (or top-level if it's an array).
+The file path is received as the skill's `args` parameter. Validate it exists and is valid JSON before processing.
 
 ## When Sending from Chat Requests
 
@@ -88,26 +62,9 @@ Process the `opportunities` array from the JSON file (or top-level if it's an ar
 orca linear create --team GUI --title "..." --body "..." --assignee me --state Backlog --priority medium --label Improvement --json
 ```
 
-### From `.loop/running/improvements.json`
-
-**Preferido** — usar o script incluso:
+### From JSON Batch (e.g. `.loop/running/improvements.json`)
 
 ```bash
 python3 .claude/skills/0001-send-to-linear/send_improvements.py "Xtreme System" .loop/running/improvements.json
-```
-
-**Fallback manual** — criar uma por uma:
-
-```bash
-orca linear create \
-  --team GUI \
-  --project "<project-name>" \
-  --title "{short_title}" \
-  --body "ID: {id} (rank {rank})\n\n## Description\n{description}\n\n## Why it matters\n{why_it_matters}\n\n## Files affected\n{files_affected}" \
-  --assignee me \
-  --state Backlog \
-  --priority {priority} \
-  --label {inferred_label} \
-  --json
 ```
 
