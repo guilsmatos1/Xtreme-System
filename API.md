@@ -194,10 +194,9 @@ are also applied to JSON responses by omitting hidden fields.
 
 Response: Single resource object
 
-**Permissions**: Requires authentication (any role)
-and profile access to the equivalent UI page for non-admin users. Field
-restrictions configured in the user's profile are also applied to JSON
-responses by omitting hidden fields.
+**Permissions**: Requires authentication and profile access to the equivalent
+UI page for non-admin users. Field restrictions configured in the user's
+profile are also applied to JSON responses by omitting hidden fields.
 
 **Status Codes**:
 
@@ -304,7 +303,10 @@ pagamento pendente.
 
 **Endpoint**: `GET /vendas/{venda_id}/fechamento/preview`
 
-**Permissions**: Requires authentication (any role)
+**Permissions**: Requires authentication and profile access to `vendas` for
+non-admin users. Field restrictions from the `vendas` profile are applied to
+the JSON response: hidden `lucro` omits cost/profit fields, hidden `debitos`
+omits debts, and hidden `participacao` omits investor participation options.
 
 Response:
 
@@ -360,6 +362,11 @@ Side effects:
 
 - `GET /fechamentos-vendas`
 - `GET /fechamentos-vendas/{id}`
+
+**Permissions**: Requires authentication and profile access to `vendas` for
+non-admin users. Field restrictions from the `vendas` profile are applied to
+the JSON response: hidden `lucro` omits cost/profit fields, hidden `debitos`
+omits debts, and hidden `participacao` omits investor participation details.
 
 #### DRE por período (UI)
 
