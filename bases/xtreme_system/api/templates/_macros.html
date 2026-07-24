@@ -156,3 +156,36 @@
   {{ caller() if caller is defined }}
 </div>
 {%- endmacro %}
+
+{% macro paginacao(
+    path,
+    qs_base,
+    target,
+    page_start,
+    page_end,
+    page_count,
+    limit,
+    offset_anterior,
+    offset_proximo,
+    tem_anterior,
+    tem_proximo
+) -%}
+{%- set sep = '&' if qs_base else '' -%}
+<div class="toolbar" style="margin-top:var(--s-4)">
+  <span class="page-head__subtitle">
+    {% if page_count %}
+      Mostrando {{ page_start }}–{{ page_end }}
+    {% else %}
+      Sem registros
+    {% endif %}
+  </span>
+  <div style="display:flex;gap:var(--s-2)">
+    <button class="btn btn--ghost" {{ '' if tem_anterior else 'disabled' }} type="button"
+            hx-get="{{ path }}?{{ qs_base }}{{ sep }}offset={{ offset_anterior }}&limit={{ limit }}"
+            hx-target="{{ target }}" hx-swap="outerHTML">Anterior</button>
+    <button class="btn btn--ghost" {{ '' if tem_proximo else 'disabled' }} type="button"
+            hx-get="{{ path }}?{{ qs_base }}{{ sep }}offset={{ offset_proximo }}&limit={{ limit }}"
+            hx-target="{{ target }}" hx-swap="outerHTML">Próxima</button>
+  </div>
+</div>
+{%- endmacro %}

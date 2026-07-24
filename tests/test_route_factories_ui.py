@@ -81,8 +81,10 @@ def test_register_ui_simples_aceita_templates_injetado(
 
 
 class _FailAfterWriteModule:
-    def list_all(self, session: Session) -> list[investidor.Investidor]:
-        return investidor.list_all(session)
+    def list_all(
+        self, session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[investidor.Investidor]:
+        return investidor.list_all(session, limit=limit, offset=offset)
 
     def get(self, session: Session, item_id: int) -> investidor.Investidor | None:
         return investidor.get(session, item_id)
@@ -245,24 +247,34 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
         )
 
 
-def test_query_list_passa_search_column_quando_search_func_aceita_kwarg() -> None:
-    def search_func(
-        _session: Session, _term: str, *, column: str | None = None
+def test_query_list_passa_limit_e_offset_para_list_func_paginal() -> None:
+    chamadas: list[tuple[int | None, int]] = []
+
+    def list_func(
+        _session: Session, *, limit: int | None = None, offset: int = 0
     ) -> list[investidor.Investidor]:
-        assert column == "nome"
-        return [investidor.Investidor(id=1, nome="Ana")]
+        chamadas.append((limit, offset))
+        dados = [
+            investidor.Investidor(id=1, nome="Ana"),
+            investidor.Investidor(id=2, nome="Bruno"),
+            investidor.Investidor(id=3, nome="Carla"),
+            investidor.Investidor(id=4, nome="Davi"),
+        ]
+        return dados[offset : offset + limit] if limit is not None else dados[offset:]
 
     resultados = query_list(
         session=cast(Session, object()),
         module=investidor,
-        q="ana",
+        q="",
         searchable=False,
-        list_func=None,
-        search_func=search_func,
-        search_column="nome",
+        list_func=list_func,
+        search_func=None,
+        limit=2,
+        offset=1,
     )
 
-    assert [item.nome for item in resultados] == ["Ana"]
+    assert chamadas == [(2, 1)]
+    assert [item.nome for item in resultados] == ["Bruno", "Carla"]
 
 
 def test_ordenar_investidores_por_nome() -> None:
@@ -382,8 +394,14 @@ class _ConflictModule:
         self.fail_on = fail_on
         self.item = _StubItem(1, "Original")
 
-    def list_all(self, _session: Session) -> list[_StubItem]:
-        return [self.item]
+    def list_all(
+        self, _session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[_StubItem]:
+        return (
+            [self.item][offset : offset + limit]
+            if limit is not None
+            else [self.item][offset:]
+        )
 
     def get(self, _session: Session, item_id: int) -> _StubItem | None:
         return self.item if item_id == self.item.id else None

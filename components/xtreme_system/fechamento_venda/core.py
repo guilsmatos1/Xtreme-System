@@ -163,10 +163,16 @@ def _schema_disponivel(session: Session) -> bool:
     return disponivel
 
 
-def list_all(session: Session) -> list[FechamentoVenda]:
+def get(session: Session, fechamento_id: int) -> FechamentoVenda | None:
     if not _schema_disponivel(session):
-        return []
-    return list(session.query(FechamentoVenda).order_by(FechamentoVenda.id).all())
+        return None
+    return crud.get(session, FechamentoVenda, fechamento_id)
+
+
+def get_by_venda(session: Session, venda_id: int) -> FechamentoVenda | None:
+    if not _schema_disponivel(session):
+        return None
+    return session.query(FechamentoVenda).filter_by(venda_id=venda_id).one_or_none()
 
 
 def ids_by_venda_ids(session: Session, venda_ids: list[int]) -> dict[int, int]:
@@ -180,74 +186,17 @@ def ids_by_venda_ids(session: Session, venda_ids: list[int]) -> dict[int, int]:
     return {row.venda_id: row.id for row in rows}
 
 
-def get(session: Session, fechamento_id: int) -> FechamentoVenda | None:
-    if not _schema_disponivel(session):
-        return None
-    return crud.get(session, FechamentoVenda, fechamento_id)
-
-
-def get_by_venda(session: Session, venda_id: int) -> FechamentoVenda | None:
-    if not _schema_disponivel(session):
-        return None
-    return session.query(FechamentoVenda).filter_by(venda_id=venda_id).one_or_none()
-
-
-def listar_para_dre(
-    session: Session,
-    *,
-    data_de: date | None = None,
-    data_ate: date | None = None,
-    investidor_id: int | None = None,
-    vendedor_id: int | None = None,
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[FechamentoVenda]:
     if not _schema_disponivel(session):
         return []
-    query = session.query(FechamentoVenda)
-    if investidor_id is not None:
-        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id).join(
-            Veiculo, Venda.veiculo_id == Veiculo.id
-        )
-        query = query.filter(Veiculo.investidor_id == investidor_id)
-    elif vendedor_id is not None:
-        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id)
-    if vendedor_id is not None:
-        query = query.filter(Venda.vendedor_id == vendedor_id)
-    if data_de is not None:
-        query = query.filter(FechamentoVenda.data_fechamento >= data_de)
-    if data_ate is not None:
-        query = query.filter(FechamentoVenda.data_fechamento <= data_ate)
-    return list(
-        query.order_by(FechamentoVenda.data_fechamento, FechamentoVenda.id).all()
-    )
-
-
-def dre_totais(fechamentos: list[FechamentoVenda]) -> DreTotais:
-    receita = sum((f.receita for f in fechamentos), Decimal("0"))
-    lucro = sum((f.lucro_liquido for f in fechamentos), Decimal("0"))
-    return DreTotais(
-        quantidade=len(fechamentos),
-        receita=_quantizar(receita),
-        custo_veiculo=_quantizar(
-            sum((f.custo_veiculo for f in fechamentos), Decimal("0"))
-        ),
-        custos_operacionais=_quantizar(
-            sum((f.custos_operacionais for f in fechamentos), Decimal("0"))
-        ),
-        debitos=_quantizar(sum((f.debitos for f in fechamentos), Decimal("0"))),
-        lucro_liquido=_quantizar(lucro),
-        margem=_quantizar(lucro / receita * PERCENTUAL_TOTAL) if receita else ZERO,
-    )
-
-
-def dre_por_mes(fechamentos: list[FechamentoVenda]) -> list[DreLinhaMes]:
-    por_mes: dict[date, list[FechamentoVenda]] = {}
-    for item in fechamentos:
-        mes = item.data_fechamento.replace(day=1)
-        por_mes.setdefault(mes, []).append(item)
-    return [
-        DreLinhaMes(mes=mes, **dre_totais(itens).model_dump())
-        for mes, itens in sorted(por_mes.items())
-    ]
+    query = session.query(FechamentoVenda).order_by(FechamentoVenda.id)
+    if limit is not None:
+        query = query.limit(limit)
+    if offset:
+        query = query.offset(offset)
+    return list(query.all())
 
 
 def preview(session: Session, venda_obj: Venda) -> FechamentoVendaPreview:
@@ -345,6 +294,64 @@ def confirmar(
     crud.flush(session)
     session.refresh(fechamento)
     return fechamento
+
+
+def listar_para_dre(
+    session: Session,
+    *,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+    investidor_id: int | None = None,
+    vendedor_id: int | None = None,
+) -> list[FechamentoVenda]:
+    if not _schema_disponivel(session):
+        return []
+    query = session.query(FechamentoVenda)
+    if investidor_id is not None:
+        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id).join(
+            Veiculo, Venda.veiculo_id == Veiculo.id
+        )
+        query = query.filter(Veiculo.investidor_id == investidor_id)
+    elif vendedor_id is not None:
+        query = query.join(Venda, FechamentoVenda.venda_id == Venda.id)
+    if vendedor_id is not None:
+        query = query.filter(Venda.vendedor_id == vendedor_id)
+    if data_de is not None:
+        query = query.filter(FechamentoVenda.data_fechamento >= data_de)
+    if data_ate is not None:
+        query = query.filter(FechamentoVenda.data_fechamento <= data_ate)
+    return list(
+        query.order_by(FechamentoVenda.data_fechamento, FechamentoVenda.id).all()
+    )
+
+
+def dre_totais(fechamentos: list[FechamentoVenda]) -> DreTotais:
+    receita = sum((f.receita for f in fechamentos), Decimal("0"))
+    lucro = sum((f.lucro_liquido for f in fechamentos), Decimal("0"))
+    return DreTotais(
+        quantidade=len(fechamentos),
+        receita=_quantizar(receita),
+        custo_veiculo=_quantizar(
+            sum((f.custo_veiculo for f in fechamentos), Decimal("0"))
+        ),
+        custos_operacionais=_quantizar(
+            sum((f.custos_operacionais for f in fechamentos), Decimal("0"))
+        ),
+        debitos=_quantizar(sum((f.debitos for f in fechamentos), Decimal("0"))),
+        lucro_liquido=_quantizar(lucro),
+        margem=_quantizar(lucro / receita * PERCENTUAL_TOTAL) if receita else ZERO,
+    )
+
+
+def dre_por_mes(fechamentos: list[FechamentoVenda]) -> list[DreLinhaMes]:
+    por_mes: dict[date, list[FechamentoVenda]] = {}
+    for item in fechamentos:
+        mes = item.data_fechamento.replace(day=1)
+        por_mes.setdefault(mes, []).append(item)
+    return [
+        DreLinhaMes(mes=mes, **dre_totais(itens).model_dump())
+        for mes, itens in sorted(por_mes.items())
+    ]
 
 
 def _calcular(

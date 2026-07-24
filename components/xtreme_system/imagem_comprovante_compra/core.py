@@ -31,8 +31,10 @@ class ImagemComprovanteCompraRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[ImagemComprovanteCompra]:
-    return crud.list_all(session, ImagemComprovanteCompra)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[ImagemComprovanteCompra]:
+    return crud.list_all(session, ImagemComprovanteCompra, limit=limit, offset=offset)
 
 
 def list_by_compra(session: Session, compra_id: int) -> list[ImagemComprovanteCompra]:

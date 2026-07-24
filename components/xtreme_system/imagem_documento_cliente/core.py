@@ -35,8 +35,10 @@ class ImagemDocumentoClienteRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[ImagemDocumentoCliente]:
-    return crud.list_all(session, ImagemDocumentoCliente)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[ImagemDocumentoCliente]:
+    return crud.list_all(session, ImagemDocumentoCliente, limit=limit, offset=offset)
 
 
 def list_by_cliente(session: Session, cliente_id: int) -> list[ImagemDocumentoCliente]:

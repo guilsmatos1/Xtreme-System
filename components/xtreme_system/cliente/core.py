@@ -85,8 +85,10 @@ class ClienteRead(BaseModel):
     profissao: str | None
 
 
-def list_all(session: Session) -> list[Cliente]:
-    return crud.list_all(session, Cliente)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Cliente]:
+    return crud.list_all(session, Cliente, limit=limit, offset=offset)
 
 
 def get(session: Session, cliente_id: int) -> Cliente | None:
@@ -127,10 +129,17 @@ def search(session: Session, term: str, column: str | None = None) -> list[Clien
     return list(_search_com_vinculo(session, term, column).all())
 
 
-def list_compradores(session: Session) -> list[Cliente]:
+def list_compradores(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Cliente]:
     from xtreme_system.venda.core import Venda  # noqa: PLC0415
 
-    return list(session.query(Cliente).join(Venda).distinct().all())
+    query = session.query(Cliente).join(Venda).distinct().order_by(Cliente.id)
+    if limit is not None:
+        query = query.limit(limit)
+    if offset:
+        query = query.offset(offset)
+    return list(query.all())
 
 
 def search_compradores(
@@ -141,10 +150,17 @@ def search_compradores(
     return list(_search_com_vinculo(session, term, column).join(Venda).distinct().all())
 
 
-def list_vendedores(session: Session) -> list[Cliente]:
+def list_vendedores(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Cliente]:
     from xtreme_system.compra.core import Compra  # noqa: PLC0415
 
-    return list(session.query(Cliente).join(Compra).distinct().all())
+    query = session.query(Cliente).join(Compra).distinct().order_by(Cliente.id)
+    if limit is not None:
+        query = query.limit(limit)
+    if offset:
+        query = query.offset(offset)
+    return list(query.all())
 
 
 def search_vendedores(

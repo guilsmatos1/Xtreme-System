@@ -19,7 +19,14 @@ ArgT = TypeVar("ArgT")
 
 
 class CrudModule(Protocol[EntityT, CreateSchemaT_contra, UpdateSchemaT_contra]):
-    def list_all(self, session: Session, /) -> list[EntityT]: ...
+    def list_all(
+        self,
+        session: Session,
+        /,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[EntityT]: ...
     def get(self, session: Session, item_id: int, /) -> EntityT | None: ...
     def create(
         self,
@@ -56,7 +63,7 @@ SortSpec = str | Callable[[EntityT], Any]
 CtxForm = Callable[[Session], dict[str, Any]]
 CtxList = Callable[[Session, list[EntityT]], dict[str, Any]]
 ParseForm = Callable[[Any], dict[str, Any]]
-ListFunc = Callable[[Session], list[EntityT]]
+ListFunc = Callable[..., list[EntityT]]
 SearchFunc = Callable[[Session, str], list[EntityT]]
 CsvRow = Callable[[EntityT], list[Any]]
 BeforeCreateHook = Callable[[Session, CreateSchemaT], None]

@@ -128,8 +128,10 @@ class VeiculoRead(BaseModel):
     investidor: InvestidorRead
 
 
-def list_all(session: Session) -> list[Veiculo]:
-    return crud.list_all(session, Veiculo)
+def list_all(
+    session: Session, *, limit: int | None = None, offset: int = 0
+) -> list[Veiculo]:
+    return crud.list_all(session, Veiculo, limit=limit, offset=offset)
 
 
 def list_ids(session: Session) -> list[int]:

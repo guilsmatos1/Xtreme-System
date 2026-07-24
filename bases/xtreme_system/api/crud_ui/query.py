@@ -68,6 +68,18 @@ def sorted_list(
     return sorted(lista, key=sort_key_fn(spec), reverse=order == "desc")
 
 
+def _accepts_list_pagination(list_func: ListFunc[EntityT]) -> bool:
+    parameters = signature(list_func).parameters.values()
+    return any(
+        parameter.kind is Parameter.VAR_KEYWORD
+        or (
+            parameter.name in {"limit", "offset"}
+            and parameter.kind is not Parameter.POSITIONAL_ONLY
+        )
+        for parameter in parameters
+    )
+
+
 def _accepts_search_column(search_func: SearchFunc[EntityT]) -> bool:
     parameters = signature(search_func).parameters.values()
     return any(
@@ -89,16 +101,30 @@ def query_list(
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
     search_column: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> list[EntityT]:
+    def _page(lista: list[EntityT]) -> list[EntityT]:
+        if limit is None:
+            return lista[offset:]
+        return lista[offset : offset + limit]
+
     if q and search_func is not None:
         if _accepts_search_column(search_func):
-            return list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
-        return list(search_func(session, q))
+            lista = list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
+        else:
+            lista = list(search_func(session, q))
+        return _page(lista)
     if searchable and q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module
         )
-        return list(searchable_module.search(session, q))
+        return _page(list(searchable_module.search(session, q)))
     if list_func is not None:
-        return list(list_func(session))
-    return list(module.list_all(session))
+        if _accepts_list_pagination(list_func):
+            return list(list_func(session, limit=limit, offset=offset))
+        return _page(list(list_func(session)))
+    list_all = module.list_all
+    if _accepts_list_pagination(list_all):
+        return list(list_all(session, limit=limit, offset=offset))
+    return _page(list(list_all(session)))

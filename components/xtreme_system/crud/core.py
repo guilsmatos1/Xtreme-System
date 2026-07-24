@@ -1,6 +1,6 @@
 """CRUD genérico: list_all, get, create, update, delete para qualquer model."""
 
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 
@@ -11,8 +11,19 @@ def flush(session: Session) -> None:
     session.flush()
 
 
-def list_all[M](session: Session, model_cls: type[M]) -> list[M]:
-    return list(session.query(model_cls).all())
+def list_all[M](
+    session: Session,
+    model_cls: type[M],
+    *,
+    limit: int | None = None,
+    offset: int = 0,
+) -> list[M]:
+    query = session.query(model_cls).order_by(cast(Any, model_cls).id)
+    if limit is not None:
+        query = query.limit(limit)
+    if offset:
+        query = query.offset(offset)
+    return list(query.all())
 
 
 def get[M](session: Session, model_cls: type[M], id_: int) -> M | None:
