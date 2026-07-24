@@ -8,11 +8,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
+from xtreme_system.api.core import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.custo_veiculo import core as custo_veiculo
+from xtreme_system.database.core import get_session
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -349,9 +352,34 @@ def test_endpoints_json_e_permissoes(client: TestClient) -> None:
     venda_id, inv_ana, inv_bia = _seed_api(client, admin_headers)
 
     preview = client.get(f"/vendas/{venda_id}/fechamento/preview", headers=func_headers)
+    assert preview.status_code == 403
+
+    session = next(app.dependency_overrides[get_session]())
+    p = perfil.create(
+        session,
+        perfil.PerfilCreate(
+            nome="Vendas limitado",
+            paginas=["vendas"],
+            restricoes={
+                "vendas": {
+                    "campos_ocultos": ["lucro", "debitos", "participacao"],
+                }
+            },
+        ),
+    )
+    func = usuario.get_by_username(session, "func")
+    assert func is not None
+    func.perfil = p
+    session.flush()
+
+    preview = client.get(f"/vendas/{venda_id}/fechamento/preview", headers=func_headers)
     assert preview.status_code == 200
     assert preview.json()["elegivel"] is True
-    assert preview.json()["lucro_liquido"] == "10000.00"
+    assert "custo_veiculo" not in preview.json()
+    assert "custos_operacionais" not in preview.json()
+    assert "debitos" not in preview.json()
+    assert "lucro_liquido" not in preview.json()
+    assert "investidores" not in preview.json()
 
     proibido = client.post(
         f"/vendas/{venda_id}/fechamento",
@@ -376,6 +404,15 @@ def test_endpoints_json_e_permissoes(client: TestClient) -> None:
     lista = client.get("/fechamentos-vendas", headers=func_headers)
     assert lista.status_code == 200
     assert lista.json()[0]["id"] == fechamento_id
+    assert "custo_veiculo" not in lista.json()[0]
+    assert "custos_operacionais" not in lista.json()[0]
+    assert "debitos" not in lista.json()[0]
+    assert "lucro_liquido" not in lista.json()[0]
+    assert "participacoes" not in lista.json()[0]
+
+    detalhe = client.get(f"/fechamentos-vendas/{fechamento_id}", headers=func_headers)
+    assert detalhe.status_code == 200
+    assert "lucro_liquido" not in detalhe.json()
 
     lancamentos = client.get("/lancamentos-caixa", headers=admin_headers).json()
     automatico = next(

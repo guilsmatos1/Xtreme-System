@@ -187,15 +187,51 @@ register_crud_routes(
 # ---- Fechamento de vendas ----
 
 
+def _require_json_vendas(user: usuario.Usuario) -> None:
+    if not perfil.pode_acessar(user, "vendas"):
+        raise HTTPException(status_code=403, detail="Página não permitida")
+
+
+def _fechamento_preview_json(
+    obj: fechamento_venda.FechamentoVendaPreview, user: usuario.Usuario
+) -> dict[str, Any]:
+    _require_json_vendas(user)
+    data: dict[str, Any] = jsonable_encoder(obj)
+    if not perfil.pode_ver_campo(user, "vendas", "lucro"):
+        for campo in ("custo_veiculo", "custos_operacionais", "lucro_liquido"):
+            data.pop(campo, None)
+    if not perfil.pode_ver_campo(user, "vendas", "debitos"):
+        data.pop("debitos", None)
+    if not perfil.pode_ver_campo(user, "vendas", "participacao"):
+        data.pop("investidores", None)
+    return data
+
+
+def _fechamento_json(
+    obj: fechamento_venda.FechamentoVenda, user: usuario.Usuario
+) -> dict[str, Any]:
+    _require_json_vendas(user)
+    data: dict[str, Any] = jsonable_encoder(
+        fechamento_venda.FechamentoVendaRead.model_validate(obj)
+    )
+    if not perfil.pode_ver_campo(user, "vendas", "lucro"):
+        for campo in ("custo_veiculo", "custos_operacionais", "lucro_liquido"):
+            data.pop(campo, None)
+    if not perfil.pode_ver_campo(user, "vendas", "debitos"):
+        data.pop("debitos", None)
+    if not perfil.pode_ver_campo(user, "vendas", "participacao"):
+        data.pop("participacoes", None)
+    return data
+
+
 @app.get(
     "/vendas/{venda_id}/fechamento/preview",
-    response_model=fechamento_venda.FechamentoVendaPreview,
 )
 def preview_fechamento_venda(
-    venda_id: int, session: SessionDep, _: CurrentUser
-) -> fechamento_venda.FechamentoVendaPreview:
+    venda_id: int, session: SessionDep, user: CurrentUser
+) -> dict[str, Any]:
     venda_obj = _found(venda.get(session, venda_id), "Venda")
-    return fechamento_venda.preview(session, venda_obj)
+    return _fechamento_preview_json(fechamento_venda.preview(session, venda_obj), user)
 
 
 @app.post(
@@ -219,22 +255,22 @@ def confirmar_fechamento_venda(
 
 @app.get(
     "/fechamentos-vendas",
-    response_model=list[fechamento_venda.FechamentoVendaRead],
 )
 def listar_fechamentos_vendas(
-    session: SessionDep, _: CurrentUser
-) -> list[fechamento_venda.FechamentoVenda]:
-    return fechamento_venda.list_all(session)
+    session: SessionDep, user: CurrentUser
+) -> list[dict[str, Any]]:
+    return [_fechamento_json(obj, user) for obj in fechamento_venda.list_all(session)]
 
 
 @app.get(
     "/fechamentos-vendas/{fechamento_id}",
-    response_model=fechamento_venda.FechamentoVendaRead,
 )
 def obter_fechamento_venda(
-    fechamento_id: int, session: SessionDep, _: CurrentUser
-) -> fechamento_venda.FechamentoVenda:
-    return _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
+    fechamento_id: int, session: SessionDep, user: CurrentUser
+) -> dict[str, Any]:
+    return _fechamento_json(
+        _found(fechamento_venda.get(session, fechamento_id), "Fechamento"), user
+    )
 
 
 # ---- Clientes ----

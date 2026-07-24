@@ -78,10 +78,10 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `/compras` | GET, POST, PATCH, DELETE | idem |
 | `/vendas` | GET, POST, PATCH, DELETE | idem |
 | `/auditoria` | GET | Admin |
-| `/vendas/{id}/fechamento/preview` | GET | CurrentUser |
+| `/vendas/{id}/fechamento/preview` | GET | CurrentUser + perfil `vendas`; oculta campos sensíveis |
 | `/vendas/{id}/fechamento` | POST | Admin |
-| `/fechamentos-vendas` | GET | CurrentUser |
-| `/fechamentos-vendas/{id}` | GET | CurrentUser |
+| `/fechamentos-vendas` | GET | CurrentUser + perfil `vendas`; oculta campos sensíveis |
+| `/fechamentos-vendas/{id}` | GET | CurrentUser + perfil `vendas`; oculta campos sensíveis |
 
 ### Fábrica de CRUD (`register_crud_routes`)
 
