@@ -9,6 +9,7 @@ import structlog
 from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base, register_post_commit
 from xtreme_system.venda.core import Venda
@@ -56,15 +57,28 @@ def get_config(session: Session) -> WhatsappConfig:
     return config
 
 
-def atualizar_config(session: Session, data: WhatsappConfigUpdate) -> WhatsappConfig:
+def atualizar_config(
+    session: Session, data: WhatsappConfigUpdate, actor_id: int | None = None
+) -> WhatsappConfig:
     config = get_config(session)
+    antes = snapshot(config)
     config.evolution_api_url = data.evolution_api_url
     config.evolution_api_key = data.evolution_api_key
     config.evolution_instance = data.evolution_instance
     config.evolution_group_id = data.evolution_group_id
     config.mensagem_template = data.mensagem_template
-    crud.flush(session)
+    session.flush()
     session.refresh(config)
+    auditar(
+        session,
+        actor_id=actor_id,
+        tabela="whatsapp_config",
+        tipo_acao="UPDATE",
+        registro_id=config.id,
+        dados_antes=antes,
+        dados_depois=snapshot(config),
+    )
+    crud.flush(session)
     return config
 
 

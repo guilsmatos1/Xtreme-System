@@ -74,6 +74,7 @@ def ui_configuracoes_salvar(
             evolution_group_id=evolution_group_id,
             mensagem_template=mensagem_template,
         ),
+        user.id,
     )
     return templates.TemplateResponse(
         request,

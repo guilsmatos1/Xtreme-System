@@ -136,3 +136,35 @@ def test_auditoria_serializa_tipos_e_mascara_campos_sensiveis() -> None:
     dados_config = auditoria.snapshot(config)
     assert dados_config["evolution_api_key"] == "***"
     assert "chave-secreta" not in str(dados_config)
+
+
+def test_whatsapp_atualizar_config_gera_auditoria_mascarada(
+    db_session: Session,
+) -> None:
+    admin = _seed_admin(db_session)
+    whatsapp.atualizar_config(
+        db_session,
+        whatsapp.WhatsappConfigUpdate(
+            evolution_api_url="https://evolution.example",
+            evolution_api_key="nova-chave",
+            evolution_instance="xtreme",
+            evolution_group_id="120363@g.us",
+            mensagem_template="Venda: {cliente}",
+        ),
+        admin.id,
+    )
+
+    rows = auditoria.query(
+        db_session, tabela="whatsapp_config", tipo_acao="UPDATE", limit=1
+    )
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.usuario_id == admin.id
+    assert row.registro_id == 1
+    assert row.dados_antes is not None
+    assert row.dados_depois is not None
+    assert row.dados_antes["evolution_api_key"] == "***"
+    assert row.dados_depois["evolution_api_key"] == "***"
+    assert row.dados_depois["evolution_api_url"] == "https://evolution.example"
+    assert "nova-chave" not in str(row.dados_antes)
+    assert "nova-chave" not in str(row.dados_depois)
