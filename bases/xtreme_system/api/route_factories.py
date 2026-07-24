@@ -38,6 +38,7 @@ from xtreme_system.api.crud_ui.routes import (
 from xtreme_system.api.crud_ui.simple import (
     register_ui_simples as _register_ui_simples_impl,
 )
+from xtreme_system.api.crud_writes import create_with_hook, update_with_hook
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import CurrentUser, SessionDep, _found
 from xtreme_system.perfil import core as perfil
@@ -138,15 +139,17 @@ def register_crud_routes(
     def _create_atomic(
         data: CreateSchemaT, session: Session, actor_id: int | None
     ) -> EntityT:
-        if before_create:
-            before_create(session, data)
-        obj = _safe_write(
-            lambda: module.create(session, data, actor_id),
+        return _safe_write(
+            lambda: create_with_hook(
+                module,
+                session,
+                data,
+                after_create,
+                actor_id,
+                before_create=before_create,
+            ),
             conflict_msg=f"{label} já existe",
         )
-        if after_create:
-            after_create(session, obj, actor_id)
-        return obj
 
     @app.patch(
         f"{prefix}/{{item_id}}",
@@ -167,15 +170,17 @@ def register_crud_routes(
         item_id: int, data: UpdateSchemaT, session: Session, actor_id: int | None
     ) -> EntityT:
         obj = _found(module.get(session, item_id), label)
-        if before_update:
-            before_update(session, obj, data)
-        obj = _safe_write(
-            lambda: module.update(session, obj, data, actor_id),
+        return _safe_write(
+            lambda: _update_with_hooks(obj, data, session, actor_id),
             conflict_msg=f"{label} já existe",
         )
-        if after_update:
-            after_update(session, obj, actor_id)
-        return obj
+
+    def _update_with_hooks(
+        obj: EntityT, data: UpdateSchemaT, session: Session, actor_id: int | None
+    ) -> EntityT:
+        if before_update:
+            before_update(session, obj, data)
+        return update_with_hook(module, session, obj, data, after_update, actor_id)
 
     @app.delete(f"{prefix}/{{item_id}}", status_code=204)
     def _delete(item_id: int, session: SessionDep, user: CurrentUser) -> None:

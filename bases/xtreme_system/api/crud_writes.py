@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_types import (
     AfterWriteHook,
     ArgT,
+    BeforeCreateHook,
     BeforeDeleteHook,
     CreateSchemaT,
     CrudModule,
@@ -38,7 +39,10 @@ def create_with_hook(
     data: CreateSchemaT,
     after_create: AfterWriteHook[EntityT] | None,
     actor_id: int | None,
+    *,
+    before_create: BeforeCreateHook[CreateSchemaT] | None = None,
 ) -> EntityT:
+    run_hook(before_create, session, data)
     obj = module.create(session, data, actor_id)
     if after_create:
         after_create(session, obj, actor_id)

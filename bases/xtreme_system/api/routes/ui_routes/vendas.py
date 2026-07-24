@@ -7,13 +7,14 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 import structlog
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
     SessionDep,
     _found,
@@ -399,10 +400,13 @@ async def _criar_venda(
         return _erro_venda(request, session, user, msg)
 
     try:
-        obj = venda.create(session, data, user.id)
-        _persistir_contrato_venda(session, obj, user.id)
-        whatsapp.notificar_venda(session, obj)
-    except IntegrityError:
+        safe_write(
+            lambda: _criar_venda_com_hooks(session, data, user.id),
+            conflict_msg="Venda já existe",
+        )
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_409_CONFLICT:
+            raise
         return rollback_integrity_error_response(
             session, lambda: _erro_venda(request, session, user, "Venda já existe")
         )
@@ -427,8 +431,13 @@ async def _atualizar_venda(
         return _erro_venda(request, session, user, msg, venda_obj=obj)
 
     try:
-        venda.update(session, obj, data, user.id)
-    except IntegrityError:
+        safe_write(
+            lambda: venda.update(session, obj, data, user.id),
+            conflict_msg="Venda já existe",
+        )
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_409_CONFLICT:
+            raise
         return rollback_integrity_error_response(
             session,
             lambda: _erro_venda(
@@ -436,6 +445,15 @@ async def _atualizar_venda(
             ),
         )
     return _ok_venda(request, session, user)
+
+
+def _criar_venda_com_hooks(
+    session: Session, data: venda.VendaCreate, actor_id: int | None
+) -> venda.Venda:
+    obj = venda.create(session, data, actor_id)
+    _persistir_contrato_venda(session, obj, actor_id)
+    whatsapp.notificar_venda(session, obj)
+    return obj
 
 
 @app.get("/ui/vendas/{item_id}/contrato")
