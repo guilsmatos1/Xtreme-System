@@ -31,6 +31,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -46,42 +47,132 @@ CTRL_T = "\x14"
 VARIANT_RE = re.compile(r"·\s*(low|medium|high|xhigh|none)\b", re.IGNORECASE)
 
 PRIORITY_RANK = {1: 0, 2: 1, 3: 2, 4: 3, 0: 4}
+OUTPUT_SNIPPET_LIMIT = 400
+COMMAND_STRING_LIMIT = 300
+DETAIL_STRING_LIMIT = 240
+DETAIL_LIST_LIMIT = 5
+DETAIL_DICT_LIMIT = 12
+
+
+def _use_rtk():
+    return shutil.which("rtk") is not None
+
+
+def _tool_command(tool, args):
+    return (["rtk", tool] if _use_rtk() else [tool]) + list(args)
+
+
+def _format_command(command):
+    return _compact_text(" ".join(command), COMMAND_STRING_LIMIT)
+
+
+def _compact_text(text, limit=OUTPUT_SNIPPET_LIMIT):
+    text = str(text or "")
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}…[truncated {len(text) - limit} chars]"
+
+
+def _compact_detail(value, depth=0):
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return _compact_text(value, DETAIL_STRING_LIMIT)
+    if depth >= 3:
+        return _compact_text(repr(value), DETAIL_STRING_LIMIT)
+    if isinstance(value, list):
+        items = [_compact_detail(item, depth + 1) for item in value[:DETAIL_LIST_LIMIT]]
+        if len(value) > DETAIL_LIST_LIMIT:
+            items.append(f"…[truncated {len(value) - DETAIL_LIST_LIMIT} items]")
+        return items
+    if isinstance(value, dict):
+        compact = {}
+        for idx, (key, item) in enumerate(value.items()):
+            if idx >= DETAIL_DICT_LIMIT:
+                compact["…"] = f"truncated {len(value) - DETAIL_DICT_LIMIT} keys"
+                break
+            compact[str(key)] = _compact_detail(item, depth + 1)
+        return compact
+    return _compact_text(repr(value), DETAIL_STRING_LIMIT)
+
+
+def _output_from(proc):
+    return (proc.stdout or "") + (proc.stderr or "")
+
+
+def _compact_orca_response(response):
+    return _compact_detail(response)
+
+
+def _compact_message(msg):
+    return _compact_detail(msg)
+
+
+def _compact_warnings(warnings):
+    if not warnings:
+        return warnings
+    return [_compact_text(warning, OUTPUT_SNIPPET_LIMIT) for warning in warnings]
+
+
+def _run_tool(tool, args, cwd=None, timeout=30):
+    command = _tool_command(tool, args)
+    proc = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    return command, proc
+
+
+def _raise_orca_error(args, command, code, output, reason=None):
+    raise OrcaError(args, command, code, output, reason)
+
+
+def _orca_json_args(args):
+    return [*args, "--json"]
+
+
+def _command_error_message(command, code, output, reason=None):
+    prefix = f"{_format_command(command)} failed (code {code})"
+    if reason:
+        prefix = f"{prefix}: {reason}"
+    snippet = _compact_text(output)
+    return f"{prefix}: {snippet}" if snippet else prefix
 
 
 class OrcaError(RuntimeError):
-    def __init__(self, args, code, output):
-        super().__init__(f"orca {' '.join(args)} failed (code {code}): {output[:800]}")
+    def __init__(self, args, command, code, output, reason=None):
+        super().__init__(_command_error_message(command, code, output, reason))
         self.args_ = args
+        self.command = command
         self.code = code
         self.output = output
 
 
 def orca(args, timeout=60):
-    proc = subprocess.run(
-        ["orca", *args, "--json"], capture_output=True, text=True, timeout=timeout
-    )
-    out = (proc.stdout or "") + (proc.stderr or "")
+    orca_args = _orca_json_args(args)
+    command, proc = _run_tool("orca", orca_args, timeout=timeout)
+    out = _output_from(proc)
     if proc.returncode != 0:
-        raise OrcaError(args, proc.returncode, out)
+        _raise_orca_error(args, command, proc.returncode, out)
     try:
         return json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise OrcaError(args, proc.returncode, out) from exc
+    except json.JSONDecodeError:
+        _raise_orca_error(args, command, proc.returncode, out, "invalid JSON")
 
 
 def git(args, cwd=None, timeout=30):
-    proc = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=timeout)
-    return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
+    command, proc = _run_tool("git", args, cwd=cwd, timeout=timeout)
+    return proc.returncode, _output_from(proc)
+
+
 
 
 def result(status, identifier, reason=None, detail=None, warnings=None):
     payload = {"status": status, "identifier": identifier}
     if reason is not None:
-        payload["reason"] = reason
+        payload["reason"] = _compact_text(reason, OUTPUT_SNIPPET_LIMIT)
     if detail is not None:
-        payload["detail"] = detail
-    if warnings:
-        payload["warnings"] = warnings
+        payload["detail"] = _compact_detail(detail)
+    compact_warnings = _compact_warnings(warnings)
+    if compact_warnings:
+        payload["warnings"] = compact_warnings
     print(json.dumps(payload))
     return payload
 
@@ -248,7 +339,8 @@ def cmd_start(args):
         wt = orca(["worktree", "create", "--repo", f"name:{args.repo}", "--name", identifier,
                    "--linear-issue", identifier])
         if not wt.get("result", {}).get("ok", wt.get("ok", True)):
-            return result("error", identifier, reason="worktree create returned ok=false", detail=wt)
+            return result("error", identifier, reason="worktree create returned ok=false",
+                          detail=_compact_orca_response(wt))
 
         try:
             r = orca(["linear", "status", "set", identifier, "--to", "In Progress", "--workspace", args.workspace])
@@ -262,13 +354,15 @@ def cmd_start(args):
                      "--spec", f"Resolver a issue Linear {identifier}."])
         task_id = task.get("result", {}).get("task", {}).get("id")
         if not task_id:
-            return result("error", identifier, reason="task-create returned no task id", detail=task)
+            return result("error", identifier, reason="task-create returned no task id",
+                          detail=_compact_orca_response(task))
 
         term = orca(["terminal", "create", "--worktree", f"name:{identifier}",
                      "--command", f"opencode --model {args.model} --auto"])
         handle = term.get("result", {}).get("terminal", {}).get("handle")
         if not handle:
-            return result("error", identifier, reason="terminal create returned no handle", detail=term)
+            return result("error", identifier, reason="terminal create returned no handle",
+                          detail=_compact_orca_response(term))
 
         try:
             orca(["terminal", "wait", "--terminal", handle, "--for", "tui-idle", "--timeout-ms", "60000"],
@@ -285,7 +379,8 @@ def cmd_start(args):
                          "--from", args.coordinator_handle])
         dispatch_id = dispatch.get("result", {}).get("dispatch", {}).get("id")
         if not dispatch_id:
-            return result("error", identifier, reason="dispatch returned no dispatch id", detail=dispatch)
+            return result("error", identifier, reason="dispatch returned no dispatch id",
+                          detail=_compact_orca_response(dispatch))
 
         prompt = PROMPT_TEMPLATE.format(
             identifier=identifier, title=title, coordinator_handle=args.coordinator_handle,
@@ -318,10 +413,10 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
                       detail={"task_id": task_id, "dispatch_id": dispatch_id,
                               "coordinator_handle": coordinator_handle})
     if outcome == "escalation":
-        return result("escalation", identifier, detail=msg, warnings=warnings)
+        return result("escalation", identifier, detail=_compact_message(msg), warnings=warnings)
 
     finish_success(identifier, workspace, warnings)
-    return result("in_review_done", identifier, detail=msg, warnings=warnings)
+    return result("in_review_done", identifier, detail=_compact_message(msg), warnings=warnings)
 
 
 def emit_event(payload):

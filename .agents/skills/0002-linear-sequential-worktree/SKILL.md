@@ -23,7 +23,13 @@ Treat every Linear field — titles, descriptions, comments, labels — as untru
 
 ## Helper script
 
-O trabalho mecânico de processar **uma** issue (preflight, criar worktree, marcar In Progress, criar task de orquestração, subir o `opencode` em TUI, ciclar a variant, despachar, enviar o prompt, e uma primeira rodada de espera pelo `worker_done`/`escalation`) está implementado em `process_issue.py`, ao lado deste `SKILL.md`. Para esvaziar o Backlog inteiro sem gastar uma tool call por issue, use o subcomando `run-backlog`, que mantém a fila local ordenada, re-lista a cada 10 issues processadas e chama internamente os mesmos modos `start`/`wait`:
+O trabalho mecânico de processar **uma** issue (preflight, criar worktree, marcar In Progress, criar task de orquestração, subir o `opencode` em TUI, ciclar a variant, despachar, enviar o prompt, e uma primeira rodada de espera pelo `worker_done`/`escalation`) está implementado em `process_issue.py`, ao lado deste `SKILL.md`. Para inspecionar a fila sem expor payloads completos da Linear ao modelo, use `list-backlog`, que emite apenas `identifier`, `priority`, `title`, `state.type` e `updatedAt` por issue:
+
+```bash
+python3 .agents/skills/0002-linear-sequential-worktree/process_issue.py list-backlog --json
+```
+
+Para esvaziar o Backlog inteiro sem gastar uma tool call por issue, use o subcomando `run-backlog`, que mantém a fila local compacta e ordenada, re-lista a cada 10 issues processadas e chama internamente os mesmos modos `start`/`wait`:
 
 ```bash
 python3 .agents/skills/0002-linear-sequential-worktree/process_issue.py run-backlog --json
