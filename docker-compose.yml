@@ -18,6 +18,8 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/xtreme
+      TRUSTED_PROXY_IPS: 172.16.0.0/12
+      FORWARDED_ALLOW_IPS: 172.16.0.0/12
 
 volumes:
   db_data:
