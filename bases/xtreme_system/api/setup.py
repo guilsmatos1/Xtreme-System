@@ -6,6 +6,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Callable
+from ipaddress import ip_address, ip_network
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,23 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
     "/redoc",
     "/openapi.json",
 }
+
+
+def _trusted_proxy_networks() -> list[Any]:
+    raw = os.environ.get("TRUSTED_PROXY_IPS", "")
+    return [
+        ip_network(item.strip(), strict=False)
+        for item in raw.split(",")
+        if item.strip()
+    ]
+
+
+def _is_trusted_proxy(peer_host: str) -> bool:
+    try:
+        peer_ip = ip_address(peer_host)
+    except ValueError:
+        return False
+    return any(peer_ip in network for network in _trusted_proxy_networks())
 
 
 class _MemoryRateLimiterStore:
@@ -103,6 +121,20 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _warn_proxy_headers_without_trusted_proxies() -> None:
+    if os.environ.get("FORWARDED_ALLOW_IPS") and not os.environ.get(
+        "TRUSTED_PROXY_IPS"
+    ):
+        logger.warning(
+            "trusted_proxy_ips_empty",
+            message=(
+                "FORWARDED_ALLOW_IPS esta configurado, mas TRUSTED_PROXY_IPS esta "
+                "vazio; X-Forwarded-For sera ignorado pelo rate limit."
+            ),
+        )
+
+
 @app.middleware("http")
 async def _request_context(
     request: Request,
@@ -149,12 +181,13 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
 
 
 def _client_ip(request: Request) -> str:
+    peer_host = request.client.host if request.client else "desconhecido"
     forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
+    if forwarded_for and _is_trusted_proxy(peer_host):
         client_ip = forwarded_for.split(",", 1)[0].strip()
         if client_ip:
             return client_ip
-    return request.client.host if request.client else "desconhecido"
+    return peer_host
 
 
 @app.middleware("http")

@@ -30,8 +30,10 @@ def test_login_bloqueia_apos_limite(client: TestClient) -> None:
 
 
 def test_login_rate_limit_isolates_clients_behind_proxy(
-    client: TestClient,
+    make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "172.18.0.0/16")
+    client = make_client(client_addr=("172.18.0.2", 50000))
     headers_a = {"X-Forwarded-For": "203.0.113.10"}
     headers_b = {"X-Forwarded-For": "203.0.113.11"}
 
@@ -90,7 +92,11 @@ def test_requests_gerais_bloqueiam_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
-def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
+def test_rate_limit_respeita_x_forwarded_for(
+    make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "172.18.0.0/16")
+    client = make_client(client_addr=("172.18.0.2", 50000))
     ip_a = {"X-Forwarded-For": "203.0.113.10"}
     ip_b = {"X-Forwarded-For": "203.0.113.11"}
 
@@ -103,6 +109,22 @@ def test_rate_limit_respeita_x_forwarded_for(client: TestClient) -> None:
 
     resp = client.get("/investidores", headers=ip_b)
     assert resp.status_code == 401
+
+
+def test_rate_limit_ignora_x_forwarded_for_de_proxy_nao_confiavel(
+    make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "172.18.0.0/16")
+    client = make_client(client_addr=("198.51.100.2", 50000))
+    ip_a = {"X-Forwarded-For": "203.0.113.10"}
+    ip_b = {"X-Forwarded-For": "203.0.113.11"}
+
+    for _ in range(_GERAL_LIMIT):
+        resp = client.get("/investidores", headers=ip_a)
+        assert resp.status_code == 401
+
+    resp = client.get("/investidores", headers=ip_b)
+    assert resp.status_code == 429
 
 
 def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:
