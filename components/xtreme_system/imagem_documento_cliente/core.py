@@ -2,9 +2,9 @@
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-from xtreme_system.crud import core as crud
+from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
 
 
@@ -35,38 +35,9 @@ class ImagemDocumentoClienteRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[ImagemDocumentoCliente]:
-    return crud.list_all(session, ImagemDocumentoCliente)
-
-
-def list_by_cliente(session: Session, cliente_id: int) -> list[ImagemDocumentoCliente]:
-    return list(
-        session.query(ImagemDocumentoCliente).filter_by(cliente_id=cliente_id).all()
-    )
-
-
-def get(session: Session, imagem_id: int) -> ImagemDocumentoCliente | None:
-    return crud.get(session, ImagemDocumentoCliente, imagem_id)
-
-
-def create(
-    session: Session,
-    data: ImagemDocumentoClienteCreate,
-    actor_id: int | None = None,
-) -> ImagemDocumentoCliente:
-    return crud.create(session, ImagemDocumentoCliente, data, actor_id)
-
-
-def update(
-    session: Session,
-    obj: ImagemDocumentoCliente,
-    data: ImagemDocumentoClienteUpdate,
-    actor_id: int | None = None,
-) -> ImagemDocumentoCliente:
-    return crud.update(session, obj, data, actor_id)
-
-
-def delete(
-    session: Session, obj: ImagemDocumentoCliente, actor_id: int | None = None
-) -> None:
-    crud.delete(session, obj, actor_id)
+list_all = attachment.make_list_all(ImagemDocumentoCliente)
+list_by_cliente = attachment.make_list_by_field(ImagemDocumentoCliente, "cliente_id")
+get = attachment.make_get(ImagemDocumentoCliente)
+create = attachment.make_create(ImagemDocumentoCliente, ImagemDocumentoClienteCreate)
+update = attachment.make_update(ImagemDocumentoCliente, ImagemDocumentoClienteUpdate)
+delete = attachment.make_delete(ImagemDocumentoCliente)

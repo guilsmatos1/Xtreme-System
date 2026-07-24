@@ -9,9 +9,9 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-from xtreme_system.crud import core as crud
+from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
 
 if TYPE_CHECKING:
@@ -43,32 +43,11 @@ class DocumentoContratoVendaRead(BaseModel):
     url: str
 
 
-def list_all(session: Session) -> list[DocumentoContratoVenda]:
-    return crud.list_all(session, DocumentoContratoVenda)
-
-
-def list_by_venda(session: Session, venda_id: int) -> list[DocumentoContratoVenda]:
-    return list(
-        session.query(DocumentoContratoVenda).filter_by(venda_id=venda_id).all()
-    )
-
-
-def get(session: Session, documento_id: int) -> DocumentoContratoVenda | None:
-    return crud.get(session, DocumentoContratoVenda, documento_id)
-
-
-def create(
-    session: Session,
-    data: DocumentoContratoVendaCreate,
-    actor_id: int | None = None,
-) -> DocumentoContratoVenda:
-    return crud.create(session, DocumentoContratoVenda, data, actor_id)
-
-
-def delete(
-    session: Session, obj: DocumentoContratoVenda, actor_id: int | None = None
-) -> None:
-    crud.delete(session, obj, actor_id)
+list_all = attachment.make_list_all(DocumentoContratoVenda)
+list_by_venda = attachment.make_list_by_field(DocumentoContratoVenda, "venda_id")
+get = attachment.make_get(DocumentoContratoVenda)
+create = attachment.make_create(DocumentoContratoVenda, DocumentoContratoVendaCreate)
+delete = attachment.make_delete(DocumentoContratoVenda)
 
 
 _MESES = (
