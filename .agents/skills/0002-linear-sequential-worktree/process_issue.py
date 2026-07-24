@@ -16,12 +16,14 @@ Usage:
   process_issue.py start --identifier GUI-123 --coordinator-handle term_xxx [--json]
   process_issue.py wait  --identifier GUI-123 --task-id task_x --dispatch-id ctx_x \\
                           --coordinator-handle term_xxx [--json]
+  process_issue.py list-backlog [--json]
   process_issue.py run-backlog [--coordinator-handle term_xxx] [--json]
 
 The start/wait subcommands print one JSON object to stdout:
   {"status": "skipped"|"error"|"escalation"|"pending"|"in_review_done",
    "identifier": "...", "reason": "...", "detail": {...}, "warnings": [...]}
-run-backlog prints compact JSONL progress events plus a final summary object.
+list-backlog prints compact backlog issue objects. run-backlog prints compact
+JSONL progress events plus a final summary object.
 """
 import argparse
 import contextlib
@@ -342,14 +344,18 @@ def _priority_value(raw):
         return 0
 
 
-def _is_backlog(issue):
+def _state_type(issue):
     state = issue.get("state") or {}
     if isinstance(state, dict):
-        return state.get("type") == "backlog"
-    return str(state).lower() == "backlog"
+        return str(state.get("type", "")).lower()
+    return str(state).lower()
 
 
-def _backlog_issue(issue):
+def _is_backlog(issue):
+    return _state_type(issue) == "backlog"
+
+
+def _compact_backlog_issue(issue):
     identifier = issue.get("identifier")
     if not identifier:
         return None
@@ -357,6 +363,8 @@ def _backlog_issue(issue):
         "identifier": str(identifier),
         "priority": _priority_value(issue.get("priority", 0)),
         "title": str(issue.get("title", "")),
+        "state": {"type": _state_type(issue)},
+        "updatedAt": issue.get("updatedAt"),
     }
 
 
@@ -370,7 +378,7 @@ def load_backlog_queue(args, attempted):
     for issue in issues:
         if not _is_backlog(issue):
             continue
-        compact = _backlog_issue(issue)
+        compact = _compact_backlog_issue(issue)
         if not compact or compact["identifier"] in attempted:
             continue
         queue.append(compact)
@@ -484,6 +492,10 @@ def record_issue(summary, issue, payload):
     return status
 
 
+def cmd_list_backlog(args):
+    return emit_event({"issues": load_backlog_queue(args, set())})
+
+
 def cmd_run_backlog(args):
     summary = {
         "event": "summary",
@@ -547,6 +559,11 @@ def build_parser():
     wait.add_argument("--dispatch-id", required=True)
     wait.add_argument("--coordinator-handle", required=True)
     wait.set_defaults(func=cmd_wait)
+
+    list_backlog = sub.add_parser("list-backlog", parents=[common])
+    list_backlog.add_argument("--team", default="GUI")
+    list_backlog.add_argument("--limit", type=int, default=216)
+    list_backlog.set_defaults(func=cmd_list_backlog)
 
     run_backlog = sub.add_parser("run-backlog", parents=[common])
     run_backlog.add_argument("--team", default="GUI")
