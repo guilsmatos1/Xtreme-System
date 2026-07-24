@@ -169,10 +169,21 @@ async def _request_context(
         response = await call_next(request)
     except Exception:
         logger.exception("unhandled_error", url=str(request.url))
-        raise
-    structlog.contextvars.clear_contextvars()
-    response.headers["X-Request-ID"] = rid
-    return response
+        if request.url.path.startswith("/ui/"):
+            response = HTMLResponse(
+                "<p>Erro interno. Contate suporte.</p>", status_code=500
+            )
+        else:
+            response = JSONResponse(
+                {"detail": "Erro interno do servidor"}, status_code=500
+            )
+        response.headers["X-Request-ID"] = rid
+        return response
+    else:
+        response.headers["X-Request-ID"] = rid
+        return response
+    finally:
+        structlog.contextvars.clear_contextvars()
 
 
 @app.middleware("http")
@@ -270,7 +281,6 @@ def _handle_nao_autorizado(
 
 @app.exception_handler(Exception)
 def _handle_erro_interno(request: Request, _exc: Exception) -> Response:
-    logger.exception("unhandled_error", url=str(request.url))
     if request.url.path.startswith("/ui/"):
         return HTMLResponse("<p>Erro interno. Contate suporte.</p>", status_code=500)
     return JSONResponse({"detail": "Erro interno do servidor"}, status_code=500)
