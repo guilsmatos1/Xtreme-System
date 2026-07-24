@@ -245,6 +245,26 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
         )
 
 
+def test_query_list_passa_search_column_quando_search_func_aceita_kwarg() -> None:
+    def search_func(
+        _session: Session, _term: str, *, column: str | None = None
+    ) -> list[investidor.Investidor]:
+        assert column == "nome"
+        return [investidor.Investidor(id=1, nome="Ana")]
+
+    resultados = query_list(
+        session=cast(Session, object()),
+        module=investidor,
+        q="ana",
+        searchable=False,
+        list_func=None,
+        search_func=search_func,
+        search_column="nome",
+    )
+
+    assert [item.nome for item in resultados] == ["Ana"]
+
+
 def test_ordenar_investidores_por_nome() -> None:
     investidores = [
         investidor.Investidor(id=1, nome="Carla"),
