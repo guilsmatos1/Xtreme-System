@@ -135,15 +135,15 @@ def test_rate_limit_ignora_x_forwarded_for_de_proxy_nao_confiavel(
     make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("TRUSTED_PROXY_IPS", "172.18.0.0/16")
-    client = make_client(client_addr=("198.51.100.2", 50000))
-    ip_a = {"X-Forwarded-For": "203.0.113.10"}
-    ip_b = {"X-Forwarded-For": "203.0.113.11"}
+    client = make_client(client_kwargs={"client": ("10.0.0.2", 123)})
 
-    for _ in range(_GERAL_LIMIT):
-        resp = client.get("/investidores", headers=ip_a)
+    for indice in range(_GERAL_LIMIT):
+        resp = client.get(
+            "/investidores", headers={"X-Forwarded-For": f"203.0.113.{indice}"}
+        )
         assert resp.status_code == 401
 
-    resp = client.get("/investidores", headers=ip_b)
+    resp = client.get("/investidores", headers={"X-Forwarded-For": "203.0.113.200"})
     assert resp.status_code == 429
 
 

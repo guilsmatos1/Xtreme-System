@@ -1,5 +1,6 @@
 import os
 from collections.abc import Callable, Iterator
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -59,6 +60,7 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         invoke_post_commit: bool = False,
         client_addr: tuple[str, int] | None = None,
         seed: Callable[[Session], None] | None = None,
+        client_kwargs: dict[str, Any] | None = None,
     ) -> TestClient:
         engine = create_test_engine()
         engines.append(engine)
@@ -89,9 +91,10 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
                 _invoke_post_commit(session)
 
         app.dependency_overrides[get_session] = override
-        if client_addr is None:
-            return TestClient(app)
-        return TestClient(app, client=client_addr)
+        kwargs = dict(client_kwargs or {})
+        if client_addr is not None:
+            kwargs.setdefault("client", client_addr)
+        return TestClient(app, **kwargs)
 
     yield _make
 

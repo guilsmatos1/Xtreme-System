@@ -6,7 +6,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Callable
-from ipaddress import ip_address, ip_network
+from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +46,7 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
 }
 
 
-def _trusted_proxy_networks() -> list[Any]:
+def _trusted_proxy_networks() -> list[IPv4Network | IPv6Network]:
     raw = os.environ.get("TRUSTED_PROXY_IPS", "")
     return [
         ip_network(item.strip(), strict=False)
@@ -55,7 +55,9 @@ def _trusted_proxy_networks() -> list[Any]:
     ]
 
 
-def _is_trusted_proxy(peer_host: str) -> bool:
+def _is_trusted_proxy(peer_host: str | None) -> bool:
+    if not peer_host:
+        return False
     try:
         peer_ip = ip_address(peer_host)
     except ValueError:
@@ -181,16 +183,13 @@ def _rate_limit_response(request: Request, mensagem: str, retry_after: float) ->
 
 
 def _client_ip(request: Request) -> str:
-    if not request.client:
-        return "desconhecido"
-
-    peer_host = request.client.host if request.client else "desconhecido"
+    peer_host = request.client.host if request.client else None
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for and _is_trusted_proxy(peer_host):
         client_ip = forwarded_for.split(",", 1)[0].strip()
         if client_ip:
             return client_ip
-    return peer_host
+    return peer_host or "desconhecido"
 
 
 @app.middleware("http")
