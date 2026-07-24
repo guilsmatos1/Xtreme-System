@@ -75,23 +75,27 @@ Extraia `result.issue.description`, tente `json.loads` nela (ou equivalente) e l
 
 ## Flow
 
-Repita os passos 1–9 até o passo 2 não sobrar nenhuma issue elegível (Backlog zerado). É uma execução única — ao esvaziar, a skill termina e reporta um resumo; ela não se reagenda via `orca automations create`.
+Repita os passos 1–9 até esvaziar a fila local (Backlog zerado). É uma execução única — ao esvaziar, a skill termina e reporta um resumo; ela não se reagenda via `orca automations create`.
 
-1. Liste o Backlog completo:
+1. **Apenas na primeira rodada** (ou quando a fila local do passo 2 esvaziar antes do esperado), liste o Backlog completo:
 
 ```bash
-orca linear list --filter open --team GUI --limit 216 --workspace all --json
+orca linear list --filter open --team GUI --limit 216 --workspace e7ff0c6a-7f22-4abd-85fe-153bb2c72687 --json
 ```
 
-2. De `result.issues`, mantenha **todas** as issues cujo `state.type == "backlog"` (sem filtro de prioridade). Ordene pela regra da seção "Priority mapping" acima. Se não sobrar nenhuma issue, pare e reporte o resumo final.
+Nas rodadas seguintes, **não** repita esta chamada — reutilize a fila local construída no passo 2. Isso evita buscar o Backlog inteiro de novo a cada issue (custo que cresce quadraticamente com o tamanho do Backlog). Como salvaguarda contra reprioritizações feitas por humanos durante a execução, re-liste do zero a cada 10 issues processadas mesmo com fila local não vazia.
+
+2. Na primeira vez (ou a cada re-listagem do passo 1), de `result.issues`, mantenha **todas** as issues cujo `state.type == "backlog"` (sem filtro de prioridade), ordene pela regra da seção "Priority mapping" acima, e guarde essa lista ordenada como a **fila local** (apenas identifiers + prioridade + título, não precisa reter os objetos completos). A cada rodada do loop, remova o topo da fila local — sem nova chamada a `orca linear list` — para decidir qual issue processar. Se a fila local esvaziar, volte ao passo 1 para confirmar que o Backlog real também está vazio antes de parar (uma issue pode ter sido criada durante a execução). Se não sobrar nenhuma issue após essa confirmação, pare e reporte o resumo final.
 
 3. Antes de criar qualquer coisa para a issue no topo da lista ordenada, inventarie o estado local de Git e Orca:
 
 ```bash
-git for-each-ref refs/heads --format='%(refname:short)'
-git worktree list --porcelain
-orca worktree list --json
+git for-each-ref refs/heads --format='%(refname:short)' | grep -i <identifier>
+git worktree list --porcelain | grep -i <identifier>
+orca worktree list --json | grep -i <identifier>
 ```
+
+Filtre por `<identifier>` diretamente nesses comandos em vez de inspecionar a lista completa — a única pergunta relevante é se já existe algo batendo com essa issue, e despejar todas as branches/worktrees do repositório a cada issue processada infla o contexto sem necessidade. Se o `grep` não retornar nada em nenhum dos três, nada está gerenciando essa issue ainda.
 
 - Se o Orca já lista um worktree com `displayName`, `name`, `path` ou `linkedLinearIssue` batendo com o identifier: pule essa issue — **skipped: already managed by Orca** — e volte ao passo 2 para pegar a próxima issue da lista ordenada.
 - Se o Git já tem um worktree no path esperado, ou uma branch checked out com esse identifier, mas o Orca não lista: pule — **skipped: existing Git worktree not managed by Orca**. Não delete, não recrie, não crie um worktree "-2" sem aprovação explícita do usuário.
