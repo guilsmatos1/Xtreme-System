@@ -19,6 +19,7 @@ PAGINAS: list[tuple[str, str]] = [
     ("vendas", "Vendas"),
 ]
 PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}
+ROTAS_DERIVADAS = {"fechamentos-vendas": "vendas"}
 
 # Campos sensíveis e operações que podem ser restringidos por perfil, por página.
 CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
@@ -186,6 +187,7 @@ def pagina_da_rota(path: str) -> str | None:
     if not path.startswith("/ui/"):
         return None
     segmento = path.removeprefix("/ui/").split("/", 1)[0]
+    segmento = ROTAS_DERIVADAS.get(segmento, segmento)
     return segmento if segmento in PAGINAS_VALIDAS else None
 
 
@@ -216,6 +218,8 @@ def pode_operacao(user: Any, pagina: str, operacao: str) -> bool:
     if is_admin(user):
         return True
     if not user.perfil:
+        return False
+    if pagina not in user.perfil.paginas:
         return False
     permitidas = (user.perfil.restricoes or {}).get(pagina, {}).get("operacoes", [])
     return operacao in permitidas
