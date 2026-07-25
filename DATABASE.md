@@ -245,7 +245,7 @@ Fechamento financeiro imutável de uma venda concluída.
 | `id` | `INTEGER` | Não | - | PK |
 | `venda_id` | `INTEGER` | Não | - | FK → `venda.id` (CASCADE), único, indexado |
 | `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id`, indexado |
-| `data_fechamento` | `DATE` | Não | `current_date` | |
+| `data_fechamento` | `DATE` | Não | `current_date` | Indexado |
 | `receita` | `NUMERIC(12,2)` | Não | - | Snapshot de `venda.valor_venda` |
 | `custo_veiculo` | `NUMERIC(12,2)` | Não | - | Snapshot de `veiculo.preco` |
 | `custos_operacionais` | `NUMERIC(12,2)` | Não | - | Soma de `custo_veiculo.valor` no fechamento |
@@ -372,6 +372,7 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 | `lancamento_investimento` | `ix_lancamento_investimento_fechamento_venda_id` | `fechamento_venda_id` | Não |
 | `fechamento_venda` | `ix_fechamento_venda_venda_id` | `venda_id` | Sim |
 | `fechamento_venda` | `ix_fechamento_venda_usuario_id` | `usuario_id` | Não |
+| `fechamento_venda` | `ix_fechamento_venda_data_fechamento` | `data_fechamento` | Não |
 | `participacao_fechamento_venda` | `ix_participacao_fechamento_venda_fechamento_venda_id` | `fechamento_venda_id` | Não |
 | `participacao_fechamento_venda` | `ix_participacao_fechamento_venda_investidor_id` | `investidor_id` | Não |
 | `participacao_fechamento_venda` | `uq_participacao_fechamento_investidor` | `fechamento_venda_id`, `investidor_id` | Sim |

@@ -7,7 +7,7 @@ from weakref import WeakKeyDictionary
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func, inspect
 from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Session, lazyload, mapped_column, relationship
 
 from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.caixa import core as caixa
@@ -46,7 +46,7 @@ class FechamentoVenda(Base):
     )
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"), index=True)
     data_fechamento: Mapped[date] = mapped_column(
-        Date, server_default=func.current_date()
+        Date, server_default=func.current_date(), index=True
     )
     receita: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     custo_veiculo: Mapped[Decimal] = mapped_column(Numeric(12, 2))
@@ -306,7 +306,11 @@ def listar_para_dre(
 ) -> list[FechamentoVenda]:
     if not _schema_disponivel(session):
         return []
-    query = session.query(FechamentoVenda)
+    query = session.query(FechamentoVenda).options(
+        lazyload(FechamentoVenda.venda),
+        lazyload(FechamentoVenda.usuario),
+        lazyload(FechamentoVenda.participacoes),
+    )
     if investidor_id is not None:
         query = query.join(Venda, FechamentoVenda.venda_id == Venda.id).join(
             Veiculo, Venda.veiculo_id == Veiculo.id
