@@ -548,7 +548,9 @@ def _stub_crud_client(
         "linhas.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
         "{% for item in itens %}<p>{{ item.nome }}</p>{% endfor %}",
         "ok.html": "<p>ok</p>",
-        "form.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}",
+        "form.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
+        "<input name='nome' value='{{ item.nome if item else \"\" }}'>"
+        "{% if user %}<span data-user='{{ user.username }}'></span>{% endif %}",
     }.items():
         (tmp_path / nome).write_text(conteudo)
 
@@ -603,6 +605,8 @@ def test_crud_ui_create_integrity_error_retorna_409(
 
     assert resp.status_code == 409
     assert "Stub já existe" in resp.text
+    assert "value='Duplicado'" in resp.text
+    assert "data-user='admin'" in resp.text
 
 
 def test_crud_ui_lista_rejeita_limit_offset_invalidos(
