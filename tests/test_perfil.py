@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
+from xtreme_system.venda import core as venda
 
 
 def _usuario(
@@ -109,6 +110,17 @@ def test_campos_de_pagina_fora_do_perfil_sao_negados(db_session: Session) -> Non
     db_session.flush()
     vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
     assert not perfil.pode_ver_campo(vendedor, "vendas", "lucro")
+
+
+def test_campos_protegidos_editaveis_de_venda_tem_mapa_de_form() -> None:
+    campos_protegidos = {campo for campo, _label in perfil.CAMPOS_PROTEGIDOS["vendas"]}
+    campos_form = set(perfil.CAMPOS_FORM_PROTEGIDOS["vendas"])
+    campos_editaveis = {
+        field.removesuffix("_id") if field.endswith("_id") else field
+        for field in venda.VendaUpdate.model_fields
+    }
+
+    assert campos_protegidos & campos_editaveis <= campos_form
 
 
 def test_operacoes_sao_opt_in(db_session: Session) -> None:
