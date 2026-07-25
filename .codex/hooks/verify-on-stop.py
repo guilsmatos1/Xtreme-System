@@ -2,18 +2,25 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 MAX_OUTPUT_CHARS = 12000
+# Bare `uv run pytest` always exits 4 here: the suite requires TEST_DATABASE_URL.
+# `make test` would satisfy it, but it points every run at the single shared
+# xtreme_test database on localhost:5432 -- parallel worktree agents would corrupt
+# each other's runs and get blocked by failures that are not theirs. The SQLite
+# fallback keeps each worktree isolated; `make test` in CI remains the real gate
+# against the Alembic-migrated Postgres schema.
 CHECKS = [
-    ("ruff-fix", ["uv", "run", "ruff", "check", "--fix"]),
-    ("ruff", ["uv", "run", "ruff", "check", "."]),
-    ("ruff-format", ["uv", "run", "ruff", "format", ".", "--check"]),
-    ("mypy", ["uv", "run", "mypy"]),
-    ("pytest", ["uv", "run", "pytest"]),
+    ("ruff-fix", ["uv", "run", "ruff", "check", "--fix"], {}),
+    ("ruff", ["uv", "run", "ruff", "check", "."], {}),
+    ("ruff-format", ["uv", "run", "ruff", "format", ".", "--check"], {}),
+    ("mypy", ["uv", "run", "mypy"], {}),
+    ("pytest", ["uv", "run", "pytest"], {"XTREME_ALLOW_SQLITE_TEST_DB": "1"}),
 ]
 
 
@@ -40,13 +47,14 @@ def state_path(root: Path, session_id: str) -> Path:
 def run_checks(
     root: Path,
 ) -> tuple[str, list[str], subprocess.CompletedProcess[str]] | None:
-    for name, command in CHECKS:
+    for name, command, env_overrides in CHECKS:
         result = subprocess.run(  # noqa: S603
             command,
             cwd=root,
             capture_output=True,
             text=True,
             check=False,
+            env={**os.environ, **env_overrides} if env_overrides else None,
         )
         if result.returncode != 0:
             return name, command, result
