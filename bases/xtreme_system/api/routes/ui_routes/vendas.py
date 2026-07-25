@@ -80,15 +80,16 @@ _CAMPOS_FORM_VENDA_MAP = {
     "status": "status",
     "observacoes": "observacoes",
 }
+_FORM_LOOKUP_LIMIT = 50
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
-    veiculos = veiculo.list_all(session)
+    veiculos = veiculo.list_all(session, limit=_FORM_LOOKUP_LIMIT)
     veiculos_disponiveis = [
         v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel
     ]
     return {
-        "clientes": cliente.list_all(session),
+        "clientes": cliente.list_all(session, limit=_FORM_LOOKUP_LIMIT),
         "veiculos": veiculos_disponiveis,
         "veiculos_troca": veiculos,
         "status": list(venda.StatusVenda),
