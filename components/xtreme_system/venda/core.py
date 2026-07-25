@@ -382,7 +382,7 @@ def ranking_vendedores(
         .join(Venda, Venda.vendedor_id == Usuario.id)
         .filter(Venda.status != StatusVenda.cancelado)
         .group_by(Usuario.id)
-        .order_by(func.sum(Venda.valor_venda).desc())
+        .order_by(func.sum(Venda.valor_venda).desc(), Usuario.id.asc())
         .limit(limite)
         .all()
     )
