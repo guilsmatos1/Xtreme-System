@@ -474,7 +474,7 @@ def register_create_route(
                         form_template,
                         ctx_form=ctx_form(session),
                         item_key=item_key,
-                        item=None,
+                        item=data,
                         user=user,
                         erro=erro,
                     ),
