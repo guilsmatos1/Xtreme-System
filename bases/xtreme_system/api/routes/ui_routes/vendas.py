@@ -451,7 +451,8 @@ def _baixar_contrato_venda(
     documentos = documento_contrato_venda.list_by_venda(session, obj.id)
     if not documentos:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
-    return RedirectResponse(documentos[-1].url)
+    documento = max(documentos, key=lambda item: item.id)
+    return RedirectResponse(documento.url)
 
 
 @app.post("/ui/vendas/{item_id}/contrato/regerar")
