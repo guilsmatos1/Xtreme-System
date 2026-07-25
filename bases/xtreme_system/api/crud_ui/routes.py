@@ -271,6 +271,7 @@ def register_list_route(
                 offset=offset,
                 sort=sort,
                 order=order,
+                sort_fields=sort_fields,
                 sql_sort_fields=sql_sort_fields,
                 query_func=query_func,
                 search_query_func=search_query_func,
