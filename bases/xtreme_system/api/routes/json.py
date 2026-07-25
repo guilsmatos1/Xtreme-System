@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
-from xtreme_system.api.route_factories import register_crud_routes
+from xtreme_system.api.route_factories import JSON_LIST_LIMIT_MAX, register_crud_routes
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
     validate_cliente_veiculo_fks,
@@ -81,8 +81,13 @@ def criar_usuario(
 
 
 @app.get("/usuarios", response_model=list[usuario.UsuarioRead])
-def listar_usuarios(session: SessionDep, _: AdminUser) -> list[usuario.Usuario]:
-    return usuario.list_all(session)
+def listar_usuarios(
+    session: SessionDep,
+    _: AdminUser,
+    limit: Annotated[int, Query(ge=1, le=JSON_LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[usuario.Usuario]:
+    return usuario.list_all(session, limit=limit, offset=offset)
 
 
 @app.delete("/usuarios/{user_id}", status_code=204)
@@ -259,10 +264,13 @@ def confirmar_fechamento_venda(
     "/fechamentos-vendas",
 )
 def listar_fechamentos_vendas(
-    session: SessionDep, user: CurrentUser
+    session: SessionDep,
+    user: CurrentUser,
+    limit: Annotated[int, Query(ge=1, le=JSON_LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[dict[str, Any]]:
     try:
-        fechamentos = fechamento_venda.list_all(session)
+        fechamentos = fechamento_venda.list_all(session, limit=limit, offset=offset)
     except fechamento_venda.FechamentoVendaError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
     return [_fechamento_json(obj, user) for obj in fechamentos]
@@ -342,8 +350,16 @@ def _require_compra_operacao(user: usuario.Usuario, operacao: str) -> None:
 
 
 @app.get("/compras")
-def listar_compras(session: SessionDep, user: CurrentUser) -> list[dict[str, Any]]:
-    return [_compra_json(obj, user) for obj in compra.list_all(session)]
+def listar_compras(
+    session: SessionDep,
+    user: CurrentUser,
+    limit: Annotated[int, Query(ge=1, le=JSON_LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[dict[str, Any]]:
+    return [
+        _compra_json(obj, user)
+        for obj in compra.list_all(session, limit=limit, offset=offset)
+    ]
 
 
 @app.get("/compras/{item_id}")

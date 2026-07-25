@@ -1,9 +1,9 @@
 """Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
@@ -47,6 +47,7 @@ from xtreme_system.usuario import core as usuario
 _sort_key = sort_key
 _csv_response = csv_response
 DepFactory = Callable[..., usuario.Usuario]
+JSON_LIST_LIMIT_MAX = 200
 
 
 def _require_json_page(user: usuario.Usuario, pagina: str) -> None:
@@ -106,12 +107,17 @@ def register_crud_routes(
     response_model = None if pagina else list[read_schema]  # type: ignore[valid-type]
 
     @app.get(prefix, response_model=response_model)
-    def _list(session: SessionDep, user: CurrentUser) -> list[EntityT] | list[Any]:
+    def _list(
+        session: SessionDep,
+        user: CurrentUser,
+        limit: Annotated[int, Query(ge=1, le=JSON_LIST_LIMIT_MAX)] = 50,
+        offset: Annotated[int, Query(ge=0)] = 0,
+    ) -> list[EntityT] | list[Any]:
         if pagina is not None:
             _require_json_page(user, pagina)
         return [
             _json_visible(obj, user, pagina, campos_protegidos, read_schema)
-            for obj in module.list_all(session)
+            for obj in module.list_all(session, limit=limit, offset=offset)
         ]
 
     @app.get(f"{prefix}/{{item_id}}", response_model=None if pagina else read_schema)

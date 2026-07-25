@@ -61,6 +61,65 @@ def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
     return cliente_id, veiculo_id
 
 
+def test_admin_lista_compras_com_paginacao(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    segundo_cliente = client.post(
+        "/clientes",
+        json={
+            "nome": "Maria Silva",
+            "documento": "98765432100",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert segundo_cliente.status_code == 201
+    segundo_veiculo = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Onix",
+            "cor": "Prata",
+            "ano": 2020,
+            "placa": "DEF4G56",
+            "km": 30000,
+            "preco": "50000.00",
+            "investidor_id": inv_id,
+        },
+        headers=headers,
+    )
+    assert segundo_veiculo.status_code == 201
+
+    primeira = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "35000.00",
+        },
+        headers=headers,
+    )
+    segunda = client.post(
+        "/compras",
+        json={
+            "cliente_id": segundo_cliente.json()["id"],
+            "veiculo_id": segundo_veiculo.json()["id"],
+            "data_compra": "2026-07-02",
+            "valor_compra": "45000.00",
+        },
+        headers=headers,
+    )
+    assert primeira.status_code == 201
+    assert segunda.status_code == 201
+
+    resp = client.get("/compras", params={"limit": 1, "offset": 1}, headers=headers)
+
+    assert resp.status_code == 200
+    assert [item["id"] for item in resp.json()] == [segunda.json()["id"]]
+
+
 def test_admin_crud_compras(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     cliente_id, veiculo_id = _seed(client, headers)
