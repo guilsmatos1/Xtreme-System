@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, cast, func, or_
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
@@ -134,6 +134,10 @@ def list_all(
     return crud.list_all(session, Veiculo, limit=limit, offset=offset)
 
 
+def query(session: Session) -> Query[Veiculo]:
+    return session.query(Veiculo).join(Investidor)
+
+
 def list_ids(session: Session) -> list[int]:
     return [row.id for row in session.query(Veiculo.id).order_by(Veiculo.id).all()]
 
@@ -163,7 +167,14 @@ def get_by_placa(session: Session, placa: str) -> Veiculo | None:
 
 
 def search(session: Session, term: str, column: str | None = None) -> list[Veiculo]:
+    return list(search_query(session, term, column).all())
+
+
+def search_query(
+    session: Session, term: str, column: str | None = None
+) -> Query[Veiculo]:
     pattern = f"%{term}%"
+    sql_query = query(session)
 
     # Mapa de colunas permitidas para busca
     columns_map = {
@@ -178,7 +189,7 @@ def search(session: Session, term: str, column: str | None = None) -> list[Veicu
         "tipo": Veiculo.tipo,
         "status": Veiculo.status,
         "tipo_entrada": Veiculo.tipo_entrada,
-        "investidor": Veiculo.investidor,
+        "investidor": Investidor.nome,
         "ano": Veiculo.ano,
         "km": Veiculo.km,
         "preco": Veiculo.preco,
@@ -188,21 +199,15 @@ def search(session: Session, term: str, column: str | None = None) -> list[Veicu
     # Se coluna específica for fornecida, buscar apenas nela
     if column and column in columns_map:
         col = columns_map[column]
-        return list(
-            session.query(Veiculo).where(cast(col, String).ilike(pattern)).all()
-        )
+        return sql_query.where(cast(col, String).ilike(pattern))
 
     # Caso contrário, buscar nas colunas padrão
-    return list(
-        session.query(Veiculo)
-        .where(
-            or_(
-                Veiculo.modelo.ilike(pattern),
-                Veiculo.placa.ilike(pattern),
-                Veiculo.cor.ilike(pattern),
-            )
+    return sql_query.where(
+        or_(
+            Veiculo.modelo.ilike(pattern),
+            Veiculo.placa.ilike(pattern),
+            Veiculo.cor.ilike(pattern),
         )
-        .all()
     )
 
 

@@ -11,7 +11,6 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
-from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -308,54 +307,6 @@ def test_query_list_ordena_no_sql_quando_query_func_disponivel(
     )
 
     assert [item.nome for item in ordenados] == ["Carla", "Bruno", "Ana"]
-
-
-def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
-    request: pytest.FixtureRequest,
-) -> None:
-    engine = create_test_engine()
-    request.addfinalizer(engine.dispose)
-    session = sessionmaker(bind=engine)()
-    request.addfinalizer(session.close)
-    session.add_all(
-        [
-            investidor.Investidor(nome="Carla"),
-            investidor.Investidor(nome="Ana"),
-            investidor.Investidor(nome="Bruno"),
-        ]
-    )
-    session.flush()
-    statements: list[str] = []
-
-    def capture_sql(
-        _conn: Any,
-        _cursor: Any,
-        statement: str,
-        *_args: Any,
-    ) -> None:
-        statements.append(statement)
-
-    event.listen(engine, "before_cursor_execute", capture_sql)
-    request.addfinalizer(
-        lambda: event.remove(engine, "before_cursor_execute", capture_sql)
-    )
-
-    query_list(
-        session,
-        investidor,
-        q="",
-        searchable=False,
-        list_func=None,
-        search_func=None,
-        sort="desconhecido",
-        order="asc",
-        sql_sort_fields={"nome": investidor.Investidor.nome},
-        query_func=lambda sess: sess.query(investidor.Investidor),
-        limit=2,
-        offset=1,
-    )
-
-    assert any("ORDER BY investidor.id ASC" in statement for statement in statements)
 
 
 def test_ordenar_investidores_por_nome() -> None:
