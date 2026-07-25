@@ -11,7 +11,17 @@ from sqlalchemy.orm import Mapped, Session, class_mapper, mapped_column
 from xtreme_system.database.core import Base
 
 AUDIT_SKIP = {"auditoria"}
-MASK = {"senha_hash", "evolution_api_key"}
+MASKED_FIELD_TERMS = (
+    "senha",
+    "password",
+    "passwd",
+    "pwd",
+    "secret",
+    "token",
+    "api_key",
+    "access_key",
+    "private_key",
+)
 TipoAcao = Literal["CREATE", "UPDATE", "DELETE"]
 TIPO_ACOES: tuple[TipoAcao, ...] = get_args(TipoAcao)
 
@@ -41,7 +51,7 @@ def snapshot(obj: Any) -> dict[str, Any]:
     data: dict[str, Any] = {}
     for col in class_mapper(obj.__class__).columns:
         val = getattr(obj, col.key)
-        if col.key in MASK:
+        if any(term in col.key.lower() for term in MASKED_FIELD_TERMS):
             val = "***"
         elif isinstance(val, date):
             val = val.isoformat()
