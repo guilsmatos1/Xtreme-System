@@ -35,6 +35,10 @@ configure_logging()
 logger = structlog.get_logger(__name__)
 
 _MAX_REQUEST_BYTES = 20 * 1024 * 1024  # 20 MB
+_MAX_RESTORE_REQUEST_BYTES = 512 * 1024 * 1024  # 512 MB
+_REQUEST_SIZE_LIMITS = {
+    "/ui/configuracoes/importar": _MAX_RESTORE_REQUEST_BYTES,
+}
 
 _LOGIN_LIMIT = 5
 _LOGIN_WINDOW_SECONDS = 60.0
@@ -193,8 +197,10 @@ async def _limite_request_size(
     request: Request, call_next: Callable[[Request], Any]
 ) -> Any:
     cl = request.headers.get("content-length")
-    if cl and int(cl) > _MAX_REQUEST_BYTES:
-        return Response("Request excede 20 MB", status_code=413)
+    max_bytes = _REQUEST_SIZE_LIMITS.get(request.url.path, _MAX_REQUEST_BYTES)
+    if cl and int(cl) > max_bytes:
+        max_mb = max_bytes // (1024 * 1024)
+        return Response(f"Request excede {max_mb} MB", status_code=413)
     return await call_next(request)
 
 

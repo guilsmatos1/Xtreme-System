@@ -218,3 +218,56 @@ def test_ui_configuracoes_importar_restaura_dump(
     assert resp.status_code == 200
     assert recebidos == [b"dump"]
     assert "Dados importados com sucesso." in resp.text
+
+
+def test_ui_configuracoes_importar_aceita_dump_maior_que_20mb(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _login(client)
+    recebidos: list[bytes] = []
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database",
+        recebidos.append,
+    )
+
+    dump = b"x" * (21 * 1024 * 1024)
+    resp = client.post(
+        "/ui/configuracoes/importar",
+        files={"arquivo": ("backup.dump", dump, "application/octet-stream")},
+    )
+
+    assert resp.status_code == 200
+    assert recebidos == [dump]
+
+
+def test_ui_configuracoes_importar_roda_restore_em_threadpool(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _login(client)
+    chamadas: list[tuple[Any, tuple[Any, ...]]] = []
+
+    def fake_restore(dump: bytes) -> None:
+        assert dump == b"dump"
+
+    async def fake_run_in_threadpool(func: Any, *args: Any) -> None:
+        chamadas.append((func, args))
+        func(*args)
+
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database",
+        fake_restore,
+    )
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.configuracoes.run_in_threadpool",
+        fake_run_in_threadpool,
+    )
+
+    resp = client.post(
+        "/ui/configuracoes/importar",
+        files={"arquivo": ("backup.dump", b"dump", "application/octet-stream")},
+    )
+
+    assert resp.status_code == 200
+    assert chamadas == [(fake_restore, (b"dump",))]
