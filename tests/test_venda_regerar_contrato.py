@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -102,6 +103,28 @@ def test_regerar_contrato_cria_novo_arquivo_com_layout_atual(
     assert url_novo != url_original
     caminho_novo = _caminho(url_novo)
     assert caminho_novo.read_bytes().startswith(b"%PDF")
+
+
+def test_baixar_contrato_usa_documento_mais_recente_por_id(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    headers = _admin_headers(client)
+    _login_ui(client)
+    venda_id = _seed_venda(client, headers)
+
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.vendas.documento_contrato_venda.list_by_venda",
+        lambda _session, _venda_id: [
+            SimpleNamespace(id=2, url="/static/uploads/contrato-novo.pdf"),
+            SimpleNamespace(id=1, url="/static/uploads/contrato-antigo.pdf"),
+        ],
+    )
+
+    resp = client.get(
+        f"/ui/vendas/{venda_id}/contrato", headers=headers, follow_redirects=False
+    )
+
+    assert resp.headers["location"] == "/static/uploads/contrato-novo.pdf"
 
 
 def test_regerar_contrato_reflete_dados_atualizados_da_empresa(
