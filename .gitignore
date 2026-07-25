@@ -34,3 +34,8 @@ logs/
 
 # Graphify output
 graphify-out/
+
+# Sequential-worktree helper artifacts (regenerated every run)
+.agents/skills/*/run-backlog.log
+.agents/skills/*/.run-backlog.lock
+.codex/.hook-state/

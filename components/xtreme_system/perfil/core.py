@@ -79,6 +79,28 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("participacao", "Participação por Investidor (fechamento)"),
     ],
 }
+
+CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
+    "vendas": {
+        "cliente": "cliente_id",
+        "veiculo": "veiculo_id",
+        "data_venda": "data_venda",
+        "valor_venda": "valor_venda",
+        "valor_entrada": "valor_entrada",
+        "debitos": "debitos",
+        "km": "km",
+        "veiculo_troca": "veiculo_troca_id",
+        "valor_diferenca": "valor_diferenca",
+        "pagamento_pendente": "pagamento_pendente",
+        "valor_pendente": "valor_pendente",
+        "datas_pagamento": "datas_pagamento",
+        "forma_pagamento": "forma_pagamento",
+        "parcelas": "parcelas",
+        "status": "status",
+        "observacoes": "observacoes",
+        "vendedor": "vendedor_id",
+    },
+}
 OPERACOES: dict[str, list[tuple[str, str]]] = {
     "veiculos": [
         ("editar", "Editar"),

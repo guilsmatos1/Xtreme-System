@@ -62,24 +62,7 @@ _VerFechamentoVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "ver_fechamento"))
 ]
 
-_CAMPOS_FORM_VENDA_MAP = {
-    "cliente": "cliente_id",
-    "veiculo": "veiculo_id",
-    "data_venda": "data_venda",
-    "valor_venda": "valor_venda",
-    "valor_entrada": "valor_entrada",
-    "debitos": "debitos",
-    "km": "km",
-    "veiculo_troca": "veiculo_troca_id",
-    "valor_diferenca": "valor_diferenca",
-    "pagamento_pendente": "pagamento_pendente",
-    "valor_pendente": "valor_pendente",
-    "datas_pagamento": "datas_pagamento",
-    "forma_pagamento": "forma_pagamento",
-    "parcelas": "parcelas",
-    "status": "status",
-    "observacoes": "observacoes",
-}
+_CAMPOS_FORM_VENDA_MAP = perfil.CAMPOS_FORM_PROTEGIDOS["vendas"]
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
