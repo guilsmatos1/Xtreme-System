@@ -10,7 +10,6 @@ import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
@@ -25,7 +24,9 @@ from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
     _uploads_contrato_venda_dir,
+    criar_aninhado_ou_resposta_conflito,
     resolver_cliente,
+    rollback_se_criou_aninhados,
 )
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
@@ -370,14 +371,17 @@ async def _criar_venda(
     if erro:
         return _erro_venda(request, session, user, erro)
 
-    if novo_cliente_data is not None:
-        try:
-            cliente_obj = cliente.create(session, novo_cliente_data, user.id)
-        except IntegrityError:
-            return rollback_integrity_error_response(
-                session,
-                lambda: _erro_venda(request, session, user, "Cliente já existe"),
-            )
+    novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
+        session,
+        novo_cliente_data,
+        cliente.create,
+        user.id,
+        lambda: _erro_venda(request, session, user, "Cliente já existe"),
+    )
+    if response is not None:
+        return response
+    if novo_cliente_obj is not None:
+        cliente_obj = novo_cliente_obj
     assert cliente_obj is not None  # noqa: S101 -- invariante interna: erro is None garante cliente_obj definido
 
     try:
@@ -394,8 +398,7 @@ async def _criar_venda(
         validate_cliente_veiculo_fks(session, data)
         validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
     except (ValidationError, HTTPException) as exc:
-        if novo_cliente_data is not None:
-            session.rollback()
+        rollback_se_criou_aninhados(session, novo_cliente_data)
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_venda(request, session, user, msg)
 

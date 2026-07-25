@@ -23,7 +23,9 @@ from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
     _uploads_compra_dir,
     _validar_uploads,
+    criar_aninhado_ou_resposta_conflito,
     resolver_cliente,
+    rollback_se_criou_aninhados,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
@@ -313,23 +315,29 @@ async def _criar_compra(  # noqa: PLR0911
     if erro:
         return _erro_compra(request, session, user, erro)
 
-    if novo_cliente_data is not None:
-        try:
-            cliente_obj = cliente.create(session, novo_cliente_data, user.id)
-        except IntegrityError:
-            return rollback_integrity_error_response(
-                session,
-                lambda: _erro_compra(request, session, user, "Cliente já existe"),
-            )
+    novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
+        session,
+        novo_cliente_data,
+        cliente.create,
+        user.id,
+        lambda: _erro_compra(request, session, user, "Cliente já existe"),
+    )
+    if response is not None:
+        return response
+    if novo_cliente_obj is not None:
+        cliente_obj = novo_cliente_obj
 
-    if novo_veiculo_data is not None:
-        try:
-            veiculo_obj = veiculo.create(session, novo_veiculo_data, user.id)
-        except IntegrityError:
-            return rollback_integrity_error_response(
-                session,
-                lambda: _erro_compra(request, session, user, "Veículo já existe"),
-            )
+    novo_veiculo_obj, response = criar_aninhado_ou_resposta_conflito(
+        session,
+        novo_veiculo_data,
+        veiculo.create,
+        user.id,
+        lambda: _erro_compra(request, session, user, "Veículo já existe"),
+    )
+    if response is not None:
+        return response
+    if novo_veiculo_obj is not None:
+        veiculo_obj = novo_veiculo_obj
 
     assert cliente_obj is not None  # noqa: S101
     assert veiculo_obj is not None  # noqa: S101
@@ -348,8 +356,7 @@ async def _criar_compra(  # noqa: PLR0911
         )
         validate_cliente_veiculo_fks(session, data)
     except (ValidationError, HTTPException) as exc:
-        if novo_cliente_data is not None or novo_veiculo_data is not None:
-            session.rollback()
+        rollback_se_criou_aninhados(session, novo_cliente_data, novo_veiculo_data)
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_compra(request, session, user, msg)
 
