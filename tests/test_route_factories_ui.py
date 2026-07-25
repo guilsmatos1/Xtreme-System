@@ -532,6 +532,16 @@ def test_crud_ui_create_integrity_error_retorna_409(
     assert "Stub já existe" in resp.text
 
 
+def test_crud_ui_lista_rejeita_limit_offset_invalidos(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="none"), request)
+
+    assert client.get("/ui/stubs", params={"limit": 201}).status_code == 422
+    assert client.get("/ui/stubs", params={"limit": 0}).status_code == 422
+    assert client.get("/ui/stubs", params={"offset": -1}).status_code == 422
+
+
 def test_crud_ui_create_rolls_back_when_create_fails_after_write(
     tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
