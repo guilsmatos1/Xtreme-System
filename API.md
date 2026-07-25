@@ -111,6 +111,11 @@ Response: User object (201 Created, inclui `perfil_id`)
 
 **Endpoint**: `GET /usuarios`
 
+Query parameters:
+
+- `limit` (optional, default `50`, min `1`, max `200`)
+- `offset` (optional, default `0`, min `0`)
+
 Response: Array of user objects (inclui `perfil_id`)
 
 **Status Codes**:
@@ -181,6 +186,11 @@ For each resource, replace `{resource}` with one of:
 #### List Resources
 
 **Endpoint**: `GET /{resource}`
+
+Query parameters:
+
+- `limit` (optional, default `50`, min `1`, max `200`)
+- `offset` (optional, default `0`, min `0`)
 
 Response: Array of resource objects
 

@@ -127,6 +127,48 @@ def test_admin_escreve(client: TestClient) -> None:
     assert resp.status_code == 201
 
 
+def test_json_crud_lista_paginal_e_rejeita_parametros_invalidos(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    for nome in ("Ana", "Bia", "Caio"):
+        resp = client.post("/investidores", json={"nome": nome}, headers=headers)
+        assert resp.status_code == 201
+
+    resp = client.get(
+        "/investidores", params={"limit": 1, "offset": 1}, headers=headers
+    )
+
+    assert resp.status_code == 200
+    assert [item["nome"] for item in resp.json()] == ["Bia"]
+    assert (
+        client.get("/investidores", params={"limit": 201}, headers=headers).status_code
+        == 422
+    )
+    assert (
+        client.get("/investidores", params={"limit": 0}, headers=headers).status_code
+        == 422
+    )
+    assert (
+        client.get("/investidores", params={"offset": -1}, headers=headers).status_code
+        == 422
+    )
+
+
+def test_json_usuarios_lista_paginal(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    client.post(
+        "/usuarios",
+        json={"username": "admin2", "senha": "senha", "papel": "admin"},
+        headers=headers,
+    )
+
+    resp = client.get("/usuarios", params={"limit": 1, "offset": 1}, headers=headers)
+
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+
 def test_remover_investidor_com_veiculo_vinculado_retorna_409(
     client: TestClient, unique_plate: str
 ) -> None:
