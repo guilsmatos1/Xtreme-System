@@ -305,6 +305,20 @@ def test_ui_dre_periodo_sem_fechamentos_mostra_vazio(client: TestClient) -> None
     assert "Detalhe dos fechamentos" not in resp.text
 
 
+def test_ui_dre_schema_desatualizado_mostra_erro(
+    make_client: Callable[..., TestClient], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = make_client(usuarios=[("admin", usuario.Papel.admin)])
+    monkeypatch.setattr(fechamento_venda, "_schema_disponivel", lambda _session: False)
+    _login(client, "admin")
+
+    resp = client.get(f"/ui/relatorios/dre?{_PERIODO}")
+
+    assert resp.status_code == 400
+    assert "make migrate" in resp.text
+    assert "R$ 0,00" not in resp.text
+
+
 def test_ui_dre_data_invalida_retorna_422(client: TestClient) -> None:
     _login(client, "admin")
 

@@ -1,6 +1,10 @@
 {% import "_macros.html" as ui %}
 <div id="dre-resultado">
 
+{% if erro %}
+{{ ui.alert(erro) }}
+{% else %}
+
 <section class="stats" aria-label="Resultado do período">
   <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("cash") }} Receita</div>
@@ -111,6 +115,8 @@
     </tbody>
   </table>
 </div>
+{% endif %}
+
 {% endif %}
 
 </div>
