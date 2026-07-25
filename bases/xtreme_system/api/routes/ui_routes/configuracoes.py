@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import structlog
 from fastapi import File, Form, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
@@ -269,16 +270,16 @@ def ui_configuracoes_exportar(
 
 
 @app.post("/ui/configuracoes/importar")
-def ui_configuracoes_importar(
+async def ui_configuracoes_importar(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
     arquivo: Annotated[UploadFile, File()],
 ) -> HTMLResponse:
-    conteudo = arquivo.file.read()
+    conteudo = await arquivo.read()
     _fechar_transacao_da_rota(session, user)
     try:
-        exportacao.restore_database(conteudo)
+        await run_in_threadpool(exportacao.restore_database, conteudo)
     except exportacao.ExportacaoError as exc:
         config = whatsapp.get_config(session)
         return templates.TemplateResponse(
