@@ -37,8 +37,11 @@ if [[ -z "${target_worktree}" ]]; then
   exit 1
 fi
 
-if [[ -n "$(git -C "${target_worktree}" status --porcelain)" ]]; then
-  printf '%s\n' "agent-finish: target worktree '${target_worktree}' is dirty" >&2
+# Only tracked modifications can be clobbered by the merge. Untracked files (agent
+# logs, scratch output) are ignored here: they used to block every merge for the
+# rest of the session once a single stray file appeared in the target worktree.
+if [[ -n "$(git -C "${target_worktree}" status --porcelain --untracked-files=no)" ]]; then
+  printf '%s\n' "agent-finish: target worktree '${target_worktree}' has uncommitted tracked changes" >&2
   exit 1
 fi
 
