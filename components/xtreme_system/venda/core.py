@@ -178,13 +178,13 @@ def veiculo_tem_outra_venda_concluida(
 def veiculo_tem_outra_troca_concluida(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> bool:
-    query = session.query(Venda).filter(
+    sql_query = session.query(Venda).filter(
         Venda.veiculo_troca_id == veiculo_id,
         Venda.status == StatusVenda.concluido,
     )
     if excluir_venda_id is not None:
-        query = query.filter(Venda.id != excluir_venda_id)
-    return query.first() is not None
+        sql_query = sql_query.filter(Venda.id != excluir_venda_id)
+    return sql_query.first() is not None
 
 
 def recomputar_status_veiculo_por_vendas(

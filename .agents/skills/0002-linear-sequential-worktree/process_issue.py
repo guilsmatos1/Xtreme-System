@@ -338,7 +338,7 @@ def cmd_start(args):
         variant = determine_variant(description)
 
         wt = orca(["worktree", "create", "--repo", f"name:{args.repo}", "--name", identifier,
-                   "--linear-issue", identifier])
+                   "--linear-issue", identifier, "--base-branch", "master"])
         if not wt.get("result", {}).get("ok", wt.get("ok", True)):
             return result("error", identifier, reason="worktree create returned ok=false",
                           detail=_compact_orca_response(wt))
