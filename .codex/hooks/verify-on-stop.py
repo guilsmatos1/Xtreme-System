@@ -20,7 +20,11 @@ CHECKS = [
     ("ruff", ["uv", "run", "ruff", "check", "."], {}),
     ("ruff-format", ["uv", "run", "ruff", "format", ".", "--check"], {}),
     ("mypy", ["uv", "run", "mypy"], {}),
-    ("pytest", ["uv", "run", "pytest"], {"XTREME_ALLOW_SQLITE_TEST_DB": "1"}),
+    (
+        "pytest",
+        ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", "pytest"],
+        {},
+    ),
 ]
 
 
