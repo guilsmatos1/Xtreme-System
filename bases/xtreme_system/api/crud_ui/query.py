@@ -91,9 +91,18 @@ def _query_sorted_list(
     offset: int,
 ) -> list[EntityT]:
     spec = sort_fields.get(sort) if sort_fields is not None else None
+    entity = None
+    if query.column_descriptions:
+        entity = query.column_descriptions[0].get("entity")
+    id_field = getattr(entity, "id", None)
     if spec is not None:
         order_expr = spec.desc() if order == "desc" else spec.asc()
         query = query.order_by(order_expr)
+        if id_field is not None and id_field is not spec:
+            id_order_expr = id_field.desc() if order == "desc" else id_field.asc()
+            query = query.order_by(id_order_expr)
+    elif id_field is not None:
+        query = query.order_by(id_field.asc())
     if offset:
         query = query.offset(offset)
     if limit is not None:

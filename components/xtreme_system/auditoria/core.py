@@ -136,7 +136,7 @@ def query(
     limit: int = 50,
     offset: int = 0,
 ) -> list[Auditoria]:
-    stmt = select(Auditoria).order_by(Auditoria.criado_em.desc())
+    stmt = select(Auditoria).order_by(Auditoria.criado_em.desc(), Auditoria.id.desc())
     stmt = _filtros(
         stmt,
         usuario_id=usuario_id,
