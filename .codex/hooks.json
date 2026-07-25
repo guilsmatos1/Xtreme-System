@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/guilsmatos/.local/bin/graphify hook-check"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use-track-edit.py\"",
+            "timeout": 10,
+            "statusMessage": "Tracking edits for post-edit checks"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/verify-on-stop.py\"",
+            "timeout": 600,
+            "statusMessage": "Running Opencode-equivalent finish hooks"
+          }
+        ]
+      }
+    ]
+  }
+}

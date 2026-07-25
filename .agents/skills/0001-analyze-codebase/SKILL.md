@@ -58,7 +58,7 @@ For each opportunity, evaluate the relevant dimensions below:
 4. Prefer high-confidence findings over generic review advice.
 5. Tie every recommendation to a specific file, function, and line range, with a real code snippet when possible.
 6. Avoid broad refactors unless the current design is clearly causing correctness, reliability, or maintenance problems.
-7. After preparing the final report, save the content to `.loop/running/improvements.json` as JSON.
+7. After preparing the final report, save the content to `.loop/running/improvements-codebase.json` as JSON.
 
 ## Suggested Workflow
 
@@ -191,4 +191,4 @@ count — never paste the report or exploration output back into the parent conv
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements.json` ONLY.
+`.loop/running/improvements-codebase.json` ONLY.

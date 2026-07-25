@@ -2,11 +2,19 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 MAX_OUTPUT_CHARS = 12000
+CHECKS = [
+    ("ruff-fix", ["uv", "run", "ruff", "check", "--fix"]),
+    ("ruff", ["uv", "run", "ruff", "check", "."]),
+    ("ruff-format", ["uv", "run", "ruff", "format", ".", "--check"]),
+    ("mypy", ["uv", "run", "mypy"]),
+    ("pytest", ["uv", "run", "pytest"]),
+]
 
 
 def project_dir(payload: dict) -> Path:
@@ -24,6 +32,31 @@ def working_tree_dirty(root: Path) -> bool:
     return bool(result.stdout.strip())
 
 
+def state_path(root: Path, session_id: str) -> Path:
+    safe_session = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id or "unknown")
+    return root / ".codex" / ".hook-state" / f"{safe_session}.json"
+
+
+def run_checks(
+    root: Path,
+) -> tuple[str, list[str], subprocess.CompletedProcess[str]] | None:
+    for name, command in CHECKS:
+        result = subprocess.run(  # noqa: S603
+            command,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return name, command, result
+    return None
+
+
+def block(reason: str) -> None:
+    print(json.dumps({"decision": "block", "reason": reason}))
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -34,6 +67,30 @@ def main() -> int:
         return 0
 
     root = project_dir(payload)
+    path = state_path(root, payload.get("session_id", ""))
+    if path.exists():
+        path.unlink(missing_ok=True)
+        failed_check = run_checks(root)
+        if failed_check is not None:
+            name, command, result = failed_check
+            output = (result.stdout + result.stderr)[-MAX_OUTPUT_CHARS:]
+            block(
+                "\n".join(
+                    [
+                        f'Post-edit check "{name}" failed.',
+                        "",
+                        f"Command: {' '.join(command)}",
+                        "",
+                        "```",
+                        output or f"{name} failed without output.",
+                        "```",
+                        "",
+                        "Fix failures, then stop again.",
+                    ]
+                )
+            )
+            return 0
+
     if not working_tree_dirty(root):
         return 0
 
@@ -48,17 +105,10 @@ def main() -> int:
         return 0
 
     output = (result.stdout + result.stderr)[-MAX_OUTPUT_CHARS:]
-    print(
-        json.dumps(
-            {
-                "decision": "block",
-                "reason": (
-                    "Agent finish hook failed "
-                    "(scripts/agent-finish.sh):\n\n"
-                    f"{output}\n\nFix the failures, then stop again."
-                ),
-            }
-        )
+    block(
+        "Agent finish hook failed "
+        "(scripts/agent-finish.sh):\n\n"
+        f"{output}\n\nFix the failures, then stop again."
     )
     return 0
 
