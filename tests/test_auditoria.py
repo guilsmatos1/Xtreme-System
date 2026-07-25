@@ -3,13 +3,26 @@
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
+
+
+class _SnapshotTestBase(DeclarativeBase):
+    pass
+
+
+class _ServicoExternoConfig(_SnapshotTestBase):
+    __tablename__ = "servico_externo_config_snapshot_test"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    api_token: Mapped[str]
+    secret_key: Mapped[str]
+    public_name: Mapped[str]
 
 
 def _seed_admin(session: Session) -> usuario.Usuario:
@@ -136,6 +149,19 @@ def test_auditoria_serializa_tipos_e_mascara_campos_sensiveis() -> None:
     dados_config = auditoria.snapshot(config)
     assert dados_config["evolution_api_key"] == "***"
     assert "chave-secreta" not in str(dados_config)
+
+    servico = _ServicoExternoConfig(
+        id=1,
+        api_token="token-secreto",  # noqa: S106
+        secret_key="secret-secreto",  # noqa: S106
+        public_name="nome-publico",
+    )
+    dados_servico = auditoria.snapshot(servico)
+    assert dados_servico["api_token"] == "***"  # noqa: S105
+    assert dados_servico["secret_key"] == "***"  # noqa: S105
+    assert dados_servico["public_name"] == "nome-publico"
+    assert "token-secreto" not in str(dados_servico)
+    assert "secret-secreto" not in str(dados_servico)
 
 
 def test_whatsapp_atualizar_config_gera_auditoria_mascarada(
