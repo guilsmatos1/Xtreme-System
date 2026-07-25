@@ -720,6 +720,47 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    for indice in range(3):
+        cliente_id = _criar_cliente(
+            client, headers, f"Cliente {indice}", f"1000000000{indice}"
+        )
+        resp = client.post(
+            "/vendas",
+            json={
+                "cliente_id": cliente_id,
+                "veiculo_id": veiculo_id,
+                "data_venda": f"2026-07-0{indice + 1}",
+                "valor_venda": "85000.00",
+                "forma_pagamento": "a_vista",
+                "parcelas": 1,
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 201, resp.text
+
+    novo_cliente_id = _criar_cliente(client, headers, "Cliente Novo", "10000000009")
+    criado = client.post(
+        "/ui/vendas?limit=2",
+        data={
+            "cliente_id": str(novo_cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": "1",
+            "status": "pendente",
+        },
+    )
+
+    assert criado.status_code == 200
+    assert len(re.findall(r'<tr id="venda-', criado.text)) == 2
+
+
 def test_ui_atualizar_venda_registra_autor_na_auditoria(
     make_client: Callable[..., TestClient],
 ) -> None:
