@@ -321,24 +321,7 @@ register_crud_routes(
     after_create=whatsapp.notificar_venda,
     pagina="vendas",
     actor_field="vendedor_id",
-    campos_protegidos=(
-        "cliente",
-        "veiculo",
-        "veiculo_troca",
-        "data_venda",
-        "valor_venda",
-        "valor_entrada",
-        "debitos",
-        "km",
-        "forma_pagamento",
-        "parcelas",
-        "status",
-        "observacoes",
-        "valor_diferenca",
-        "pagamento_pendente",
-        "valor_pendente",
-        "datas_pagamento",
-    ),
+    campos_protegidos=tuple(perfil.CAMPOS_FORM_PROTEGIDOS["vendas"]),
 )
 
 

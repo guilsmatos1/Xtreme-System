@@ -351,9 +351,12 @@ def reset_to_backlog(identifier, workspace, worker_handle, warnings):
     The reverse order would leave a failed issue stuck In Progress, where
     run-backlog never looks at it again and the failure disappears silently.
 
-    `orca worktree rm --force` deletes the branch along with the worktree; without
-    that, preflight would skip the issue forever on the "existing local branch"
-    rule and the Backlog reset would be pointless.
+    `orca worktree rm --force` only deletes the branch when it has no unmerged
+    commits. A failed worker usually has some -- the Stop hook commits before the
+    agent finishes -- so the branch survives the removal and preflight would skip
+    the issue forever on its "existing local branch" rule, making the Backlog reset
+    pointless. The explicit `git branch -D` below is what actually makes a failed
+    issue retryable, and it is what discards the failed attempt's commits.
     """
     close_worker_terminal(worker_handle, warnings)
 
@@ -370,6 +373,29 @@ def reset_to_backlog(identifier, workspace, worker_handle, warnings):
             warnings.append("failed to remove worktree")
     except OrcaError as exc:
         warnings.append(f"failed to remove worktree: {exc}")
+
+    delete_issue_branch(identifier, warnings)
+
+
+def delete_issue_branch(identifier, warnings):
+    """Drop the issue branch left behind by `orca worktree rm`.
+
+    Must run after the worktree removal: git refuses to delete a branch that is
+    still checked out somewhere. Any branch still mentioning the identifier
+    afterwards is reported, because preflight would skip the issue on the next run.
+    """
+    code, out = git(["branch", "-D", identifier])
+    if code != 0:
+        warnings.append(f"failed to delete branch {identifier}: {_compact_text(out)}")
+
+    code, out = git(["for-each-ref", "refs/heads", "--format=%(refname:short)"])
+    if code == 0:
+        leftover = [line for line in out.splitlines() if _mentions_identifier(line, identifier)]
+        if leftover:
+            warnings.append(
+                f"branches still referencing {identifier} after reset: {', '.join(leftover[:3])}; "
+                f"preflight will skip this issue until they are removed"
+            )
 
 
 def cmd_start(args):
