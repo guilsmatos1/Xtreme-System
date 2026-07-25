@@ -161,10 +161,12 @@ def query_list(
     offset: int = 0,
     sort: str = "",
     order: str = "asc",
+    sort_fields: Mapping[str, SortSpec[EntityT]] | None = None,
     sql_sort_fields: Mapping[str, Any] | None = None,
     query_func: QueryFunc[EntityT] | None = None,
     search_query_func: SearchQueryFunc[EntityT] | None = None,
 ) -> list[EntityT]:
+    python_sort_fields = sort_fields or {}
     if q and search_query_func is not None:
         if _accepts_column(search_query_func):
             query = search_query_func(session, q, column=search_column)
@@ -178,7 +180,7 @@ def query_list(
     if q and search_func is not None:
         lista = _search_list(search_func, session, q, search_column)
         result = _page_list(
-            sorted_list(lista, sort, order, sql_sort_fields or {}), limit, offset
+            sorted_list(lista, sort, order, python_sort_fields), limit, offset
         )
     elif searchable and q:
         searchable_module = cast(
@@ -189,7 +191,7 @@ def query_list(
                 list(searchable_module.search(session, q)),
                 sort,
                 order,
-                sql_sort_fields or {},
+                python_sort_fields,
             ),
             limit,
             offset,
@@ -200,7 +202,7 @@ def query_list(
         if paginated_result is None:
             result = _page_list(
                 sorted_list(
-                    list(callable_list(session)), sort, order, sql_sort_fields or {}
+                    list(callable_list(session)), sort, order, python_sort_fields
                 ),
                 limit,
                 offset,

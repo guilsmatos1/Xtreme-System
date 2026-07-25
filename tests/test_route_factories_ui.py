@@ -278,6 +278,30 @@ def test_query_list_passa_limit_e_offset_para_list_func_paginal() -> None:
     assert [item.nome for item in resultados] == ["Bruno", "Carla"]
 
 
+def test_query_list_usa_sort_fields_python_quando_sql_sort_fields_existe() -> None:
+    def search_func(_session: Session, _term: str) -> list[investidor.Investidor]:
+        return [
+            investidor.Investidor(nome="Carla"),
+            investidor.Investidor(nome="Ana"),
+            investidor.Investidor(nome="Bruno"),
+        ]
+
+    ordenados = query_list(
+        session=cast(Session, object()),
+        module=investidor,
+        q="a",
+        searchable=False,
+        list_func=None,
+        search_func=search_func,
+        sort="nome",
+        order="asc",
+        sort_fields={"nome": "nome"},
+        sql_sort_fields={"nome": investidor.Investidor.nome},
+    )
+
+    assert [item.nome for item in ordenados] == ["Ana", "Bruno", "Carla"]
+
+
 def test_query_list_ordena_no_sql_quando_query_func_disponivel(
     request: pytest.FixtureRequest,
 ) -> None:
@@ -524,7 +548,9 @@ def _stub_crud_client(
         "linhas.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
         "{% for item in itens %}<p>{{ item.nome }}</p>{% endfor %}",
         "ok.html": "<p>ok</p>",
-        "form.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}",
+        "form.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
+        "<input name='nome' value='{{ item.nome if item else \"\" }}'>"
+        "{% if user %}<span data-user='{{ user.username }}'></span>{% endif %}",
     }.items():
         (tmp_path / nome).write_text(conteudo)
 
@@ -579,6 +605,8 @@ def test_crud_ui_create_integrity_error_retorna_409(
 
     assert resp.status_code == 409
     assert "Stub já existe" in resp.text
+    assert "value='Duplicado'" in resp.text
+    assert "data-user='admin'" in resp.text
 
 
 def test_crud_ui_lista_rejeita_limit_offset_invalidos(

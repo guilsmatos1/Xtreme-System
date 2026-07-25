@@ -103,6 +103,36 @@ def test_criar_venda_dispara_notificacao(
     assert "Gol" in mensagens[0]
 
 
+def test_criar_venda_agenda_notificacao_em_executor_limitado(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mensagens: list[str] = []
+    submits: list[tuple[Callable[..., None], tuple[Any, ...]]] = []
+
+    class _Executor:
+        def submit(self, fn: Callable[..., None], *args: Any) -> None:
+            submits.append((fn, args))
+            fn(*args)
+
+    monkeypatch.setattr(whatsapp, "_NOTIFICACAO_EXECUTOR", _Executor())
+    monkeypatch.setattr(
+        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
+    )
+    _configurar(client)
+
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas", json=_payload(cliente_id, veiculo_id), headers=headers
+    )
+
+    assert resp.status_code == 201
+    assert len(submits) == 1
+    assert callable(submits[0][0])
+    assert len(mensagens) == 1
+
+
 def test_falha_no_envio_nao_impede_criacao_da_venda(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
