@@ -465,7 +465,7 @@ class _ConflictModule:
 
 def _stub_crud_client(
     tmp_path: Path,
-    module: _ConflictModule,
+    module: Any,
     request: pytest.FixtureRequest,
     *,
     before_create: Callable[[Session, Any], None] | None = None,
@@ -530,6 +530,18 @@ def test_crud_ui_create_integrity_error_retorna_409(
 
     assert resp.status_code == 409
     assert "Stub já existe" in resp.text
+
+
+def test_crud_ui_create_rolls_back_when_create_fails_after_write(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    client = _stub_crud_client(tmp_path, _FailAfterWriteModule(), request)
+
+    resp = client.post("/ui/stubs", data={"nome": "Ana"})
+
+    assert resp.status_code == 409
+    assert "Stub já existe" in resp.text
+    assert "Ana" not in client.get("/ui/stubs").text
 
 
 def test_crud_ui_create_integrity_error_before_create_maintains_session(
