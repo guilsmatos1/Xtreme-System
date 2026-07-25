@@ -1,9 +1,9 @@
 """Notificação de venda via WhatsApp (Evolution API): config, formatação e envio."""
 
 import json
-import threading
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 import structlog
 from pydantic import BaseModel
@@ -17,6 +17,11 @@ from xtreme_system.venda.core import Venda
 logger = structlog.get_logger(__name__)
 
 _CONFIG_ID = 1
+_NOTIFICACAO_MAX_WORKERS = 2
+_NOTIFICACAO_EXECUTOR = ThreadPoolExecutor(
+    max_workers=_NOTIFICACAO_MAX_WORKERS,
+    thread_name_prefix="whatsapp-notify",
+)
 
 MENSAGEM_TEMPLATE_PADRAO = (
     "🚗 Nova venda registrada!\n"
@@ -159,11 +164,18 @@ def notificar_venda(
     api_key = config.evolution_api_key
     instance = config.evolution_instance
     group_id = config.evolution_group_id
+
+    def _agendar_envio() -> None:
+        _NOTIFICACAO_EXECUTOR.submit(
+            _notificar_em_background,
+            api_url,
+            api_key,
+            instance,
+            group_id,
+            texto,
+        )
+
     register_post_commit(
         session,
-        lambda: threading.Thread(
-            target=_notificar_em_background,
-            args=(api_url, api_key, instance, group_id, texto),
-            daemon=True,
-        ).start(),
+        _agendar_envio,
     )
