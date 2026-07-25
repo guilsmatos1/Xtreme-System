@@ -1,15 +1,18 @@
 """Shared helpers for HTMX route modules."""
 
 import contextlib
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import date
 from pathlib import Path
 from typing import Annotated, Any, Self, cast
 
 from fastapi import UploadFile
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, BeforeValidator, Field, ValidationError, model_validator
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.cliente import core as cliente
 from xtreme_system.upload_file.core import uploaded_file_path
 
@@ -208,3 +211,25 @@ def resolver_cliente(
     except ValidationError:
         return None, None, invalid_new_msg
     return None, novo_cliente_data, None
+
+
+def criar_aninhado_ou_resposta_conflito[EntityT, CreateDataT](
+    session: Session,
+    data: CreateDataT | None,
+    create_fn: Callable[[Session, CreateDataT, int | None], EntityT],
+    actor_id: int | None,
+    build_conflict_response: Callable[[], HTMLResponse],
+) -> tuple[EntityT | None, HTMLResponse | None]:
+    if data is None:
+        return None, None
+    try:
+        return create_fn(session, data, actor_id), None
+    except IntegrityError:
+        return None, rollback_integrity_error_response(session, build_conflict_response)
+
+
+def rollback_se_criou_aninhados(
+    session: Session, *dados_aninhados: object | None
+) -> None:
+    if any(dado is not None for dado in dados_aninhados):
+        session.rollback()
