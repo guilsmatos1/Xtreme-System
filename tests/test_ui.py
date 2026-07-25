@@ -720,6 +720,38 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ctx_form_venda_limita_clientes_e_veiculos(
+    monkeypatch: pytest.MonkeyPatch, client: TestClient
+) -> None:
+    calls: list[tuple[str, int | None]] = []
+
+    def fake_clientes(
+        _session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[cliente.Cliente]:
+        assert offset == 0
+        calls.append(("clientes", limit))
+        return []
+
+    def fake_veiculos(
+        _session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[veiculo.Veiculo]:
+        assert offset == 0
+        calls.append(("veiculos", limit))
+        return []
+
+    monkeypatch.setattr(cliente, "list_all", fake_clientes)
+    monkeypatch.setattr(veiculo, "list_all", fake_veiculos)
+
+    _login_admin(client)
+    resp = client.get("/ui/vendas/novo")
+
+    assert resp.status_code == 200
+    assert calls == [
+        ("veiculos", 50),
+        ("clientes", 50),
+    ]
+
+
 def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)

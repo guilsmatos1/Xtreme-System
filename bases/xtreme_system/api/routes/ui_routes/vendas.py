@@ -63,15 +63,16 @@ _VerFechamentoVendaDep = Annotated[
 ]
 
 _CAMPOS_FORM_VENDA_MAP = perfil.CAMPOS_FORM_PROTEGIDOS["vendas"]
+_FORM_LOOKUP_LIMIT = 50
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
-    veiculos = veiculo.list_all(session)
+    veiculos = veiculo.list_all(session, limit=_FORM_LOOKUP_LIMIT)
     veiculos_disponiveis = [
         v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel
     ]
     return {
-        "clientes": cliente.list_all(session),
+        "clientes": cliente.list_all(session, limit=_FORM_LOOKUP_LIMIT),
         "veiculos": veiculos_disponiveis,
         "veiculos_troca": veiculos,
         "status": list(venda.StatusVenda),
