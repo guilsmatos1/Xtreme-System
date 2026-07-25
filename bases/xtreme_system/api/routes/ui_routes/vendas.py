@@ -62,6 +62,25 @@ _VerFechamentoVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "ver_fechamento"))
 ]
 
+_CAMPOS_FORM_VENDA_MAP = {
+    "cliente": "cliente_id",
+    "veiculo": "veiculo_id",
+    "data_venda": "data_venda",
+    "valor_venda": "valor_venda",
+    "valor_entrada": "valor_entrada",
+    "debitos": "debitos",
+    "km": "km",
+    "veiculo_troca": "veiculo_troca_id",
+    "valor_diferenca": "valor_diferenca",
+    "pagamento_pendente": "pagamento_pendente",
+    "valor_pendente": "valor_pendente",
+    "datas_pagamento": "datas_pagamento",
+    "forma_pagamento": "forma_pagamento",
+    "parcelas": "parcelas",
+    "status": "status",
+    "observacoes": "observacoes",
+}
+
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
     veiculos = veiculo.list_all(session)
@@ -106,25 +125,7 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
 def _filtrar_campos_ocultos_venda(
     user: usuario.Usuario, data: dict[str, Any]
 ) -> dict[str, Any]:
-    campos_form_map = {
-        "cliente": "cliente_id",
-        "veiculo": "veiculo_id",
-        "data_venda": "data_venda",
-        "valor_venda": "valor_venda",
-        "valor_entrada": "valor_entrada",
-        "debitos": "debitos",
-        "km": "km",
-        "veiculo_troca": "veiculo_troca_id",
-        "valor_diferenca": "valor_diferenca",
-        "pagamento_pendente": "pagamento_pendente",
-        "valor_pendente": "valor_pendente",
-        "datas_pagamento": "datas_pagamento",
-        "forma_pagamento": "forma_pagamento",
-        "parcelas": "parcelas",
-        "status": "status",
-        "observacoes": "observacoes",
-    }
-    for campo, campo_form in campos_form_map.items():
+    for campo, campo_form in _CAMPOS_FORM_VENDA_MAP.items():
         if not perfil.pode_ver_campo(user, "vendas", campo):
             data.pop(campo_form, None)
     return data
@@ -265,24 +266,7 @@ register_crud_ui_routes(
     editar_dep=require_operacao("vendas", "editar"),
     excluir_dep=require_operacao("vendas", "excluir"),
     pagina="vendas",
-    campos_form_map={
-        "cliente": "cliente_id",
-        "veiculo": "veiculo_id",
-        "data_venda": "data_venda",
-        "valor_venda": "valor_venda",
-        "valor_entrada": "valor_entrada",
-        "debitos": "debitos",
-        "km": "km",
-        "veiculo_troca": "veiculo_troca_id",
-        "valor_diferenca": "valor_diferenca",
-        "pagamento_pendente": "pagamento_pendente",
-        "valor_pendente": "valor_pendente",
-        "datas_pagamento": "datas_pagamento",
-        "forma_pagamento": "forma_pagamento",
-        "parcelas": "parcelas",
-        "status": "status",
-        "observacoes": "observacoes",
-    },
+    campos_form_map=_CAMPOS_FORM_VENDA_MAP,
 )
 
 
