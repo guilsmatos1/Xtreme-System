@@ -271,9 +271,14 @@ register_crud_ui_routes(
 
 
 def _ok_venda(
-    request: Request, session: Session, user: usuario.Usuario
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    *,
+    limit: int = 50,
+    offset: int = 0,
 ) -> HTMLResponse:
-    vendas = venda.list_all(session)
+    vendas = venda.list_all(session, limit=limit, offset=offset)
     return templates.TemplateResponse(
         request,
         "_vendas_ok.html",
@@ -346,7 +351,11 @@ def _persistir_contrato_venda(
 
 @app.post("/ui/vendas")
 async def _criar_venda(
-    request: Request, session: SessionDep, user: _CadastrarVendaDep
+    request: Request,
+    session: SessionDep,
+    user: _CadastrarVendaDep,
+    limit: int = 50,
+    offset: int = 0,
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     form = await request.form()
@@ -397,12 +406,17 @@ async def _criar_venda(
         return rollback_integrity_error_response(
             session, lambda: _erro_venda(request, session, user, "Venda já existe")
         )
-    return _ok_venda(request, session, user)
+    return _ok_venda(request, session, user, limit=limit, offset=offset)
 
 
 @app.post("/ui/vendas/{item_id}")
 async def _atualizar_venda(
-    item_id: int, request: Request, session: SessionDep, user: _EditarVendaDep
+    item_id: int,
+    request: Request,
+    session: SessionDep,
+    user: _EditarVendaDep,
+    limit: int = 50,
+    offset: int = 0,
 ) -> HTMLResponse:
     session.info["usuario_id"] = user.id
     obj = _found(venda.get(session, item_id), "Venda")
@@ -431,7 +445,7 @@ async def _atualizar_venda(
                 request, session, user, "Venda já existe", venda_obj=obj
             ),
         )
-    return _ok_venda(request, session, user)
+    return _ok_venda(request, session, user, limit=limit, offset=offset)
 
 
 def _criar_venda_com_hooks(
@@ -497,7 +511,12 @@ def _form_fechamento_venda(
 
 @app.post("/ui/vendas/{item_id}/fechamento")
 async def _confirmar_fechamento_venda(
-    item_id: int, request: Request, session: SessionDep, user: _FecharVendaDep
+    item_id: int,
+    request: Request,
+    session: SessionDep,
+    user: _FecharVendaDep,
+    limit: int = 50,
+    offset: int = 0,
 ) -> HTMLResponse:
     obj = _found(venda.get(session, item_id), "Venda")
     form = await request.form()
@@ -530,7 +549,7 @@ async def _confirmar_fechamento_venda(
             },
             status_code=400,
         )
-    vendas = venda.list_all(session)
+    vendas = venda.list_all(session, limit=limit, offset=offset)
     return templates.TemplateResponse(
         request,
         "_vendas_ok.html",
