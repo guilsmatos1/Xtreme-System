@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from urllib.parse import urlencode
 
 import structlog
-from fastapi import Query, Request, Response
+from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -76,6 +76,29 @@ def _ctx_dre(session: Session, user: usuario.Usuario, f: FiltroDre) -> dict[str,
     }
 
 
+def _ctx_dre_erro(
+    session: Session, user: usuario.Usuario, f: FiltroDre, erro: str
+) -> dict[str, Any]:
+    data_de, data_ate = f.periodo
+    return {
+        "user": user,
+        "titulo": "DRE",
+        "erro": erro,
+        "investidores": investidor.list_all(session),
+        "vendedores": usuario.list_all(session),
+        "f_data_de": data_de,
+        "f_data_ate": data_ate,
+        "f_investidor_id": f.investidor_id,
+        "f_vendedor_id": f.vendedor_id,
+        "filtros_qs": urlencode(
+            {
+                "data_de": data_de.isoformat(),
+                "data_ate": data_ate.isoformat(),
+            }
+        ),
+    }
+
+
 @app.get("/ui/relatorios/dre")
 def ui_relatorio_dre(
     request: Request,
@@ -83,7 +106,16 @@ def ui_relatorio_dre(
     user: UIAdmin,
     filtros: FiltroDreDep,
 ) -> HTMLResponse:
-    ctx = _ctx_dre(session, user, filtros)
+    try:
+        ctx = _ctx_dre(session, user, filtros)
+    except fechamento_venda.FechamentoVendaError as exc:
+        ctx = _ctx_dre_erro(session, user, filtros, str(exc))
+        template = (
+            "_dre_resultado.html"
+            if request.headers.get("HX-Request")
+            else "relatorios_dre.html"
+        )
+        return templates.TemplateResponse(request, template, ctx, status_code=400)
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "_dre_resultado.html", ctx)
     return templates.TemplateResponse(request, "relatorios_dre.html", ctx)
@@ -95,7 +127,10 @@ def ui_relatorio_dre_exportar(
     _: UIAdmin,
     filtros: FiltroDreDep,
 ) -> Response:
-    fechamentos = _listar(session, filtros)
+    try:
+        fechamentos = _listar(session, filtros)
+    except fechamento_venda.FechamentoVendaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
     return _csv_response(
         "dre.csv",
         [

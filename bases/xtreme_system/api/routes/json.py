@@ -261,7 +261,11 @@ def confirmar_fechamento_venda(
 def listar_fechamentos_vendas(
     session: SessionDep, user: CurrentUser
 ) -> list[dict[str, Any]]:
-    return [_fechamento_json(obj, user) for obj in fechamento_venda.list_all(session)]
+    try:
+        fechamentos = fechamento_venda.list_all(session)
+    except fechamento_venda.FechamentoVendaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    return [_fechamento_json(obj, user) for obj in fechamentos]
 
 
 @app.get(

@@ -368,6 +368,9 @@ non-admin users. Field restrictions from the `vendas` profile are applied to
 the JSON response: hidden `lucro` omits cost/profit fields, hidden `debitos`
 omits debts, and hidden `participacao` omits investor participation details.
 
+`GET /fechamentos-vendas` retorna `400` se a migration de fechamento de vendas
+não foi aplicada, com a orientação para rodar `make migrate`.
+
 #### DRE por período (UI)
 
 Página HTMX admin-only que agrega os fechamentos por competência
@@ -379,6 +382,9 @@ dos fechamentos.
   `HX-Request` devolve apenas o fragmento de resultado.
 - `GET /ui/relatorios/dre/exportar` — mesmos filtros, devolve `text/csv`
   (`dre.csv`) com uma linha por fechamento.
+
+Sem a migration de fechamento de vendas aplicada, a página, o fragmento HTMX e a
+exportação retornam `400` com a orientação para rodar `make migrate`.
 
 Validação dos filtros (compartilhada com `/ui/auditoria`, em
 `ui_routes/common.py`): campos vazios (`?data_de=`) contam como ausentes; ids

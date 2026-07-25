@@ -190,7 +190,7 @@ def list_all(
     session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[FechamentoVenda]:
     if not _schema_disponivel(session):
-        return []
+        raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)
     query = session.query(FechamentoVenda).order_by(FechamentoVenda.id)
     if limit is not None:
         query = query.limit(limit)
@@ -305,7 +305,7 @@ def listar_para_dre(
     vendedor_id: int | None = None,
 ) -> list[FechamentoVenda]:
     if not _schema_disponivel(session):
-        return []
+        raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)
     query = session.query(FechamentoVenda).options(
         lazyload(FechamentoVenda.venda),
         lazyload(FechamentoVenda.usuario),

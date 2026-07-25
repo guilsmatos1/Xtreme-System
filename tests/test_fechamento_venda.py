@@ -227,6 +227,17 @@ def test_schema_indisponivel_nao_e_cacheado(
     ]
 
 
+def test_listagens_de_fechamento_exigem_schema_atualizado(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(fechamento_venda, "_schema_disponivel", lambda _session: False)
+
+    with pytest.raises(fechamento_venda.FechamentoVendaError, match="make migrate"):
+        fechamento_venda.list_all(session)
+    with pytest.raises(fechamento_venda.FechamentoVendaError, match="make migrate"):
+        fechamento_venda.listar_para_dre(session)
+
+
 @pytest.mark.parametrize(
     ("status", "pagamento_pendente"),
     [
@@ -424,6 +435,18 @@ def test_endpoints_json_e_permissoes(client: TestClient) -> None:
         headers=admin_headers,
     )
     assert bloqueado.status_code == 400
+
+
+def test_endpoint_fechamentos_retorna_erro_sem_schema(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    monkeypatch.setattr(fechamento_venda, "_schema_disponivel", lambda _session: False)
+
+    resp = client.get("/fechamentos-vendas", headers=headers)
+
+    assert resp.status_code == 400
+    assert "make migrate" in resp.json()["detail"]
 
 
 def test_ui_modal_fechamento_e_estado_fechada(client: TestClient) -> None:
