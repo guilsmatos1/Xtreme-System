@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import Depends, Form, HTTPException
+from fastapi import Depends, Form, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -33,6 +33,8 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
+
+AUDITORIA_LIMIT_MAX = 200
 
 # ---- Health check (sem auth) ----
 
@@ -421,8 +423,8 @@ def listar_auditoria(
     tipo_acao: str | None = None,
     data_de: date | None = None,
     data_ate: date | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    limit: Annotated[int, Query(ge=1, le=AUDITORIA_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[auditoria.Auditoria]:
     return auditoria.query(
         session,

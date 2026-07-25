@@ -250,6 +250,23 @@ def test_api_usuario_management_atribui_admin_na_auditoria(
     assert all(r["usuario_id"] == admin_id for r in por_acao["DELETE"])
 
 
+def test_auditoria_rejeita_limit_offset_invalidos(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+
+    assert (
+        client.get("/auditoria", params={"limit": 201}, headers=headers).status_code
+        == 422
+    )
+    assert (
+        client.get("/auditoria", params={"limit": 0}, headers=headers).status_code
+        == 422
+    )
+    assert (
+        client.get("/auditoria", params={"offset": -1}, headers=headers).status_code
+        == 422
+    )
+
+
 def test_placa_duplicada_retorna_400(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[

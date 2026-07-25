@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -56,6 +56,7 @@ from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 DepFactory = Callable[..., usuario.Usuario]
+LIST_LIMIT_MAX = 200
 
 
 def register_crud_ui_routes(
@@ -254,8 +255,8 @@ def register_list_route(
         sort: str = "",
         order: str = "asc",
         search_column: str = "",
-        limit: int = 50,
-        offset: int = 0,
+        limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
+        offset: Annotated[int, Query(ge=0)] = 0,
     ) -> HTMLResponse:
         lista = sorted_list(
             query_list(
