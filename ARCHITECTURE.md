@@ -205,8 +205,8 @@ públicas (CRUD e helpers), `models.py` define os modelos SQLAlchemy, e
 
 ### JWT (PyJWT)
 
-- `create_access_token(username, papel)` → token com expiração configurável
-- `decode_token(token)` → payload com `sub` (username) e `papel`
+- `create_access_token(username)` → token com expiração configurável
+- `decode_token(token)` → payload com `sub` (username)
 - Segredo: `AUTH_SECRET_KEY` do `.env`
 
 ### Argon2 (pwdlib)

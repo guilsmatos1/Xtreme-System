@@ -1865,7 +1865,7 @@ def test_ui_user_funcionario_sem_perfil_pode_acessar_conta(
             username="conta_sem_perfil", senha="abc", papel=usuario.Papel.funcionario
         ),
     )
-    token = auth.create_access_token(user.username, user.papel)
+    token = auth.create_access_token(user.username)
 
     autenticado = get_ui_user(_request("/ui/conta"), db_session, token)
 
@@ -1881,7 +1881,7 @@ def test_ui_user_funcionario_sem_perfil_nao_acessa_pagina_ui_desconhecida(
             username="nova_pagina", senha="abc", papel=usuario.Papel.funcionario
         ),
     )
-    token = auth.create_access_token(user.username, user.papel)
+    token = auth.create_access_token(user.username)
 
     with pytest.raises(_NaoAutorizadoError):
         get_ui_user(_request("/ui/nova-pagina"), db_session, token)
@@ -1896,7 +1896,7 @@ def test_ui_user_funcionario_sem_perfil_nao_usa_prefixo_conta_como_excecao(
             username="contabilidade", senha="abc", papel=usuario.Papel.funcionario
         ),
     )
-    token = auth.create_access_token(user.username, user.papel)
+    token = auth.create_access_token(user.username)
 
     with pytest.raises(_NaoAutorizadoError):
         get_ui_user(_request("/ui/contabilidade"), db_session, token)

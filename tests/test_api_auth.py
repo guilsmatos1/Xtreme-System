@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -57,12 +58,34 @@ def test_get_current_user_binda_sessao_com_usuario_id(db_session: Session) -> No
     db_session.add(admin)
     db_session.flush()
 
-    token = auth.create_access_token(admin.username, admin.papel)
+    token = auth.create_access_token(admin.username)
 
     user = deps.get_current_user(token, db_session)
 
     assert user.id == admin.id
     assert db_session.info["usuario_id"] == admin.id
+
+
+def test_admin_authorization_uses_database_role_not_token_claim(
+    db_session: Session,
+) -> None:
+    admin = usuario.Usuario(
+        username="admin",
+        senha_hash=auth.hash_password("senha"),
+        papel=usuario.Papel.admin,
+    )
+    db_session.add(admin)
+    db_session.flush()
+
+    token = auth.create_access_token(admin.username)
+    admin.papel = usuario.Papel.funcionario
+    db_session.flush()
+
+    user = deps.get_current_user(token, db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        deps.require_admin(user)
+    assert exc.value.status_code == 403
 
 
 def test_get_ui_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
@@ -74,7 +97,7 @@ def test_get_ui_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
     db_session.add(admin)
     db_session.flush()
 
-    token = auth.create_access_token(admin.username, admin.papel)
+    token = auth.create_access_token(admin.username)
     request = Request(
         {
             "type": "http",

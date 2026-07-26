@@ -68,7 +68,7 @@ def login(
         or not auth.verify_password(form.password, user.senha_hash)
     ):
         raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
-    token = auth.create_access_token(user.username, user.papel)
+    token = auth.create_access_token(user.username)
     return auth.Token(access_token=token)
 
 
