@@ -6,36 +6,6 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 
 ## Improvements
 
-### 1. Limit large-output reads to the necessary section
-- **Problem:** Greps, test logs, and large file reads enter context in full when the task only needs a small window or the most relevant matches.
-- **Solution:** After locating a target, read `line-40..line+80`, use narrower filters, or use `--stat`/`--name-only`; expand only when the small section is not enough.
-- **Estimated savings:** ~9k-31k tokens per affected session.
-- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-109.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md (x2), docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
-
-### 2. Preflight failure-prone commands
-- **Problem:** Exploratory commands, tests with incorrect names, and environment scripts fail before contributing to the solution, dumping disposable context.
-- **Solution:** Validate path, environment, and minimal command before running expensive variants; when the question is structural, prefer static inspection with `rg`/model metadata.
-- **Estimated savings:** ~1k-15k tokens per affected session.
-- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
-
-### 3. Reread/regrep watchdog
-- **Problem:** The agent rereads the same file, repeats `rg`/`git diff`/`git status`, or reruns identical validations, reinjecting already known evidence into context.
-- **Solution:** If an identical call has already been executed, reuse the previous conclusion or require an explicit scope/argument change before repeating it.
-- **Estimated savings:** ~500-4.5k tokens per avoided repetition; up to ~30% of reanalysis tokens.
-- **Sources:** loop-2/GUI-Others.md, docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
-
-### 4. Chain discovery with more specific queries
-- **Problem:** The agent performs broad discovery and many tool calls before converging on the file or helper actually involved.
-- **Solution:** Start with `graphify query` or a specific grep; then open only directly implicated files, delegating broad maps to graphify/a compact subagent.
-- **Estimated savings:** ~3.5k-6.5k tokens per affected session.
-- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
-
-### 5. Reduce context persisted between worker stages
-- **Problem:** Old logs, diffs, and reads remain in cached context and make later test, commit, and merge phases more expensive.
-- **Solution:** Before long phases, summarize findings into compact state with changed files, decisions, and verification commands; avoid reintroducing old outputs.
-- **Estimated savings:** ~5k-14.5k tokens per affected session.
-- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-369.md
-
 ### 6. Stair-step verification / avoid duplicate suite runs
 - **Problem:** Focused tests + full suite + rerun after lint, while commit hooks run pytest again: duplicated and slow validation.
 - **Solution:** After a small final change, run only impacted tests/lint; leave the full suite for hooks/CI; rerun the full suite only if the change touches central logic or the user requires it.
@@ -130,25 +100,20 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 
 | # | Improvement | Mentions | Sources |
 |---|-------------|----------|---------|
-| 1 | Limit large-output reads to the necessary section | 16 | GUI-108, GUI-109, GUI-120, GUI-159, GUI-168, GUI-349, GUI-360, GUI-361, GUI-362, GUI-363, GUI-365, GUI-366, GUI-367, GUI-368, GUI-369 |
-| 2 | Preflight failure-prone commands | 13 | GUI-108, GUI-120, GUI-159, GUI-168, GUI-349, GUI-360, GUI-361, GUI-362, GUI-363, GUI-365, GUI-366, GUI-368, GUI-369 |
-| 3 | Reread/regrep watchdog | 11 | loop-2, GUI-108, GUI-159, GUI-168, GUI-360, GUI-362, GUI-363, GUI-366, GUI-367, GUI-368, GUI-369 |
-| 4 | Chain discovery with more specific queries | 10 | GUI-108, GUI-120, GUI-159, GUI-168, GUI-360, GUI-361, GUI-362, GUI-366, GUI-368, GUI-369 |
-| 5 | Reduce context persisted between worker stages | 10 | GUI-108, GUI-120, GUI-159, GUI-168, GUI-360, GUI-361, GUI-362, GUI-365, GUI-366, GUI-369 |
-| 6 | Stair-step verification / avoid duplicate suite runs | 3 | loop-2 |
-| 7 | Deterministic and safe commit-merge | 2 | loop-2 |
-| 8 | Fixed repo command shortcuts (test/lint) | 2 | loop-2 |
-| 9 | Lint before commit | 2 | loop-2, GUI-349 |
-| 10 | Pre-task impact-analysis subagent | 2 | loop-2 |
-| 11 | Precheck master-worktree merge blockers | 2 | loop-2 |
-| 12 | Compact no-op response | 1 | loop-2 |
-| 13 | Lean agent for trivial bug fixes | 1 | loop-2 |
-| 14 | Linear auto-context (injected summary) | 1 | loop-2 |
-| 15 | Post-merge inspection without detailed diff | 1 | GUI-349 |
-| 16 | Pytest hook: "0 failures = success" | 1 | loop-2 |
-| 17 | Required ticket template | 1 | loop-2 |
-| 18 | Summarize git worktree list automatically | 1 | loop-2 |
-| 19 | test-impact skill (diff -> affected tests) | 1 | loop-2 |
-| 20 | Use RTK only for voluminous outputs | 1 | loop-2 |
+| 5 | Stair-step verification / avoid duplicate suite runs | 3 | loop-2 |
+| 6 | Deterministic and safe commit-merge | 2 | loop-2 |
+| 7 | Fixed repo command shortcuts (test/lint) | 2 | loop-2 |
+| 8 | Lint before commit | 2 | loop-2, GUI-349 |
+| 9 | Pre-task impact-analysis subagent | 2 | loop-2 |
+| 10 | Precheck master-worktree merge blockers | 2 | loop-2 |
+| 11 | Compact no-op response | 1 | loop-2 |
+| 12 | Lean agent for trivial bug fixes | 1 | loop-2 |
+| 13 | Linear auto-context (injected summary) | 1 | loop-2 |
+| 14 | Post-merge inspection without detailed diff | 1 | GUI-349 |
+| 15 | Pytest hook: "0 failures = success" | 1 | loop-2 |
+| 16 | Required ticket template | 1 | loop-2 |
+| 17 | Summarize git worktree list automatically | 1 | loop-2 |
+| 18 | test-impact skill (diff -> affected tests) | 1 | loop-2 |
+| 19 | Use RTK only for voluminous outputs | 1 | loop-2 |
 
-_Total: 82 mentions -> 20 improvements in the ranking. 5 improvements (24 mentions) already applied. See `../0005-apply-harness-improvements/implementations.md`._
+_Total: 22 mentions -> 15 improvements in the ranking. 10 improvements (84 mentions) already applied. See `../0005-apply-harness-improvements/implementations.md`._

@@ -20,6 +20,7 @@ Minimal, on-demand reading:
 - Grep/graphify first — open only the files the issue names. Don't read docs out of habit.
 - Read `README.md` / `ARCHITECTURE.md` / `API.md` / `DATABASE.md` only when the change is ambiguous about contract, architecture, auth, or schema. A bug fix that already carries `file:line` does NOT trigger reading those 4 docs.
 - When the issue gives `file:line`, read `line-30..line+30` in a single call — never the whole file in multiple chunks.
+- After a search identifies a target, read only a bounded nearby window and use narrow filters for greps and logs; inspect `git diff --stat` and `git diff --name-only` before a full diff. Expand output only when the smaller evidence cannot answer the task; full reads remain allowed when needed for correctness.
 
 ## 1. Think Before Coding
 
@@ -90,6 +91,8 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+Before a long implementation, test, commit, or merge phase, retain a compact state of changed files, decisions, and verification commands instead of rereading or reposting prior raw output. Apply this only across phase changes; reopen source evidence when a new decision requires it.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -97,6 +100,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ## 6. RTK
 
 RTK is active — every shell command is auto-rewritten for token savings. See .opencode/RTK.md.
+
+### Preflight Failure-Prone Commands
+
+- Before a command likely to fail, take a long time, or produce costly output, confirm the target path, required environment, and smallest useful invocation. For structural questions, start with targeted static inspection.
+- Do not preflight trivial commands whose path and environment are already known to work.
+- Within a task, do not repeat an identical read, `rg`, status/diff, or validation call unless its scope, arguments, working tree, or external state changed; reuse the recorded conclusion. Rerun it when an edit or state change makes verification necessary.
 
 ## 7. Others
 
@@ -125,6 +134,7 @@ When the user types `/graphify`, use the installed graphify skill or instruction
 
 Rules:
 - For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- When a task lacks an exact file target, start with a specific `rg` or `graphify query` using its symbol, route, or error, then open only directly implicated files. Broaden graph exploration only when that focused query is insufficient.
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
