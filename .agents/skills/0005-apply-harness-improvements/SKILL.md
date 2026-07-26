@@ -1,11 +1,11 @@
 ---
-name: 0004-apply-harness-improvements
-description: Applies the accumulated harness-improvement ranking maintained by skill 0005. Selects improvements with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness improvements, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0005.
+name: 0005-apply-harness-improvements
+description: Applies the accumulated harness-improvement ranking maintained by skill 0004. Selects improvements with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness improvements, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0004.
 ---
 
 # Apply Harness Improvements
 
-Close the loop from skill **0005**: take the ranking in `improvements-harness.md`, turn generic proposals into concrete actions, and apply improvements to the harness that guides **Codex** workers. Stay conservative: lowest risk first, one improvement at a time, review before continuing.
+Close the loop from skill **0004**: take the ranking in `improvements-harness.md`, turn generic proposals into concrete actions, and apply improvements to the harness that guides **Codex** workers. Stay conservative: lowest risk first, one improvement at a time, review before continuing.
 
 ## Scope
 
@@ -27,8 +27,8 @@ Ineligible:
 
 ## Files
 
-- Ranking: `.agents/skills/0005-consolidate-harness-improvements/improvements-harness.md` (locate with `find .agents/skills -name improvements-harness.md` if needed).
-- Log: `.agents/skills/0004-apply-harness-improvements/implementations.md`.
+- Ranking: `.agents/skills/0004-consolidate-harness-improvements/improvements-harness.md` (locate with `find .agents/skills -name improvements-harness.md` if needed).
+- Log: `.agents/skills/0005-apply-harness-improvements/implementations.md`.
 - Skills: always write to `.agents/skills/...`. If `.claude/skills` exists as a symlink, do not duplicate anything.
 
 ## Done

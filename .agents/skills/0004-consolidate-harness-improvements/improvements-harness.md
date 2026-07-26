@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-26. Processed sources: loop-2-2026-07-24, docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-109.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md._
 
-_5 improvements (24 mentions) have already been applied to the harness by skill `0004-apply-harness-improvements` and removed from this ranking. See `../0004-apply-harness-improvements/implementations.md`._
+_5 improvements (24 mentions) have already been applied to the harness by skill `0005-apply-harness-improvements` and removed from this ranking. See `../0005-apply-harness-improvements/implementations.md`._
 
 ## Improvements
 
@@ -151,4 +151,4 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 | 19 | test-impact skill (diff -> affected tests) | 1 | loop-2 |
 | 20 | Use RTK only for voluminous outputs | 1 | loop-2 |
 
-_Total: 82 mentions -> 20 improvements in the ranking. 5 improvements (24 mentions) already applied. See `../0004-apply-harness-improvements/implementations.md`._
+_Total: 82 mentions -> 20 improvements in the ranking. 5 improvements (24 mentions) already applied. See `../0005-apply-harness-improvements/implementations.md`._

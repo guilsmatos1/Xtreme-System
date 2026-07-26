@@ -1,5 +1,5 @@
 ---
-name: 0005-consolidate-harness-improvements
+name: 0004-consolidate-harness-improvements
 description: Consolidates harness-improvement suggestions produced by worktree runs. Reads versioned GUI-*.md reports in docs/0003-analyze-token-efficiency/ and, for legacy runs, the latest .loop folder; groups equivalent improvements through semantic deduplication and maintains an accumulated ranking (improvements-harness.md, inside this skill). Use when asked to consolidate harness suggestions, rank run improvements, or feed the continuous-improvement loop.
 ---
 

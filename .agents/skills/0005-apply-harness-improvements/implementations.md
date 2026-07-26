@@ -1,6 +1,6 @@
 # Harness Improvement Implementations
 
-Record of what skill `0004-apply-harness-improvements` actually applied to the Codex worker harness. Each block corresponds to an improvement removed from the ranking in `improvements-harness.md`.
+Record of what skill `0005-apply-harness-improvements` actually applied to the Codex worker harness. Each block corresponds to an improvement removed from the ranking in `improvements-harness.md`.
 
 ---
 

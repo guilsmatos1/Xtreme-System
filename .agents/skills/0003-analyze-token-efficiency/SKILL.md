@@ -1,6 +1,6 @@
 ---
 name: 0003-analyze-token-efficiency
-description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0005.
+description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0004.
 ---
 
 # Analyze Token Efficiency
@@ -58,7 +58,7 @@ fi
 mkdir -p "$(dirname "$OUT")"
 ```
 
-Write only the canonical format consumed by `0005-consolidate-harness-improvements`:
+Write only the canonical format consumed by `0004-consolidate-harness-improvements`:
 
 ```markdown
 # Token Efficiency — <issue>
