@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
@@ -78,8 +78,8 @@ class VeiculoCreate(BaseModel):
     placa: str
     chassi: str | None = None
     renavam: str | None = None
-    km: int | None = None
-    preco: Decimal
+    km: int | None = Field(default=None, ge=0)
+    preco: Decimal = Field(gt=0)
     procuracao: str | None = None
     proprietario_registrado: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
@@ -97,8 +97,8 @@ class VeiculoUpdate(BaseModel):
     placa: str | None = None
     chassi: str | None = None
     renavam: str | None = None
-    km: int | None = None
-    preco: Decimal | None = None
+    km: int | None = Field(default=None, ge=0)
+    preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
     proprietario_registrado: str | None = None
     status: StatusVeiculo | None = None
