@@ -1,9 +1,10 @@
 """Cliente: enum de tipo, model, schemas e CRUD."""
 
+import re
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -17,6 +18,116 @@ if TYPE_CHECKING:
 class TipoCliente(StrEnum):
     pessoa_fisica = "pessoa_fisica"
     pessoa_juridica = "pessoa_juridica"
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_UF_RE = re.compile(r"^[A-Z]{2}$")
+_CEP_LENGTH = 8
+
+
+class DocumentoClienteInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Documento do cliente inválido")
+
+
+class EmailClienteInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("E-mail do cliente inválido")
+
+
+class EstadoClienteInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Estado do cliente inválido")
+
+
+class CepClienteInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("CEP do cliente inválido")
+
+
+class CampoClienteObrigatorioError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Campo obrigatório")
+
+
+class TipoClienteInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Tipo do cliente inválido")
+
+
+def _trim_texto(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
+def _trim_str(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return value.strip() or None
+
+
+def _trim_texto_obrigatorio(value: Any) -> Any:
+    value = _trim_texto(value)
+    if value is None:
+        raise CampoClienteObrigatorioError
+    return value
+
+
+def _digits(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalizado = re.sub(r"\D", "", value)
+    return normalizado or None
+
+
+def normalizar_documento(value: str | None) -> str | None:
+    return _digits(value)
+
+
+def normalizar_telefone(value: str | None) -> str | None:
+    return _digits(value)
+
+
+def normalizar_cep(value: str | None) -> str | None:
+    cep = _digits(value)
+    if cep is not None and len(cep) != _CEP_LENGTH:
+        raise CepClienteInvalidoError
+    return cep
+
+
+def normalizar_estado(value: str | None) -> str | None:
+    estado = _trim_str(value)
+    if estado is None:
+        return None
+    estado = estado.upper()
+    if not _UF_RE.fullmatch(estado):
+        raise EstadoClienteInvalidoError
+    return estado
+
+
+def normalizar_email(value: str | None) -> str | None:
+    email = _trim_str(value)
+    if email is None:
+        return None
+    email = email.lower()
+    if not _EMAIL_RE.fullmatch(email):
+        raise EmailClienteInvalidoError
+    return email
+
+
+def _validar_documento_por_tipo(
+    documento: str | None, tipo: TipoCliente | None
+) -> None:
+    if documento is None:
+        return
+    tamanhos_validos = (
+        {11, 14} if tipo is None else {11 if tipo is TipoCliente.pessoa_fisica else 14}
+    )
+    if len(documento) not in tamanhos_validos:
+        raise DocumentoClienteInvalidoError
 
 
 class Cliente(Base):
@@ -53,6 +164,53 @@ class ClienteCreate(BaseModel):
     cep: str | None = None
     profissao: str | None = None
 
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _normalizar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto_obrigatorio(value)
+
+    @field_validator("documento", mode="before")
+    @classmethod
+    def _normalizar_documento(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_documento(value)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _normalizar_email(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_email(value)
+
+    @field_validator("telefone", mode="before")
+    @classmethod
+    def _normalizar_telefone(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_telefone(value)
+
+    @field_validator("endereco", "bairro", "cidade", "profissao", mode="before")
+    @classmethod
+    def _normalizar_texto_opcional(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto(value)
+
+    @field_validator("estado", mode="before")
+    @classmethod
+    def _normalizar_estado(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_estado(value)
+
+    @field_validator("cep", mode="before")
+    @classmethod
+    def _normalizar_cep(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_cep(value)
+
+    @model_validator(mode="after")
+    def _validar_documento(self) -> "ClienteCreate":
+        _validar_documento_por_tipo(self.documento, self.tipo)
+        return self
+
 
 class ClienteUpdate(BaseModel):
     nome: str | None = None
@@ -66,6 +224,57 @@ class ClienteUpdate(BaseModel):
     estado: str | None = None
     cep: str | None = None
     profissao: str | None = None
+
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _normalizar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto_obrigatorio(value)
+
+    @field_validator("documento", mode="before")
+    @classmethod
+    def _normalizar_documento(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_documento(value)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _normalizar_email(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_email(value)
+
+    @field_validator("telefone", mode="before")
+    @classmethod
+    def _normalizar_telefone(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_telefone(value)
+
+    @field_validator("endereco", "bairro", "cidade", "profissao", mode="before")
+    @classmethod
+    def _normalizar_texto_opcional(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto(value)
+
+    @field_validator("estado", mode="before")
+    @classmethod
+    def _normalizar_estado(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_estado(value)
+
+    @field_validator("cep", mode="before")
+    @classmethod
+    def _normalizar_cep(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_cep(value)
+
+    @model_validator(mode="after")
+    def _validar_documento(self) -> "ClienteUpdate":
+        if "documento" in self.model_fields_set and self.documento is None:
+            raise DocumentoClienteInvalidoError
+        if "tipo" in self.model_fields_set and self.tipo is None:
+            raise TipoClienteInvalidoError
+        _validar_documento_por_tipo(self.documento, self.tipo)
+        return self
 
 
 class ClienteRead(BaseModel):
