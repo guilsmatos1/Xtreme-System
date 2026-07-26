@@ -1,10 +1,11 @@
 """Veículo: enums, model (com FKs), schemas e CRUD."""
 
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
@@ -31,6 +32,56 @@ class StatusVeiculo(StrEnum):
 class TipoEntrada(StrEnum):
     compra = "compra"
     consignacao = "consignacao"
+
+
+_PLACA_RE = re.compile(r"^[A-Z]{3}(?:[0-9]{4}|[0-9][A-Z][0-9]{2})$")
+_CHASSI_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
+_RENAVAM_RE = re.compile(r"^[0-9]{11}$")
+
+
+class PlacaInvalidaError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Placa inválida")
+
+
+class ChassiInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Chassi inválido")
+
+
+class RenavamInvalidoError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("RENAVAM inválido")
+
+
+def _limpar_identificador(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalizado = re.sub(r"[^0-9A-Za-z]", "", value).upper()
+    return normalizado or None
+
+
+def normalizar_placa(value: str) -> str:
+    placa = _limpar_identificador(value)
+    if placa is None or not _PLACA_RE.fullmatch(placa):
+        raise PlacaInvalidaError
+    return placa
+
+
+def normalizar_chassi(value: str | None) -> str | None:
+    chassi = _limpar_identificador(value)
+    if chassi is not None and not _CHASSI_RE.fullmatch(chassi):
+        raise ChassiInvalidoError
+    return chassi
+
+
+def normalizar_renavam(value: str | None) -> str | None:
+    renavam = re.sub(r"\D", "", value) if value is not None else None
+    if renavam == "":
+        return None
+    if renavam is not None and not _RENAVAM_RE.fullmatch(renavam):
+        raise RenavamInvalidoError
+    return renavam
 
 
 class Veiculo(Base):
@@ -87,6 +138,24 @@ class VeiculoCreate(BaseModel):
     revisao: bool = False
     investidor_id: int
 
+    @field_validator("placa", mode="before")
+    @classmethod
+    def _normalizar_placa(cls, value: str) -> str:
+        _ = cls
+        return normalizar_placa(value)
+
+    @field_validator("chassi", mode="before")
+    @classmethod
+    def _normalizar_chassi(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_chassi(value)
+
+    @field_validator("renavam", mode="before")
+    @classmethod
+    def _normalizar_renavam(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_renavam(value)
+
 
 class VeiculoUpdate(BaseModel):
     tipo: TipoVeiculo | None = None
@@ -105,6 +174,24 @@ class VeiculoUpdate(BaseModel):
     tipo_entrada: TipoEntrada | None = None
     revisao: bool | None = None
     investidor_id: int | None = None
+
+    @field_validator("placa", mode="before")
+    @classmethod
+    def _normalizar_placa(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_placa(value) if value is not None else None
+
+    @field_validator("chassi", mode="before")
+    @classmethod
+    def _normalizar_chassi(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_chassi(value)
+
+    @field_validator("renavam", mode="before")
+    @classmethod
+    def _normalizar_renavam(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_renavam(value)
 
 
 class VeiculoRead(BaseModel):
@@ -164,7 +251,11 @@ def delete(session: Session, obj: Veiculo, actor_id: int | None = None) -> None:
 
 
 def get_by_placa(session: Session, placa: str) -> Veiculo | None:
-    return session.query(Veiculo).filter_by(placa=placa).one_or_none()
+    try:
+        placa_normalizada = normalizar_placa(placa)
+    except PlacaInvalidaError:
+        return None
+    return session.query(Veiculo).filter_by(placa=placa_normalizada).one_or_none()
 
 
 def search(session: Session, term: str, column: str | None = None) -> list[Veiculo]:

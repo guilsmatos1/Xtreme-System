@@ -30,7 +30,7 @@ def session() -> Iterator[Session]:
 @pytest.fixture
 def unique_plate() -> str:
     """Generate unique license plates for parallel test execution."""
-    return uuid.uuid4().hex[:7].upper()
+    return f"TST{uuid.uuid4().int % 10000:04d}"
 
 
 def _seed_usuario(session: Session) -> usuario.Usuario:
@@ -150,12 +150,58 @@ def test_schemas_rejeitam_valores_financeiros_e_operacionais_impossiveis() -> No
         )
 
 
+def test_veiculo_schema_normaliza_identificadores() -> None:
+    dados = veiculo.VeiculoCreate(
+        tipo=veiculo.TipoVeiculo.carro,
+        modelo="Gol",
+        cor="Branco",
+        ano=2018,
+        placa="abc-1d23",
+        chassi="9bw zzz377 vt004251",
+        renavam="001.234.567-89",
+        km=70000,
+        preco=Decimal("32000.00"),
+        investidor_id=1,
+    )
+
+    assert dados.placa == "ABC1D23"
+    assert dados.chassi == "9BWZZZ377VT004251"
+    assert dados.renavam == "00123456789"
+
+
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("placa", "AB12345"),
+        ("chassi", "9BWZZZ377VT00425I"),
+        ("renavam", "1234567890"),
+    ],
+)
+def test_veiculo_schema_rejeita_identificadores_invalidos(
+    campo: str, valor: str
+) -> None:
+    dados = {
+        "tipo": veiculo.TipoVeiculo.carro,
+        "modelo": "Gol",
+        "cor": "Branco",
+        "ano": 2018,
+        "placa": "ABC1D23",
+        "km": 70000,
+        "preco": Decimal("32000.00"),
+        "investidor_id": 1,
+        campo: valor,
+    }
+
+    with pytest.raises(ValidationError):
+        veiculo.VeiculoCreate(**dados)
+
+
 def test_veiculo_search_usa_busca_textual_ampla_e_por_coluna(
     session: Session, unique_plate: str
 ) -> None:
     _seed_usuario(session)
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
-    placa_extra = uuid.uuid4().hex[:7].upper()
+    placa_extra = f"EXT{uuid.uuid4().int % 10000:04d}"
     veiculo.create(
         session,
         veiculo.VeiculoCreate(
