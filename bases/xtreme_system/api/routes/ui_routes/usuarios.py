@@ -7,8 +7,9 @@ from fastapi import Form, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import sort_key as _sort_key
+from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
-from xtreme_system.api.route_factories import _csv_response, _sort_key
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario

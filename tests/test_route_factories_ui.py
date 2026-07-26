@@ -16,13 +16,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
-from xtreme_system.api.crud_ui.query import query_list, sorted_list
-from xtreme_system.api.deps import get_ui_user
-from xtreme_system.api.route_factories import (
-    _sort_key,
-    register_crud_ui_routes,
-    register_ui_simples,
+from xtreme_system.api.crud_ui.query import (
+    query_list,
+    sorted_list,
 )
+from xtreme_system.api.crud_ui.query import (
+    sort_key as _sort_key,
+)
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
+from xtreme_system.api.crud_ui.simple import register_ui_simples
+from xtreme_system.api.deps import get_ui_user
 from xtreme_system.api.routes.ui_routes.investidores import (
     MetricasInvestidor,
     ordenar_investidores,

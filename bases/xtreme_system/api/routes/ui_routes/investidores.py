@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import sort_key as _sort_key
+from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
 from xtreme_system.api.deps import (
     SessionDep,
@@ -20,7 +22,6 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.route_factories import _csv_response, _sort_key
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor

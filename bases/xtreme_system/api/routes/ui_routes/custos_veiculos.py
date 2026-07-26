@@ -7,8 +7,9 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import sort_key as _sort_key
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.deps import require_operacao, templates
-from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.setup import app
 from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.veiculo import core as veiculo
