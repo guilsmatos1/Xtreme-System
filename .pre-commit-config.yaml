@@ -100,7 +100,7 @@ repos:
 
       - id: pytest
         name: pytest
-        entry: env XTREME_ALLOW_SQLITE_TEST_DB=1 uv run python -m pytest tests/ -q
+        entry: env XTREME_ALLOW_SQLITE_TEST_DB=1 uv run python -m pytest tests/ -q -n 4
         language: system
         pass_filenames: false
         always_run: true

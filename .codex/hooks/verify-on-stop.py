@@ -42,7 +42,7 @@ CHECKS = [
     ("mypy", ["uv", "run", "mypy"], {}),
     (
         "pytest",
-        ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", "pytest"],
+        ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", "pytest", "-n", "4"],
         {},
     ),
 ]
