@@ -19,7 +19,6 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
     pending_upload_paths,
-    remover_orfaos,
     salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
@@ -44,8 +43,6 @@ def _cliente_vendedor_modal(
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     documentos = []
     if item_compra is not None:
-        docs = list(item_compra.cliente.documentos)
-        remover_orfaos(session, docs, imagem_documento_cliente.delete)
         session.refresh(item_compra.cliente)
         documentos = imagem_documento_cliente.list_by_cliente(
             session, item_compra.cliente_id

@@ -13,7 +13,6 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
     pending_upload_paths,
-    remover_orfaos,
     salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
@@ -42,7 +41,6 @@ def _imagem_modal(
     action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    remover_orfaos(session, item.imagens, imagem_veiculo.delete)
     session.refresh(item)
     return templates.TemplateResponse(
         request,

@@ -35,7 +35,6 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
     pending_upload_paths,
-    remover_orfaos,
     salvar_anexos_entidade,
     salvar_arquivos,
 )
@@ -140,8 +139,6 @@ def _comprovantes_modal(
     action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(compra.get(session, compra_id), "Compra")
-    comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
-    remover_orfaos(session, comprovantes, imagem_comprovante_compra.delete)
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
     return templates.TemplateResponse(
         request,

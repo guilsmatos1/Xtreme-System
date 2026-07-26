@@ -28,7 +28,6 @@ from xtreme_system.api.deps import (
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
-    remover_orfaos,
 )
 from xtreme_system.api.routes.workflows import validate_veiculo_fks
 from xtreme_system.api.setup import app
@@ -282,8 +281,6 @@ def _detalhe_veiculo(
     custos = [c for c in custo_veiculo.list_all(session) if c.veiculo_id == item_id]
     documentos_vendedor = []
     if compra_atual is not None:
-        docs = list(compra_atual.cliente.documentos)
-        remover_orfaos(session, docs, imagem_documento_cliente.delete)
         session.refresh(compra_atual.cliente)
         documentos_vendedor = imagem_documento_cliente.list_by_cliente(
             session, compra_atual.cliente_id
