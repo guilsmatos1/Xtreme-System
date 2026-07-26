@@ -1,146 +1,146 @@
 ---
 name: 0004-apply-harness-improvements
-description: Aplica o ranking acumulado de melhorias de harness mantido pela skill 0003. Seleciona melhorias com mais de 3 menções, refina propostas, aplica uma por vez via subagent Codex, revisa, registra em implementations.md e remove do ranking. Use quando pedirem para aplicar melhorias de harness, implementar o ranking, colocar em prática dicas consolidadas ou fechar o ciclo iniciado pela 0003.
+description: Applies the accumulated harness-improvement ranking maintained by skill 0003. Selects improvements with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness improvements, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0003.
 ---
 
 # Apply Harness Improvements
 
-Fecha o ciclo da skill **0003**: pega o ranking em `improvements-harness.md`, transforma propostas genéricas em ações concretas e aplica melhorias no harness que orienta workers **Codex**. Seja conservador: menor risco primeiro, uma melhoria por vez, revisão antes de prosseguir.
+Close the loop from skill **0003**: take the ranking in `improvements-harness.md`, turn generic proposals into concrete actions, and apply improvements to the harness that guides **Codex** workers. Stay conservative: lowest risk first, one improvement at a time, review before continuing.
 
-## Escopo
+## Scope
 
-O harness aqui é a infraestrutura que guia a execução dos workers Codex, não o app `xtreme-system`.
+Here, the harness is the infrastructure that guides Codex workers, not the `xtreme-system` app.
 
-Alvos válidos, do menor para o maior risco:
+Valid targets, from lowest to highest risk:
 
-1. `AGENTS.md` — orientação lida pelo Codex. Preferencial.
-2. Skills em `.agents/skills/` — texto/comportamento de skills usadas pelo Codex.
-3. RTK em `/Users/guilsmatos/.codex/RTK.md` ou referências locais equivalentes — regras de economia/reescrita de comandos.
-4. Scripts/orquestração que disparam workers Codex, como `process_issue.py`/prompt injetado — alto risco.
-5. Hooks/configurações Codex, quando existirem no repo ou em `$CODEX_HOME` e forem claramente usados pelo fluxo — alto risco.
+1. `AGENTS.md` — guidance read by Codex. Preferred target.
+2. Skills in `.agents/skills/` — text or behavior of skills used by Codex.
+3. RTK in `/Users/guilsmatos/.codex/RTK.md` or equivalent local references — command-saving/rewrite rules.
+4. Scripts/orchestration that start Codex workers, such as `process_issue.py` or an injected prompt — high risk.
+5. Codex hooks/configuration, when present in the repo or `$CODEX_HOME` and clearly used by the flow — high risk.
 
-Inelegível:
+Ineligible:
 
-- Código de produção do app (`bases/`, `components/`, migrations, tests do app etc.).
-- Qualquer melhoria que só ajude outro executor e não altere o que o Codex lê/usa.
-- Mudança especulativa sem caminho de verificação.
+- Production app code (`bases/`, `components/`, migrations, app tests, etc.).
+- Any improvement that only helps another executor and does not change what Codex reads/uses.
+- Speculative changes with no verification path.
 
-## Arquivos
+## Files
 
-- Ranking: `.agents/skills/0003-consolidate-harness-improvements/improvements-harness.md` (localize com `find .agents/skills -name improvements-harness.md` se necessário).
-- Registro: `.agents/skills/0004-apply-harness-improvements/implementations.md`.
-- Skills: grave sempre em `.agents/skills/...`. Se `.claude/skills` existir como symlink, não duplique nada.
+- Ranking: `.agents/skills/0003-consolidate-harness-improvements/improvements-harness.md` (locate with `find .agents/skills -name improvements-harness.md` if needed).
+- Log: `.agents/skills/0004-apply-harness-improvements/implementations.md`.
+- Skills: always write to `.agents/skills/...`. If `.claude/skills` exists as a symlink, do not duplicate anything.
 
 ## Done
 
-1. Melhorias com **menções > 3** tiveram a `Solução` refinada no ranking.
-2. Melhorias elegíveis foram ordenadas por risco crescente e aplicadas uma por vez.
-3. Cada aplicação aprovada foi registrada em `implementations.md`.
-4. Melhorias aplicadas foram removidas do ranking, com tabela/numeração/total atualizados.
+1. Improvements with **mentions > 3** had their `Solução` refined in the ranking.
+2. Eligible improvements were sorted by increasing risk and applied one at a time.
+3. Each approved application was recorded in `implementations.md`.
+4. Applied improvements were removed from the ranking, with table/numbering/total updated.
 
-## Fluxo
+## Flow
 
-### 1. Selecionar
+### 1. Select
 
-- Leia a tabela `Ranking por menções`.
-- Selecione apenas itens com menções **> 3** (3 exatas ficam fora).
-- Ordene por menções desc; empate por título.
-- Informe ao usuário a lista selecionada antes de editar.
+- Read the `Ranking por menções` table.
+- Select only items with **mentions > 3** (exactly 3 stays out).
+- Sort by mentions desc; ties by title.
+- Tell the user the selected list before editing.
 
-### 2. Refinar Soluções
+### 2. Refine Solutions
 
-Para cada item selecionado, reescreva só o campo `Solução` ou adicione `**Proposta refinada:**`, mantendo título e contagem.
+For each selected item, rewrite only the `Solução` field or add `**Proposta refinada:**`, keeping title and count unchanged.
 
-A proposta refinada deve dizer:
+The refined proposal must state:
 
-- arquivo(s) exatos que o Codex consome;
-- texto/regra/comportamento a alterar;
-- gatilho e limite de aplicação;
-- como verificar.
+- exact file(s) consumed by Codex;
+- text/rule/behavior to change;
+- trigger and boundary for applying it;
+- how to verify it.
 
-### 3. Classificar Risco
+### 3. Classify Risk
 
-- Baixo: texto aditivo em `AGENTS.md` ou skill; não muda automação.
-- Médio: muda comportamento de skill existente ou regra RTK.
-- Alto: scripts de orquestração, prompts globais, hooks/config automática.
+- Low: additive text in `AGENTS.md` or a skill; no automation changes.
+- Medium: changes behavior of an existing skill or RTK rule.
+- High: orchestration scripts, global prompts, hooks, automatic config.
 
-Aplique baixo antes de médio. Para alto risco, deixe a proposta pronta e peça confirmação antes de editar.
+Apply low before medium. For high-risk items, leave the proposal ready and ask for confirmation before editing.
 
-### 4. Aplicar Uma Por Vez
+### 4. Apply One At A Time
 
-Para cada melhoria elegível:
+For each eligible improvement:
 
-1. Dispare um subagent síncrono para implementar apenas aquela melhoria.
-2. Revise você mesmo o resultado:
-   - `git status --short` e `git diff --stat`;
-   - só arquivos de harness esperados mudaram;
-   - nada do app foi tocado;
-   - a mudança corresponde à proposta refinada;
-   - Markdown/config/scripts continuam coerentes.
-3. Se reprovar, corrija pontualmente ou reenvie ao subagent com feedback específico.
-4. Se aprovar, registre em `implementations.md` e remova do ranking antes de passar ao próximo item.
+1. Start a synchronous subagent to implement only that improvement.
+2. Review the result yourself:
+   - `git status --short` and `git diff --stat`;
+   - only expected harness files changed;
+   - no app code was touched;
+   - the change matches the refined proposal;
+   - Markdown/config/scripts remain coherent.
+3. If review fails, fix narrowly or send the subagent specific feedback.
+4. If review passes, record it in `implementations.md` and remove it from the ranking before moving to the next item.
 
-Nunca aplique duas melhorias em paralelo.
+Never apply two improvements in parallel.
 
-#### Prompt Enxuto Para Subagent
+#### Lean Subagent Prompt
 
 ```text
-Implemente UMA melhoria de harness no repo xtreme-system.
+Implement ONE harness improvement in the xtreme-system repo.
 
-MELHORIA: <título>
-PROPOSTA REFINADA:
-<colar solução refinada>
+IMPROVEMENT: <title>
+REFINED PROPOSAL:
+<paste refined solution>
 
-ALVO(S): <arquivo(s) exatos>
-RISCO: <baixo|médio|alto>
+TARGET(S): <exact file(s)>
+RISK: <low|medium|high>
 
-Regras:
-- Mude somente os alvos indicados.
-- Não toque em código do app: bases/, components/, migrations, tests do app.
-- A melhoria precisa afetar o que workers Codex leem/usam.
-- Preserve estilo e idioma existentes.
-- Não commite.
+Rules:
+- Change only the listed targets.
+- Do not touch app code: bases/, components/, migrations, app tests.
+- The improvement must affect what Codex workers read/use.
+- Preserve existing style and language.
+- Do not commit.
 
-Entregue: arquivos alterados, resumo curto e como verificar.
+Deliver: changed files, short summary, and how to verify.
 ```
 
-### 5. Registrar e Limpar Ranking
+### 5. Record and Clean Ranking
 
-Após cada melhoria aprovada, acrescente em `implementations.md`:
+After each approved improvement, append this to `implementations.md`:
 
 ```markdown
-### <Título> — <data>
-- **Faixa de risco:** baixo | médio | alto
-- **Arquivos alterados:** <caminhos>
-- **O que mudou:** <resumo>
-- **Como verificar:** <checagem/comando>
-- **Como reverter:** <arquivo + trecho, ou git revert do commit>
-- **Origem:** improvements-harness.md #<posição> (<menções> menções)
+### <Title> — <date>
+- **Risk level:** low | medium | high
+- **Changed files:** <paths>
+- **What changed:** <summary>
+- **How to verify:** <check/command>
+- **How to revert:** <file + section, or git revert of commit>
+- **Source:** improvements-harness.md #<position> (<mentions> mentions)
 ```
 
-Depois remova essa melhoria de `improvements-harness.md`:
+Then remove that improvement from `improvements-harness.md`:
 
-- apague a seção do item;
-- apague a linha da tabela;
-- renumere entradas restantes;
-- ajuste total/rodapé e `_Última atualização:_`.
+- delete the item section;
+- delete the table row;
+- renumber remaining entries;
+- update total/footer and `_Última atualização:_`.
 
-Faça isso incrementalmente para manter consistência se a execução for interrompida.
+Do this incrementally so the state stays consistent if execution is interrupted.
 
-## Relatório Final
+## Final Report
 
-Informe:
+Report:
 
-- itens selecionados e quantos foram refinados;
-- plano por risco: aplicado, adiado por alto risco ou inelegível;
-- para cada aplicado: título, arquivos e veredito da revisão;
-- quantas melhorias restam no ranking e onde está o registro.
+- selected items and how many were refined;
+- risk plan: applied, delayed as high risk, or ineligible;
+- for each applied item: title, files, and review verdict;
+- how many improvements remain in the ranking and where the log is.
 
 ## Guardrails
 
-- Codex é o executor alvo.
-- Só harness; nunca código do app.
-- Alto risco exige confirmação.
-- Uma melhoria por vez, com revisão.
-- Não commit/merge sem pedido explícito.
-- Idempotência: se já está em `implementations.md`, não reaplique.
+- Codex is the target executor.
+- Harness only; never app code.
+- High risk requires confirmation.
+- One improvement at a time, with review.
+- Do not commit/merge without an explicit request.
+- Idempotency: if it is already in `implementations.md`, do not reapply it.
