@@ -1,6 +1,8 @@
+{% import "_macros.html" as ui %}
 <form hx-post="/ui/usuarios/{{ usuario.id }}/perfil"
       hx-target="#linhas" hx-swap="outerHTML"
-      style="display:flex;align-items:flex-end;gap:var(--s-3);margin-top:var(--s-3);padding:var(--s-3);background:var(--surface-2);border-radius:var(--r)">
+      style="display:flex;{% if erro %}flex-direction:column;align-items:stretch;{% else %}align-items:flex-end;{% endif %}gap:var(--s-3);margin-top:var(--s-3);padding:var(--s-3);background:var(--surface-2);border-radius:var(--r)">
+  {% if erro %}{{ ui.alert(erro) }}{% endif %}
   <label class="field" style="margin:0;flex:1">
     <span class="field__label">Perfil para {{ usuario.username }}</span>
     <select class="select" name="perfil_id">

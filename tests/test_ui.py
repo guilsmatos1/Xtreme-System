@@ -2055,6 +2055,29 @@ def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     assert resp.status_code == 303
 
 
+def test_ui_admin_rejeita_perfil_inexistente_ao_alterar_usuario(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "perfil_invalido", "senha": "abc", "papel": "funcionario"},
+    )
+    token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
+    token = token_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    usuarios = client.get("/usuarios", headers=headers).json()
+    usuario_id = next(u["id"] for u in usuarios if u["username"] == "perfil_invalido")
+
+    resp = client.post(
+        f"/ui/usuarios/{usuario_id}/perfil",
+        data={"perfil_id": "999999"},
+    )
+
+    assert resp.status_code == 400
+    assert "Perfil inválido" in resp.text
+
+
 def test_ui_admin_edita_usuario_e_troca_senha_no_modal(client: TestClient) -> None:
     """O modal de edição permite atualizar dados e redefinir a senha."""
     _login_admin(client)
