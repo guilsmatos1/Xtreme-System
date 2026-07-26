@@ -42,13 +42,22 @@ def _pg_env() -> dict[str, str]:
     return env
 
 
-def dump_database() -> bytes:
-    cmd = ["pg_dump", *_pg_args(), "-Fc", "-Z", "6"]
+def dump_database_to_file(output_path: str | Path) -> None:
+    cmd = ["pg_dump", *_pg_args(), "-Fc", "-Z", "6", "-f", str(output_path)]
     result = subprocess.run(cmd, env=_pg_env(), capture_output=True, check=False)  # noqa: S603
     if result.returncode != 0:
         stderr = result.stderr.decode() if result.stderr else "pg_dump falhou"
         raise ExportacaoError(stderr)
-    return result.stdout
+
+
+def dump_database() -> bytes:
+    with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
+        tmp_path = f.name
+    try:
+        dump_database_to_file(tmp_path)
+        return Path(tmp_path).read_bytes()
+    finally:
+        os.unlink(tmp_path)
 
 
 def _listar_tabelas_do_dump(tmp_path: str) -> set[str]:
@@ -78,11 +87,30 @@ def _validar_dump(tmp_path: str) -> None:
 
 
 def _salvar_backup_pre_restore() -> None:
-    dump = dump_database()
     backup_dir = Path(get_settings().backup_dir)
     backup_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    (backup_dir / f"pre_restore_{ts}.dump").write_bytes(dump)
+    dump_database_to_file(backup_dir / f"pre_restore_{ts}.dump")
+
+
+def restore_database_from_file(dump_path: str | Path) -> None:
+    dump_path = Path(dump_path)
+    _validar_dump(str(dump_path))
+    _salvar_backup_pre_restore()
+    cmd = [
+        "pg_restore",
+        *_pg_args(),
+        "--clean",
+        "--if-exists",
+        "--no-owner",
+        "--no-acl",
+        "--single-transaction",
+        str(dump_path),
+    ]
+    result = subprocess.run(cmd, env=_pg_env(), capture_output=True, check=False)  # noqa: S603
+    if result.returncode != 0:
+        stderr = result.stderr.decode() if result.stderr else "pg_restore falhou"
+        raise ExportacaoError(stderr)
 
 
 def restore_database(dump: bytes) -> None:
@@ -90,21 +118,6 @@ def restore_database(dump: bytes) -> None:
         f.write(dump)
         tmp_path = f.name
     try:
-        _validar_dump(tmp_path)
-        _salvar_backup_pre_restore()
-        cmd = [
-            "pg_restore",
-            *_pg_args(),
-            "--clean",
-            "--if-exists",
-            "--no-owner",
-            "--no-acl",
-            "--single-transaction",
-            tmp_path,
-        ]
-        result = subprocess.run(cmd, env=_pg_env(), capture_output=True, check=False)  # noqa: S603
-        if result.returncode != 0:
-            stderr = result.stderr.decode() if result.stderr else "pg_restore falhou"
-            raise ExportacaoError(stderr)
+        restore_database_from_file(tmp_path)
     finally:
         os.unlink(tmp_path)

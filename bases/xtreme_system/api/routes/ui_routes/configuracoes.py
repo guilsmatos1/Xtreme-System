@@ -1,15 +1,16 @@
 """HTMX routes for configuracoes."""
 
 import os
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
 import structlog
-from fastapi import File, Form, Request, UploadFile
+from fastapi import BackgroundTasks, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
@@ -244,9 +245,12 @@ def ui_configuracoes_exportar(
     user: UIAdmin,
 ) -> Response:
     _fechar_transacao_da_rota(session, user)
+    with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
+        tmp_path = f.name
     try:
-        dump = exportacao.dump_database()
+        exportacao.dump_database_to_file(tmp_path)
     except exportacao.ExportacaoError as exc:
+        os.unlink(tmp_path)
         config = whatsapp.get_config(session)
         return templates.TemplateResponse(
             request,
@@ -262,10 +266,14 @@ def ui_configuracoes_exportar(
         )
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     filename = f"humpback_dump_{ts}.dump"
-    return Response(
-        content=dump,
+    background = BackgroundTasks()
+    background.add_task(os.unlink, tmp_path)
+    return FileResponse(
+        tmp_path,
         media_type="application/octet-stream",
+        filename=filename,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        background=background,
     )
 
 
@@ -276,10 +284,13 @@ async def ui_configuracoes_importar(
     user: UIAdmin,
     arquivo: Annotated[UploadFile, File()],
 ) -> HTMLResponse:
-    conteudo = await arquivo.read()
+    with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
+        tmp_path = f.name
+        while chunk := await arquivo.read(1024 * 1024):
+            f.write(chunk)
     _fechar_transacao_da_rota(session, user)
     try:
-        await run_in_threadpool(exportacao.restore_database, conteudo)
+        await run_in_threadpool(exportacao.restore_database_from_file, tmp_path)
     except exportacao.ExportacaoError as exc:
         config = whatsapp.get_config(session)
         return templates.TemplateResponse(
@@ -293,6 +304,8 @@ async def ui_configuracoes_importar(
                 "aba": "banco",
             },
         )
+    finally:
+        os.unlink(tmp_path)
     session.expire_all()
     config = whatsapp.get_config(session)
     return templates.TemplateResponse(
