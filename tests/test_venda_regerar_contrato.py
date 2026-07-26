@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.test_documento_contrato_venda import _extract_pdf_text
+from tests.test_documento_contrato_venda import extract_pdf_text
 from xtreme_system.usuario import core as usuario
 
 
@@ -144,5 +144,5 @@ def test_regerar_contrato_reflete_dados_atualizados_da_empresa(
     url = client.get(
         f"/ui/vendas/{venda_id}/contrato", headers=headers, follow_redirects=False
     ).headers["location"]
-    texto = _extract_pdf_text(_caminho(url).read_bytes())
+    texto = extract_pdf_text(_caminho(url).read_bytes())
     assert "Nova Razão Social" in texto

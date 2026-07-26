@@ -114,7 +114,7 @@ _MAGIC_BYTES: dict[str, bytes] = {
 }
 
 
-def _validar_uploads(arquivos: list[UploadFile]) -> str | None:
+def validar_uploads(arquivos: list[UploadFile]) -> str | None:
     """Retorna mensagem de erro do primeiro arquivo inválido, ou None.
 
     Lote inteiro é rejeitado no primeiro erro — nenhum arquivo é salvo.

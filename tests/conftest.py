@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.setup import reset_rate_limiters
-from xtreme_system.database.core import _invoke_post_commit, get_session
+from xtreme_system.database.core import get_session
+from xtreme_system.database.core import invoke_post_commit as run_post_commit_callbacks
 from xtreme_system.usuario import core as usuario
 
 
@@ -97,7 +98,7 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         def override() -> Iterator[Session]:
             yield session
             if invoke_post_commit:
-                _invoke_post_commit(session)
+                run_post_commit_callbacks(session)
 
         app.dependency_overrides[get_session] = override
         kwargs = dict(client_kwargs or {})

@@ -15,8 +15,8 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
-    _validar_uploads,
     arquivo_disponivel,
+    validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     remover_orfaos,
@@ -24,7 +24,7 @@ from xtreme_system.api.routes.ui_routes.uploads import (
 )
 from xtreme_system.cliente.core import Cliente, TipoCliente
 from xtreme_system.compra.core import Compra
-from xtreme_system.database.core import _invoke_post_commit
+from xtreme_system.database.core import invoke_post_commit
 from xtreme_system.imagem_comprovante_compra.core import ImagemComprovanteCompra
 from xtreme_system.investidor.core import Investidor
 from xtreme_system.usuario import core as usuario
@@ -285,7 +285,7 @@ def test_delete_parent_removes_upload_file_after_post_commit(
     db_session.flush()
     assert arquivo.exists()
 
-    _invoke_post_commit(db_session)
+    invoke_post_commit(db_session)
 
     assert not arquivo.exists()
 
@@ -388,35 +388,35 @@ class _MagicFakeUploadFull(_MagicFakeUpload):
 
 
 def test_validar_uploads_aceita_jpeg_valido() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("foto.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF")]  # type: ignore[list-item]
     )
     assert result is None
 
 
 def test_validar_uploads_aceita_png_valido() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("captura.png", b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")]  # type: ignore[list-item]
     )
     assert result is None
 
 
 def test_validar_uploads_aceita_pdf_valido() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("doc.pdf", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3")]  # type: ignore[list-item]
     )
     assert result is None
 
 
 def test_validar_uploads_aceita_webp_valido() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("img.webp", b"RIFF\x00\x00\x00\x00WEBPVP8")]  # type: ignore[list-item]
     )
     assert result is None
 
 
 def test_validar_uploads_rejeita_executavel_renomeado_jpg() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("foto.jpg", b"MZ\x90\x00\x03\x00\x00\x00")]  # type: ignore[list-item]
     )
     assert result is not None
@@ -424,7 +424,7 @@ def test_validar_uploads_rejeita_executavel_renomeado_jpg() -> None:
 
 
 def test_validar_uploads_rejeita_txt_renomeado_png() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("img.png", b"not a png file at all")]  # type: ignore[list-item]
     )
     assert result is not None
@@ -432,7 +432,7 @@ def test_validar_uploads_rejeita_txt_renomeado_png() -> None:
 
 
 def test_validar_uploads_rejeita_exe_renomeado_pdf() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("relatorio.pdf", b"MZ\x90\x00")]  # type: ignore[list-item]
     )
     assert result is not None
@@ -440,7 +440,7 @@ def test_validar_uploads_rejeita_exe_renomeado_pdf() -> None:
 
 
 def test_validar_uploads_ignora_arquivo_sem_filename() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("", b"qualquer")]  # type: ignore[list-item]
     )
     assert result is None
@@ -448,26 +448,26 @@ def test_validar_uploads_ignora_arquivo_sem_filename() -> None:
 
 def test_validar_uploads_mantem_seek_apos_verificacao() -> None:
     arq = _MagicFakeUpload("foto.jpg", b"\xff\xd8\xffABC")
-    _validar_uploads([arq])  # type: ignore[list-item]
+    validar_uploads([arq])  # type: ignore[list-item]
     assert arq.file.tell() == 0
 
 
 def test_validar_uploads_rejeita_arquivo_muito_curto() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("foto.jpg", b"\xff")]  # type: ignore[list-item]
     )
     assert result is not None
 
 
 def test_validar_uploads_rejeita_conteudo_vazio() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("foto.jpg", b"")]  # type: ignore[list-item]
     )
     assert result is not None
 
 
 def test_validar_uploads_ainda_rejeita_extensao_nao_permitida() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [_MagicFakeUpload("script.exe", b"MZ")]  # type: ignore[list-item]
     )
     assert result is not None
@@ -475,7 +475,7 @@ def test_validar_uploads_ainda_rejeita_extensao_nao_permitida() -> None:
 
 
 def test_validar_uploads_ainda_rejeita_content_type_divergente() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [
             _MagicFakeUploadFull(
                 "foto.jpg",
@@ -489,7 +489,7 @@ def test_validar_uploads_ainda_rejeita_content_type_divergente() -> None:
 
 
 def test_validar_uploads_content_type_vazio_nao_bloqueia() -> None:
-    result = _validar_uploads(
+    result = validar_uploads(
         [
             _MagicFakeUploadFull(
                 "foto.jpg",
@@ -507,7 +507,7 @@ def test_validar_uploads_arquivo_sem_tamanho_detecta() -> None:
         def size(self) -> None:  # type: ignore[override]
             return None
 
-    result = _validar_uploads(
+    result = validar_uploads(
         [_NoSizeUpload("foto.jpg", b"\xff\xd8\xffABC")]  # type: ignore[list-item]
     )
     assert result is None

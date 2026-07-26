@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
-    _validar_uploads,
+    validar_uploads,
 )
 from xtreme_system.database.core import register_post_rollback
 
@@ -95,7 +95,7 @@ def salvar_anexos_entidade(
     arquivos: list[UploadFile],
     actor_id: int,
 ) -> str | None:
-    erro = _validar_uploads(arquivos)
+    erro = validar_uploads(arquivos)
     if erro:
         return erro
     session.info["usuario_id"] = actor_id
