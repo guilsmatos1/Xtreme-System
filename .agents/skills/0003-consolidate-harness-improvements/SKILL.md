@@ -9,6 +9,13 @@ Consolida, em um único ranking acumulado, as dicas de melhoria de harness que c
 
 O entregável é o arquivo **`improvements-harness.md`**, gravado **dentro desta pasta de skill**. Ele **acumula histórico** entre execuções — cada fonte nova soma menções sobre o que já existe.
 
+## Regra de eficiência
+
+- Preserve os relatórios brutos; **não apague nem mova** `docs/0005-analyze-token-efficiency/GUI-*.md`.
+- Faça consolidação incremental: liste nomes de arquivos primeiro, compare com `Fontes processadas`, e leia conteúdo **somente** das fontes novas.
+- Não releia relatórios antigos para dedup. Use apenas o estado compacto já resumido em `improvements-harness.md`.
+- Para descobrir fontes novas, use comandos de listagem (`find`, `rg --files`, `git ls-files`) e filtre por caminho; não abra o conteúdo dos `.md` nessa etapa.
+
 ## Objetivo (o que é "done")
 
 - `improvements-harness.md` contém uma seção explicativa por melhoria única + uma tabela final de ranking ordenada por menções (desc).
@@ -19,7 +26,8 @@ O entregável é o arquivo **`improvements-harness.md`**, gravado **dentro desta
 
 ### 1. Localizar fontes alvo
 
-- Primeiro liste `docs/0005-analyze-token-efficiency/GUI-*.md`.
+- Leia `improvements-harness.md` primeiro, se existir, e extraia só o estado acumulado e a linha `Fontes processadas`.
+- Liste `docs/0005-analyze-token-efficiency/GUI-*.md` por nome/caminho.
 - Se houver arquivos ali, processe **todos os relatórios ainda não registrados** em `improvements-harness.md`.
 - Se não houver relatórios versionados novos, use o fallback legado: liste `.loop/loop-*`, escolha a **mais recente** pela data no nome (`loop-N-YYYY-MM-DD` ou similar), desempatando pelo número maior, e processe os `GUI-*.md` dela que ainda não foram registrados.
 - **Exija ao menos uma fonte nova.** Se todos os relatórios já constarem como processados, avise o usuário e pare.
@@ -27,7 +35,7 @@ O entregável é o arquivo **`improvements-harness.md`**, gravado **dentro desta
 
 ### 2. Carregar estado acumulado
 
-- Se `improvements-harness.md` (nesta pasta de skill) já existir, leia-o para obter:
+- Se `improvements-harness.md` (nesta pasta de skill) já existir, use a leitura do passo 1 para obter:
   - a lista canônica de melhorias já registradas, seus títulos e contagens;
   - a lista de **"Fontes processadas"** (arquivos `docs/.../GUI-*.md` ou `.loop/.../GUI-*.md` já contabilizados).
 - Remova da fila qualquer fonte que já conste como processada. Não reprocessar evita contagem dupla. Se o usuário insistir em reprocessar, remova a fonte da lista antes de recontar.
@@ -35,7 +43,7 @@ O entregável é o arquivo **`improvements-harness.md`**, gravado **dentro desta
 
 ### 3. Extrair melhorias das fontes atuais
 
-- Leia **todos** os `GUI-*.md` selecionados no passo 1.
+- Leia **somente** os `GUI-*.md` novos selecionados no passo 1.
 - Formato `GUI-NNN.md` (numerados): blocos
   ```
   Melhoria #N: <Título>
