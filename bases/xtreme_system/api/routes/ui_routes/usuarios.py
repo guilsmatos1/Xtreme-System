@@ -181,6 +181,17 @@ def ui_usuario_perfil_alterar(
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
+    if perfil_id is not None and perfil.get(session, perfil_id) is None:
+        return templates.TemplateResponse(
+            request,
+            "_form_perfil_usuario.html",
+            {
+                "usuario": obj,
+                "perfis": perfil.list_all(session),
+                "erro": "Perfil inválido",
+            },
+            status_code=400,
+        )
     usuario.set_perfil(session, obj, perfil_id, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
