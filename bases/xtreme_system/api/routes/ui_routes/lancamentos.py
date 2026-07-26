@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
+from xtreme_system.api.crud_ui.responses import error_response, ok_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
@@ -42,10 +43,17 @@ def _ctx_lancamentos(
 def _ok_lancamentos(
     request: Request, session: Session, user: usuario.Usuario, investidor_id: int
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    ctx = _ctx_lancamentos(session, investidor_id)
+    return ok_response(
+        templates,
         request,
         "_lancamentos_ok.html",
-        {"user": user, **_ctx_lancamentos(session, investidor_id)},
+        user=user,
+        list_key="lancamentos",
+        lista=ctx["lancamentos"],
+        ctx_list={
+            chave: valor for chave, valor in ctx.items() if chave != "lancamentos"
+        },
     )
 
 
@@ -56,15 +64,17 @@ def _erro_lancamento(
     obj: caixa.LancamentoInvestimento | None,
 ) -> HTMLResponse:
     erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-    return templates.TemplateResponse(
+    return error_response(
+        templates,
         request,
         "_form_lancamento.html",
-        {
+        ctx_form={
             "investidor_id": investidor_id,
-            "lancamento": obj,
             "tipos": list(caixa.TipoLancamento),
-            "erro": erro,
         },
+        item_key="lancamento",
+        item=obj,
+        erro=erro,
         status_code=400,
     )
 

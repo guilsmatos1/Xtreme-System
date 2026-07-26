@@ -11,7 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
-from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.responses import (
+    error_response,
+    ok_response,
+    rollback_integrity_error_response,
+)
 from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.deps import (
     SessionDep,
@@ -260,20 +264,29 @@ def _resolver_veiculo(
 def _erro_compra(
     request: Request, session: Session, user: usuario.Usuario, msg: str
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    return error_response(
+        templates,
         request,
         "_form_compra.html",
-        {**_ctx_form_compra(session), "compra": None, "user": user, "erro": msg},
+        ctx_form=_ctx_form_compra(session),
+        item_key="compra",
+        item=None,
+        erro=msg,
         status_code=400,
+        user=user,
     )
 
 
 def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
     compras = compra.list_all(session)
-    return templates.TemplateResponse(
+    return ok_response(
+        templates,
         request,
         "_compras_ok.html",
-        {"user": user, "compras": compras},
+        user=user,
+        list_key="compras",
+        lista=compras,
+        ctx_list={},
     )
 
 

@@ -12,7 +12,9 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
+    error_response,
     list_response,
+    ok_response,
     rollback_integrity_error_response,
 )
 from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
@@ -360,21 +362,30 @@ def _ok_veiculo(
     request: Request, session: Session, user: usuario.Usuario
 ) -> HTMLResponse:
     veiculos = _listar_veiculos(session)
-    return templates.TemplateResponse(
+    return ok_response(
+        templates,
         request,
         "_veiculos_ok.html",
-        {"user": user, "veiculos": veiculos, **_ctx_lista_veiculos(session, veiculos)},
+        user=user,
+        list_key="veiculos",
+        lista=veiculos,
+        ctx_list=_ctx_lista_veiculos(session, veiculos),
     )
 
 
 def _erro_veiculo(
     request: Request, session: Session, user: usuario.Usuario, msg: str
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    return error_response(
+        templates,
         request,
         "_form_veiculo.html",
-        {**_ctx_form_veiculo(session), "veiculo": None, "user": user, "erro": msg},
+        ctx_form=_ctx_form_veiculo(session),
+        item_key="veiculo",
+        item=None,
+        erro=msg,
         status_code=400,
+        user=user,
     )
 
 
