@@ -403,6 +403,70 @@ def register_edit_route(
         )
 
 
+def write_conflict_response(
+    session: SessionDep,
+    templates: Jinja2Templates,
+    request: Request,
+    form_template: str,
+    *,
+    ctx_form: CtxForm,
+    item_key: str,
+    item: object,
+    user: usuario.Usuario,
+    erro: str,
+) -> HTMLResponse:
+    return rollback_integrity_error_response(
+        session,
+        lambda: conflict_form_response(
+            templates,
+            request,
+            form_template,
+            ctx_form=ctx_form(session),
+            item_key=item_key,
+            item=item,
+            user=user,
+            erro=erro,
+        ),
+    )
+
+
+def write_ok_response(
+    session: SessionDep,
+    templates: Jinja2Templates,
+    request: Request,
+    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
+    ok_partial_template: str,
+    *,
+    user: usuario.Usuario,
+    list_key: str,
+    ctx_list: CtxList[EntityT],
+    searchable: bool,
+    list_func: ListFunc[EntityT] | None,
+    search_func: SearchFunc[EntityT] | None,
+    query_func: QueryFunc[EntityT] | None,
+    search_query_func: SearchQueryFunc[EntityT] | None,
+) -> HTMLResponse:
+    lista = query_list(
+        session,
+        module,
+        q="",
+        searchable=searchable,
+        list_func=list_func,
+        search_func=search_func,
+        query_func=query_func,
+        search_query_func=search_query_func,
+    )
+    return ok_response(
+        templates,
+        request,
+        ok_partial_template,
+        user=user,
+        list_key=list_key,
+        lista=lista,
+        ctx_list=ctx_list(session, lista),
+    )
+
+
 def register_create_route(
     app: FastAPI,
     templates: Jinja2Templates,
@@ -465,18 +529,16 @@ def register_create_route(
         except HTTPException as exc:
             erro = str(exc.detail)
             if exc.status_code == status.HTTP_409_CONFLICT:
-                return rollback_integrity_error_response(
+                return write_conflict_response(
                     session,
-                    lambda: conflict_form_response(
-                        templates,
-                        request,
-                        form_template,
-                        ctx_form=ctx_form(session),
-                        item_key=item_key,
-                        item=data,
-                        user=user,
-                        erro=erro,
-                    ),
+                    templates,
+                    request,
+                    form_template,
+                    ctx_form=ctx_form,
+                    item_key=item_key,
+                    item=data,
+                    user=user,
+                    erro=erro,
                 )
             return error_response(
                 templates,
@@ -489,24 +551,20 @@ def register_create_route(
                 erro=erro,
                 status_code=400,
             )
-        lista = query_list(
+        return write_ok_response(
             session,
+            templates,
+            request,
             module,
-            q="",
+            ok_partial_template,
+            user=user,
+            list_key=list_key,
+            ctx_list=ctx_list,
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
             query_func=query_func,
             search_query_func=search_query_func,
-        )
-        return ok_response(
-            templates,
-            request,
-            ok_partial_template,
-            user=user,
-            list_key=list_key,
-            lista=lista,
-            ctx_list=ctx_list(session, lista),
         )
 
 
@@ -586,37 +644,31 @@ def register_update_route(
             if exc.status_code != status.HTTP_409_CONFLICT:
                 raise
             erro = str(exc.detail)
-            return rollback_integrity_error_response(
+            return write_conflict_response(
                 session,
-                lambda: conflict_form_response(
-                    templates,
-                    request,
-                    form_template,
-                    ctx_form=ctx_form(session),
-                    item_key=item_key,
-                    item=obj,
-                    user=user,
-                    erro=erro,
-                ),
+                templates,
+                request,
+                form_template,
+                ctx_form=ctx_form,
+                item_key=item_key,
+                item=obj,
+                user=user,
+                erro=erro,
             )
-        lista = query_list(
+        return write_ok_response(
             session,
+            templates,
+            request,
             module,
-            q="",
+            ok_partial_template,
+            user=user,
+            list_key=list_key,
+            ctx_list=ctx_list,
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
             query_func=query_func,
             search_query_func=search_query_func,
-        )
-        return ok_response(
-            templates,
-            request,
-            ok_partial_template,
-            user=user,
-            list_key=list_key,
-            lista=lista,
-            ctx_list=ctx_list(session, lista),
         )
 
 
