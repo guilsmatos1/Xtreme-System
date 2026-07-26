@@ -29,6 +29,14 @@ def _placa() -> str:
     return f"ABC{_next_id() % 10}D{_next_id() % 100:02d}"
 
 
+def _chassi() -> str:
+    return f"9A1BCDE23FG{_next_id() % 1000000:06d}"
+
+
+def _renavam() -> str:
+    return f"{_next_id() % 100000000000:011d}"
+
+
 class InvestidorCreateFactory(ModelFactory[investidor.InvestidorCreate]):
     __model__ = investidor.InvestidorCreate
 
@@ -57,6 +65,8 @@ class VeiculoCreateFactory(ModelFactory[veiculo.VeiculoCreate]):
     cor = "Branco"
     ano = 2018
     placa = Use(_placa)
+    chassi = Use(_chassi)
+    renavam = Use(_renavam)
     km = 50000
     preco = Decimal("40000.00")
     procuracao = None

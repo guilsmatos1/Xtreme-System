@@ -21,7 +21,7 @@ from xtreme_system.usuario import core as usuario
 @pytest.fixture
 def unique_plate() -> str:
     """Generate unique license plates for parallel test execution."""
-    return uuid.uuid4().hex[:7].upper()
+    return f"ATH{uuid.uuid4().int % 10000:04d}"
 
 
 @pytest.fixture
