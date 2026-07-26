@@ -1,6 +1,6 @@
 # Harness Improvements — Accumulated Ranking
 
-_Last updated: 2026-07-26. Processed sources: loop-2-2026-07-24, docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-109.md, docs/0005-analyze-token-efficiency/GUI-120.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-349.md, docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-361.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-363.md, docs/0005-analyze-token-efficiency/GUI-365.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-367.md, docs/0005-analyze-token-efficiency/GUI-368.md, docs/0005-analyze-token-efficiency/GUI-369.md._
+_Last updated: 2026-07-26. Processed sources: loop-2-2026-07-24, docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-109.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md._
 
 _5 improvements (24 mentions) have already been applied to the harness by skill `0004-apply-harness-improvements` and removed from this ranking. See `../0004-apply-harness-improvements/implementations.md`._
 
@@ -10,31 +10,31 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 - **Problem:** Greps, test logs, and large file reads enter context in full when the task only needs a small window or the most relevant matches.
 - **Solution:** After locating a target, read `line-40..line+80`, use narrower filters, or use `--stat`/`--name-only`; expand only when the small section is not enough.
 - **Estimated savings:** ~9k-31k tokens per affected session.
-- **Sources:** docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-109.md, docs/0005-analyze-token-efficiency/GUI-120.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-349.md (x2), docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-361.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-363.md, docs/0005-analyze-token-efficiency/GUI-365.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-367.md, docs/0005-analyze-token-efficiency/GUI-368.md, docs/0005-analyze-token-efficiency/GUI-369.md
+- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-109.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md (x2), docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
 
 ### 2. Preflight failure-prone commands
 - **Problem:** Exploratory commands, tests with incorrect names, and environment scripts fail before contributing to the solution, dumping disposable context.
 - **Solution:** Validate path, environment, and minimal command before running expensive variants; when the question is structural, prefer static inspection with `rg`/model metadata.
 - **Estimated savings:** ~1k-15k tokens per affected session.
-- **Sources:** docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-120.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-349.md, docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-361.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-363.md, docs/0005-analyze-token-efficiency/GUI-365.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-368.md, docs/0005-analyze-token-efficiency/GUI-369.md
+- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-349.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
 
 ### 3. Reread/regrep watchdog
 - **Problem:** The agent rereads the same file, repeats `rg`/`git diff`/`git status`, or reruns identical validations, reinjecting already known evidence into context.
 - **Solution:** If an identical call has already been executed, reuse the previous conclusion or require an explicit scope/argument change before repeating it.
 - **Estimated savings:** ~500-4.5k tokens per avoided repetition; up to ~30% of reanalysis tokens.
-- **Sources:** loop-2/GUI-Others.md, docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-363.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-367.md, docs/0005-analyze-token-efficiency/GUI-368.md, docs/0005-analyze-token-efficiency/GUI-369.md
+- **Sources:** loop-2/GUI-Others.md, docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-363.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-367.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
 
 ### 4. Chain discovery with more specific queries
 - **Problem:** The agent performs broad discovery and many tool calls before converging on the file or helper actually involved.
 - **Solution:** Start with `graphify query` or a specific grep; then open only directly implicated files, delegating broad maps to graphify/a compact subagent.
 - **Estimated savings:** ~3.5k-6.5k tokens per affected session.
-- **Sources:** docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-120.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-361.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-368.md, docs/0005-analyze-token-efficiency/GUI-369.md
+- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-368.md, docs/0003-analyze-token-efficiency/GUI-369.md
 
 ### 5. Reduce context persisted between worker stages
 - **Problem:** Old logs, diffs, and reads remain in cached context and make later test, commit, and merge phases more expensive.
 - **Solution:** Before long phases, summarize findings into compact state with changed files, decisions, and verification commands; avoid reintroducing old outputs.
 - **Estimated savings:** ~5k-14.5k tokens per affected session.
-- **Sources:** docs/0005-analyze-token-efficiency/GUI-108.md, docs/0005-analyze-token-efficiency/GUI-120.md, docs/0005-analyze-token-efficiency/GUI-159.md, docs/0005-analyze-token-efficiency/GUI-168.md, docs/0005-analyze-token-efficiency/GUI-360.md, docs/0005-analyze-token-efficiency/GUI-361.md, docs/0005-analyze-token-efficiency/GUI-362.md, docs/0005-analyze-token-efficiency/GUI-365.md, docs/0005-analyze-token-efficiency/GUI-366.md, docs/0005-analyze-token-efficiency/GUI-369.md
+- **Sources:** docs/0003-analyze-token-efficiency/GUI-108.md, docs/0003-analyze-token-efficiency/GUI-120.md, docs/0003-analyze-token-efficiency/GUI-159.md, docs/0003-analyze-token-efficiency/GUI-168.md, docs/0003-analyze-token-efficiency/GUI-360.md, docs/0003-analyze-token-efficiency/GUI-361.md, docs/0003-analyze-token-efficiency/GUI-362.md, docs/0003-analyze-token-efficiency/GUI-365.md, docs/0003-analyze-token-efficiency/GUI-366.md, docs/0003-analyze-token-efficiency/GUI-369.md
 
 ### 6. Stair-step verification / avoid duplicate suite runs
 - **Problem:** Focused tests + full suite + rerun after lint, while commit hooks run pytest again: duplicated and slow validation.
@@ -70,7 +70,7 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 - **Problem:** The commit fails due to ruff/format/focused-test rules, creating another patch/stage/commit cycle with large hook output.
 - **Solution:** In Python tasks with new tests or code edits, run `ruff check`, `ruff format --check`, and the focused test before committing.
 - **Estimated savings:** ~1k-18k tokens + 2-3 calls.
-- **Sources:** loop-2/GUI-302.md, docs/0005-analyze-token-efficiency/GUI-349.md
+- **Sources:** loop-2/GUI-302.md, docs/0003-analyze-token-efficiency/GUI-349.md
 
 ### 12. Linear auto-context (injected summary)
 - **Problem:** Reading the ticket requires loading a skill and running `orca status`, spending tokens on long instructions and large JSON.
@@ -124,7 +124,7 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 - **Problem:** During merge convergence, opening a detailed diff only to confirm staged files reinjects large content at the end of the session.
 - **Solution:** Use `merge-base`, `diff --cached --name-only`, and `diff --cached --stat`; open a full diff only if there is an unexpected file or real conflict.
 - **Estimated savings:** ~2.5k tokens.
-- **Sources:** docs/0005-analyze-token-efficiency/GUI-349.md
+- **Sources:** docs/0003-analyze-token-efficiency/GUI-349.md
 
 ## Ranking by mentions
 

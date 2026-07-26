@@ -33,7 +33,7 @@ def report_path(checkout: Path, branch: str) -> Path:
     return (
         checkout
         / "docs"
-        / "0005-analyze-token-efficiency"
+        / "0003-analyze-token-efficiency"
         / f"{safe_name(branch)}.md"
     )
 
@@ -57,7 +57,7 @@ def main() -> int:
         BRANCH_ENV: args.source_branch,
     }
     prompt = (
-        "Use skill 0005-analyze-token-efficiency. "
+        "Use skill 0003-analyze-token-efficiency. "
         "Analyze only the session indicated by CODEX_THREAD_ID, write the report "
         "to CODEX_TOKEN_REPORT_PATH, and do not alter product code."
     )

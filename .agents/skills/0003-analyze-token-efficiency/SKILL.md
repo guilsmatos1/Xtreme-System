@@ -1,6 +1,6 @@
 ---
-name: 0005-analyze-token-efficiency
-description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0003.
+name: 0003-analyze-token-efficiency
+description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0005.
 ---
 
 # Analyze Token Efficiency
@@ -14,7 +14,7 @@ Identify harness improvements that would have produced exactly the same delivera
 Run the extractor once. It reads the rollout indicated by `CODEX_THREAD_ID`, uses the latest `token_count` as the cutoff to exclude this retrospective, and returns only compact aggregates and candidates:
 
 ```bash
-python .agents/skills/0005-analyze-token-efficiency/profile_session.py \
+python .agents/skills/0003-analyze-token-efficiency/profile_session.py \
   --session-id "${CODEX_THREAD_ID:?}" > /tmp/codex-token-profile.json
 ```
 
@@ -53,12 +53,12 @@ else
   MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
   LOOP="$(find "$MAIN/.loop" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | sort | tail -1)"
   ISSUE="${CODEX_SOURCE_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
-  OUT="${LOOP:-$MAIN/docs/0005-analyze-token-efficiency}/$ISSUE.md"
+  OUT="${LOOP:-$MAIN/docs/0003-analyze-token-efficiency}/$ISSUE.md"
 fi
 mkdir -p "$(dirname "$OUT")"
 ```
 
-Write only the canonical format consumed by `0003-consolidate-harness-improvements`:
+Write only the canonical format consumed by `0005-consolidate-harness-improvements`:
 
 ```markdown
 # Token Efficiency — <issue>
