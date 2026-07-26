@@ -44,7 +44,6 @@ def ui_conta_senha_alterar(
             {"user": user, "erro": "A confirmação não coincide com a nova senha"},
             status_code=400,
         )
-    session.info["usuario_id"] = user.id
     usuario.change_password(session, user, nova_senha)
     return templates.TemplateResponse(
         request, "conta.html", {"user": user, "sucesso": "Senha alterada com sucesso."}

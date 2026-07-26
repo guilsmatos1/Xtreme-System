@@ -281,7 +281,6 @@ def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
 async def _criar_compra(  # noqa: PLR0911
     request: Request, session: SessionDep, user: _CadastrarCompraDep
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     form = await request.form()
 
     comprovantes = cast(

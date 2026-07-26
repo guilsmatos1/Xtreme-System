@@ -188,7 +188,6 @@ def ui_investidor_editar(
 async def ui_investidor_criar(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     form = await request.form()
     nome = str(form.get("nome") or "").strip()
     if not nome:
@@ -242,7 +241,6 @@ async def ui_investidor_criar(
 async def ui_investidor_atualizar(
     item_id: int, request: Request, session: SessionDep, user: _EditarInvestidorDep
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(investidor.get(session, item_id), "Investidores")
     nome = str((await request.form()).get("nome") or "").strip()
     if not nome:
@@ -273,7 +271,6 @@ async def ui_investidor_atualizar(
 def ui_investidor_excluir(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirInvestidorDep
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(investidor.get(session, item_id), "Investidores")
     if caixa.list_by_investidor(session, item_id):
         return templates.TemplateResponse(

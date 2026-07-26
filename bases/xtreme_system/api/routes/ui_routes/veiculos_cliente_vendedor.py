@@ -72,7 +72,6 @@ def ui_veiculo_cliente_vendedor(
     user: _AbrirClienteVendedorDep,
     veiculo_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     return _cliente_vendedor_modal(request, session, user, veiculo_id)
 
 
@@ -84,7 +83,6 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _cliente_vendedor_modal(
@@ -114,7 +112,6 @@ def ui_veiculo_cliente_vendedor_documentos_excluir(
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is None:
         return _cliente_vendedor_modal(
