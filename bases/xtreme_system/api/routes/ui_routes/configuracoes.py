@@ -18,7 +18,7 @@ from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
     _uploads_empresa_dir,
-    _validar_uploads,
+    validar_uploads,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.database.core import register_post_commit, register_post_rollback
@@ -176,7 +176,7 @@ def ui_configuracoes_empresa_logo_enviar(
             empresa.get_config(session),
             erro=f"O logo deve ser uma imagem (aceitos: {exts})",
         )
-    erro = _validar_uploads([logo])
+    erro = validar_uploads([logo])
     if erro:
         return _pagina_empresa(
             request, session, user, empresa.get_config(session), erro=erro

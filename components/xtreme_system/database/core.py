@@ -199,7 +199,7 @@ def register_post_rollback(session: Session, callback: Callable[[], None]) -> No
     callbacks.append(callback)
 
 
-def _invoke_post_commit(session: Session) -> None:
+def invoke_post_commit(session: Session) -> None:
     callbacks: list[Callable[[], None]] = session.info.pop(_POST_COMMIT_KEY, [])
     session.info.pop(_POST_ROLLBACK_KEY, None)
     for cb in callbacks:
@@ -214,7 +214,7 @@ def get_session() -> Iterator[Session]:
     try:
         yield session
         session.commit()
-        _invoke_post_commit(session)
+        invoke_post_commit(session)
     except Exception:
         session.rollback()
         raise

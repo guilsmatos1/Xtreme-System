@@ -27,10 +27,10 @@ from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
     _uploads_compra_dir,
-    _validar_uploads,
     criar_aninhado_ou_resposta_conflito,
     resolver_cliente,
     rollback_se_criou_aninhados,
+    validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
@@ -306,7 +306,7 @@ async def _criar_compra(  # noqa: PLR0911
     )
     if not perfil.pode_operacao(user, "compras", "enviar_comprovante"):
         comprovantes = []
-    erro = _validar_uploads(comprovantes)
+    erro = validar_uploads(comprovantes)
     if erro:
         return _erro_compra(request, session, user, erro)
 

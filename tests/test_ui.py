@@ -16,17 +16,17 @@ from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
-from xtreme_system.api.deps import _NaoAutorizadoError, get_ui_user, templates
+from xtreme_system.api.deps import NaoAutorizadoError, get_ui_user, templates
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
-from xtreme_system.api.routes.ui_routes.common import _validar_uploads, resolver_cliente
+from xtreme_system.api.routes.ui_routes.common import resolver_cliente, validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
-from xtreme_system.database.core import _invoke_post_commit, get_session
+from xtreme_system.database.core import get_session, invoke_post_commit
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.fechamento_venda import core as fechamento_venda
@@ -1983,7 +1983,7 @@ def test_ui_user_funcionario_sem_perfil_nao_acessa_pagina_ui_desconhecida(
     )
     token = auth.create_access_token(user.username)
 
-    with pytest.raises(_NaoAutorizadoError):
+    with pytest.raises(NaoAutorizadoError):
         get_ui_user(_request("/ui/nova-pagina"), db_session, token)
 
 
@@ -1998,7 +1998,7 @@ def test_ui_user_funcionario_sem_perfil_nao_usa_prefixo_conta_como_excecao(
     )
     token = auth.create_access_token(user.username)
 
-    with pytest.raises(_NaoAutorizadoError):
+    with pytest.raises(NaoAutorizadoError):
         get_ui_user(_request("/ui/contabilidade"), db_session, token)
 
 
@@ -2324,7 +2324,7 @@ def _client_with_failing_final_commit() -> Iterator[
                 if fail_commit["enabled"]:
                     _raise_commit_error()
                 session.commit()
-                _invoke_post_commit(session)
+                invoke_post_commit(session)
             except Exception:
                 session.rollback()
                 raise
@@ -2801,7 +2801,7 @@ class _FakeUpload:
 
 def test_validar_uploads_extensao_invalida() -> None:
     arq = _FakeUpload("malicioso.gif", "image/gif", 100)
-    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    msg = validar_uploads([arq])  # type: ignore[list-item]
     assert msg is not None
     assert "Tipo não permitido" in msg
     assert ".gif" in msg
@@ -2816,24 +2816,24 @@ def test_validar_uploads_extensao_valida_passa() -> None:
         ("contrato.pdf", "application/pdf"),
     ]:
         arq = _FakeUpload(nome, ct, 1000)
-        assert _validar_uploads([arq]) is None, f"{nome} deveria passar"  # type: ignore[list-item]
+        assert validar_uploads([arq]) is None, f"{nome} deveria passar"  # type: ignore[list-item]
 
 
 def test_validar_uploads_content_type_divergente() -> None:
     arq = _FakeUpload("foto.jpg", "application/pdf", 1000)
-    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    msg = validar_uploads([arq])  # type: ignore[list-item]
     assert msg is not None
     assert "Conteúdo não corresponde" in msg
 
 
 def test_validar_uploads_content_type_ausente_passa() -> None:
     arq = _FakeUpload("foto.jpg", None, 1000)
-    assert _validar_uploads([arq]) is None  # type: ignore[list-item]
+    assert validar_uploads([arq]) is None  # type: ignore[list-item]
 
 
 def test_validar_uploads_arquivo_maior_que_5mb() -> None:
     arq = _FakeUpload("grande.jpg", "image/jpeg", 5 * 1024 * 1024 + 1)
-    msg = _validar_uploads([arq])  # type: ignore[list-item]
+    msg = validar_uploads([arq])  # type: ignore[list-item]
     assert msg is not None
     assert "excede 5 MB" in msg
 
@@ -2841,14 +2841,14 @@ def test_validar_uploads_arquivo_maior_que_5mb() -> None:
 def test_validar_uploads_lote_rejeitado_se_um_falha() -> None:
     bons = _FakeUpload("ok.jpg", "image/jpeg", 1000)
     mau = _FakeUpload("mau.exe", "application/octet-stream", 1000)
-    msg = _validar_uploads([bons, mau])  # type: ignore[list-item]
+    msg = validar_uploads([bons, mau])  # type: ignore[list-item]
     assert msg is not None
     assert "Tipo não permitido" in msg
 
 
 def test_validar_uploads_sem_filename_ignorado() -> None:
     arq = _FakeUpload("", None, None)
-    assert _validar_uploads([arq]) is None  # type: ignore[list-item]
+    assert validar_uploads([arq]) is None  # type: ignore[list-item]
 
 
 def test_post_com_content_length_maior_que_20mb_retorna_413(

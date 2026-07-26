@@ -94,15 +94,15 @@ def _is_ui_unmapped_authorized_path(path: str) -> bool:
     )
 
 
-class _NaoAutenticadoError(Exception):
+class NaoAutenticadoError(Exception):
     pass
 
 
-class _NaoAdminError(Exception):
+class NaoAdminError(Exception):
     pass
 
 
-class _NaoAutorizadoError(Exception):
+class NaoAutorizadoError(Exception):
     pass
 
 
@@ -112,14 +112,14 @@ def get_ui_user(
     access_token: Annotated[str | None, Cookie()] = None,
 ) -> usuario.Usuario:
     if not access_token:
-        raise _NaoAutenticadoError
+        raise NaoAutenticadoError
     try:
         dados = auth.decode_token(access_token)
     except InvalidTokenError:
-        raise _NaoAutenticadoError from None
+        raise NaoAutenticadoError from None
     user = usuario.get_by_username(session, dados.username)
     if user is None or not user.ativo:
-        raise _NaoAutenticadoError
+        raise NaoAutenticadoError
     pagina = perfil.pagina_da_rota(request.url.path)
     if (
         not pagina
@@ -127,9 +127,9 @@ def get_ui_user(
         and not _is_ui_unmapped_authorized_path(request.url.path)
         and not usuario.is_admin(user)
     ):
-        raise _NaoAutorizadoError
+        raise NaoAutorizadoError
     if pagina and not perfil.pode_acessar(user, pagina):
-        raise _NaoAutorizadoError
+        raise NaoAutorizadoError
     return _bind_usuario(session, user)
 
 
@@ -138,7 +138,7 @@ UIUser = Annotated[usuario.Usuario, Depends(get_ui_user)]
 
 def require_ui_admin(user: UIUser) -> usuario.Usuario:
     if not usuario.is_admin(user):
-        raise _NaoAdminError
+        raise NaoAdminError
     return user
 
 
@@ -151,7 +151,7 @@ DepFilter = Callable[[usuario.Usuario], usuario.Usuario]
 def require_operacao(pagina: str, operacao: str) -> DepFilter:
     def _dep(user: UIUser) -> usuario.Usuario:
         if not perfil.pode_operacao(user, pagina, operacao):
-            raise _NaoAutorizadoError
+            raise NaoAutorizadoError
         return user
 
     return _dep

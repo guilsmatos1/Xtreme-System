@@ -23,10 +23,10 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from xtreme_system.api.deps import (
+    NaoAdminError,
+    NaoAutenticadoError,
+    NaoAutorizadoError,
     UIUser,
-    _NaoAdminError,
-    _NaoAutenticadoError,
-    _NaoAutorizadoError,
 )
 from xtreme_system.database.core import DatabaseRateLimiterStore, RateLimiterStore
 from xtreme_system.logging.core import configure_logging
@@ -279,22 +279,20 @@ def raiz() -> RedirectResponse:
     return RedirectResponse("/ui/dashboard")
 
 
-@app.exception_handler(_NaoAutenticadoError)
+@app.exception_handler(NaoAutenticadoError)
 def _handle_nao_autenticado(
-    _request: Request, _exc: _NaoAutenticadoError
+    _request: Request, _exc: NaoAutenticadoError
 ) -> RedirectResponse:
     return RedirectResponse("/ui/login", status_code=303)
 
 
-@app.exception_handler(_NaoAdminError)
-def _handle_nao_admin(_request: Request, _exc: _NaoAdminError) -> HTMLResponse:
+@app.exception_handler(NaoAdminError)
+def _handle_nao_admin(_request: Request, _exc: NaoAdminError) -> HTMLResponse:
     return HTMLResponse("<p>Requer papel admin</p>", status_code=403)
 
 
-@app.exception_handler(_NaoAutorizadoError)
-def _handle_nao_autorizado(
-    _request: Request, _exc: _NaoAutorizadoError
-) -> HTMLResponse:
+@app.exception_handler(NaoAutorizadoError)
+def _handle_nao_autorizado(_request: Request, _exc: NaoAutorizadoError) -> HTMLResponse:
     return HTMLResponse(
         "<p>Seu perfil não tem acesso a esta página.</p>", status_code=403
     )

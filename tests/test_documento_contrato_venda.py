@@ -15,7 +15,7 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
 
-def _extract_pdf_text(data: bytes) -> str:
+def extract_pdf_text(data: bytes) -> str:
     """Decompõe streams FlateDecode do PDF e concatena como latin-1."""
     parts: list[str] = []
     for match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", data, re.DOTALL):
@@ -121,7 +121,7 @@ def test_gerar_pdf_campos_opcionais_nulos_nao_quebram() -> None:
 
 
 def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
-    texto = _extract_pdf_text(
+    texto = extract_pdf_text(
         documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     )
     assert "Silva" in texto
@@ -132,7 +132,7 @@ def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
 
 
 def test_gerar_pdf_renderiza_cabecalho_da_empresa() -> None:
-    texto = _extract_pdf_text(
+    texto = extract_pdf_text(
         documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     )
     assert "Contrato de Venda" in texto
@@ -146,11 +146,11 @@ def test_gerar_pdf_renderiza_cabecalho_da_empresa() -> None:
 def test_gerar_pdf_assinaturas_na_mesma_pagina() -> None:
     pdf = documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     assert pdf.count(b"/Type /Page\n") == 1
-    assert "De acordo," in _extract_pdf_text(pdf)
+    assert "De acordo," in extract_pdf_text(pdf)
 
 
 def test_gerar_pdf_segue_secoes_do_modelo() -> None:
-    texto = _extract_pdf_text(
+    texto = extract_pdf_text(
         documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     )
     for rotulo in (
@@ -173,13 +173,13 @@ def test_gerar_pdf_com_logo_mantem_cabecalho(tmp_path: Path) -> None:
     Image.new("RGB", (120, 60), "black").save(logo)
     pdf = documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa(), logo)
     assert pdf.startswith(b"%PDF")
-    texto = _extract_pdf_text(pdf)
+    texto = extract_pdf_text(pdf)
     assert "XTREME MOTORS" in texto
     assert "Recebemos de:" in texto
 
 
 def test_gerar_pdf_formata_valor_em_reais() -> None:
-    texto = _extract_pdf_text(
+    texto = extract_pdf_text(
         documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
     )
     assert "R$ 40.000,00" in texto
