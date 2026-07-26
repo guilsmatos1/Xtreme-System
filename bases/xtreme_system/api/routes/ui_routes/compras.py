@@ -88,19 +88,7 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
 def _filtrar_campos_ocultos_compra(
     user: usuario.Usuario, data: dict[str, Any]
 ) -> dict[str, Any]:
-    campos_form_map = {
-        "data_compra": "data_compra",
-        "cliente": "cliente_id",
-        "status": "status",
-        "veiculo": "veiculo_id",
-        "valor_compra": "valor_compra",
-        "debitos": "debitos",
-        "observacoes": "observacoes",
-    }
-    for campo, campo_form in campos_form_map.items():
-        if not perfil.pode_ver_campo(user, "compras", campo):
-            data.pop(campo_form, None)
-    return data
+    return perfil.filtrar_campos_form_ocultos(user, "compras", data)
 
 
 def _ctx_lista_compras(
@@ -472,13 +460,4 @@ register_crud_ui_routes(
     editar_dep=require_operacao("compras", "editar"),
     excluir_dep=require_operacao("compras", "excluir"),
     pagina="compras",
-    campos_form_map={
-        "data_compra": "data_compra",
-        "cliente": "cliente_id",
-        "status": "status",
-        "veiculo": "veiculo_id",
-        "valor_compra": "valor_compra",
-        "debitos": "debitos",
-        "observacoes": "observacoes",
-    },
 )

@@ -81,6 +81,18 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
 }
 
 CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
+    "compras": {
+        "data_compra": "data_compra",
+        "cliente": "cliente_id",
+        "status": "status",
+        "veiculo": "veiculo_id",
+        "valor_compra": "valor_compra",
+        "debitos": "debitos",
+        "observacoes": "observacoes",
+    },
+    "custos-veiculos": {
+        "valor": "valor",
+    },
     "vendas": {
         "cliente": "cliente_id",
         "veiculo": "veiculo_id",
@@ -101,6 +113,19 @@ CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
         "vendedor": "vendedor_id",
     },
 }
+
+
+def filtrar_campos_form_ocultos(
+    user: Any, pagina: str | None, data: dict[str, Any]
+) -> dict[str, Any]:
+    if pagina is None:
+        return data
+    for campo, campo_form in CAMPOS_FORM_PROTEGIDOS.get(pagina, {}).items():
+        if not pode_ver_campo(user, pagina, campo):
+            data.pop(campo_form, None)
+    return data
+
+
 OPERACOES: dict[str, list[tuple[str, str]]] = {
     "veiculos": [
         ("editar", "Editar"),

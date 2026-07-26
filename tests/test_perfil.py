@@ -123,6 +123,24 @@ def test_campos_protegidos_editaveis_de_venda_tem_mapa_de_form() -> None:
     assert campos_protegidos & campos_editaveis <= campos_form
 
 
+def test_filtrar_campos_form_ocultos_remove_inputs_mapeados(
+    db_session: Session,
+) -> None:
+    vendedores = perfil.Perfil(
+        nome="Vendedores",
+        paginas=["compras"],
+        restricoes={"compras": {"campos_ocultos": ["valor_compra"]}},
+    )
+    db_session.add(vendedores)
+    db_session.flush()
+    vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
+    data = {"valor_compra": "1000", "observacoes": "ok"}
+
+    perfil.filtrar_campos_form_ocultos(vendedor, "compras", data)
+
+    assert data == {"observacoes": "ok"}
+
+
 def test_operacoes_sao_opt_in(db_session: Session) -> None:
     vendedores = perfil.Perfil(
         nome="Vendedores",

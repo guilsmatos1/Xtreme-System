@@ -62,7 +62,6 @@ _VerFechamentoVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "ver_fechamento"))
 ]
 
-_CAMPOS_FORM_VENDA_MAP = perfil.CAMPOS_FORM_PROTEGIDOS["vendas"]
 _FORM_LOOKUP_LIMIT = 50
 
 
@@ -109,10 +108,7 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
 def _filtrar_campos_ocultos_venda(
     user: usuario.Usuario, data: dict[str, Any]
 ) -> dict[str, Any]:
-    for campo, campo_form in _CAMPOS_FORM_VENDA_MAP.items():
-        if not perfil.pode_ver_campo(user, "vendas", campo):
-            data.pop(campo_form, None)
-    return data
+    return perfil.filtrar_campos_form_ocultos(user, "vendas", data)
 
 
 def _validate_venda_update(
@@ -250,7 +246,6 @@ register_crud_ui_routes(
     editar_dep=require_operacao("vendas", "editar"),
     excluir_dep=require_operacao("vendas", "excluir"),
     pagina="vendas",
-    campos_form_map=_CAMPOS_FORM_VENDA_MAP,
 )
 
 

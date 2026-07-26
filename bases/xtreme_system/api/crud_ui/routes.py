@@ -97,7 +97,6 @@ def register_crud_ui_routes(
     excluir_dep: DepFactory | None = None,
     cadastrar_dep: DepFactory | None = None,
     pagina: str | None = None,
-    campos_form_map: dict[str, str] | None = None,
     list_func: ListFunc[EntityT] | None = None,
     search_func: SearchFunc[EntityT] | None = None,
     sql_sort_fields: dict[str, object] | None = None,
@@ -205,7 +204,6 @@ def register_crud_ui_routes(
             search_query_func=search_query_func,
             editar_dep=editar_dep,
             pagina=pagina,
-            campos_form_map=campos_form_map,
         )
     if register_delete:
         register_delete_route(
@@ -536,7 +534,6 @@ def register_update_route(
     search_query_func: SearchQueryFunc[EntityT] | None,
     editar_dep: DepFactory | None = None,
     pagina: str | None = None,
-    campos_form_map: dict[str, str] | None = None,
 ) -> None:
     dep = editar_dep or require_ui_admin
 
@@ -550,10 +547,7 @@ def register_update_route(
         obj = _found(module.get(session, item_id), label)
         form = await request.form()
         dados_form = parse_form(form)
-        if pagina and campos_form_map:
-            for campo, campo_form in campos_form_map.items():
-                if not perfil.pode_ver_campo(user, pagina, campo):
-                    dados_form.pop(campo_form, None)
+        perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
         try:
             data = update_schema.model_validate(dados_form)
             run_hook(before_update, session, data)
