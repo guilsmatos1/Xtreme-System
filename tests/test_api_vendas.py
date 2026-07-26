@@ -121,6 +121,61 @@ def test_admin_cria_venda(client: TestClient) -> None:
     assert data["vendedor"]["username"] == "admin"
 
 
+def test_venda_rejeita_valores_financeiros_e_operacionais_impossiveis(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "valor_entrada": "40000.01",
+            "debitos": "-0.01",
+            "km": -1,
+            "forma_pagamento": "a_vista",
+            "parcelas": 0,
+            "valor_pendente": "-0.01",
+        },
+        headers=headers,
+    )
+
+    assert resp.status_code == 422
+
+
+def test_atualizar_venda_rejeita_entrada_maior_que_valor_salvo(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    venda_resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+        },
+        headers=headers,
+    )
+    assert venda_resp.status_code == 201
+
+    resp = client.patch(
+        f"/vendas/{venda_resp.json()['id']}",
+        json={"valor_entrada": "40000.01"},
+        headers=headers,
+    )
+
+    assert resp.status_code == 400
+    assert "valor_entrada" in resp.json()["detail"]
+
+
 def test_api_json_respeita_perfil_em_veiculos_e_vendas(
     client: TestClient,
 ) -> None:

@@ -36,6 +36,7 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
     validate_cliente_veiculo_fks,
+    validate_valores_venda_update,
     validate_veiculo_disponivel_para_venda,
 )
 from xtreme_system.api.setup import app
@@ -120,6 +121,7 @@ def _validate_venda_update(
     session: Session, obj: venda.Venda, data: venda.VendaUpdate
 ) -> None:
     validate_cliente_veiculo_fks(session, data)
+    validate_valores_venda_update(obj, data)
     if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
         validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
 

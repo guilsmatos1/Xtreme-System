@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -123,6 +124,30 @@ def test_placa_duplicada_rejeitada(session: Session, unique_plate: str) -> None:
     with pytest.raises(IntegrityError):
         # DB unique constraint catches the duplicate
         veiculo.create(session, dados)
+
+
+def test_schemas_rejeitam_valores_financeiros_e_operacionais_impossiveis() -> None:
+    with pytest.raises(ValidationError):
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Gol",
+            cor="Branco",
+            ano=2018,
+            placa="NEG1A23",
+            km=-1,
+            preco=Decimal("32000.00"),
+            investidor_id=1,
+        )
+
+    with pytest.raises(ValidationError):
+        veiculo.VeiculoUpdate(preco=Decimal("0"))
+
+    with pytest.raises(ValidationError):
+        caixa.LancamentoInvestimentoCreate(
+            investidor_id=1,
+            tipo=caixa.TipoLancamento.aporte,
+            valor=Decimal("-10.00"),
+        )
 
 
 def test_veiculo_search_usa_busca_textual_ampla_e_por_coluna(

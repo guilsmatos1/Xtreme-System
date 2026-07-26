@@ -33,13 +33,13 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" type="number" step="0.01" value="{{ venda.valor_venda }}" required>
+            <input class="input" name="valor_venda" type="number" step="0.01" min="0.01" value="{{ venda.valor_venda }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
-            <input class="input" name="valor_entrada" type="number" step="0.01" value="{{ venda.valor_entrada if venda.valor_entrada is not none else '' }}">
+            <input class="input" name="valor_entrada" type="number" step="0.01" min="0" value="{{ venda.valor_entrada if venda.valor_entrada is not none else '' }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'debitos') %}
@@ -86,7 +86,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
-            <input class="input" name="valor_diferenca" type="number" step="0.01" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
+            <input class="input" name="valor_diferenca" type="number" step="0.01" min="0" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
@@ -101,7 +101,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="number" step="0.01" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
+            <input class="input" name="valor_pendente" type="number" step="0.01" min="0" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
@@ -226,13 +226,13 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" type="number" step="0.01" required>
+            <input class="input" name="valor_venda" type="number" step="0.01" min="0.01" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
-            <input class="input" name="valor_entrada" type="number" step="0.01">
+            <input class="input" name="valor_entrada" type="number" step="0.01" min="0">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'debitos') %}
@@ -267,7 +267,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="number" step="0.01">
+            <input class="input" name="valor_pendente" type="number" step="0.01" min="0">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
@@ -303,7 +303,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
-            <input class="input" name="valor_diferenca" type="number" step="0.01">
+            <input class="input" name="valor_diferenca" type="number" step="0.01" min="0">
           </label>
           {% endif %}
 

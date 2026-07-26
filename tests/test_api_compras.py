@@ -167,6 +167,36 @@ def test_admin_crud_compras(client: TestClient) -> None:
     assert missing_resp.status_code == 404
 
 
+def test_compra_rejeita_valor_e_debitos_negativos(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    valor_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "-1.00",
+        },
+        headers=headers,
+    )
+    debitos_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "35000.00",
+            "debitos": "-0.01",
+        },
+        headers=headers,
+    )
+
+    assert valor_resp.status_code == 422
+    assert debitos_resp.status_code == 422
+
+
 def test_vendedor_nao_cria_compra(client: TestClient) -> None:
     admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     vendedor_headers = {"Authorization": f"Bearer {_token(client, 'vendedor')}"}

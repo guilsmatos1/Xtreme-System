@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Date, ForeignKey, Numeric, func, select
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
@@ -55,8 +55,8 @@ class CompraCreate(BaseModel):
     veiculo_id: int
     usuario_id: int | None = None
     data_compra: date | None = None
-    valor_compra: Decimal
-    debitos: Decimal | None = None
+    valor_compra: Decimal = Field(gt=0)
+    debitos: Decimal | None = Field(default=None, ge=0)
     observacoes: str | None = None
     status: StatusCompra = StatusCompra.pendente
 
@@ -65,8 +65,8 @@ class CompraUpdate(BaseModel):
     cliente_id: int | None = None
     veiculo_id: int | None = None
     data_compra: date | None = None
-    valor_compra: Decimal | None = None
-    debitos: Decimal | None = None
+    valor_compra: Decimal | None = Field(default=None, gt=0)
+    debitos: Decimal | None = Field(default=None, ge=0)
     observacoes: str | None = None
     status: StatusCompra | None = None
 

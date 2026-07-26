@@ -40,6 +40,21 @@ def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
         raise HTTPException(status_code=400, detail="vendedor_id inexistente")
 
 
+def validate_valores_venda_update(venda_obj: venda.Venda, data: Any) -> None:
+    valor_venda = (
+        data.valor_venda if data.valor_venda is not None else venda_obj.valor_venda
+    )
+    if data.valor_entrada is not None:
+        valor_entrada = data.valor_entrada
+    else:
+        valor_entrada = venda_obj.valor_entrada
+    if valor_entrada is not None and valor_entrada > valor_venda:
+        raise HTTPException(
+            status_code=400,
+            detail=venda.ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA,
+        )
+
+
 def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
     v = session.get(veiculo.Veiculo, veiculo_id, with_for_update=True)
     if v is None:

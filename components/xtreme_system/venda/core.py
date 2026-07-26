@@ -3,8 +3,9 @@
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import (
     Boolean,
     Date,
@@ -24,6 +25,8 @@ from xtreme_system.documento_contrato_venda.core import DocumentoContratoVenda
 from xtreme_system.imagem_comprovante_venda.core import ImagemComprovanteVenda
 from xtreme_system.usuario.core import Usuario, UsuarioRead
 from xtreme_system.veiculo.core import StatusVeiculo, TipoVeiculo, Veiculo, VeiculoRead
+
+ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA = "valor_entrada não pode exceder valor_venda"
 
 
 class StatusVenda(StrEnum):
@@ -80,19 +83,25 @@ class VendaCreate(BaseModel):
     veiculo_id: int
     vendedor_id: int | None = None
     data_venda: date | None = None
-    valor_venda: Decimal
-    valor_entrada: Decimal | None = None
-    debitos: Decimal | None = None
-    km: int | None = None
+    valor_venda: Decimal = Field(gt=0)
+    valor_entrada: Decimal | None = Field(default=None, ge=0)
+    debitos: Decimal | None = Field(default=None, ge=0)
+    km: int | None = Field(default=None, ge=0)
     forma_pagamento: str
-    parcelas: int | None = None
+    parcelas: int | None = Field(default=None, ge=1)
     status: StatusVenda = StatusVenda.pendente
     observacoes: str | None = None
     veiculo_troca_id: int | None = None
-    valor_diferenca: Decimal | None = None
+    valor_diferenca: Decimal | None = Field(default=None, ge=0)
     pagamento_pendente: bool = False
-    valor_pendente: Decimal | None = None
+    valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
+
+    @model_validator(mode="after")
+    def validar_valores(self) -> Self:
+        if self.valor_entrada is not None and self.valor_entrada > self.valor_venda:
+            raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+        return self
 
 
 class VendaUpdate(BaseModel):
@@ -100,19 +109,29 @@ class VendaUpdate(BaseModel):
     veiculo_id: int | None = None
     vendedor_id: int | None = None
     data_venda: date | None = None
-    valor_venda: Decimal | None = None
-    valor_entrada: Decimal | None = None
-    debitos: Decimal | None = None
-    km: int | None = None
+    valor_venda: Decimal | None = Field(default=None, gt=0)
+    valor_entrada: Decimal | None = Field(default=None, ge=0)
+    debitos: Decimal | None = Field(default=None, ge=0)
+    km: int | None = Field(default=None, ge=0)
     forma_pagamento: str | None = None
-    parcelas: int | None = None
+    parcelas: int | None = Field(default=None, ge=1)
     status: StatusVenda | None = None
     observacoes: str | None = None
     veiculo_troca_id: int | None = None
-    valor_diferenca: Decimal | None = None
+    valor_diferenca: Decimal | None = Field(default=None, ge=0)
     pagamento_pendente: bool = False
-    valor_pendente: Decimal | None = None
+    valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
+
+    @model_validator(mode="after")
+    def validar_valores(self) -> Self:
+        if (
+            self.valor_venda is not None
+            and self.valor_entrada is not None
+            and self.valor_entrada > self.valor_venda
+        ):
+            raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+        return self
 
 
 class VendaRead(BaseModel):
@@ -252,6 +271,12 @@ def create(session: Session, data: VendaCreate, actor_id: int | None = None) -> 
 def update(
     session: Session, obj: Venda, data: VendaUpdate, actor_id: int | None = None
 ) -> Venda:
+    valor_venda = data.valor_venda if data.valor_venda is not None else obj.valor_venda
+    valor_entrada = (
+        data.valor_entrada if data.valor_entrada is not None else obj.valor_entrada
+    )
+    if valor_entrada is not None and valor_entrada > valor_venda:
+        raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
     veiculo_anterior_id = obj.veiculo_id
     veiculo_troca_anterior_id = obj.veiculo_troca_id
     status_anterior = obj.status
