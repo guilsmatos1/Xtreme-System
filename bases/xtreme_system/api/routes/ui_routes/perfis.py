@@ -94,7 +94,6 @@ def ui_perfil_editar(
 async def ui_perfil_criar(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     form = await request.form()
     try:
         data = perfil.PerfilCreate(
@@ -138,7 +137,6 @@ async def ui_perfil_criar(
 async def ui_perfil_atualizar(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(perfil.get(session, item_id), "Perfil")
     form = await request.form()
     data = perfil.PerfilUpdate(
@@ -171,7 +169,6 @@ async def ui_perfil_atualizar(
 def ui_perfil_excluir(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(perfil.get(session, item_id), "Perfil")
     try:
         perfil.delete(session, obj, user.id)

@@ -59,7 +59,6 @@ def ui_veiculo_documentos(
     user: _DocumentoDep,
     veiculo_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     return _documentos_modal(request, session, user, veiculo_id)
 
 

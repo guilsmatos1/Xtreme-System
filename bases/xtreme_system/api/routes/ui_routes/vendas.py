@@ -337,7 +337,6 @@ async def _criar_venda(
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     form = await request.form()
 
     cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
@@ -398,7 +397,6 @@ async def _atualizar_venda(
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(venda.get(session, item_id), "Venda")
     form = await request.form()
 
@@ -460,7 +458,6 @@ def _regerar_contrato_venda(
     sozinho quando esses dados mudam.
     """
     obj = _found(venda.get(session, item_id), "Venda")
-    session.info["usuario_id"] = user.id
     _persistir_contrato_venda(session, obj, user.id)
     return RedirectResponse(f"/ui/vendas/{item_id}/contrato", status_code=303)
 
@@ -511,7 +508,6 @@ async def _confirmar_fechamento_venda(
         data = fechamento_venda.FechamentoVendaCreate.model_validate(
             {"participacoes": participacoes}
         )
-        session.info["usuario_id"] = user.id
         fechamento_venda.confirmar(session, obj, data, usuario_id=user.id)
     except (ValidationError, fechamento_venda.FechamentoVendaError) as exc:
         msg = str(exc)

@@ -68,7 +68,6 @@ def ui_veiculo_imagens(
     user: _AbrirImagensDep,
     veiculo_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     return _imagem_modal(request, session, user, veiculo_id)
 
 

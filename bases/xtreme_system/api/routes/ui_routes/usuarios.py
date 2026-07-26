@@ -107,7 +107,6 @@ def ui_usuario_criar(
             {"perfis": perfil.list_all(session), "erro": "username já existe"},
             status_code=400,
         )
-    session.info["usuario_id"] = user.id
     usuario.create(
         session,
         usuario.UsuarioCreate(
@@ -132,7 +131,6 @@ def ui_usuario_excluir(
             status_code=400,
         )
     obj = _found(usuario.get(session, user_id), "Usuário")
-    session.info["usuario_id"] = user.id
     usuario.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
@@ -156,7 +154,6 @@ def ui_usuario_senha_alterar(
     nova_senha: Annotated[str, Form()],
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    session.info["usuario_id"] = user.id
     usuario.change_password(session, obj, nova_senha, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
@@ -184,7 +181,6 @@ def ui_usuario_perfil_alterar(
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    session.info["usuario_id"] = user.id
     usuario.set_perfil(session, obj, perfil_id, user.id)
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
@@ -231,7 +227,6 @@ def ui_usuario_editar(
             },
             status_code=400,
         )
-    session.info["usuario_id"] = user.id
     usuario.update(
         session,
         obj,

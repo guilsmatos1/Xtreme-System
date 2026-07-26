@@ -304,7 +304,6 @@ def _detalhe_veiculo(
 def _excluir_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(veiculo.get(session, item_id), "Veículo")
     try:
         delete_with_hook(
@@ -383,7 +382,6 @@ def _erro_veiculo(
 async def _atualizar_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     obj = _found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
     dados_form = dict(form)

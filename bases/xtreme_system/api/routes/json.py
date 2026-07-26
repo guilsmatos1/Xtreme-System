@@ -78,7 +78,6 @@ def criar_usuario(
 ) -> usuario.Usuario:
     if usuario.get_by_username(session, data.username) is not None:
         raise HTTPException(status_code=400, detail="username já existe")
-    session.info["usuario_id"] = admin.id
     return usuario.create(session, data, admin.id)
 
 
@@ -99,7 +98,6 @@ def deletar_usuario(
     if user_id == current.id:
         raise HTTPException(status_code=400, detail="não pode excluir a si mesmo")
     obj = _found(usuario.get(session, user_id), "Usuário")
-    session.info["usuario_id"] = current.id
     usuario.delete(session, obj, current.id)
 
 
@@ -111,7 +109,6 @@ def trocar_senha_usuario(
     nova_senha: Annotated[str, Form()],
 ) -> None:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    session.info["usuario_id"] = admin.id
     usuario.change_password(session, obj, nova_senha, admin.id)
 
 
@@ -257,7 +254,6 @@ def confirmar_fechamento_venda(
     admin: AdminUser,
 ) -> fechamento_venda.FechamentoVenda:
     venda_obj = _found(venda.get(session, venda_id), "Venda")
-    session.info["usuario_id"] = admin.id
     try:
         return fechamento_venda.confirmar(session, venda_obj, data, usuario_id=admin.id)
     except fechamento_venda.FechamentoVendaError as exc:

@@ -65,7 +65,6 @@ def ui_veiculo_procuracao(
     user: _AbrirProcuracaoDep,
     veiculo_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     return _procuracao_modal(request, session, user, veiculo_id)
 
 
