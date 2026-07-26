@@ -4,6 +4,7 @@ import jwt
 import pytest
 
 from xtreme_system.auth import core as auth
+from xtreme_system.usuario import core as usuario
 
 
 def test_hash_roundtrip() -> None:
@@ -11,6 +12,16 @@ def test_hash_roundtrip() -> None:
     assert h != "segredo"
     assert auth.verify_password("segredo", h)
     assert not auth.verify_password("errado", h)
+
+
+def test_validate_senha_rejeita_vazia_ou_fraca() -> None:
+    for senha in ("", "   ", "x", "xy"):
+        with pytest.raises(usuario.SenhaFracaError):
+            usuario.validate_senha(senha)
+
+
+def test_validate_senha_remove_espacos() -> None:
+    assert usuario.validate_senha("  abc  ") == "abc"
 
 
 def test_token_roundtrip() -> None:

@@ -245,6 +245,19 @@ def test_admin_pode_excluir_outro_admin(client: TestClient) -> None:
     assert not any(u["id"] == outro_id for u in usuarios)
 
 
+def test_admin_nao_cria_usuario_com_senha_vazia_ou_fraca(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+
+    for username, senha in (("sem_senha", " "), ("senha_fraca", "xy")):
+        resp = client.post(
+            "/usuarios",
+            json={"username": username, "senha": senha, "papel": "funcionario"},
+            headers=headers,
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "senha deve ter pelo menos 3 caracteres"
+
+
 def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     # cria um vendedor
@@ -268,6 +281,26 @@ def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     assert resp2.status_code == 200
 
 
+def test_admin_nao_troca_para_senha_vazia_ou_fraca(client: TestClient) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    vendedor = client.post(
+        "/usuarios",
+        json={"username": "vendedor_fraco", "senha": "abc", "papel": "funcionario"},
+        headers=headers,
+    )
+    assert vendedor.status_code == 201
+    vendedor_id = vendedor.json()["id"]
+
+    resp = client.post(
+        f"/usuarios/{vendedor_id}/senha",
+        data={"nova_senha": "xy"},
+        headers=headers,
+    )
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "senha deve ter pelo menos 3 caracteres"
+
+
 def test_api_usuario_management_atribui_admin_na_auditoria(
     client: TestClient,
 ) -> None:
@@ -280,7 +313,7 @@ def test_api_usuario_management_atribui_admin_na_auditoria(
     # CREATE
     novo = client.post(
         "/usuarios",
-        json={"username": "alvo", "senha": "s", "papel": "funcionario"},
+        json={"username": "alvo", "senha": "senha", "papel": "funcionario"},
         headers=headers,
     )
     assert novo.status_code == 201

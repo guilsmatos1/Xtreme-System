@@ -79,7 +79,10 @@ def criar_usuario(
 ) -> usuario.Usuario:
     if usuario.get_by_username(session, data.username) is not None:
         raise HTTPException(status_code=400, detail="username já existe")
-    return usuario.create(session, data, admin.id)
+    try:
+        return usuario.create(session, data, admin.id)
+    except usuario.SenhaFracaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/usuarios", response_model=list[usuario.UsuarioRead])
@@ -110,7 +113,10 @@ def trocar_senha_usuario(
     nova_senha: Annotated[str, Form()],
 ) -> None:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    usuario.change_password(session, obj, nova_senha, admin.id)
+    try:
+        usuario.change_password(session, obj, nova_senha, admin.id)
+    except usuario.SenhaFracaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 # ---- Investidores ----

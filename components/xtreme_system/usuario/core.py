@@ -12,10 +12,17 @@ from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.perfil.core import Perfil
 
+MIN_SENHA_LENGTH = 3
+
 
 class Papel(StrEnum):
     admin = "admin"
     funcionario = "funcionario"
+
+
+class SenhaFracaError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("senha deve ter pelo menos 3 caracteres")
 
 
 class Usuario(Base):
@@ -72,13 +79,21 @@ def get_by_username(session: Session, username: str) -> Usuario | None:
     return session.query(Usuario).filter_by(username=username).one_or_none()
 
 
+def validate_senha(senha: str) -> str:
+    senha = senha.strip()
+    if len(senha) < MIN_SENHA_LENGTH:
+        raise SenhaFracaError()
+    return senha
+
+
 def create(
     session: Session, data: UsuarioCreate, actor_id: int | None = None
 ) -> Usuario:
+    senha = validate_senha(data.senha)
     obj = Usuario(
         username=data.username,
         nome=data.nome,
-        senha_hash=hash_password(data.senha),
+        senha_hash=hash_password(senha),
         papel=data.papel,
         perfil_id=data.perfil_id,
     )
@@ -130,6 +145,7 @@ def delete(session: Session, obj: Usuario, actor_id: int | None = None) -> None:
 def change_password(
     session: Session, obj: Usuario, nova_senha: str, actor_id: int | None = None
 ) -> None:
+    nova_senha = validate_senha(nova_senha)
     antes = snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
     session.flush()

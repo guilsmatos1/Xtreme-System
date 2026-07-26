@@ -83,7 +83,7 @@ def test_tabelas_distintas(db_session: Session) -> None:
     admin = _seed_admin(db_session)
     usuario.create(
         db_session,
-        usuario.UsuarioCreate(username="u", senha="s", papel=usuario.Papel.admin),
+        usuario.UsuarioCreate(username="u", senha="senha", papel=usuario.Papel.admin),
         admin.id,
     )
     investidor.create(db_session, investidor.InvestidorCreate(nome="X"), admin.id)
@@ -105,7 +105,7 @@ def test_auditar_permite_actor_none(db_session: Session) -> None:
     usuario.create(
         db_session,
         usuario.UsuarioCreate(
-            username="sem_autor", senha="s", papel=usuario.Papel.admin
+            username="sem_autor", senha="senha", papel=usuario.Papel.admin
         ),
     )
     rows = auditoria.query(db_session, tabela="usuario", tipo_acao="CREATE")
