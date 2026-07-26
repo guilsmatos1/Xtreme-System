@@ -28,8 +28,10 @@ from xtreme_system.api.routes.ui_routes.common import (
     rollback_se_criou_aninhados,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
+    excluir_anexo_entidade,
     pending_upload_paths,
     remover_orfaos,
+    salvar_anexos_entidade,
     salvar_arquivos,
 )
 from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
@@ -182,12 +184,7 @@ def ui_compra_comprovantes_upload(
     comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
     _found(compra.get(session, compra_id), "Compra")
-    erro = _validar_uploads(comprovantes)
-    if erro:
-        return _comprovantes_modal(request, session, user, compra_id, erro)
-
-    session.info["usuario_id"] = user.id
-    salvar_arquivos(
+    erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_compra_dir(compra_id),
         url_prefix=f"/static/uploads/compras/{compra_id}/comprovantes",
@@ -198,6 +195,9 @@ def ui_compra_comprovantes_upload(
         arquivos=comprovantes,
         actor_id=user.id,
     )
+    if erro:
+        return _comprovantes_modal(request, session, user, compra_id, erro)
+
     return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
 
@@ -212,13 +212,15 @@ def ui_compra_comprovantes_excluir(
     comprovante = _found(
         imagem_comprovante_compra.get(session, comprovante_id), "Comprovante"
     )
-    if comprovante.compra_id != compra_id:
-        raise HTTPException(status_code=404, detail="Comprovante não encontrado")
-    session.info["usuario_id"] = user.id
-    imagem_comprovante_compra.delete(session, comprovante, user.id)
-    path = _uploaded_file_path(comprovante.url or "")
-    if path is not None:
-        _remover_upload(path)
+    excluir_anexo_entidade(
+        session,
+        anexo=comprovante,
+        parent_field="compra_id",
+        parent_id=compra_id,
+        delete_fn=imagem_comprovante_compra.delete,
+        actor_id=user.id,
+        not_found_detail="Comprovante não encontrado",
+    )
     return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 
 

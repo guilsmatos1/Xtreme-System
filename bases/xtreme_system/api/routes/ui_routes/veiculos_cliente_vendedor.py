@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -14,15 +14,13 @@ from xtreme_system.api.deps import (
     templates,
 )
 from xtreme_system.api.routes.ui_routes.common import (
-    _remover_upload,
-    _uploaded_file_path,
     _uploads_cliente_dir,
-    _validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
+    excluir_anexo_entidade,
     pending_upload_paths,
     remover_orfaos,
-    salvar_arquivos,
+    salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.compra import core as compra
@@ -92,10 +90,7 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
         return _cliente_vendedor_modal(
             request, session, user, veiculo_id, "Cliente vendedor não encontrado"
         )
-    erro = _validar_uploads(documentos)
-    if erro:
-        return _cliente_vendedor_modal(request, session, user, veiculo_id, erro)
-    salvar_arquivos(
+    erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_cliente_dir(item_compra.cliente_id),
         url_prefix=f"/static/uploads/clientes/{item_compra.cliente_id}/documentos",
@@ -106,6 +101,8 @@ def ui_veiculo_cliente_vendedor_documentos_upload(
         arquivos=documentos,
         actor_id=user.id,
     )
+    if erro:
+        return _cliente_vendedor_modal(request, session, user, veiculo_id, erro)
     return _cliente_vendedor_modal(request, session, user, veiculo_id)
 
 
@@ -124,10 +121,13 @@ def ui_veiculo_cliente_vendedor_documentos_excluir(
             request, session, user, veiculo_id, "Cliente vendedor não encontrado"
         )
     doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
-    if doc.cliente_id != item_compra.cliente_id:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    imagem_documento_cliente.delete(session, doc, user.id)
-    path = _uploaded_file_path(doc.url or "")
-    if path is not None:
-        _remover_upload(path)
+    excluir_anexo_entidade(
+        session,
+        anexo=doc,
+        parent_field="cliente_id",
+        parent_id=item_compra.cliente_id,
+        delete_fn=imagem_documento_cliente.delete,
+        actor_id=user.id,
+        not_found_detail="Documento não encontrado",
+    )
     return _cliente_vendedor_modal(request, session, user, veiculo_id)

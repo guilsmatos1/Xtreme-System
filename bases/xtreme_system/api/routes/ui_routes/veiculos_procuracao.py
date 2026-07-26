@@ -2,21 +2,19 @@
 
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.common import (
-    _remover_upload,
-    _uploaded_file_path,
     _uploads_procuracao_dir,
-    _validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
+    excluir_anexo_entidade,
     pending_upload_paths,
     remover_orfaos,
-    salvar_arquivos,
+    salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.documento_procuracao import core as documento_procuracao
@@ -79,12 +77,8 @@ def ui_veiculo_procuracao_upload(
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     _found(veiculo.get(session, veiculo_id), "Veículo")
-    erro = _validar_uploads(documentos)
-    if erro:
-        return _procuracao_modal(request, session, user, veiculo_id, erro)
-    salvar_arquivos(
+    erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_procuracao_dir(veiculo_id),
         url_prefix=f"/static/uploads/veiculos/{veiculo_id}/procuracao",
@@ -95,6 +89,8 @@ def ui_veiculo_procuracao_upload(
         arquivos=documentos,
         actor_id=user.id,
     )
+    if erro:
+        return _procuracao_modal(request, session, user, veiculo_id, erro)
     return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)
 
 
@@ -106,12 +102,14 @@ def ui_veiculo_procuracao_excluir(
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     doc = _found(documento_procuracao.get(session, doc_id), "Documento")
-    if doc.veiculo_id != veiculo_id:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    documento_procuracao.delete(session, doc, user.id)
-    path = _uploaded_file_path(doc.url or "")
-    if path is not None:
-        _remover_upload(path)
+    excluir_anexo_entidade(
+        session,
+        anexo=doc,
+        parent_field="veiculo_id",
+        parent_id=veiculo_id,
+        delete_fn=documento_procuracao.delete,
+        actor_id=user.id,
+        not_found_detail="Documento não encontrado",
+    )
     return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)
