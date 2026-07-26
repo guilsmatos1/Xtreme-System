@@ -1,29 +1,22 @@
 """Documento de procuração de veículo: model (FK veiculo), schemas e CRUD."""
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey, event
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
-from xtreme_system.upload_file.core import schedule_uploaded_file_delete
 
 
-class DocumentoProcuracao(Base):
+class DocumentoProcuracao(attachment.UrlAttachmentMixin, Base):
     __tablename__ = "documento_procuracao"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     veiculo_id: Mapped[int] = mapped_column(
         ForeignKey("veiculo.id", ondelete="CASCADE"), index=True
     )
-    url: Mapped[str]
 
 
-@event.listens_for(DocumentoProcuracao, "after_delete")
-def _delete_upload_file(
-    _mapper: object, _connection: object, target: DocumentoProcuracao
-) -> None:
-    schedule_uploaded_file_delete(target)
+attachment.register_upload_file_delete(DocumentoProcuracao)
 
 
 class DocumentoProcuracaoCreate(BaseModel):
