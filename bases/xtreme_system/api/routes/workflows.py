@@ -13,11 +13,9 @@ from xtreme_system.venda import core as venda
 
 
 def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -> None:
-    inv_id = data.investidor_id
-    inv_valid = (not update or inv_id is not None) and investidor.get(
-        session, inv_id
-    ) is None
-    if inv_valid:
+    investidor_id = data.investidor_id
+    investidor_deve_existir = not update or investidor_id is not None
+    if investidor_deve_existir and investidor.get(session, investidor_id) is None:
         raise HTTPException(status_code=400, detail="investidor_id inexistente")
     if (
         not update
