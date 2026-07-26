@@ -1,63 +1,28 @@
 {% import "_macros.html" as ui %}
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-procuracao-title">
-  <div class="modal__panel">
-    <div class="modal__head">
-      <h2 id="modal-procuracao-title">
-        Procuração — {{ veiculo.modelo }} ({{ veiculo.placa }})
-        {% if veiculo.documentos_procuracao %}<span class="mmgr__count">{{ veiculo.documentos_procuracao | length }}</span>{% endif %}
-      </h2>
-      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
-    </div>
-    <div class="modal__body">
-      {% if erro %}{{ ui.alert(erro) }}{% endif %}
-      {% if veiculo.documentos_procuracao %}
-      <div class="mmgr__grid">
-        {% for doc in veiculo.documentos_procuracao %}
-        {% set is_imagem = doc.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
-        <div class="mmgr__card">
-          {% if arquivo_disponivel(doc.url, pending_upload_paths) and is_imagem %}
-          <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar documento">
-            <img src="{{ doc.url }}" alt="Documento de procuração de {{ veiculo.modelo }}" loading="lazy">
-          </button>
-          <dialog class="image-preview" onclick="if (event.target === this) this.close()">
-            <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
-            <img src="{{ doc.url }}" alt="Documento de procuração de {{ veiculo.modelo }}">
-          </dialog>
-          {% elif arquivo_disponivel(doc.url, pending_upload_paths) %}
-          <a class="mmgr__doc" href="{{ doc.url }}" target="_blank" rel="noopener" aria-label="Abrir documento PDF">
-            <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
-            <span class="mmgr__doc-badge">PDF</span>
-            <span class="mmgr__doc-name">{{ doc.url.split("/") | last }}</span>
-          </a>
-          {% else %}
-          <div class="mmgr__doc mmgr__doc--missing" aria-disabled="true">
-            <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
-            <span class="mmgr__doc-badge">Indisponível</span>
-            <span class="mmgr__doc-name">{{ doc.url.split("/") | last }}</span>
-          </div>
-          {% endif %}
-          {% if pode_operacao(user, 'veiculos', 'excluir_procuracao') %}<button class="mmgr__del" type="button" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao/{{ doc.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este documento?" aria-label="Excluir documento">{{ ui.icon("trash") }}</button>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-        {{ ui.empty("file", "Nenhum documento", "Envie documentos de procuração deste veículo usando a área abaixo.") }}
-      {% endif %}
-    </div>
-    {% if pode_operacao(user, 'veiculos', 'enviar_procuracao') %}<form class="mmgr__upload" hx-post="/ui/veiculos/{{ veiculo.id }}/procuracao" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
-      <label class="mmgr__drop">
-        <input type="file" name="documentos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
-               onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste documentos aqui ou clique para selecionar'">
-        <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
-        <span class="mmgr__drop-text">Arraste documentos aqui ou clique para selecionar</span>
-        <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
-      </label>
-      <div class="mmgr__upload-actions">
-        <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar documentos</button>
-      </div>
-    </form>{% endif %}
-  </div>
-</div>
+{{ ui.anexos_modal(
+  "modal-procuracao-title",
+  "Procuração — " ~ veiculo.modelo ~ " (" ~ veiculo.placa ~ ")",
+  veiculo.documentos_procuracao,
+  erro,
+  pending_upload_paths,
+  "file",
+  "Nenhum documento",
+  "Envie documentos de procuração deste veículo usando a área abaixo.",
+  pode_operacao(user, 'veiculos', 'enviar_procuracao'),
+  "/ui/veiculos/" ~ veiculo.id ~ "/procuracao",
+  "documentos",
+  ".pdf,.jpg,.jpeg,.png,.webp",
+  "file",
+  "Arraste documentos aqui ou clique para selecionar",
+  "PDF, JPG, PNG ou WEBP",
+  "Enviar documentos",
+  pode_operacao(user, 'veiculos', 'excluir_procuracao'),
+  "/ui/veiculos/" ~ veiculo.id ~ "/procuracao/",
+  "Excluir este documento?",
+  "Excluir documento",
+  "Ampliar documento",
+  "Documento de procuração de " ~ veiculo.modelo
+) }}
 {% if action_oob %}
 {% set v = veiculo %}
 {% include "_action_veiculo_procuracao.html" %}
