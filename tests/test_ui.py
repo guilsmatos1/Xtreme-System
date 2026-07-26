@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from tests.database import create_test_engine
 from xtreme_system.api.core import app
-from xtreme_system.api.deps import _NaoAutorizadoError, get_ui_user
+from xtreme_system.api.deps import _NaoAutorizadoError, get_ui_user, templates
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
 from xtreme_system.api.routes.ui_routes.common import _validar_uploads, resolver_cliente
@@ -208,7 +208,9 @@ def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
             Path("bases/xtreme_system/api").joinpath(url.lstrip("/")).unlink()
 
 
-def test_modal_imagens_mostra_indisponivel_sem_arquivo(client: TestClient) -> None:
+def test_modal_imagens_nao_verifica_arquivo_faltante_ao_abrir(
+    client: TestClient,
+) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
@@ -225,8 +227,9 @@ def test_modal_imagens_mostra_indisponivel_sem_arquivo(client: TestClient) -> No
     resp = client.get(f"/ui/veiculos/{veiculo_id}/imagens")
 
     assert resp.status_code == 200
-    assert "Indisponível" in resp.text
-    assert url not in resp.text
+    assert "Indisponível" not in resp.text
+    assert url in resp.text
+    assert client.get(url).status_code == 404
 
 
 def test_modal_imagens_veiculo_get_renderiza_acoes_com_imagem_existente(
@@ -1565,6 +1568,35 @@ def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
     finally:
         with contextlib.suppress(FileNotFoundError):
             outro_caminho.unlink()
+
+
+def test_modal_com_anexo_nao_verifica_arquivo_no_disco(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    compra_id = _seed_compra(client, "65498732100")
+
+    def falha_se_consultar_disco(*_args: object, **_kwargs: object) -> bool:
+        raise AssertionError("modal nao deve verificar arquivo no disco")
+
+    monkeypatch.setitem(
+        templates.env.globals, "arquivo_disponivel", falha_se_consultar_disco
+    )
+
+    upload = client.post(
+        f"/ui/compras/{compra_id}/comprovantes",
+        files=[
+            (
+                "comprovantes",
+                ("comprovante.pdf", b"%PDF-conteudo-pagto", "application/pdf"),
+            )
+        ],
+    )
+
+    assert upload.status_code == 200
+    assert "/static/uploads/compras/" in upload.text
+    assert "Indisponível" not in upload.text
+    _remover_uploads_renderizados(upload.text)
 
 
 def test_ui_compras_upload_comprovante_invalido_rejeita_lote(

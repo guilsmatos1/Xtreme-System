@@ -28,7 +28,7 @@
           {% for doc in documentos %}
           <li class="midia-list__item">
             {{ ui.icon("file") }}
-            {% if arquivo_disponivel(doc.url, pending_upload_paths) %}
+            {% if doc.url %}
             <a href="{{ doc.url }}" target="_blank" rel="noopener">Documento {{ loop.index }}</a>
             {% else %}
             <span aria-disabled="true">Documento {{ loop.index }} indisponível</span>
