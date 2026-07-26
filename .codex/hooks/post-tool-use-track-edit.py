@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -17,6 +18,9 @@ def state_path(cwd: str, session_id: str) -> Path:
 
 
 def main() -> int:
+    if os.environ.get("CODEX_TOKEN_EFFICIENCY_CHILD") == "1":
+        return 0
+
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:

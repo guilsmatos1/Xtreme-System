@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/guilsmatos/.local/bin/graphify hook-check"
+            "command": "if [ \"${CODEX_TOKEN_EFFICIENCY_CHILD:-}\" != \"1\" ]; then /Users/guilsmatos/.local/bin/graphify hook-check; fi"
           }
         ]
       }
@@ -31,7 +31,7 @@
             "type": "command",
             "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/verify-on-stop.py\"",
             "timeout": 600,
-            "statusMessage": "Running Opencode-equivalent finish hooks"
+            "statusMessage": "Running Codex finish hooks"
           }
         ]
       }

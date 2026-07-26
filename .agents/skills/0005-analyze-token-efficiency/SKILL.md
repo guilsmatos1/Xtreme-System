@@ -44,13 +44,18 @@ Ordene por economia estimada decrescente. Produza até 5 melhorias; se houver me
 
 ### 3. Gravar uma única representação
 
-Localize o checkout principal e a rodada atual:
+Quando `CODEX_TOKEN_REPORT_PATH` estiver definido pelo hook, use-o sem
+alterações. Caso contrário, localize o checkout principal e a rodada atual:
 
 ```bash
-MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-LOOP="$(find "$MAIN/.loop" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | sort | tail -1)"
-ISSUE="$(git rev-parse --abbrev-ref HEAD)"
-OUT="${LOOP:-$MAIN/docs/0005-analyze-token-efficiency}/$ISSUE.md"
+if [ -n "${CODEX_TOKEN_REPORT_PATH:-}" ]; then
+  OUT="$CODEX_TOKEN_REPORT_PATH"
+else
+  MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+  LOOP="$(find "$MAIN/.loop" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | sort | tail -1)"
+  ISSUE="${CODEX_SOURCE_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
+  OUT="${LOOP:-$MAIN/docs/0005-analyze-token-efficiency}/$ISSUE.md"
+fi
 mkdir -p "$(dirname "$OUT")"
 ```
 
@@ -79,3 +84,5 @@ Ao terminar, responda em uma linha com sessão, totais, caminho e títulos/econo
 - Use os totais reais do perfil; estime apenas custos isolados.
 - Não inclua a própria retrospectiva.
 - Não edite código do produto.
+- Em execução automática, grave somente em `CODEX_TOKEN_REPORT_PATH`; não
+  altere `.codex/.hook-state`, nem arquivos da orquestração.

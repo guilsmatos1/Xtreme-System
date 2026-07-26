@@ -29,6 +29,7 @@ from pathlib import Path
 
 MAX_OUTPUT_CHARS = 12000
 BODY_LIMIT = 1200
+CHILD_PROCESS_ENV = "CODEX_TOKEN_EFFICIENCY_CHILD"
 # Bare `uv run pytest` always exits 4 here: the suite requires TEST_DATABASE_URL.
 # `make test` would satisfy it, but it points every run at the single shared
 # xtreme_test database on localhost:5432 -- parallel worktree agents would corrupt
@@ -77,6 +78,88 @@ def working_tree_dirty(root: Path) -> bool:
 def state_path(root: Path, session_id: str) -> Path:
     safe_session = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id or "unknown")
     return hook_state_dir(root) / f"{safe_session}.json"
+
+
+def main_checkout(root: Path) -> Path | None:
+    result = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    return Path(result.stdout.strip()).parent
+
+
+def branch_name(root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout.strip() if result.returncode == 0 else "unknown"
+
+
+def launch_token_efficiency(
+    checkout: Path | None,
+    source_branch: str,
+    session_id: str,
+) -> None:
+    """Start a best-effort retrospective after the session is fully resolved."""
+    session_id = session_id.strip()
+    if not session_id or checkout is None:
+        return
+
+    runner = (
+        checkout
+        / ".agents"
+        / "skills"
+        / "0005-analyze-token-efficiency"
+        / "run_hook.py"
+    )
+    if not runner.is_file():
+        return
+
+    state_dir = checkout / ".codex" / ".hook-state" / "token-efficiency"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    safe_session = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id)
+    marker = state_dir / f"{safe_session}.started"
+    try:
+        marker.touch(exist_ok=False)
+    except FileExistsError:
+        return
+
+    log_path = state_dir / f"{safe_session}.log"
+    env = {**os.environ, CHILD_PROCESS_ENV: "1"}
+    try:
+        with log_path.open("ab") as log:
+            subprocess.Popen(  # noqa: S603
+                [
+                    sys.executable,
+                    str(runner),
+                    "--session-id",
+                    session_id,
+                    "--source-branch",
+                    source_branch,
+                ],
+                cwd=checkout,
+                env=env,
+                stdin=subprocess.DEVNULL,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+                close_fds=True,
+            )
+    except OSError as exc:
+        marker.unlink(missing_ok=True)
+        log_path.write_text(
+            f"failed to launch retrospective: {exc}\n",
+            encoding="utf-8",
+        )
 
 
 def run_checks(
@@ -161,7 +244,7 @@ def finalize(
     phase: str,
     body: str,
     can_block: bool,
-) -> None:
+) -> bool:
     """Send the verdict exactly once, then consume the agent's report.
 
     Consuming only after a successful send is what makes a retry possible: while
@@ -172,12 +255,12 @@ def finalize(
     report = hook_state_dir(root) / "report.json"
     if context is None:
         report.unlink(missing_ok=True)
-        return
+        return True
 
     error = send_worker_done(context, phase, body)
     if error is None:
         report.unlink(missing_ok=True)
-        return
+        return True
 
     if can_block:
         block(
@@ -185,10 +268,11 @@ def finalize(
             f"(orca orchestration send, phase={phase}):\n\n{error}\n\n"
             "The work is already committed and merged. Stop again to retry the report."
         )
-        return
+        return False
 
     report.unlink(missing_ok=True)
     (hook_state_dir(root) / "report-error.log").write_text(error, encoding="utf-8")
+    return True
 
 
 def checks_stage(
@@ -197,16 +281,16 @@ def checks_stage(
     report: dict | None,
     context: dict | None,
     can_block: bool,
-) -> bool:
-    """Run the post-edit checks. Returns True when the turn is already resolved."""
+) -> bool | None:
+    """Return None to continue, True when finalized, or False when unresolved."""
     session_state = state_path(root, payload.get("session_id", ""))
     if not session_state.exists():
-        return False
+        return None
 
     session_state.unlink(missing_ok=True)
     failed_check = run_checks(root)
     if failed_check is None:
-        return False
+        return None
 
     name, command, result = failed_check
     output = (result.stdout + result.stderr)[-MAX_OUTPUT_CHARS:]
@@ -226,24 +310,24 @@ def checks_stage(
                 ]
             )
         )
-        return True
+        return False
 
     # Second failure in a row, with no block left to ask for a fix. A red tree
     # must not reach master, so report the failure instead: the coordinator
     # resets the issue for a later retry, rather than waiting out its 2h cap on
     # a worker that will never report.
     if report is not None:
-        finalize(
+        return finalize(
             root,
             context,
             "failed",
             f'post-edit check "{name}" still failing:\n{output}',
             can_block,
         )
-    return True
+    return False
 
 
-def integrate_unreported(root: Path, can_block: bool) -> None:
+def integrate_unreported(root: Path, can_block: bool) -> bool:
     """No verdict on disk: not a worker, or an agent that stopped mid-task.
 
     Keeps the historical behaviour -- integrate whatever is pending -- and
@@ -251,7 +335,7 @@ def integrate_unreported(root: Path, can_block: bool) -> None:
     unfinished turn as a result.
     """
     if not working_tree_dirty(root):
-        return
+        return True
     ok, output = run_agent_finish(root)
     if not ok and can_block:
         block(
@@ -259,6 +343,8 @@ def integrate_unreported(root: Path, can_block: bool) -> None:
             "(scripts/agent-finish.sh):\n\n"
             f"{output}\n\nFix the failures, then stop again."
         )
+        return False
+    return ok
 
 
 def integrate_reported(
@@ -266,7 +352,7 @@ def integrate_reported(
     report: dict,
     context: dict | None,
     can_block: bool,
-) -> None:
+) -> bool:
     phase = str(report.get("phase", "")).strip().lower()
     summary = str(report.get("summary", ""))
 
@@ -276,27 +362,28 @@ def integrate_reported(
     # broken work in master forever.
     if phase != "success":
         body = summary or "worker reported failure"
-        finalize(root, context, "failed", body, can_block)
-        return
+        return finalize(root, context, "failed", body, can_block)
 
     ok, output = run_agent_finish(root)
     if not ok:
         # Implementation is fine, integration is not. `merge_failed` stops the
         # whole run with the worktree and branch intact, instead of discarding
         # work that only needs a human to resolve a conflict.
-        finalize(
+        return finalize(
             root,
             context,
             "merge_failed",
             f"{summary}\n\nscripts/agent-finish.sh failed:\n{output}",
             can_block,
         )
-        return
 
-    finalize(root, context, "success", summary, can_block)
+    return finalize(root, context, "success", summary, can_block)
 
 
 def main() -> int:
+    if os.environ.get(CHILD_PROCESS_ENV) == "1":
+        return 0
+
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
@@ -310,15 +397,25 @@ def main() -> int:
 
     report = read_json(hook_state_dir(root) / "report.json")
     context = read_json(hook_state_dir(root) / "orchestration.json")
+    checkout = main_checkout(root)
+    source_branch = str((context or {}).get("identifier") or branch_name(root))
+    session_id = str(payload.get("session_id", ""))
 
-    if checks_stage(root, payload, report, context, can_block):
+    checks_result = checks_stage(root, payload, report, context, can_block)
+    if checks_result is not None:
+        if checks_result:
+            launch_token_efficiency(checkout, source_branch, session_id)
         return 0
 
     if report is None:
-        integrate_unreported(root, can_block)
+        finalized = integrate_unreported(root, can_block)
+        if finalized:
+            launch_token_efficiency(checkout, source_branch, session_id)
         return 0
 
-    integrate_reported(root, report, context, can_block)
+    finalized = integrate_reported(root, report, context, can_block)
+    if finalized:
+        launch_token_efficiency(checkout, source_branch, session_id)
     return 0
 
 
