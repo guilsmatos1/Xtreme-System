@@ -2,6 +2,7 @@
 
 import subprocess
 from collections.abc import Callable
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -36,8 +37,9 @@ def test_dump_database_usa_pg_dump_custom_format(
     ) -> subprocess.CompletedProcess[bytes]:
         assert capture_output is True
         assert check is False
+        Path(cmd[-1]).write_bytes(b"dump")
         chamadas.append((cmd, env))
-        return subprocess.CompletedProcess(cmd, 0, stdout=b"dump", stderr=b"")
+        return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
 
     monkeypatch.setattr(
         exportacao,
@@ -49,7 +51,7 @@ def test_dump_database_usa_pg_dump_custom_format(
     monkeypatch.setattr("xtreme_system.exportacao.core.subprocess.run", fake_run)
 
     assert exportacao.dump_database() == b"dump"
-    assert chamadas[0][0] == [
+    assert chamadas[0][0][:-1] == [
         "pg_dump",
         "-h",
         "db",
@@ -62,7 +64,9 @@ def test_dump_database_usa_pg_dump_custom_format(
         "-Fc",
         "-Z",
         "6",
+        "-f",
     ]
+    assert chamadas[0][0][-1].endswith(".dump")
     assert chamadas[0][1]["PGPASSWORD"] == "secret"
 
 
@@ -95,7 +99,8 @@ def test_restore_database_usa_pg_restore_com_replace(
         assert env is not None
         assert env["PGPASSWORD"] == "secret"
         if cmd[0] == "pg_dump":
-            return subprocess.CompletedProcess(cmd, 0, stdout=b"backup", stderr=b"")
+            Path(cmd[-1]).write_bytes(b"backup")
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
         return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
 
     monkeypatch.setattr(
@@ -186,9 +191,13 @@ def test_ui_configuracoes_exportar_baixa_dump(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _login(client)
+
+    def fake_dump(output_path: str | Path) -> None:
+        Path(output_path).write_bytes(b"dump")
+
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.dump_database",
-        lambda: b"dump",
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.dump_database_to_file",
+        fake_dump,
     )
 
     resp = client.post("/ui/configuracoes/exportar")
@@ -205,9 +214,13 @@ def test_ui_configuracoes_importar_restaura_dump(
 ) -> None:
     _login(client)
     recebidos: list[bytes] = []
+
+    def fake_restore(dump_path: str | Path) -> None:
+        recebidos.append(Path(dump_path).read_bytes())
+
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database",
-        recebidos.append,
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database_from_file",
+        fake_restore,
     )
 
     resp = client.post(
@@ -226,9 +239,13 @@ def test_ui_configuracoes_importar_aceita_dump_maior_que_20mb(
 ) -> None:
     _login(client)
     recebidos: list[bytes] = []
+
+    def fake_restore(dump_path: str | Path) -> None:
+        recebidos.append(Path(dump_path).read_bytes())
+
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database",
-        recebidos.append,
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database_from_file",
+        fake_restore,
     )
 
     dump = b"x" * (21 * 1024 * 1024)
@@ -248,15 +265,15 @@ def test_ui_configuracoes_importar_roda_restore_em_threadpool(
     _login(client)
     chamadas: list[tuple[Any, tuple[Any, ...]]] = []
 
-    def fake_restore(dump: bytes) -> None:
-        assert dump == b"dump"
+    def fake_restore(dump_path: str | Path) -> None:
+        assert Path(dump_path).read_bytes() == b"dump"
 
     async def fake_run_in_threadpool(func: Any, *args: Any) -> None:
         chamadas.append((func, args))
         func(*args)
 
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database",
+        "xtreme_system.api.routes.ui_routes.configuracoes.exportacao.restore_database_from_file",
         fake_restore,
     )
     monkeypatch.setattr(
@@ -270,4 +287,5 @@ def test_ui_configuracoes_importar_roda_restore_em_threadpool(
     )
 
     assert resp.status_code == 200
-    assert chamadas == [(fake_restore, (b"dump",))]
+    assert chamadas[0][0] is fake_restore
+    assert Path(chamadas[0][1][0]).suffix == ".dump"
