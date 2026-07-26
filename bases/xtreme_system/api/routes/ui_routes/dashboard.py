@@ -75,28 +75,22 @@ def _opcoes_meses(mes_selecionado: date) -> list[dict[str, str]]:
     ]
 
 
-def _resumo_vendas_mes(session: Session, inicio: date) -> tuple[int, Decimal]:
+def _resumo_ticket_vendas_mes(
+    session: Session, inicio: date
+) -> tuple[int, Decimal, Decimal]:
     fim = _somar_meses(inicio, 1)
-    count, total = (
-        session.query(func.count(venda.Venda.id), func.sum(venda.Venda.valor_venda))
+    count, total, ticket_medio = (
+        session.query(
+            func.count(venda.Venda.id),
+            func.sum(venda.Venda.valor_venda),
+            func.avg(venda.Venda.valor_venda),
+        )
         .filter(venda.Venda.data_venda >= inicio)
         .filter(venda.Venda.data_venda < fim)
         .filter(venda.Venda.status != venda.StatusVenda.cancelado)
         .one()
     )
-    return count or 0, total or Decimal("0")
-
-
-def _ticket_medio_mes(session: Session, inicio: date) -> Decimal:
-    fim = _somar_meses(inicio, 1)
-    valor = (
-        session.query(func.avg(venda.Venda.valor_venda))
-        .filter(venda.Venda.data_venda >= inicio)
-        .filter(venda.Venda.data_venda < fim)
-        .filter(venda.Venda.status != venda.StatusVenda.cancelado)
-        .scalar()
-    )
-    return valor or Decimal("0")
+    return count or 0, total or Decimal("0"), ticket_medio or Decimal("0")
 
 
 def _atividade_titulo(row: auditoria.Auditoria) -> str:
@@ -144,7 +138,9 @@ def _ctx_dashboard(session: Session, mes: str | None = None) -> dict[str, Any]:
         veiculo.StatusVeiculo.disponivel, (0, Decimal("0"))
     )
 
-    vendas_mes_count, vendas_mes_total = _resumo_vendas_mes(session, mes_inicio)
+    vendas_mes_count, vendas_mes_total, ticket_medio = _resumo_ticket_vendas_mes(
+        session, mes_inicio
+    )
 
     desempenho_mensal = venda.desempenho_vendas_mensal(session, 6)
     maior_total = max(
@@ -178,7 +174,7 @@ def _ctx_dashboard(session: Session, mes: str | None = None) -> dict[str, Any]:
         "valor_estoque": valor_estoque,
         "vendas_mes_count": vendas_mes_count,
         "vendas_mes_total": vendas_mes_total,
-        "ticket_medio": _ticket_medio_mes(session, mes_inicio),
+        "ticket_medio": ticket_medio,
         "ranking_vendedores": venda.ranking_vendedores(session),
         "atividades_recentes": _atividades_recentes(session),
         "desempenho_chart": desempenho_chart,

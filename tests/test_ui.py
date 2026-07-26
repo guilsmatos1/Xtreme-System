@@ -3,7 +3,8 @@
 import contextlib
 import re
 from collections.abc import Callable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +19,7 @@ from tests.database import create_test_engine
 from xtreme_system.api.core import app
 from xtreme_system.api.deps import NaoAutorizadoError, get_ui_user, templates
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
+from xtreme_system.api.routes.ui_routes import dashboard as dashboard_ui
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
 from xtreme_system.api.routes.ui_routes.common import resolver_cliente, validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
@@ -2748,6 +2750,76 @@ def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:
     assert "1" in resp.text  # contagem de vendas > 0
     assert "Atividades Recentes" in resp.text
     assert "Venda #" in resp.text
+
+
+def test_ui_dashboard_resumo_ticket_vendas_mes_usa_query_unica(
+    db_session: Session,
+) -> None:
+    inv = investidor.create(
+        db_session, investidor.InvestidorCreate(nome="Investidor B")
+    )
+    cli = cliente.create(
+        db_session,
+        cliente.ClienteCreate(
+            nome="Cliente Dashboard Query",
+            documento="98765432100",
+            tipo=cliente.TipoCliente.pessoa_fisica,
+        ),
+    )
+    vei = veiculo.create(
+        db_session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Corolla",
+            cor="Prata",
+            ano=2024,
+            placa="QRY1A23",
+            km=1000,
+            preco=Decimal("100000.00"),
+            investidor_id=inv.id,
+        ),
+    )
+    venda.create(
+        db_session,
+        venda.VendaCreate(
+            cliente_id=cli.id,
+            veiculo_id=vei.id,
+            data_venda=date(2026, 7, 10),
+            valor_venda=Decimal("90000.00"),
+            forma_pagamento="financiamento",
+            parcelas=48,
+        ),
+    )
+    db_session.flush()
+    engine = db_session.get_bind()
+    assert isinstance(engine, Engine)
+    selects = 0
+
+    def count_venda_selects(
+        _conn: Any,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        nonlocal selects
+        normalized = statement.lstrip().upper()
+        if normalized.startswith("SELECT") and "venda" in statement:
+            selects += 1
+
+    event.listen(engine, "before_cursor_execute", count_venda_selects)
+    try:
+        count, total, ticket_medio = dashboard_ui._resumo_ticket_vendas_mes(  # noqa: SLF001
+            db_session, date(2026, 7, 1)
+        )
+    finally:
+        event.remove(engine, "before_cursor_execute", count_venda_selects)
+
+    assert selects == 1
+    assert count == 1
+    assert total == Decimal("90000.00")
+    assert ticket_medio == Decimal("90000.00")
 
 
 # ---- Validação de uploads ----
