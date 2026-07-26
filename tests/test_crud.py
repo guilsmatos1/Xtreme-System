@@ -125,6 +125,43 @@ def test_placa_duplicada_rejeitada(session: Session, unique_plate: str) -> None:
         veiculo.create(session, dados)
 
 
+def test_veiculo_search_usa_busca_textual_ampla_e_por_coluna(
+    session: Session, unique_plate: str
+) -> None:
+    _seed_usuario(session)
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
+    placa_extra = uuid.uuid4().hex[:7].upper()
+    veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Gol",
+            cor="Azul",
+            ano=2018,
+            placa=unique_plate,
+            km=70000,
+            preco=Decimal("32000.00"),
+            investidor_id=inv.id,
+        ),
+    )
+    esperado = veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Onix",
+            cor="Prata",
+            ano=2024,
+            placa=placa_extra,
+            km=12000,
+            preco=Decimal("85000.00"),
+            investidor_id=inv.id,
+        ),
+    )
+
+    assert veiculo.search(session, "Prata") == [esperado]
+    assert veiculo.search(session, "85000", column="preco") == [esperado]
+
+
 def test_usuario_crud(session: Session) -> None:
     """CRUD de usuário: criar, buscar, listar, deletar e trocar senha."""
     _seed_usuario(session)
