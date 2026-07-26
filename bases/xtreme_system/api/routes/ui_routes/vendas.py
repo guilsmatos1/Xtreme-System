@@ -13,7 +13,11 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
-from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.responses import (
+    error_response,
+    ok_response,
+    rollback_integrity_error_response,
+)
 from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
@@ -259,10 +263,14 @@ def _ok_venda(
     offset: int = 0,
 ) -> HTMLResponse:
     vendas = venda.list_all(session, limit=limit, offset=offset)
-    return templates.TemplateResponse(
+    return ok_response(
+        templates,
         request,
         "_vendas_ok.html",
-        {"user": user, "vendas": vendas, **_ctx_lista_vendas(session, vendas)},
+        user=user,
+        list_key="vendas",
+        lista=vendas,
+        ctx_list=_ctx_lista_vendas(session, vendas),
     )
 
 
@@ -273,16 +281,16 @@ def _erro_venda(
     msg: str,
     venda_obj: venda.Venda | None = None,
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    return error_response(
+        templates,
         request,
         "_form_venda.html",
-        {
-            **_ctx_form_venda(session),
-            "venda": venda_obj,
-            "user": user,
-            "erro": msg,
-        },
+        ctx_form=_ctx_form_venda(session),
+        item_key="venda",
+        item=venda_obj,
+        erro=msg,
         status_code=400,
+        user=user,
     )
 
 
