@@ -1,51 +1,50 @@
 ---
 name: 0005-analyze-token-efficiency
-description: Analisa o perfil compacto da última sessão do worker Codex e identifica até 5 melhorias de harness que obteriam o MESMO resultado com menos tokens. Exige evidência, economia estimada e teste de mesmo resultado. Use em retrospectivas de tokens ou para alimentar a skill 0003.
+description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0003.
 ---
 
 # Analyze Token Efficiency
 
-Identifique melhorias de harness que teriam produzido exatamente a mesma entrega com menos tokens. Não reduza investigação, testes ou qualidade.
+Identify harness improvements that would have produced exactly the same deliverable with fewer tokens. Do not reduce investigation, tests, or quality.
 
-## Fluxo
+## Flow
 
-### 1. Extrair o perfil
+### 1. Extract The Profile
 
-Execute o extrator uma única vez. Ele lê o rollout indicado por `CODEX_THREAD_ID`, usa o último `token_count` como corte para excluir esta retrospectiva e retorna somente agregados e candidatos compactos:
+Run the extractor once. It reads the rollout indicated by `CODEX_THREAD_ID`, uses the latest `token_count` as the cutoff to exclude this retrospective, and returns only compact aggregates and candidates:
 
 ```bash
 python .agents/skills/0005-analyze-token-efficiency/profile_session.py \
   --session-id "${CODEX_THREAD_ID:?}" > /tmp/codex-token-profile.json
 ```
 
-Leia `/tmp/codex-token-profile.json` uma única vez. Não leia o rollout diretamente, salvo se o extrator falhar ou faltar evidência indispensável.
+Read `/tmp/codex-token-profile.json` once. Do not read the rollout directly unless the extractor fails or indispensable evidence is missing.
 
-O perfil contém:
+The profile contains:
 
-- `tokens`: totais reais do Codex; `cached_input_tokens` já faz parte de `input_tokens`;
+- `tokens`: real Codex totals; `cached_input_tokens` is already part of `input_tokens`;
 - `tool_counts`;
-- `largest_outputs`: chamadas com maior volume;
-- `duplicate_calls`: chamadas idênticas repetidas;
-- `failed_calls`: tentativas que falharam;
-- `task_prompt`: pedido do usuário, truncado.
+- `largest_outputs`: highest-volume calls;
+- `duplicate_calls`: repeated identical calls;
+- `failed_calls`: failed attempts;
+- `task_prompt`: user request, truncated.
 
-`estimated_output_tokens` usa 4 caracteres por token e é apenas estimativa. Não atribua todo o cache a uma chamada específica.
+`estimated_output_tokens` uses 4 characters per token and is only an estimate. Do not attribute the whole cache to one specific call.
 
-### 2. Escolher as melhorias
+### 2. Choose Improvements
 
-Cruze os candidatos com a tarefa. Uma melhoria só é válida quando:
+Cross-check candidates against the task. An improvement is valid only when it:
 
-1. possui evidência no perfil;
-2. muda um canal consumido pelo Codex: `AGENTS.md`, skill, RTK, graphify, prompt/script de worker, hook/config/plugin ou estratégia de ferramentas;
-3. elimina informação duplicada, output não usado, tentativa evitável ou volume desnecessário;
-4. preserva código, testes e entrega final igualmente corretos e completos.
+1. has evidence in the profile;
+2. changes a channel consumed by Codex: `AGENTS.md`, skill, RTK, graphify, worker prompt/script, hook/config/plugin, or tool strategy;
+3. removes duplicated information, unused output, avoidable attempts, or unnecessary volume;
+4. preserves code, tests, and final deliverable as equally correct and complete.
 
-Ordene por economia estimada decrescente. Produza até 5 melhorias; se houver menos candidatos válidos, não invente.
+Sort by estimated savings desc. Produce up to 5 improvements; if there are fewer valid candidates, do not invent any.
 
-### 3. Gravar uma única representação
+### 3. Write One Canonical Representation
 
-Quando `CODEX_TOKEN_REPORT_PATH` estiver definido pelo hook, use-o sem
-alterações. Caso contrário, localize o checkout principal e a rodada atual:
+When `CODEX_TOKEN_REPORT_PATH` is set by the hook, use it unchanged. Otherwise, locate the main checkout and current run:
 
 ```bash
 if [ -n "${CODEX_TOKEN_REPORT_PATH:-}" ]; then
@@ -59,30 +58,29 @@ fi
 mkdir -p "$(dirname "$OUT")"
 ```
 
-Grave somente o formato canônico consumido pela `0003-consolidate-harness-improvements`:
+Write only the canonical format consumed by `0003-consolidate-harness-improvements`:
 
 ```markdown
 # Eficiência de tokens — <issue>
 _Codex: <session_id> · input: <N> · cached: <N> · output: <N> · total: <N>_
 
-Melhoria #1: <título>
-- Problema: <desperdício observado>
-- Evidência: <ferramenta/chamada, repetição ou tamanho>
-- Solução: <canal Codex e mudança concreta>
+Melhoria #1: <title>
+- Problema: <observed waste>
+- Evidência: <tool/call, repetition, or size>
+- Solução: <Codex channel and concrete change>
 - Economia estimada: ~<N> tokens
-- Teste de mesmo-resultado: <por que a entrega seria idêntica>
+- Teste de mesmo-resultado: <why the deliverable would be identical>
 
-Melhoria #2: ... até #5.
+Melhoria #2: ... up to #5.
 ```
 
-Ao terminar, responda em uma linha com sessão, totais, caminho e títulos/economias.
+When done, respond in one line with session, totals, path, and titles/savings.
 
 ## Guardrails
 
-- Analise Codex, não Opencode ou Claude Code.
-- Não carregue outputs completos para medir tamanho.
-- Use os totais reais do perfil; estime apenas custos isolados.
-- Não inclua a própria retrospectiva.
-- Não edite código do produto.
-- Em execução automática, grave somente em `CODEX_TOKEN_REPORT_PATH`; não
-  altere `.codex/.hook-state`, nem arquivos da orquestração.
+- Analyze Codex, not Opencode or Claude Code.
+- Do not load full outputs just to measure size.
+- Use real profile totals; estimate only isolated costs.
+- Do not include the retrospective itself.
+- Do not edit product code.
+- In automatic execution, write only to `CODEX_TOKEN_REPORT_PATH`; do not alter `.codex/.hook-state` or orchestration files.

@@ -1,108 +1,109 @@
 ---
 name: 0003-consolidate-harness-improvements
-description: Consolida as dicas de melhoria de harness geradas nas rodadas de worktree. Lê relatórios GUI-*.md versionados em docs/0005-analyze-token-efficiency/ e, para rodadas antigas, a pasta .loop mais recente; agrupa melhorias equivalentes por dedup semântico e mantém um ranking acumulado (improvements-harness.md, dentro da própria skill). Use quando pedirem para consolidar dicas de harness, ranquear melhorias das rodadas, ou alimentar o sistema de melhora contínua.
+description: Consolidates harness-improvement suggestions produced by worktree runs. Reads versioned GUI-*.md reports in docs/0005-analyze-token-efficiency/ and, for legacy runs, the latest .loop folder; groups equivalent improvements through semantic deduplication and maintains an accumulated ranking (improvements-harness.md, inside this skill). Use when asked to consolidate harness suggestions, rank run improvements, or feed the continuous-improvement loop.
 ---
 
 # Consolidate Harness Improvements
 
-Consolida, em um único ranking acumulado, as dicas de melhoria de harness que cada rodada de trabalho em worktree deixa em `docs/0005-analyze-token-efficiency/GUI-*.md`. Para relatórios legados, também pode ler a pasta `.loop` mais recente. Melhorias equivalentes (mesmo com nomes diferentes) contam como **uma só**, e o número de menções indica quais ajustes de harness dão maior retorno nas próximas rodadas.
+Consolidate, into one accumulated ranking, the harness-improvement suggestions that each worktree run leaves in `docs/0005-analyze-token-efficiency/GUI-*.md`. For legacy reports, the latest `.loop` folder can also be used. Equivalent improvements, even with different names, count as **one** item, and the mention count shows which harness changes should have the highest return in future runs.
 
-O entregável é o arquivo **`improvements-harness.md`**, gravado **dentro desta pasta de skill**. Ele **acumula histórico** entre execuções — cada fonte nova soma menções sobre o que já existe.
+The deliverable is **`improvements-harness.md`**, written **inside this skill folder**. It **accumulates history** across runs: each new source adds mentions to the existing state.
 
-## Regra de eficiência
+## Efficiency Rule
 
-- Preserve os relatórios brutos; **não apague nem mova** `docs/0005-analyze-token-efficiency/GUI-*.md`.
-- Faça consolidação incremental: liste nomes de arquivos primeiro, compare com `Fontes processadas`, e leia conteúdo **somente** das fontes novas.
-- Não releia relatórios antigos para dedup. Use apenas o estado compacto já resumido em `improvements-harness.md`.
-- Para descobrir fontes novas, use comandos de listagem (`find`, `rg --files`, `git ls-files`) e filtre por caminho; não abra o conteúdo dos `.md` nessa etapa.
+- Preserve raw reports; **do not delete or move** `docs/0005-analyze-token-efficiency/GUI-*.md`.
+- Consolidate incrementally: list filenames first, compare them with `Fontes processadas`, and read content **only** from new sources.
+- Do not reread old reports for deduplication. Use only the compact state already summarized in `improvements-harness.md`.
+- To discover new sources, use listing commands (`find`, `rg --files`, `git ls-files`) and filter by path; do not open `.md` content at this stage.
 
-## Objetivo (o que é "done")
+## Done
 
-- `improvements-harness.md` contém uma seção explicativa por melhoria única + uma tabela final de ranking ordenada por menções (desc).
-- Nenhuma melhoria duplicada: equivalentes semânticos viram uma entrada com menções somadas.
-- Cada fonte processada fica registrada; reexecutar sobre as mesmas fontes **não** duplica contagens.
+- `improvements-harness.md` contains one explanatory section per unique improvement plus a final ranking table sorted by mentions desc.
+- No duplicate improvements: semantic equivalents become one entry with summed mentions.
+- Each processed source is recorded; rerunning on the same sources **does not** duplicate counts.
 
-## Fluxo
+## Flow
 
-### 1. Localizar fontes alvo
+### 1. Locate Target Sources
 
-- Leia `improvements-harness.md` primeiro, se existir, e extraia só o estado acumulado e a linha `Fontes processadas`.
-- Liste `docs/0005-analyze-token-efficiency/GUI-*.md` por nome/caminho.
-- Se houver arquivos ali, processe **todos os relatórios ainda não registrados** em `improvements-harness.md`.
-- Se não houver relatórios versionados novos, use o fallback legado: liste `.loop/loop-*`, escolha a **mais recente** pela data no nome (`loop-N-YYYY-MM-DD` ou similar), desempatando pelo número maior, e processe os `GUI-*.md` dela que ainda não foram registrados.
-- **Exija ao menos uma fonte nova.** Se todos os relatórios já constarem como processados, avise o usuário e pare.
-- Reporte ao usuário quais fontes serão processadas antes de prosseguir.
+- Read `improvements-harness.md` first, if it exists, and extract only the accumulated state and the `Fontes processadas` line.
+- List `docs/0005-analyze-token-efficiency/GUI-*.md` by name/path.
+- If files exist there, process **all reports not yet recorded** in `improvements-harness.md`.
+- If there are no new versioned reports, use the legacy fallback: list `.loop/loop-*`, choose the **latest** by date in the name (`loop-N-YYYY-MM-DD` or similar), break ties with the higher number, and process its `GUI-*.md` files that are not yet recorded.
+- **Require at least one new source.** If all reports are already listed as processed, tell the user and stop.
+- Tell the user which sources will be processed before continuing.
 
-### 2. Carregar estado acumulado
+### 2. Load Accumulated State
 
-- Se `improvements-harness.md` (nesta pasta de skill) já existir, use a leitura do passo 1 para obter:
-  - a lista canônica de melhorias já registradas, seus títulos e contagens;
-  - a lista de **"Fontes processadas"** (arquivos `docs/.../GUI-*.md` ou `.loop/.../GUI-*.md` já contabilizados).
-- Remova da fila qualquer fonte que já conste como processada. Não reprocessar evita contagem dupla. Se o usuário insistir em reprocessar, remova a fonte da lista antes de recontar.
-- Se o arquivo não existir, comece de um estado vazio.
+- If `improvements-harness.md` exists in this skill folder, use the read from step 1 to obtain:
+  - the canonical list of already registered improvements, titles, and counts;
+  - the **`Fontes processadas`** list (already counted `docs/.../GUI-*.md` or `.loop/.../GUI-*.md` files).
+- Remove from the queue any source already listed as processed. Avoiding reprocessing prevents double counting. If the user insists on reprocessing, remove that source from the list before recounting.
+- If the file does not exist, start from an empty state.
 
-### 3. Extrair melhorias das fontes atuais
+### 3. Extract Improvements From Current Sources
 
-- Leia **somente** os `GUI-*.md` novos selecionados no passo 1.
-- Formato `GUI-NNN.md` (numerados): blocos
-  ```
-  Melhoria #N: <Título>
+- Read **only** the new `GUI-*.md` files selected in step 1.
+- Numbered `GUI-NNN.md` format: blocks like
+  ```text
+  Melhoria #N: <Title>
   - Problema: ...
   - Solução: ...
   - Economia estimada: <tokens>
   ```
-  Extraia cada bloco como `{título, problema, solução, economia, fonte}`.
-- Formato `GUI-Others.md` (texto livre): extraia cada sugestão distinta (subagents, skills, regras de AGENTS.md/hooks) como um item, sintetizando problema/solução/economia quando presentes.
-- `fonte` = caminho relativo completo, por exemplo `docs/0005-analyze-token-efficiency/GUI-360.md` ou `.loop/loop-4-2026-07-24/GUI-350.md`.
+  Extract each block as `{title, problem, solution, savings, source}`.
+- Free-text `GUI-Others.md` format: extract each distinct suggestion (subagents, skills, AGENTS.md/hooks rules) as one item, synthesizing problem/solution/savings when present.
+- `source` = full relative path, for example `docs/0005-analyze-token-efficiency/GUI-360.md` or `.loop/loop-4-2026-07-24/GUI-350.md`.
 
-### 4. Consolidar por dedup semântico (você, LLM, faz isso)
+### 4. Consolidate By Semantic Deduplication
 
-Para cada melhoria extraída, compare **pelo significado** — não por string exata — contra as entradas canônicas já existentes. Exemplos de equivalência que devem colapsar em uma entrada:
+For each extracted improvement, compare **by meaning**, not exact string, against existing canonical entries. Examples of equivalence that must collapse into one entry:
 
-- "Docs Sob Demanda" ≡ "leitura cega de docs" ≡ "ler ARCHITECTURE/API só se mudar contrato".
-- "Diff Completo Só Uma Vez" ≡ "Diffflow Enxuto" ≡ "git diff --stat por padrão".
-- "Skill Commit-Merge Compacta" ≡ "Commit Flow Mais Enxuto" ≡ "modo small clean change".
-- "Reduzir Comentários Intermediários" ≡ "menos progress updates".
-- "Linear Auto-Contexto" ≡ "injetar resumo do issue" ≡ "ler só arquivos referenciados pela issue".
+- "Docs On Demand" == "blind docs reading" == "read ARCHITECTURE/API only when changing contracts".
+- "Full Diff Only Once" == "Lean Diff Flow" == "git diff --stat by default".
+- "Compact Commit-Merge Skill" == "Leaner Commit Flow" == "small clean change mode".
+- "Reduce Intermediate Comments" == "fewer progress updates".
+- "Linear Auto-Context" == "inject issue summary" == "read only files referenced by the issue".
 
-Regras:
-- **Casou com existente** → incremente o contador e acrescente a `fonte` à entrada. **Não** reescreva a explicação nem crie entrada nova.
-- **É nova** → crie entrada canônica com um **título curto e estável**, explicação sintetizada (problema, solução proposta, economia típica) e menção = 1.
-- Ao reescrever o arquivo, **reuse os títulos canônicos já gravados** para não renomear entradas entre execuções.
-- Duas menções da mesma melhoria em arquivos GUI diferentes contam como **2**.
+Rules:
 
-### 5. Reescrever `improvements-harness.md`
+- **Matched existing entry**: increment its counter and append `source`. **Do not** rewrite its explanation or create a new entry.
+- **New entry**: create a canonical entry with a **short, stable title**, synthesized explanation (problem, proposed solution, typical savings), and mentions = 1.
+- When rewriting the file, **reuse canonical titles already recorded** so entries are not renamed across runs.
+- Two mentions of the same improvement in different GUI files count as **2**.
 
-Grave o arquivo nesta pasta de skill com esta estrutura:
+### 5. Rewrite `improvements-harness.md`
+
+Write the file in this skill folder with this structure:
 
 ```markdown
 # Melhorias de Harness — Ranking Acumulado
 
-_Última atualização: <data>. Fontes processadas: <lista de caminhos relativos>._
+_Última atualização: <date>. Fontes processadas: <relative-path list>._
 
 ## Melhorias
 
-### <Título canônico 1>
+### <Canonical title 1>
 - **Problema:** ...
 - **Solução:** ...
 - **Economia estimada:** ...
-- **Fontes:** <rodada/arquivo>, <rodada/arquivo>, ...
+- **Fontes:** <run/file>, <run/file>, ...
 
-### <Título canônico 2>
+### <Canonical title 2>
 ...
 
 ## Ranking por menções
 
 | # | Melhoria | Menções | Fontes |
 |---|----------|---------|---------|
-| 1 | <Título> | 5       | GUI-360, GUI-361 |
-| 2 | ...      | 3       | ...     |
+| 1 | <Title> | 5       | GUI-360, GUI-361 |
+| 2 | ...     | 3       | ... |
 ```
 
-- A tabela é ordenada por **menções desc** (empate: alfabético). O topo = maior prioridade para as próximas rodadas.
-- Use `Fontes processadas` no cabeçalho para listar os caminhos relativos processados. Se estiver atualizando um arquivo antigo que ainda diz `Rodadas processadas`, migre esse campo para `Fontes processadas` preservando as entradas existentes.
-- Na tabela, a coluna `Fontes` deve mostrar os identificadores distintos de origem extraídos das fontes, por exemplo `GUI-360`, `GUI-361`, `loop-4-2026-07-24/GUI-350`.
+- The table is sorted by **mentions desc** (tie: alphabetical). The top item is the highest priority for upcoming runs.
+- Use `Fontes processadas` in the header to list processed relative paths. If updating an old file that still says `Rodadas processadas`, migrate that field to `Fontes processadas` while preserving existing entries.
+- In the table, the `Fontes` column must show distinct source identifiers extracted from sources, for example `GUI-360`, `GUI-361`, `loop-4-2026-07-24/GUI-350`.
 
-### 6. Reportar
+### 6. Report
 
-Ao terminar, informe ao usuário: fontes processadas, nº de melhorias novas adicionadas, nº de menções incrementadas em entradas existentes, e o top 3 do ranking.
+When done, tell the user: processed sources, number of new improvements added, number of mentions incremented in existing entries, and the ranking top 3.
