@@ -107,6 +107,13 @@ def ui_usuario_criar(
             {"perfis": perfil.list_all(session), "erro": "username já existe"},
             status_code=400,
         )
+    if perfil_id is not None and perfil.get(session, perfil_id) is None:
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario.html",
+            {"perfis": perfil.list_all(session), "erro": "perfil não encontrado"},
+            status_code=400,
+        )
     try:
         usuario.create(
             session,
@@ -255,6 +262,17 @@ def ui_usuario_editar(
                 "usuario": obj,
                 "perfis": perfil.list_all(session),
                 "erro": "username já existe",
+            },
+            status_code=400,
+        )
+    if perfil_id is not None and perfil.get(session, perfil_id) is None:
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario_editar.html",
+            {
+                "usuario": obj,
+                "perfis": perfil.list_all(session),
+                "erro": "perfil não encontrado",
             },
             status_code=400,
         )
