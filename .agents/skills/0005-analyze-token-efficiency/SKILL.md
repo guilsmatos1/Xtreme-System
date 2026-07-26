@@ -14,7 +14,7 @@ Identifique melhorias de harness que teriam produzido exatamente a mesma entrega
 Execute o extrator uma única vez. Ele lê o rollout indicado por `CODEX_THREAD_ID`, usa o último `token_count` como corte para excluir esta retrospectiva e retorna somente agregados e candidatos compactos:
 
 ```bash
-python .agents/skills/0005-analyze-token-efficiency/scripts/profile_session.py \
+python .agents/skills/0005-analyze-token-efficiency/profile_session.py \
   --session-id "${CODEX_THREAD_ID:?}" > /tmp/codex-token-profile.json
 ```
 
