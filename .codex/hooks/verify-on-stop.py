@@ -104,15 +104,15 @@ def branch_name(root: Path) -> str:
     return result.stdout.strip() if result.returncode == 0 else "unknown"
 
 
-def launch_token_efficiency(
-    checkout: Path | None,
+def run_token_efficiency(  # noqa: PLR0911
+    checkout: Path,
     source_branch: str,
     session_id: str,
-) -> None:
-    """Start a best-effort retrospective after the session is fully resolved."""
+) -> str | None:
+    """Run the token-efficiency retrospective before committing the worktree."""
     session_id = session_id.strip()
-    if not session_id or checkout is None:
-        return
+    if not session_id:
+        return None
 
     runner = (
         checkout
@@ -122,22 +122,22 @@ def launch_token_efficiency(
         / "run_hook.py"
     )
     if not runner.is_file():
-        return
+        return None
 
     state_dir = checkout / ".codex" / ".hook-state" / "token-efficiency"
     state_dir.mkdir(parents=True, exist_ok=True)
     safe_session = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id)
-    marker = state_dir / f"{safe_session}.started"
+    marker = state_dir / f"{safe_session}.completed"
     try:
         marker.touch(exist_ok=False)
     except FileExistsError:
-        return
+        return None
 
     log_path = state_dir / f"{safe_session}.log"
     env = {**os.environ, CHILD_PROCESS_ENV: "1"}
     try:
         with log_path.open("ab") as log:
-            subprocess.Popen(  # noqa: S603
+            result = subprocess.run(  # noqa: S603
                 [
                     sys.executable,
                     str(runner),
@@ -151,15 +151,21 @@ def launch_token_efficiency(
                 stdin=subprocess.DEVNULL,
                 stdout=log,
                 stderr=subprocess.STDOUT,
-                start_new_session=True,
-                close_fds=True,
+                check=False,
+                timeout=920,
             )
+        if result.returncode != 0:
+            return f"token-efficiency retrospective failed; see {log_path}"
     except OSError as exc:
         marker.unlink(missing_ok=True)
         log_path.write_text(
             f"failed to launch retrospective: {exc}\n",
             encoding="utf-8",
         )
+        return f"failed to launch token-efficiency retrospective: {exc}"
+    except subprocess.TimeoutExpired:
+        return f"token-efficiency retrospective timed out; see {log_path}"
+    return None
 
 
 def run_checks(
@@ -351,6 +357,7 @@ def integrate_reported(
     root: Path,
     report: dict,
     context: dict | None,
+    session_id: str,
     can_block: bool,
 ) -> bool:
     phase = str(report.get("phase", "")).strip().lower()
@@ -363,6 +370,16 @@ def integrate_reported(
     if phase != "success":
         body = summary or "worker reported failure"
         return finalize(root, context, "failed", body, can_block)
+
+    source_branch = str((context or {}).get("identifier") or branch_name(root))
+    token_error = run_token_efficiency(root, source_branch, session_id)
+    if token_error and can_block:
+        block(
+            f"{token_error}\n\n"
+            "Fix the retrospective, then stop again so the report can be "
+            "committed and merged."
+        )
+        return False
 
     ok, output = run_agent_finish(root)
     if not ok:
@@ -397,25 +414,22 @@ def main() -> int:
 
     report = read_json(hook_state_dir(root) / "report.json")
     context = read_json(hook_state_dir(root) / "orchestration.json")
-    checkout = main_checkout(root)
-    source_branch = str((context or {}).get("identifier") or branch_name(root))
-    session_id = str(payload.get("session_id", ""))
 
     checks_result = checks_stage(root, payload, report, context, can_block)
     if checks_result is not None:
-        if checks_result:
-            launch_token_efficiency(checkout, source_branch, session_id)
         return 0
 
     if report is None:
-        finalized = integrate_unreported(root, can_block)
-        if finalized:
-            launch_token_efficiency(checkout, source_branch, session_id)
+        integrate_unreported(root, can_block)
         return 0
 
-    finalized = integrate_reported(root, report, context, can_block)
-    if finalized:
-        launch_token_efficiency(checkout, source_branch, session_id)
+    integrate_reported(
+        root,
+        report,
+        context,
+        str(payload.get("session_id", "")),
+        can_block,
+    )
     return 0
 
 

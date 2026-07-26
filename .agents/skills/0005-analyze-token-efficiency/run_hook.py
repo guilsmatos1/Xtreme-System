@@ -29,24 +29,19 @@ def safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]", "_", value) or "unknown"
 
 
-def report_path(checkout: Path, branch: str, session_id: str) -> Path:
-    loop_root = checkout / ".loop"
-    loops = sorted(
-        path for path in loop_root.glob("loop-*") if path.is_dir()
-    )
-    if loops:
-        return loops[-1] / f"{safe_name(branch)}.md"
+def report_path(checkout: Path, branch: str) -> Path:
     return (
-        loop_root
-        / "token-efficiency"
-        / f"{safe_name(branch)}-{safe_name(session_id)}.md"
+        checkout
+        / "docs"
+        / "0005-analyze-token-efficiency"
+        / f"{safe_name(branch)}.md"
     )
 
 
 def main() -> int:
     args = parse_args()
     checkout = Path.cwd()
-    output = report_path(checkout, args.source_branch, args.session_id)
+    output = report_path(checkout, args.source_branch)
     output.parent.mkdir(parents=True, exist_ok=True)
 
     codex = shutil.which("codex")
