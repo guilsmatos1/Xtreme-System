@@ -6,6 +6,7 @@ from functools import lru_cache
 from typing import Protocol
 
 import structlog
+from fastapi import Request
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import (
     Column,
@@ -209,12 +210,22 @@ def invoke_post_commit(session: Session) -> None:
             logger.warning("post_commit_callback_failed", exc_info=True)
 
 
-def get_session() -> Iterator[Session]:
+_READ_ONLY_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+def _should_commit_session(request: Request) -> bool:
+    return request.method.upper() not in _READ_ONLY_METHODS
+
+
+def get_session(request: Request) -> Iterator[Session]:
     session = SessionLocal()
     try:
         yield session
-        session.commit()
-        invoke_post_commit(session)
+        if _should_commit_session(request):
+            session.commit()
+            invoke_post_commit(session)
+        else:
+            session.rollback()
     except Exception:
         session.rollback()
         raise
