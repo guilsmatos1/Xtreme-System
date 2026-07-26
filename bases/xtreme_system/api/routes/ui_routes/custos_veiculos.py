@@ -104,5 +104,4 @@ register_crud_ui_routes(
     editar_dep=require_operacao("custos-veiculos", "editar"),
     excluir_dep=require_operacao("custos-veiculos", "excluir"),
     pagina="custos-veiculos",
-    campos_form_map={"valor": "valor"},
 )
