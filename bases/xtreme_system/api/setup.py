@@ -50,6 +50,8 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
     "/redoc",
     "/openapi.json",
 }
+_CORS_ALLOWED_METHODS = ["GET", "POST", "PATCH", "DELETE"]
+_CORS_ALLOWED_HEADERS = ["Authorization", "Content-Type"]
 
 
 def _trusted_proxy_networks() -> list[IPv4Network | IPv6Network]:
@@ -132,15 +134,15 @@ def _cors_origins() -> list[str]:
     # Lê env direto para não acoplar setup.py a Settings (que exige
     # AUTH_SECRET_KEY) durante o import do conftest de testes.
     raw = os.environ.get("CORS_ORIGINS", "http://localhost:8000")
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    return [o.strip() for o in raw.split(",") if o.strip() and o.strip() != "*"]
 
 
 app = FastAPI(title="Xtreme Motors")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=_CORS_ALLOWED_METHODS,
+    allow_headers=_CORS_ALLOWED_HEADERS,
 )
 
 
