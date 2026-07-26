@@ -1,192 +1,219 @@
 ---
 name: 0005-analyze-token-efficiency
-description: Analisa o histórico de execução da última sessão do worker Opencode (tabela opencode.db) e cita 5 melhorias de harness que teriam obtido o MESMO resultado consumindo menos tokens, sem perder qualidade. Para cada melhoria: evidência do desperdício na sessão (tool calls, re-leituras, outputs grandes, cache_read inflado — com custo real em tokens), o alvo de harness a mudar, a economia estimada e o teste de "mesmo resultado". Use quando pedirem retrospectiva de eficiência de tokens do worker, "onde gastei token à toa", ou para alimentar o pipeline de melhoria contínua (skill 0003).
+description: Analisa o histórico JSONL da última sessão do worker Codex e cita 5 melhorias de harness que teriam obtido o MESMO resultado consumindo menos tokens, sem perder qualidade. Para cada melhoria, exige evidência concreta da sessão, custo em tokens, alvo de harness, economia estimada e teste de mesmo resultado. Use em retrospectivas de eficiência de tokens do worker, ao investigar onde tokens foram desperdiçados ou para alimentar a skill 0003.
 ---
 
 # Analyze Token Efficiency
 
-Retrospectiva de **eficiência de tokens** da sessão que o **worker Opencode** acabou de rodar. A pergunta central é:
+Analise a sessão que o **worker Codex** acabou de executar e responda:
 
-> **Quais melhorias no harness, se estivessem em vigor, teriam produzido exatamente o mesmo resultado consumindo menos tokens?**
+> Quais melhorias no harness teriam produzido exatamente o mesmo resultado com menos tokens?
 
-O entregável são **exatamente 5 melhorias de harness**, cada uma ancorada em **evidência concreta da sessão** (o que foi lido/rodado, quantas vezes, o custo em tokens) e com um **teste de "mesmo resultado"** que justifica por que a qualidade **não** cairia. Sem esse teste, uma "melhoria" vira só corte de trabalho — proibido aqui.
+O entregável são **exatamente 5 melhorias**, ordenadas por economia estimada, cada uma apoiada por evidência concreta da sessão. Não proponha reduzir investigação, testes ou qualidade.
 
-Esta skill é o **gerador** do pipeline de melhoria contínua: os blocos que ela produz têm o formato que a skill **`0003-consolidate-harness-improvements`** consome (`Melhoria #N` / Problema / Solução / Economia estimada). Ela é o passo que **deixa as dicas em `.loop/loop-*/GUI-*.md`** ao fim de uma rodada de worktree, para depois entrarem no ranking acumulado.
+Esta skill alimenta a `0003-consolidate-harness-improvements`: grave blocos no formato `Melhoria #N` / Problema / Solução / Economia estimada em `.loop/loop-*/GUI-*.md`.
 
-> ## 🎯 O executor é o **Opencode**, não o Claude Code
-> Esta skill roda **dentro do worker Opencode**, que resolve issues em worktrees (`.../workspaces/xtreme-system/GUI-NNN`). Portanto:
-> - **A fonte do histórico é o banco do Opencode** (`~/.local/share/opencode/opencode.db`), **não** os `.jsonl` do Claude Code.
-> - **As melhorias precisam beneficiar o Opencode.** Alvos válidos (ver skill `0004`): `AGENTS.md` (raiz, lido nativamente — preferencial), **skills** (`.agents/skills`/`.claude/skills`), **RTK** (`.claude/RTK.md`, vale no Opencode), **plugins do Opencode** (`.opencode/plugins/*.js` + `opencode.json`, alto risco), **`PROMPT_TEMPLATE`** em `process_issue.py` (alto risco), e o uso de **graphify**.
-> - **`CLAUDE.md` e hooks `.claude/settings.json` são só do Claude Code → inelegíveis.** Se uma melhoria só afetaria o Claude Code, não conte.
+## Canais elegíveis
 
-## Objetivo (o que é "done")
+As melhorias devem beneficiar o Codex. Alvos válidos:
 
-1. A **sessão-alvo** foi identificada no `opencode.db` — a sessão do worker que acabou de rodar (por `directory` = worktree atual).
-2. Um **perfil de execução compacto** foi extraído via **SQL** (contagens, tamanhos, tokens reais) **sem despejar os outputs inteiros** no contexto.
-3. Foram produzidas **exatamente 5 melhorias**, ordenadas por **economia estimada (desc)**, cada uma com: evidência + custo, alvo de harness do Opencode, economia estimada e **teste de mesmo-resultado**.
-4. As 5 foram gravadas na pasta `.loop/loop-*/GUI-*.md` da rodada corrente no **formato compatível com a 0003** (e/ou em `docs/0005-analyze-token-efficiency/` se pedido).
+- `AGENTS.md` e instruções importadas por ele;
+- skills em `.agents/skills` ou `~/.codex/skills`;
+- `RTK.md` e uso do RTK;
+- graphify;
+- prompts e scripts que iniciam workers Codex;
+- hooks, configuração ou plugins do Codex;
+- estratégia de ferramentas e, quando permitido, subagentes.
 
-## Como o custo de token funciona no Opencode (leia antes de estimar)
+Configuração exclusiva do Opencode ou Claude Code é inelegível.
 
-A tabela `session` tem colunas de token **reais** — use-as, não estime 4:1:
-`tokens_input`, `tokens_output`, `tokens_reasoning`, `tokens_cache_read`, `tokens_cache_write`, `cost`.
+## Critérios de conclusão
 
-**Insight-chave — o efeito multiplicador do cache_read.** O Opencode reenvia o contexto acumulado a cada passo; o que entrou cedo é **re-lido como cache em TODOS os passos seguintes**. Por isso `tokens_cache_read` costuma ser 10–100× o `tokens_input` (ex.: uma sessão real com ~9,8M de cache_read). Consequência para priorizar melhorias:
+1. Identificar o rollout da sessão-alvo pelo `CODEX_THREAD_ID` ou pelo `cwd`.
+2. Extrair um perfil compacto do JSONL sem despejar outputs completos no contexto.
+3. Produzir até 5 melhorias comprovadas, ordenadas por economia estimada.
+4. Gravar o relatório da rodada em formato compatível com a skill 0003.
+5. Manter a própria análise econômica em tokens.
 
-- Um **output grande lido cedo** (doc inteiro, `git diff` gigante, dump de comando) custa **muito mais** que o mesmo output no fim, porque é pago uma vez na escrita e depois re-lido N vezes.
-- **Cortar contexto de entrada cedo tem economia multiplicativa.** Ranqueie melhorias que enxugam **o que entra no contexto nos primeiros passos** acima de microeconomias no fim.
+## Como o Codex registra tokens
+
+Os rollouts ficam em `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`.
+
+- `session_meta.payload`: `session_id`, `cwd`, origem e versão.
+- `event_msg` com `payload.type == "token_count"`: uso cumulativo em `payload.info.total_token_usage`.
+- `response_item` com `payload.type == "function_call"`: ferramenta e argumentos.
+- `response_item` com `payload.type == "function_call_output"`: output e `call_id`.
+
+Use o **último** evento `token_count` anterior ao início desta retrospectiva. Seus campos são:
+
+- `input_tokens`
+- `cached_input_tokens`
+- `cache_write_input_tokens`
+- `output_tokens`
+- `reasoning_output_tokens`
+- `total_tokens`
+
+Os totais são reais. Para isolar um output específico, use `length / 4` apenas como aproximação e rotule-a como estimativa. Contexto grande inserido cedo tende a reaparecer em `cached_input_tokens`, então priorize desperdícios iniciais e recorrentes.
 
 ## Fluxo
 
-### 1. Localizar a sessão-alvo no `opencode.db`
+### 1. Localizar a sessão-alvo
 
-Quem invoca esta skill é o plugin **`worktree-finish.js`** no evento `session.idle`, injetando um prompt na **própria sessão** do worker. Portanto a sessão-alvo é a **sessão corrente** — e o plugin já tem o `sessionID`.
-
-- **Se o prompt de invocação trouxer um session id** (ex.: `SID=ses_...` injetado pelo plugin), **use-o direto** — é a fonte mais confiável.
-- **Senão**, ache a sessão mais recente do **diretório worktree atual** (o cwd do worker):
+Prefira o id fornecido pelo invocador. Na sessão corrente, use `CODEX_THREAD_ID`:
 
 ```bash
-DB=~/.local/share/opencode/opencode.db
+SID="${CODEX_THREAD_ID:-<id-fornecido>}"
+ROLLOUT="$(find ~/.codex/sessions -type f -name "*${SID}*.jsonl" -print -quit)"
+```
+
+Se não houver id, escolha o rollout mais recente cujo `session_meta.payload.cwd` seja o diretório atual:
+
+```bash
 CWD="$(pwd)"
-sqlite3 -header "$DB" "SELECT id, title, agent, model,
-  tokens_input, tokens_output, tokens_cache_read, tokens_cache_write, round(cost,4) cost
-  FROM session WHERE directory = '$CWD' ORDER BY time_created DESC LIMIT 1;"
+ROLLOUT="$(
+  find ~/.codex/sessions -type f -name 'rollout-*.jsonl' -print0 |
+  xargs -0 ls -t |
+  while IFS= read -r f; do
+    jq -e --arg cwd "$CWD" \
+      'select(.type=="session_meta" and .payload.cwd==$cwd)' "$f" >/dev/null &&
+      { printf '%s\n' "$f"; break; }
+  done
+)"
+SID="$(jq -r 'select(.type=="session_meta") | .payload.session_id' "$ROLLOUT")"
 ```
 
-- Guarde `SID` = id da sessão para os passos seguintes.
-- **Auto-alvo.** Esta skill roda **na mesma sessão que analisa**, e o commit-merge roda antes dela. **Só** exclua da análise os turnos **desta própria retrospectiva** (as queries/leituras que a `0005` faz agora) — analisá-los é circular e sem valor. **Tudo o mais entra**, inclusive os turnos da skill `commit-merge`: eles fazem parte do custo real de toda issue e são um **alvo de otimização válido** (ex.: mensagem/diff mais enxutos). Não os trate como intocáveis.
+Garanta que o `cwd` e a issue correspondem ao trabalho analisado. Exclua somente as chamadas feitas pela própria retrospectiva. Trabalho anterior de commit/merge faz parte do custo real.
 
-### 2. Extrair o perfil de execução (via SQL, sem despejar outputs)
+### 2. Extrair um perfil compacto
 
-A skill trata de economia — ela mesma **não pode** puxar `.state.output` inteiro para o contexto. Use `length()`, `COUNT`, `GROUP BY`. Receitas **validadas** contra o schema real (`part.data` é JSON; `.tool`, `.state.input`, `.state.output`, `.state.metadata`):
+Nunca imprima o rollout inteiro nem outputs integrais. Use agregações:
 
 ```bash
-SID='ses_...'   # id do passo 1
+# Metadados
+jq -c 'select(.type=="session_meta") |
+  .payload | {session_id,cwd,originator,cli_version,source}' "$ROLLOUT"
 
-# (a) Tokens da sessão já vêm da tabela session (passo 1). Complemento por mensagem:
-sqlite3 "$DB" "SELECT COUNT(*) AS passos FROM message WHERE session_id='$SID' AND json_extract(data,'\$.role')='assistant';"
+# Totais reais: use o último token_count anterior à retrospectiva
+jq -c 'select(.type=="event_msg" and .payload.type=="token_count") |
+  .payload.info.total_token_usage' "$ROLLOUT" | tail -1
 
-# (b) Contagem por ferramenta
-sqlite3 "$DB" "SELECT json_extract(data,'\$.tool') tool, COUNT(*) n
-  FROM part WHERE session_id='$SID' AND json_extract(data,'\$.type')='tool'
-  GROUP BY tool ORDER BY n DESC;"
+# Contagem por ferramenta
+jq -r 'select(.type=="response_item" and .payload.type=="function_call") |
+  .payload.name' "$ROLLOUT" | sort | uniq -c | sort -nr
 
-# (c) Arquivos lidos e REPETIÇÕES (re-leitura = desperdício)
-sqlite3 "$DB" "SELECT json_extract(data,'\$.state.input.filePath') f, COUNT(*) n
-  FROM part WHERE session_id='$SID' AND json_extract(data,'\$.tool')='read'
-  GROUP BY f ORDER BY n DESC;"
+# Chamadas com argumentos grandes; tamanho, não conteúdo
+jq -r 'select(.type=="response_item" and .payload.type=="function_call") |
+  [.timestamp,.payload.name,(.payload.arguments|length)] | @tsv' "$ROLLOUT" |
+  sort -k3,3nr | head -12
 
-# (d) Comandos bash (procure git diff cheio, ls -R, cat de arquivo grande, repetição)
-sqlite3 "$DB" "SELECT json_extract(data,'\$.state.input.command') cmd
-  FROM part WHERE session_id='$SID' AND json_extract(data,'\$.tool')='bash';"
+# Maiores outputs; tamanho, não conteúdo
+jq -r 'select(.type=="response_item" and .payload.type=="function_call_output") |
+  [.timestamp,.payload.call_id,(.payload.output|length)] | @tsv' "$ROLLOUT" |
+  sort -k3,3nr | head -12
 
-# (e) MAIORES outputs de tool (chars) — onde o contexto encheu cedo. Ordene e veja só o tamanho.
-sqlite3 "$DB" "SELECT json_extract(data,'\$.tool') tool,
-  length(json_extract(data,'\$.state.output')) len,
-  substr(json_extract(data,'\$.state.input'),1,60) inp
-  FROM part WHERE session_id='$SID' AND json_extract(data,'\$.type')='tool'
-  ORDER BY len DESC LIMIT 12;"
-
-# (f) Outputs TRUNCADOS (pediu mais do que precisava)
-sqlite3 "$DB" "SELECT json_extract(data,'\$.tool') tool, COUNT(*) n
-  FROM part WHERE session_id='$SID'
-    AND json_extract(data,'\$.state.metadata.truncated')=1 GROUP BY tool;"
-
-# (g) grep/glob largos (varredura que poderia ser graphify/subagente)
-sqlite3 "$DB" "SELECT json_extract(data,'\$.tool') tool, json_extract(data,'\$.state.input') inp
-  FROM part WHERE session_id='$SID' AND json_extract(data,'\$.tool') IN ('grep','glob');"
+# Comandos e caminhos, truncados para inspeção segura
+jq -r 'select(.type=="response_item" and .payload.type=="function_call") |
+  [.timestamp,.payload.name,((.payload.arguments|fromjson? // {}) |
+    (.cmd // .path // .query // .target // tostring)[0:240])] | @tsv' "$ROLLOUT"
 ```
 
-Para converter chars→tokens em outputs (quando a coluna de sessão não isola aquele item), use **~4 chars ≈ 1 token** e **rotule como estimativa**. Os totais da sessão (passo 1) são exatos.
+Quando necessário, correlacione `function_call.id` com `function_call_output.call_id` usando `jq -s`, mas retorne apenas nome, timestamp, argumento resumido e quantidade de caracteres.
 
-### 3. Diagnosticar os padrões de desperdício
+### 3. Diagnosticar desperdícios
 
-Cruze o perfil com o **objetivo da issue** (o que a tarefa realmente exigia). Procure trabalho cujo **resultado não dependia** do custo pago. Catálogo:
+Compare as chamadas com o objetivo real da issue. Procure:
 
-- **Docs lidos sem gatilho** — `read` de `ARCHITECTURE.md`/`API.md`/`README` inteiros (recipe c/e) quando a issue não mudava contrato. Alvo clássico: regra em `AGENTS.md` "ler doc só se mudar contrato".
-- **Re-leitura** — mesmo arquivo lido N vezes (recipe c), ou reler após editar só para "conferir".
-- **Comando tagarela** — `git diff` completo onde `--stat`/`--name-only` bastava; `ls -R`, `cat` de arquivo enorme, log verboso (recipe d/e). Alvo típico: **RTK**.
-- **Output grande cedo** — recipe (e) no topo + ocorrendo nos primeiros passos → custo multiplicado por cache_read (ver seção acima).
-- **Varredura no worker principal** — `grep`/`glob` largos (recipe g) que poderiam ter ido para um **subagente** (`task`) que devolve só a conclusão, ou para **graphify query**.
-- **Truncamento** — outputs truncados (recipe f): pediu volume, pagou pela leitura, e ainda perdeu informação.
-- **Ida-e-volta evitável** — comando que falha por flag conhecida, refeito depois; uma regra/skill teria evitado.
-- **Contexto refeito** — reconstruir do zero o que `graphify` ou o resumo da issue já dariam pronto.
+- documentos lidos sem gatilho;
+- mesmo arquivo ou busca repetidos sem mudança relevante;
+- `git diff`, logs, listagens ou testes com output maior do que o necessário;
+- output grande inserido cedo e carregado nos turnos seguintes;
+- chamadas que falharam por sintaxe ou descoberta evitável;
+- buscas amplas que graphify ou `rg` mais específico resolveriam;
+- leitura integral quando um recorte por linha bastava;
+- múltiplas inspeções equivalentes do mesmo estado;
+- atualizações ou narração que não mudaram decisões;
+- contexto reconstruído que já existia na issue ou no grafo.
 
-Para cada candidato anote: **evidência** (recipe + número), **custo estimado em tokens** (lembrando o multiplicador de cache_read se foi cedo), e **qual canal do Opencode** o teria evitado.
+Para cada candidato, registre:
 
-### 4. Escrever exatamente 5 melhorias, com o teste de mesmo-resultado
+1. timestamp e ferramenta;
+2. chamada ou arquivo envolvido;
+3. tamanho do output ou repetição observada;
+4. custo estimado;
+5. canal Codex que evitaria o desperdício.
 
-Selecione as **5** de maior economia estimada. Cada uma **precisa** passar no teste:
+### 4. Selecionar as melhorias
 
-> **Teste de mesmo-resultado:** se esta melhoria estivesse ativa na sessão-alvo, a entrega final (o código/PR da issue) teria sido **igualmente correta e completa**? Aponte por que o token cortado era **redundante** — informação duplicada, output não usado na solução, varredura jogada fora — e **não** informação de que a solução dependia.
+Cada melhoria precisa passar neste teste:
 
-Se uma ideia não passa nesse teste, ela **corta qualidade** — descarte e pegue a próxima. Cada melhoria deve mirar um **canal que o Opencode consome** (AGENTS.md/skill/RTK/graphify/subagente/plugin/PROMPT_TEMPLATE); se só afetaria o Claude Code, é inelegível. Ordene por economia estimada (desc).
+> Se a regra já existisse, o código, os testes e a entrega final continuariam igualmente corretos e completos?
 
-### 5. Gravar (formato do pipeline `.loop`, consumido pela 0003)
+Explique por que o custo removido era redundante: informação duplicada, output não utilizado, tentativa evitável ou volume além do necessário. Descarte qualquer proposta que dependa de fazer menos validação útil.
 
-⚠️ **`.loop` vive SÓ no checkout principal e é gitignored** (`~/orca/projects/xtreme-system/.loop`), **nunca dentro da worktree**. Como o worker roda numa worktree (`~/orca/workspaces/.../GUI-NNN`), gravar em `./.loop` criaria uma pasta isolada que **ninguém consome**. Grave por **caminho absoluto no checkout principal**:
+Ordene por economia estimada decrescente. Se menos de 5 candidatos tiverem evidência e passarem no teste, reporte apenas os válidos; não invente para completar cinco.
+
+### 5. Gravar o relatório
+
+`.loop` existe apenas no checkout principal:
 
 ```bash
-# Raiz do checkout principal (a partir da worktree): pai do git-common-dir
 MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-# Rodada .loop corrente = a mais recente (mesma regra da 0003)
-LOOP="$(ls -d "$MAIN"/.loop/loop-* 2>/dev/null | sort | tail -1)"
-# Issue a partir do nome da branch/worktree (ex.: GUI-156)
+LOOP="$(find "$MAIN/.loop" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | sort | tail -1)"
 ISSUE="$(git rev-parse --abbrev-ref HEAD)"
-# Alvo final:  $LOOP/GUI-$ISSUE.md   (não sobrescreva GUI-Others.md nem improvements.json)
+OUT="${LOOP:-$MAIN/docs/0005-analyze-token-efficiency}/$ISSUE.md"
+mkdir -p "$(dirname "$OUT")"
 ```
 
-- Grave os 5 blocos em `"$LOOP/GUI-$ISSUE.md"`, no formato que a **0003** lê (um arquivo por issue, como os `GUI-267.md` já existentes).
-- Se não houver `.loop/loop-*` no checkout principal, caia para `"$MAIN"/docs/0005-analyze-token-efficiency/GUI-$ISSUE.md` e avise no resumo.
+Use este formato:
 
 ```markdown
-# Retrospectiva de Eficiência de Tokens — <issue / prompt-alvo em uma linha>
+# Retrospectiva de Eficiência de Tokens — <issue>
 
-_Sessão Opencode: <ses_id> · worktree: <dir> · modelo: <model> · Data: <data>_
+_Sessão Codex: <session_id> · worktree: <cwd> · modelo: <modelo, se disponível> · data: <data>_
 
-## Perfil de execução (tokens reais da tabela session)
-- input: <N> · output: <N> · cache_read: <N> · cache_write: <N> · custo: $<N>
-- Passos (assistant): <N> · Ferramentas: <read xN, bash xN, grep xN, ...>
-- Maiores outputs / re-leituras / truncamentos: <resumo das recipes c/e/f>
+## Perfil de execução
+- input: <N> · cached_input: <N> · output: <N> · reasoning: <N> · total: <N>
+- Ferramentas: <exec_command xN, apply_patch xN, ...>
+- Maiores outputs e repetições: <resumo compacto>
 
-## As 5 melhorias (ordenadas por economia estimada)
+## As 5 melhorias
 
-### 1. <título curto e estável>
-- **Padrão:** <doc sem gatilho | comando tagarela | output grande cedo | varredura no principal | ...>
-- **Evidência:** <recipe + número — ex.: recipe (c): API.md lido inteiro (limit 2000) no passo 2>
-- **Custo observado:** ~<N> tokens (<exato | estimado>; se foi cedo, some o efeito cache_read)
-- **Alvo de harness (Opencode):** <AGENTS.md | skill X | .claude/RTK.md | graphify | subagente/task | plugin | PROMPT_TEMPLATE>
-- **Solução:** <a regra/atalho/mudança concreta — nível "o que escrever/fazer">
+### 1. <título>
+- **Padrão:** <tipo de desperdício>
+- **Evidência:** <timestamp, ferramenta, repetição/tamanho>
+- **Custo observado:** ~<N> tokens (<exato ou estimado>)
+- **Alvo de harness (Codex):** <arquivo ou canal>
+- **Solução:** <mudança concreta>
 - **Economia estimada:** ~<N> tokens
-- **Teste de mesmo-resultado:** <por que a entrega continuaria correta e completa>
+- **Teste de mesmo-resultado:** <por que a entrega não muda>
 
 ### 2. ... até ### 5.
 
 ## Total estimado economizado
-~<N> tokens (~<%> do custo da sessão), sem mudança no resultado entregue.
+~<N> tokens (~<percentual>), sem mudança no resultado entregue.
 
 ---
 
-## Blocos para o pipeline (formato 0003)
+## Blocos para o pipeline
 
 Melhoria #1: <título>
 - Problema: <...>
-- Solução: <alvo Opencode + mudança concreta>
+- Solução: <alvo Codex + mudança concreta>
 - Economia estimada: ~<N> tokens
 
-Melhoria #2: ...  (até #5)
+Melhoria #2: ... até #5.
 ```
 
-### 6. Reportar (headless)
+### 6. Reportar
 
-Esta skill roda **sem humano assistindo** (disparada no `session.idle`). O entregável é o **arquivo** do passo 5 — não um relatório de chat. Ao terminar, imprima **uma linha** de confirmação: sessão-alvo, custo real (input/output/cache_read), caminho gravado e os 5 títulos com a economia estimada. Nada de narração longa (ela mesma custaria tokens). A **0003** consolida esses blocos no ranking; a **0004** os aplica.
+O arquivo é o entregável. Ao terminar, responda em uma linha com sessão, totais reais, caminho gravado e títulos/economias. Não faça narração longa.
 
 ## Guardrails
 
-- **Alvo é o Opencode.** Só contam melhorias em canais que o worker Opencode lê/usa (AGENTS.md, skills, RTK, graphify, subagentes, plugins do Opencode, PROMPT_TEMPLATE). `CLAUDE.md` e `.claude/settings.json` são **inelegíveis** (só Claude Code).
-- **Sempre 5, sempre com teste de mesmo-resultado.** Uma "melhoria" que reduz o escopo da entrega **não** vale. Se não houver 5 que passem no teste, diga isso e liste quantas passaram — não invente para completar 5.
-- **A skill não pode ser gastadora.** Nunca puxe `.state.output` inteiro para o contexto; use `length()`/`COUNT`/`GROUP BY`. Em sessão enorme, rode a extração e traga só o perfil agregado.
-- **Tokens reais primeiro.** Use as colunas da tabela `session`/`message`; só estime (4:1) quando precisar isolar o custo de um item, e rotule como estimativa.
-- **Evidência real, não hipótese.** Toda melhoria cita recipe + número da sessão. Sem evidência no histórico → fora.
-- **Analysis-only para o app.** A skill grava **relatório/blocos de harness**; **nunca** edita código de `xtreme-system` (bases/, components/, etc.).
-- **Auto-alvo.** Ao escolher a sessão, garanta que é a da issue resolvida, não a da própria análise.
+- Analise Codex, não Opencode.
+- Evidência real é obrigatória.
+- Use totais reais do último `token_count`; estime apenas custos isolados.
+- Nunca carregue outputs completos só para medir tamanho.
+- Não atribua todo `cached_input_tokens` a uma única leitura; trate o efeito de cache como estimativa.
+- Não edite código do produto. Esta skill produz apenas análise e blocos de melhoria de harness.
+- Não inclua chamadas da própria retrospectiva no custo analisado.
