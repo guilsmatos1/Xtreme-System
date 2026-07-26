@@ -5,10 +5,11 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, cast, func, or_
+from sqlalchemy import DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
+from xtreme_system.crud.search import apply_text_search
 from xtreme_system.database.core import Base
 from xtreme_system.documento_procuracao.core import DocumentoProcuracao
 from xtreme_system.documento_veiculo.core import DocumentoVeiculo
@@ -173,7 +174,6 @@ def search(session: Session, term: str, column: str | None = None) -> list[Veicu
 def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[Veiculo]:
-    pattern = f"%{term}%"
     sql_query = query(session)
 
     # Mapa de colunas permitidas para busca
@@ -196,18 +196,16 @@ def search_query(
         "revisao": Veiculo.revisao,
     }
 
-    # Se coluna específica for fornecida, buscar apenas nela
-    if column and column in columns_map:
-        col = columns_map[column]
-        return sql_query.where(cast(col, String).ilike(pattern))
-
-    # Caso contrário, buscar nas colunas padrão
-    return sql_query.where(
-        or_(
-            Veiculo.modelo.ilike(pattern),
-            Veiculo.placa.ilike(pattern),
-            Veiculo.cor.ilike(pattern),
-        )
+    return apply_text_search(
+        sql_query,
+        term,
+        columns_map=columns_map,
+        default_columns=(
+            Veiculo.modelo,
+            Veiculo.placa,
+            Veiculo.cor,
+        ),
+        column=column,
     )
 
 

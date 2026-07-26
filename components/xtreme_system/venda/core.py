@@ -10,17 +10,15 @@ from sqlalchemy import (
     Date,
     ForeignKey,
     Numeric,
-    String,
-    cast,
     extract,
     false,
     func,
-    or_,
 )
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
 from xtreme_system.crud import core as crud
+from xtreme_system.crud.search import apply_text_search
 from xtreme_system.database.core import Base
 from xtreme_system.documento_contrato_venda.core import DocumentoContratoVenda
 from xtreme_system.imagem_comprovante_venda.core import ImagemComprovanteVenda
@@ -278,7 +276,6 @@ def search(session: Session, term: str, column: str | None = None) -> list[Venda
 def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[Venda]:
-    pattern = f"%{term}%"
     sql_query = (
         session.query(Venda)
         .join(Cliente, Venda.cliente_id == Cliente.id)
@@ -299,19 +296,19 @@ def search_query(
         "vendedor": Usuario.nome,
     }
 
-    if column and column in columns_map:
-        col = columns_map[column]
-        return sql_query.where(cast(col, String).ilike(pattern))
-
-    return sql_query.where(
-        or_(
-            Cliente.nome.ilike(pattern),
-            Cliente.documento.ilike(pattern),
-            Veiculo.modelo.ilike(pattern),
-            Veiculo.placa.ilike(pattern),
-            cast(Venda.status, String).ilike(pattern),
-            Venda.observacoes.ilike(pattern),
-        )
+    return apply_text_search(
+        sql_query,
+        term,
+        columns_map=columns_map,
+        default_columns=(
+            Cliente.nome,
+            Cliente.documento,
+            Veiculo.modelo,
+            Veiculo.placa,
+            Venda.status,
+            Venda.observacoes,
+        ),
+        column=column,
     )
 
 

@@ -4,10 +4,10 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
+from xtreme_system.crud.search import apply_text_search
 from xtreme_system.database.core import Base
 
 if TYPE_CHECKING:
@@ -204,17 +204,15 @@ def search_query_vendedores(
 def _search_com_vinculo(
     session: Session, term: str, column: str | None = None
 ) -> Query[Cliente]:
-    pattern = f"%{term}%"
-
-    if column and column in _COLUNAS_BUSCA:
-        col = _COLUNAS_BUSCA[column]
-        return session.query(Cliente).where(cast(col, String).ilike(pattern))
-
-    return session.query(Cliente).where(
-        or_(
-            Cliente.nome.ilike(pattern),
-            Cliente.documento.ilike(pattern),
-            Cliente.cidade.ilike(pattern),
-            Cliente.estado.ilike(pattern),
-        )
+    return apply_text_search(
+        session.query(Cliente),
+        term,
+        columns_map=_COLUNAS_BUSCA,
+        default_columns=(
+            Cliente.nome,
+            Cliente.documento,
+            Cliente.cidade,
+            Cliente.estado,
+        ),
+        column=column,
     )

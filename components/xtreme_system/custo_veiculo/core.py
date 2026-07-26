@@ -4,10 +4,11 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, cast, func, or_
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
+from xtreme_system.crud.search import apply_text_search
 from xtreme_system.database.core import Base
 from xtreme_system.veiculo.core import Veiculo, VeiculoRead
 
@@ -98,7 +99,6 @@ def search(
 def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[CustoVeiculo]:
-    pattern = f"%{term}%"
     sql_query = session.query(CustoVeiculo).join(Veiculo)
 
     columns_map = {
@@ -110,15 +110,15 @@ def search_query(
         "descricao": CustoVeiculo.descricao,
     }
 
-    if column and column in columns_map:
-        col = columns_map[column]
-        return sql_query.where(cast(col, String).ilike(pattern))
-
-    return sql_query.where(
-        or_(
-            Veiculo.modelo.ilike(pattern),
-            Veiculo.placa.ilike(pattern),
-            CustoVeiculo.categoria.ilike(pattern),
-            CustoVeiculo.descricao.ilike(pattern),
-        )
+    return apply_text_search(
+        sql_query,
+        term,
+        columns_map=columns_map,
+        default_columns=(
+            Veiculo.modelo,
+            Veiculo.placa,
+            CustoVeiculo.categoria,
+            CustoVeiculo.descricao,
+        ),
+        column=column,
     )
