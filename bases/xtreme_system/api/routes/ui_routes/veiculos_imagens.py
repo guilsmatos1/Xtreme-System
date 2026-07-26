@@ -2,21 +2,19 @@
 
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.common import (
-    _remover_upload,
-    _uploaded_file_path,
     _uploads_dir,
-    _validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
+    excluir_anexo_entidade,
     pending_upload_paths,
     remover_orfaos,
-    salvar_arquivos,
+    salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
@@ -82,9 +80,18 @@ def ui_veiculo_imagens_upload(
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     item = _found(veiculo.get(session, veiculo_id), "Veículo")
-    erro = _validar_uploads(imagens)
+    erro = salvar_anexos_entidade(
+        session,
+        upload_dir=_uploads_dir(veiculo_id),
+        url_prefix=f"/static/uploads/veiculos/{veiculo_id}",
+        create_fn=imagem_veiculo.create,
+        schema=imagem_veiculo.ImagemVeiculoCreate,
+        fk_field="veiculo_id",
+        fk_id=veiculo_id,
+        arquivos=imagens,
+        actor_id=user.id,
+    )
     if erro:
         return templates.TemplateResponse(
             request,
@@ -102,17 +109,6 @@ def ui_veiculo_imagens_upload(
             },
             status_code=400,
         )
-    salvar_arquivos(
-        session,
-        upload_dir=_uploads_dir(veiculo_id),
-        url_prefix=f"/static/uploads/veiculos/{veiculo_id}",
-        create_fn=imagem_veiculo.create,
-        schema=imagem_veiculo.ImagemVeiculoCreate,
-        fk_field="veiculo_id",
-        fk_id=veiculo_id,
-        arquivos=imagens,
-        actor_id=user.id,
-    )
     return _imagem_modal(request, session, user, veiculo_id, action_oob=True)
 
 
@@ -124,12 +120,14 @@ def ui_veiculo_imagens_excluir(
     veiculo_id: int,
     img_id: int,
 ) -> HTMLResponse:
-    session.info["usuario_id"] = user.id
     img = _found(imagem_veiculo.get(session, img_id), "Imagem")
-    if img.veiculo_id != veiculo_id:
-        raise HTTPException(status_code=404, detail="Imagem não encontrada")
-    imagem_veiculo.delete(session, img, user.id)
-    path = _uploaded_file_path(img.url or "")
-    if path is not None:
-        _remover_upload(path)
+    excluir_anexo_entidade(
+        session,
+        anexo=img,
+        parent_field="veiculo_id",
+        parent_id=veiculo_id,
+        delete_fn=imagem_veiculo.delete,
+        actor_id=user.id,
+        not_found_detail="Imagem não encontrada",
+    )
     return _imagem_modal(request, session, user, veiculo_id, action_oob=True)
