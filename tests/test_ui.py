@@ -284,7 +284,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
         "/clientes",
         json={
             "nome": "Bia Vendedora",
-            "documento": "12345678902",
+            "documento": "12345678000102",
             "tipo": "pessoa_juridica",
         },
         headers=headers,
