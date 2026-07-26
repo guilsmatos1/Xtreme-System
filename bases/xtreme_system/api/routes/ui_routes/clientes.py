@@ -22,7 +22,6 @@ from xtreme_system.api.routes.ui_routes.common import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
     pending_upload_paths,
-    remover_orfaos,
     salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
@@ -120,7 +119,6 @@ def _documentos_modal(
     action_oob: bool = False,
 ) -> HTMLResponse:
     item = _found(cliente.get(session, cliente_id), "Cliente")
-    remover_orfaos(session, item.documentos, imagem_documento_cliente.delete)
     session.refresh(item)
     return templates.TemplateResponse(
         request,
