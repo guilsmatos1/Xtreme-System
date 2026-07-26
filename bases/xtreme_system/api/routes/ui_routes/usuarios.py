@@ -107,13 +107,25 @@ def ui_usuario_criar(
             {"perfis": perfil.list_all(session), "erro": "username já existe"},
             status_code=400,
         )
-    usuario.create(
-        session,
-        usuario.UsuarioCreate(
-            username=username, nome=nome, senha=senha, papel=papel, perfil_id=perfil_id
-        ),
-        user.id,
-    )
+    try:
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username=username,
+                nome=nome,
+                senha=senha,
+                papel=papel,
+                perfil_id=perfil_id,
+            ),
+            user.id,
+        )
+    except usuario.SenhaFracaError as exc:
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario.html",
+            {"perfis": perfil.list_all(session), "erro": str(exc)},
+            status_code=400,
+        )
     return templates.TemplateResponse(
         request, "_usuarios_ok.html", _usuarios_ctx(session, user)
     )
@@ -154,7 +166,15 @@ def ui_usuario_senha_alterar(
     nova_senha: Annotated[str, Form()],
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    usuario.change_password(session, obj, nova_senha, user.id)
+    try:
+        usuario.change_password(session, obj, nova_senha, user.id)
+    except usuario.SenhaFracaError as exc:
+        return templates.TemplateResponse(
+            request,
+            "_form_senha.html",
+            {"usuario": obj, "erro": str(exc)},
+            status_code=400,
+        )
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
@@ -247,7 +267,15 @@ def ui_usuario_editar(
         user.id,
     )
     if senha:
-        usuario.change_password(session, obj, senha, user.id)
+        try:
+            usuario.change_password(session, obj, senha, user.id)
+        except usuario.SenhaFracaError as exc:
+            return templates.TemplateResponse(
+                request,
+                "_form_usuario_editar.html",
+                {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
+                status_code=400,
+            )
     return templates.TemplateResponse(
         request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
