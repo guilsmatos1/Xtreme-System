@@ -147,6 +147,55 @@ def test_venda_rejeita_valores_financeiros_e_operacionais_impossiveis(
     assert resp.status_code == 422
 
 
+def test_criar_venda_rejeita_pagamento_pendente_sem_valor_positivo(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "pagamento_pendente": True,
+            "datas_pagamento": "10/08/2026",
+        },
+        headers=headers,
+    )
+
+    assert resp.status_code == 422
+    assert "valor_pendente" in resp.text
+
+
+def test_criar_venda_rejeita_valor_pendente_sem_pagamento_pendente(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+
+    resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+            "valor_pendente": "1000.00",
+        },
+        headers=headers,
+    )
+
+    assert resp.status_code == 422
+    assert "pagamento_pendente" in resp.text
+
+
 def test_atualizar_venda_rejeita_entrada_maior_que_valor_salvo(
     client: TestClient,
 ) -> None:
@@ -174,6 +223,35 @@ def test_atualizar_venda_rejeita_entrada_maior_que_valor_salvo(
 
     assert resp.status_code == 400
     assert "valor_entrada" in resp.json()["detail"]
+
+
+def test_atualizar_venda_rejeita_valor_pendente_sem_pagamento_pendente_salvo(
+    client: TestClient,
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    cliente_id, veiculo_id = _seed(client, headers)
+    venda_resp = client.post(
+        "/vendas",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_venda": "2026-07-01",
+            "valor_venda": "40000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": 1,
+        },
+        headers=headers,
+    )
+    assert venda_resp.status_code == 201
+
+    resp = client.patch(
+        f"/vendas/{venda_resp.json()['id']}",
+        json={"valor_pendente": "1000.00"},
+        headers=headers,
+    )
+
+    assert resp.status_code == 400
+    assert "pagamento_pendente" in resp.json()["detail"]
 
 
 def test_api_json_respeita_perfil_em_veiculos_e_vendas(

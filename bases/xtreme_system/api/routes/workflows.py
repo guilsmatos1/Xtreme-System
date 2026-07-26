@@ -53,6 +53,27 @@ def validate_valores_venda_update(venda_obj: venda.Venda, data: Any) -> None:
             status_code=400,
             detail=venda.ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA,
         )
+    pagamento_pendente = (
+        data.pagamento_pendente
+        if "pagamento_pendente" in data.model_fields_set
+        else venda_obj.pagamento_pendente
+    )
+    valor_pendente = (
+        data.valor_pendente
+        if "valor_pendente" in data.model_fields_set
+        else venda_obj.valor_pendente
+    )
+    datas_pagamento = (
+        data.datas_pagamento
+        if "datas_pagamento" in data.model_fields_set
+        else venda_obj.datas_pagamento
+    )
+    try:
+        venda.validar_coerencia_pagamento(
+            pagamento_pendente, valor_pendente, datas_pagamento
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:

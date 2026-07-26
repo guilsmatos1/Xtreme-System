@@ -27,6 +27,14 @@ from xtreme_system.usuario.core import Usuario, UsuarioRead
 from xtreme_system.veiculo.core import StatusVeiculo, TipoVeiculo, Veiculo, VeiculoRead
 
 ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA = "valor_entrada não pode exceder valor_venda"
+ERRO_PAGAMENTO_PENDENTE_VALOR_OBRIGATORIO = (
+    "pagamento_pendente exige valor_pendente maior que zero"
+)
+ERRO_PAGAMENTO_PENDENTE_DATAS_OBRIGATORIAS = "pagamento_pendente exige datas_pagamento"
+ERRO_PAGAMENTO_SEM_PENDENCIA_COM_VALOR = (
+    "valor_pendente maior que zero exige pagamento_pendente"
+)
+ERRO_PAGAMENTO_SEM_PENDENCIA_COM_DATAS = "datas_pagamento exige pagamento_pendente"
 
 
 class StatusVenda(StrEnum):
@@ -34,6 +42,28 @@ class StatusVenda(StrEnum):
     aprovado = "aprovado"
     cancelado = "cancelado"
     concluido = "concluido"
+
+
+def _tem_texto(valor: str | None) -> bool:
+    return bool(valor and valor.strip())
+
+
+def validar_coerencia_pagamento(
+    pagamento_pendente: bool,
+    valor_pendente: Decimal | None,
+    datas_pagamento: str | None,
+) -> None:
+    if pagamento_pendente:
+        if valor_pendente is None or valor_pendente <= 0:
+            raise ValueError(ERRO_PAGAMENTO_PENDENTE_VALOR_OBRIGATORIO)
+        if not _tem_texto(datas_pagamento):
+            raise ValueError(ERRO_PAGAMENTO_PENDENTE_DATAS_OBRIGATORIAS)
+        return
+
+    if valor_pendente is not None and valor_pendente > 0:
+        raise ValueError(ERRO_PAGAMENTO_SEM_PENDENCIA_COM_VALOR)
+    if _tem_texto(datas_pagamento):
+        raise ValueError(ERRO_PAGAMENTO_SEM_PENDENCIA_COM_DATAS)
 
 
 class Venda(Base):
@@ -101,6 +131,9 @@ class VendaCreate(BaseModel):
     def validar_valores(self) -> Self:
         if self.valor_entrada is not None and self.valor_entrada > self.valor_venda:
             raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+        validar_coerencia_pagamento(
+            self.pagamento_pendente, self.valor_pendente, self.datas_pagamento
+        )
         return self
 
 
@@ -131,6 +164,10 @@ class VendaUpdate(BaseModel):
             and self.valor_entrada > self.valor_venda
         ):
             raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+        if "pagamento_pendente" in self.model_fields_set:
+            validar_coerencia_pagamento(
+                self.pagamento_pendente, self.valor_pendente, self.datas_pagamento
+            )
         return self
 
 
@@ -277,6 +314,22 @@ def update(
     )
     if valor_entrada is not None and valor_entrada > valor_venda:
         raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+    pagamento_pendente = (
+        data.pagamento_pendente
+        if "pagamento_pendente" in data.model_fields_set
+        else obj.pagamento_pendente
+    )
+    valor_pendente = (
+        data.valor_pendente
+        if "valor_pendente" in data.model_fields_set
+        else obj.valor_pendente
+    )
+    datas_pagamento = (
+        data.datas_pagamento
+        if "datas_pagamento" in data.model_fields_set
+        else obj.datas_pagamento
+    )
+    validar_coerencia_pagamento(pagamento_pendente, valor_pendente, datas_pagamento)
     veiculo_anterior_id = obj.veiculo_id
     veiculo_troca_anterior_id = obj.veiculo_troca_id
     status_anterior = obj.status
