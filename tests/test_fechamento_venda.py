@@ -56,6 +56,8 @@ def _seed_venda(
     pagamento_pendente: bool = False,
     valor_venda: Decimal = Decimal("60000.00"),
     debitos: Decimal | None = Decimal("500.00"),
+    valor_pendente: Decimal | None = None,
+    datas_pagamento: str | None = None,
 ) -> tuple[investidor.Investidor, investidor.Investidor, venda.Venda]:
     inv_principal = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
     inv_participante = investidor.create(
@@ -104,6 +106,10 @@ def _seed_venda(
             parcelas=1,
             status=status,
             pagamento_pendente=pagamento_pendente,
+            valor_pendente=valor_pendente
+            or (Decimal("1000.00") if pagamento_pendente else None),
+            datas_pagamento=datas_pagamento
+            or ("2026-08-01" if pagamento_pendente else None),
         ),
     )
     return inv_principal, inv_participante, obj
