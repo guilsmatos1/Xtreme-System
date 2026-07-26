@@ -40,7 +40,7 @@ def ui_login(
             {"erro": "Usuário ou senha inválidos"},
             status_code=401,
         )
-    token = auth.create_access_token(user.username, user.papel)
+    token = auth.create_access_token(user.username)
     resp = RedirectResponse("/ui/veiculos", status_code=303)
     resp.set_cookie(
         "access_token",

@@ -32,7 +32,6 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str
-    papel: str
 
 
 def hash_password(senha: str) -> str:
@@ -43,10 +42,10 @@ def verify_password(senha: str, senha_hash: str) -> bool:
     return _hasher.verify(senha, senha_hash)
 
 
-def create_access_token(username: str, papel: str) -> str:
+def create_access_token(username: str) -> str:
     settings = get_settings()
     expire = datetime.now(UTC) + timedelta(minutes=settings.auth_token_expire_minutes)
-    payload = {"sub": username, "papel": papel, "exp": expire}
+    payload = {"sub": username, "exp": expire}
     return jwt.encode(
         payload, settings.auth_secret_key, algorithm=settings.auth_algorithm
     )
@@ -58,7 +57,7 @@ def decode_token(token: str) -> TokenData:
         token, settings.auth_secret_key, algorithms=[settings.auth_algorithm]
     )
     try:
-        return TokenData(username=payload["sub"], papel=payload["papel"])
+        return TokenData(username=payload["sub"])
     except KeyError as exc:
         raise jwt.InvalidTokenError(  # noqa: TRY003 -- exceção de terceiros, não dá pra mover a mensagem
             "token sem claims obrigatórias"

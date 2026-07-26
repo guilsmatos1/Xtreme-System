@@ -14,10 +14,9 @@ def test_hash_roundtrip() -> None:
 
 
 def test_token_roundtrip() -> None:
-    token = auth.create_access_token("ana", "admin")
+    token = auth.create_access_token("ana")
     dados = auth.decode_token(token)
     assert dados.username == "ana"
-    assert dados.papel == "admin"
 
 
 def test_token_invalido() -> None:
