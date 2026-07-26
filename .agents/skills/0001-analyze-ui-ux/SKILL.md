@@ -5,154 +5,216 @@ description: Analyze the system's UI/UX and visual design and identify the 10 hi
 
 # Analyze UI/UX
 
-Analyze this system as an **interface**, not as source code and not as a feature set, and identify
-the 10 best opportunities to improve the experience of using it, prioritized by how much friction
-each one removes for someone who works in the system every day.
+Analyze this system thoroughly as an interface and identify the best UI/UX improvement opportunities,
+prioritized by how much friction each one removes for people who use the system every day. Prioritize
+hesitation, misreads, mis-clicks, retyping, inaccessible controls, and unclear system state over
+pure visual preference.
 
-The question is not "is the code clean?" nor "what feature is missing?" — it is
-**"where does the person using this screen hesitate, misread, mis-click, retype, or give up?"**
+Quality over quantity. Target 8-12 opportunities, but only include findings with impact `High` or
+`Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
+cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
+to fill the count.
 
-## Scope
+## Review Dimensions
 
-Vehicle dealership management platform, server-rendered: FastAPI + Jinja + HTMX, hand-written CSS.
-Users are dealership staff on desktop, working long sessions with dense lists and long forms.
+For each opportunity, evaluate the relevant dimensions below:
 
-Ground every finding in what actually exists:
+1. Information hierarchy
+  - important values hidden
+  - overloaded tables
+  - weak visual priority
+2. Form ergonomics
+  - poor field order
+  - missing input modes or masks
+  - unclear required fields
+3. Feedback and system state
+  - missing loading/success/error states
+  - HTMX swaps without indicators
+  - destructive actions without confirmation
+4. Error presentation
+  - errors far from fields
+  - lost user input
+  - generic or inconsistent messages
+5. Consistency
+  - macro bypasses
+  - divergent button/table/modal patterns
+  - terminology drift
+6. Density and scanability
+  - hard-to-scan rows
+  - poor alignment for numbers/statuses
+  - overflow or truncation hiding meaning
+7. Accessibility and responsiveness
+  - weak focus states
+  - missing labels or semantics
+  - broken tablet/smaller desktop layouts
 
-- `bases/xtreme_system/api/templates/base.html` — global layout, navigation, page shell.
-- `bases/xtreme_system/api/templates/_macros.html` — the de-facto design system (inputs, buttons,
-  tables, modals). Inconsistency almost always means "a template bypassed a macro".
-- `bases/xtreme_system/api/templates/_form_*.html` — the long forms (venda, veículo, compra are
-  the biggest and the most used).
-- `bases/xtreme_system/api/templates/_modal_*.html` — modal flows, uploads, nested actions.
-- `bases/xtreme_system/api/templates/_linhas_*.html`, `_row_*.html` — list/table rendering.
-- `bases/xtreme_system/api/static/app.css` — spacing, typography, color, states.
-- `bases/xtreme_system/api/static/columns.js`, `filters.js` — client-side table behavior.
-- `bases/xtreme_system/api/routes/ui_routes/*.py` — which fragment each interaction swaps in,
-  and what the user sees while it happens.
+## Process
 
-Read `README.md` for the product context and `ARCHITECTURE.md` for the HTMX fragment flow before
-judging any interaction.
+1. Explore the interface structure before diving into specific templates.
+2. Identify likely hotspots:
+  - `base.html` global layout and navigation
+  - `_macros.html` design-system primitives
+  - long forms for veículo, compra, venda, fechamento, and caixa
+  - table rows/fragments and modal flows
+  - `app.css`, `columns.js`, `filters.js`, and HTMX attributes
+3. Read enough template/CSS/route context to understand each issue before judging it.
+4. If the app can be run, render key screens at desktop and smaller widths; if it cannot, say so
+   and rely only on template/CSS evidence.
+5. Prefer fixes in shared macros and CSS over per-template patches when the issue repeats.
+6. Tie every recommendation to a specific template, selector, macro, route, or JS behavior.
+7. Avoid feature requests or code-quality refactors unless the interface issue cannot be fixed without them.
+8. After preparing the final report, save the content to `.loop/running/improvements-ui-ux.json` as JSON.
 
-## Analysis Dimensions
+## Suggested Workflow
 
-1. **Information hierarchy** — on each screen, is the most important thing the most visible thing?
-   Are lists showing the columns the user actually decides with, or every column that exists?
-2. **Form ergonomics** — field order matching the real-world order of the task, grouping, labels,
-   placeholders vs labels, required-field signalling, sane defaults, tab order, input types
-   (`type=number`, `inputmode`, masks for CPF/placa/valor), and length of the longest forms.
-3. **Feedback and system state** — does the user know a request is in flight, succeeded, or failed?
-   HTMX swaps without an indicator, silent failures, alerts that vanish or never appear,
-   destructive actions without confirmation, no optimistic/disabled state on submit.
-4. **Error presentation** — where validation errors surface, whether they point at the offending
-   field, whether the user's typed data survives a failed submit.
-5. **Consistency** — the same concept rendered differently across screens: button styles, table
-   headers, modal structure, date/currency formatting, status badges, empty states, terminology
-   (pt-BR wording drift between screens).
-6. **Density and scanability** — line-height, column alignment (numbers right-aligned?),
-   zebra/hover affordances, sticky headers on long tables, truncation that hides meaning.
-7. **Navigation and wayfinding** — nav structure, active-state, breadcrumbs, deep links, what
-   happens after a save (where does the user land?), back-button behavior with HTMX.
-8. **Accessibility** — color contrast in `app.css`, focus-visible styles, labels tied to inputs,
-   keyboard reachability of modals and custom controls, `aria-*` on dynamic regions, focus
-   trapping and focus return on modal close, semantics of clickable non-buttons.
-9. **Responsiveness** — behavior of wide tables and long forms below ~1280px and on tablets;
-   horizontal scroll, overflowing modals, unusable controls at small widths.
-10. **Visual craft** — spacing scale, typographic scale, color palette coherence, use of color to
-    carry meaning (status, positive/negative money), shadows/borders/radii consistency, and
-    whether dark/light or print/export views are broken.
+Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
 
-## Method
+- design system usage: `graphify query "templates using macros and raw repeated controls"`
+- HTMX feedback: `graphify query "hx attributes indicators targets error states"`
+- screen concept: `graphify explain "<screen or template>"`
+- route-to-template relationship: `graphify path "<route>" "<template>"`
+- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
 
-1. Read `base.html` and `_macros.html` in full. That is the design system; write down what it
-   defines and what it fails to define.
-2. Read `app.css` looking for: how many distinct spacing values, font sizes, colors, radii and
-   shadows exist; duplicated or overriding rules; `!important`; dead selectors.
-3. Walk the 5 most-used screens end to end (lista de veículos, cadastro/edição de veículo,
-   venda, fechamento de venda, caixa/lançamentos) and describe what the user sees at each step.
-4. For each screen, check macro usage vs raw HTML with `graphify query "templates using <macro>"` /
-   `graphify explain "<screen or component>"` before falling back to grepping templates directly.
-   Raw HTML that duplicates a macro is a consistency finding with a concrete fix.
-5. Check every destructive or money-changing action for confirmation and feedback.
-6. Check every `hx-` attribute for a matching indicator, target and error path.
-7. If the app can be run, render the main screens with the `playwright-cli` skill and screenshot
-   them at 1440px and 1024px. If it cannot be run, say so and rely on template/CSS reading only —
-   never invent visual observations you did not make.
-8. Rank by **frequency of the affected screen × severity of the friction**, discounted by effort.
-   One fix in `_macros.html` that corrects ten screens outranks a bespoke tweak on one screen.
-9. Keep the 10 best.
+Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
+surface, or to confirm exact line ranges before citing them in a finding. Use Playwright screenshots
+only when the app can run and visual observations are needed; never invent visual observations.
 
-## Rules
+## What Strong Findings Look Like
 
-- Every finding must cite concrete evidence: a template path and line, a CSS selector, a macro
-  name. No generic design advice that could apply to any web app.
-- Describe the problem as the user experiences it first, then as the code that causes it.
-- Prefer fixes in `_macros.html` and `app.css` over per-template patches; say explicitly which
-  screens each fix propagates to.
-- Respect the existing stack. Do not propose React, a CSS framework, a component library, a build
-  step, or a full redesign. Work with Jinja macros, HTMX and hand-written CSS.
-- Do not propose new features or new business rules — that is `0004-analyze-features`.
-- Do not propose code-quality refactors — that is `0001-analyze-codebase`.
-- Keep all user-facing copy suggestions in pt-BR, matching the existing terminology.
-- If you are unsure whether a behavior exists (an indicator, a confirm dialog), search before
-  claiming it's missing. If still unsure, mark it explicitly as uncertain and lower its priority.
+Strong finding:
+
+```text
+Money-changing HTMX forms submit without disabled/loading state or nearby error recovery, so staff can double-submit or lose confidence during slow saves.
+```
+
+Weak finding:
+
+```text
+The page would look nicer with more spacing.
+```
+
+Do not report subjective visual polish unless it materially affects comprehension, task speed,
+accessibility, or error rate. Do not lower the bar just to reach a round number of findings.
+
+## Output Requirements
+
+Deliver 8-12 opportunities (fewer if that's all the evidence supports), ordered from highest to
+lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
+rather than padding the list with them.
+
+For each opportunity, include:
+
+- **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
+- **Short title**: actionable, specific to the UI/UX issue
+- **Location**: representative file, line range, function/macro/selector, and a real code snippet (8-12 lines)
+- **Impact**: `High` or `Medium`
+- **Category**: primary dimension from review dimensions
+- **Description**: specific explanation tied to the interface
+- **Why it matters**: user friction, error risk, accessibility, trust, or frequency
+- **Concrete fix**: smallest useful template, CSS, JS, macro, or route change
+- **Estimated effort**: `Low`, `Medium`, or `High`
+- **Potential savings**: concrete, estimated benefit when it can be reasoned about — omit rather than guess
+- **Priority**: `high`, `medium`, or `low` (may differ from impact)
+- **Risk level**: `high`, `medium`, or `low` (implementation risk)
+- **Tags**: searchable labels
+- **Files affected**: list of all files involved in the fix
+- **Related opportunities**: IDs of related findings from the same analysis
+- **Self-critique**: per-opportunity honest assessment — confidence score, strengths, weaknesses, and uncertainty
+- **UI/UX details**: screens, frequency of exposure, propagation, proposed change, and acceptance criteria
 
 ## Output Format
 
-Use exactly this text format for each of the 10 items, most impactful first. No Markdown tables.
+Deliver results as a JSON file with this comprehensive structure:
 
-```text
-## <short title of the UI/UX improvement>
-
-Screen(s): <lista de veículos | form de venda | fechamento | modais de upload | global | ...>
-Category: <hierarquia | formulário | feedback | erro | consistência | densidade | navegação | acessibilidade | responsividade | visual>
-Evidence: path/to/template.html:123 (and other relevant files)
-User impact: High | Medium | Low
-Frequency of exposure: Every session | Daily | Occasional
-Estimated effort: Low | Medium | High
-Propagates to: <how many screens this single fix improves>
-
-What the user experiences today:
-<the friction, described from the user's point of view, on a concrete task>
-
-Evidence in the code:
-<the template/CSS/HTMX detail that causes it, tied to the cited files>
-
-Proposed change:
-<the smallest concrete change — which macro, which CSS rule, which attribute>
-
-Acceptance criteria:
-- <verifiable statement 1>
-- <verifiable statement 2>
-- <verifiable statement 3>
-```
-
-Close the report with two short sections:
-
-```text
-## Sistema de design atual
-
-<6–10 lines describing what _macros.html and app.css actually establish today: spacing scale,
-type scale, palette, component set — and the concrete gaps in it>
-
-## Descartados
-
-<3–6 candidates you considered and rejected, one line each, with the reason>
+```json
+{
+  "analysis_timestamp": "ISO-8601 timestamp",
+  "total_opportunities": 9,
+  "opportunities": [
+    {
+      "id": "imp-YYYYMMDD-NNN",
+      "short_title": "<short, actionable title>",
+      "location": {
+        "file": "path/to/template.html",
+        "line_start": 120,
+        "line_end": 135,
+        "function": "macro_or_selector_name",
+        "snippet": "<8-12 lines of the actual relevant code>"
+      },
+      "impact": "High",
+      "category": "Feedback and system state",
+      "estimated_effort": "Medium",
+      "potential_savings": "<concrete estimated benefit, omit if not justifiable>",
+      "description": "<specific explanation tied to the interface>",
+      "why_it_matters": "<user friction, error risk, accessibility, trust, or frequency>",
+      "concrete_fix": "<smallest useful template, CSS, JS, macro, or route change>",
+      "example": "<before/after interaction or markup when useful>",
+      "additional_fields": {
+        "priority": "high|medium|low",
+        "risk_level": "high|medium|low",
+        "tags": ["tag1", "tag2"],
+        "files_affected": ["path1", "path2"],
+        "related_opportunities": ["imp-YYYYMMDD-NNN"],
+        "screens": ["lista de veiculos", "form de venda"],
+        "frequency_of_exposure": "Every session|Daily|Occasional",
+        "propagates_to": "<how many screens this fix improves>",
+        "proposed_change": "<specific macro/CSS/attribute/route change>",
+        "acceptance_criteria": ["<verifiable statement 1>", "<verifiable statement 2>"]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": ["<why this finding is solid, cite what was verified>"],
+        "weaknesses": ["<what wasn't verified, assumptions made>"],
+        "uncertain": false,
+        "suggested_improvements": ["<how to raise confidence further>"]
+      }
+    }
+  ],
+  "design_system_current_state": {
+    "summary": "<what _macros.html and app.css establish today>",
+    "gaps": ["<concrete design-system gap>"]
+  },
+  "discarded_candidates": [
+    {
+      "title": "<candidate considered and rejected>",
+      "reason": "<why it is not a strong UI/UX opportunity>"
+    }
+  ]
+}
 ```
 
 ## Persistence
 
-- Write the final report to `docs/0001-ui-ux-analysis.md`.
-- Overwrite the file if it already exists, unless the user asks for another filename.
-- Markdown only, no tables, matching the format above item by item.
-
-**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-The report is the deliverable and it goes to `docs/0001-ui-ux-analysis.md` ONLY.
-Reply in the terminal with a single line pointing to the file.
+- Write the final report to `.loop/running/improvements-ui-ux.json`.
+- If the directory does not exist, create it.
+- If the file already exists, overwrite it with the latest report.
+- `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
+- Include all analysis data in the JSON structure above, preserving all findings from the review.
 
 ## Execution
 
 This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
 the raw exploration (graphify queries, template/CSS reads, screenshots) stays out of the caller's
-context. The subagent should write the report to the path above and reply with only the file path —
-never paste the report or exploration output back into the parent conversation.
+context. The subagent should write the report to the path above and reply with only the file path
+and item count — never paste the report or exploration output back into the parent conversation.
+
+## Review Standard
+
+- Be specific, surgical, and evidence-based.
+- Describe the user's friction first, then the template/CSS/HTMX evidence.
+- Prefer shared macro and CSS fixes over one-off template tweaks.
+- Respect the existing stack: Jinja, HTMX, handwritten CSS, and server-rendered routes.
+- Do not propose new features or business rules as UI/UX findings.
+- If visual behavior was not rendered, say so in the self-critique instead of inventing observations.
+- If a suspected issue is uncertain, set `self_critique.uncertain: true`, list it in `weaknesses`,
+  and lower its priority/confidence_score accordingly.
+- Include all enriched metadata: tags, affected files, related opportunities, screens, acceptance
+  criteria, propagation, and self-assessment of confidence.
+- Honesty over completeness: an accurate list of 7 is better than an inflated list of 10.
+
+
+
+**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
+
+The full report is the deliverable, and it goes to
+`.loop/running/improvements-ui-ux.json` ONLY.

@@ -5,157 +5,215 @@ description: Analyze the codebase for code consolidation opportunities — dupli
 
 # Analyze Consolidation
 
-Find the places where this codebase says the same thing more than once, and propose how to say it
-once — **without removing, weakening, or changing any existing behavior**.
+Analyze this codebase thoroughly and identify the best opportunities to consolidate duplicated,
+near-duplicated, or redundant code without removing, weakening, or changing existing behavior.
+Prioritize duplicated business rules, divergent parallel implementations, and repeated workflow or
+template patterns over cosmetic similarity.
 
-The question is not "is this code good?" — it is **"where does one logical rule live in two or more
-places, and what is the smallest behavior-preserving change that makes it live in one?"**
+Quality over quantity. Target 8-12 opportunities, but only include findings with impact `High` or
+`Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
+cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
+to fill the count.
 
-Consolidation here means: unify duplicates, collapse parallel implementations, reuse what already
-exists. It does **not** mean invent new abstractions, add configurability, or generalize for
-hypothetical future cases.
+## Review Dimensions
 
-## Scope
+For each opportunity, evaluate the relevant dimensions below:
 
-The system is a vehicle dealership management platform (Polylith + FastAPI + HTMX + Jinja).
-Look for duplication across all layers, and especially **across** layers:
+1. Literal duplication
+  - byte-identical blocks
+  - copy-pasted conditionals
+  - repeated route/template fragments
+2. Near duplication
+  - same shape with renamed fields
+  - repeated parsing, filtering, or pagination
+  - similar form/table/modal templates
+3. Parallel implementations
+  - same business rule computed in multiple places
+  - divergent validation or error handling
+  - duplicated status transitions
+4. Reimplemented helpers
+  - existing function, macro, or workflow bypassed
+  - ad hoc formatting/coercion
+  - duplicate query construction
+5. Redundant layers
+  - wrappers that only forward
+  - single-caller indirections
+  - re-export-only components
+6. Template consolidation
+  - repeated Jinja blocks
+  - macro bypasses
+  - duplicated HTMX attributes and empty/error states
+7. Behavior preservation
+  - differences between copies
+  - verification coverage
+  - layer-boundary risks
 
-- `components/xtreme_system/*/core.py` — business rules restated in more than one component.
-- `components/xtreme_system/*/workflows.py` — repeated multi-step sequences and validation chains.
-- `bases/xtreme_system/api/routes/` and `routes/ui_routes/` — route handlers that differ only in
-  the entity they touch; repeated parsing, filtering, pagination, permission and error handling.
-- `bases/xtreme_system/api/templates/` — near-identical Jinja blocks that should be one macro in
-  `_macros.html`; forms, tables, filters, modals copy-pasted per domain.
-- `bases/xtreme_system/api/crud_writes.py`, `components/xtreme_system/database/core.py` —
-  transaction/commit/rollback patterns re-implemented per caller.
-- Query construction — the same filter/join/ordering rebuilt in several routes.
-- Formatting and coercion — currency, date, CPF/CNPJ, placa, decimal parsing done ad hoc.
-- `tests/` — duplicated fixtures and setup that hide which behavior is actually pinned.
+## Process
 
-Read `ARCHITECTURE.md` first to respect layer boundaries: a consolidation that pulls route-level
-logic into a component, or pushes component logic into a route, must be justified against the rules
-in `CLAUDE.md` ("Placing validation") — invariants in `core.py`, FK/availability in `workflows.py`,
-route-specific 400/409 in the routes.
+1. Explore the project structure before diving into specific files.
+2. Identify likely hotspots:
+  - business rules repeated across `components/*/core.py`
+  - multi-step validation chains in `workflows.py`
+  - route handlers with repeated parsing, filtering, pagination, permission, and error handling
+  - Jinja fragments that should be macros
+  - transaction, formatting, coercion, and query patterns repeated per caller
+3. For each candidate, open every occurrence and compare the exact differences before judging it.
+4. Prefer an existing module, function, workflow, or macro as the consolidation target.
+5. Create a new shared helper only when no suitable home exists and there are at least 2 real callers.
+6. Tie every recommendation to all duplicate sites, with representative snippets when possible.
+7. Avoid broad refactors unless the duplication is clearly causing correctness, reliability, or
+   maintenance problems.
+8. After preparing the final report, save the content to `.loop/running/improvements-consolidation.json` as JSON.
 
-## What Counts as a Consolidation Opportunity
+## Suggested Workflow
 
-1. **Literal duplication** — the same block copy-pasted in 2+ places.
-2. **Near duplication** — same shape, differing only in a name, a field, or a constant.
-3. **Parallel implementations** — the same rule computed twice with divergent details
-   (this is the highest-value kind: the divergence is usually a latent bug).
-4. **Reimplemented existing helper** — code that redoes what a function/macro already in the repo
-   does; the fix is a call, not a new abstraction.
-5. **Redundant layers** — a wrapper that only forwards, an indirection with a single caller on both
-   sides, a component that exists only to re-export another.
-6. **Template duplication** — repeated Jinja fragments that `_macros.html` should own.
-7. **Dead-by-duplication** — one of the copies is unreachable or unused; the consolidation is a
-   deletion. Verify with a repo-wide search before claiming it.
+Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
 
-## What Does NOT Count
+- duplicated logic: `graphify query "duplicated or parallel implementations"`
+- route/template duplication: `graphify query "repeated route handlers and jinja fragments"`
+- a specific concept: `graphify explain "<business rule or workflow>"`
+- relationship between duplicate sites: `graphify path "<A>" "<B>"`
+- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
 
-- Similar-looking code that encodes genuinely different rules. Coincidental shape is not duplication.
-- Tests that intentionally repeat setup to stay readable and independent.
-- Splitting large files/functions, typing weak contracts, breaking cycles — that is
-  `0003-analyze-llm-adherence`.
-- General code-quality or performance findings — that is `0001-analyze-codebase`.
-- Any change that removes a capability, a validation, an error message, a status code, or a
-  logged/audited event. If the copies differ in behavior, the consolidated version must keep the
-  union of the behaviors, and you must say explicitly how.
+Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
+surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
+file tree or definition list by hand when graphify can answer the same question with a fraction of
+the tokens.
 
-## Method
+## What Strong Findings Look Like
 
-1. Read `ARCHITECTURE.md`, `API.md`, `DATABASE.md`, and `CLAUDE.md`.
-2. Sweep for repetition with `graphify query "duplicated or parallel implementations"` (and similar
-   queries per candidate area) before falling back to broad `rg` searches for repeated function
-   names, literals/messages, query fragments, or Jinja blocks that graphify doesn't surface.
-3. For each candidate, open **every** occurrence and diff them line by line. Write down the exact
-   differences — that list is what determines whether consolidation is safe.
-4. Classify the candidate using the categories above.
-5. Determine the target home for the unified code, respecting layer boundaries. Prefer an existing
-   module, function, or macro over a new one. Creating a new shared helper is allowed only when no
-   suitable home exists, and it must have at least 2 real callers.
-6. Establish how behavior preservation will be proven: which existing tests cover the call sites,
-   and which new test is needed to pin a difference that would otherwise be lost.
-7. Rank by **duplication risk × blast radius**, discounted by migration cost. A rule duplicated
-   across components outranks three identical HTML snippets.
-8. Keep the 10 best.
+Strong finding:
 
-## Rules
+```text
+Vehicle availability validation is implemented in two workflows with different status checks, so one path can sell a vehicle that the other path rejects.
+```
 
-- Every finding must cite **all** duplicate sites with `path/to/file.py:line`. A finding with one
-  site is not a consolidation finding.
-- State the differences between the copies explicitly, even when there are none ("byte-identical").
-- If the copies diverge, the proposal must say which behavior wins, or that both are preserved
-  behind an explicit parameter — never silently pick one.
-- Propose the smallest change that removes the duplication. No new layers, no configurability that
-  wasn't already implied by the existing copies.
-- If consolidating would cross a layer boundary defined in `ARCHITECTURE.md`, say so and either
-  justify it or lower the priority.
-- Do not propose the change if you cannot name how it is verified.
-- If you are unsure two blocks are truly equivalent, mark the finding as uncertain and lower its
-  priority rather than asserting it.
-- Analysis only — do not edit code in this skill.
+Weak finding:
+
+```text
+These two route handlers look similar.
+```
+
+Do not report similar-looking code unless it represents one logical rule or reusable structure that
+can be unified while preserving behavior. Do not lower the bar just to reach a round number of
+findings.
+
+## Output Requirements
+
+Deliver 8-12 opportunities (fewer if that's all the evidence supports), ordered from highest to
+lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
+rather than padding the list with them.
+
+For each opportunity, include:
+
+- **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
+- **Short title**: actionable, specific to the duplication
+- **Location**: representative file, line range, function, and a real code snippet (8-12 lines)
+- **Impact**: `High` or `Medium`
+- **Category**: primary dimension from review dimensions
+- **Description**: specific explanation tied to the duplicated code
+- **Why it matters**: correctness, risk, maintainability, or operational consequence
+- **Concrete fix**: smallest behavior-preserving consolidation
+- **Estimated effort**: `Low`, `Medium`, or `High`
+- **Potential savings**: concrete, estimated benefit when it can be reasoned about — omit rather than guess
+- **Priority**: `high`, `medium`, or `low` (may differ from impact)
+- **Risk level**: `high`, `medium`, or `low` (implementation risk)
+- **Tags**: searchable labels
+- **Files affected**: list of all duplicate sites and consolidation targets
+- **Related opportunities**: IDs of related findings from the same analysis
+- **Self-critique**: per-opportunity honest assessment — confidence score, strengths, weaknesses, and uncertainty
+- **Consolidation details**: duplicate type, all sites, differences between copies, behavior preservation, and verification plan
 
 ## Output Format
 
-Use exactly this text format for each of the 10 items, highest value first. No Markdown tables.
+Deliver results as a JSON file with this comprehensive structure:
 
-```text
-## <short title of the consolidation>
-
-Type: literal duplication | near duplication | parallel implementation | reimplemented helper | redundant layer | template duplication | dead-by-duplication
-Sites:
-- path/to/file.py:123
-- path/to/other.py:45
-Layer: component | workflow | route | template | test | cross-layer
-Duplication risk: High | Medium | Low
-Blast radius: <how many call sites / screens / endpoints are affected>
-Estimated effort: Low | Medium | High
-Behavior change: none (required) — <one line stating why nothing is lost>
-
-What is duplicated:
-<the logical rule or block that appears more than once>
-
-Differences between the copies:
-<line-by-line differences, or "byte-identical">
-
-Proposed consolidation:
-<the target home and the smallest change that unifies the sites>
-
-How functionality is preserved:
-<which behaviors of each copy survive, and where the union is handled>
-
-Verification:
-- <existing test or check that must still pass>
-- <new test needed to pin a preserved difference, if any>
-```
-
-Close the report with two short sections:
-
-```text
-## Descartados
-
-<3–6 candidates you considered and rejected, one line each, with the reason —
-especially the ones that only look like duplication>
-
-## Riscos
-
-<any consolidation above that could plausibly change behavior, and what to watch>
+```json
+{
+  "analysis_timestamp": "ISO-8601 timestamp",
+  "total_opportunities": 9,
+  "opportunities": [
+    {
+      "id": "imp-YYYYMMDD-NNN",
+      "short_title": "<short, actionable title>",
+      "location": {
+        "file": "path/to/file.py",
+        "line_start": 120,
+        "line_end": 135,
+        "function": "function_name",
+        "snippet": "<8-12 lines of the actual relevant code>"
+      },
+      "impact": "High",
+      "category": "Parallel implementations",
+      "estimated_effort": "Medium",
+      "potential_savings": "<concrete estimated benefit, omit if not justifiable>",
+      "description": "<specific explanation tied to the duplicated code>",
+      "why_it_matters": "<correctness, risk, maintainability, or operational consequence>",
+      "concrete_fix": "<specific behavior-preserving consolidation>",
+      "example": "<code sample with before/after when useful>",
+      "additional_fields": {
+        "priority": "high|medium|low",
+        "risk_level": "high|medium|low",
+        "tags": ["tag1", "tag2"],
+        "files_affected": ["path1", "path2"],
+        "related_opportunities": ["imp-YYYYMMDD-NNN"],
+        "duplicate_type": "literal duplication|near duplication|parallel implementation|reimplemented helper|redundant layer|template consolidation",
+        "duplicate_sites": ["path/to/file.py:123", "path/to/other.py:45"],
+        "differences_between_copies": "<line-by-line differences, or byte-identical>",
+        "behavior_preservation": "<which behaviors survive and how>",
+        "verification": ["<existing test/check>", "<new test needed>"]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": ["<why this finding is solid, cite what was verified>"],
+        "weaknesses": ["<what wasn't verified, assumptions made>"],
+        "uncertain": false,
+        "suggested_improvements": ["<how to raise confidence further>"]
+      }
+    }
+  ],
+  "discarded_candidates": [
+    {
+      "title": "<candidate considered and rejected>",
+      "reason": "<why it is not a consolidation opportunity>"
+    }
+  ],
+  "risks": ["<consolidation risks to watch>"]
+}
 ```
 
 ## Persistence
 
-- Write the final report to `docs/0001-consolidation-analysis.md`.
-- Overwrite the file if it already exists, unless the user asks for another filename.
-- Markdown only, no tables, matching the format above item by item.
-
-**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-The report is the deliverable and it goes to `docs/0001-consolidation-analysis.md` ONLY.
-Reply in the terminal with a single line pointing to the file.
+- Write the final report to `.loop/running/improvements-consolidation.json`.
+- If the directory does not exist, create it.
+- If the file already exists, overwrite it with the latest report.
+- `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
+- Include all analysis data in the JSON structure above, preserving all findings from the review.
 
 ## Execution
 
 This skill can be run in an isolated subagent when combined with other `0001-analyze-*` skills, so
 the raw exploration (graphify queries, file reads, `rg` output) stays out of the caller's context.
-The subagent should write the report to the path above and reply with only the file path — never
-paste the report or exploration output back into the parent conversation.
+The subagent should write the report to the path above and reply with only the file path and item
+count — never paste the report or exploration output back into the parent conversation.
+
+## Review Standard
+
+- Be specific, surgical, and evidence-based.
+- Prefer duplicate rules with real drift risk over visual similarity.
+- Cite all duplicate sites, not just a representative one.
+- State the differences between copies explicitly, even when there are none.
+- If the copies diverge, preserve the union of behavior or explain which behavior intentionally wins.
+- Name the tradeoff when consolidation crosses a layer boundary.
+- If a suspected duplicate is uncertain, set `self_critique.uncertain: true`, list it in
+  `weaknesses`, and lower its priority/confidence_score accordingly.
+- Include all enriched metadata: tags, affected files, related opportunities, duplicate sites,
+  behavior-preservation details, and self-assessment of confidence.
+- Honesty over completeness: an accurate list of 7 is better than an inflated list of 10.
+
+
+
+**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
+
+The full report is the deliverable, and it goes to
+`.loop/running/improvements-consolidation.json` ONLY.
