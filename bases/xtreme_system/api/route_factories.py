@@ -1,7 +1,7 @@
 """Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -60,6 +60,7 @@ def _json_visible(
     pagina: str | None,
     campos: tuple[str, ...],
     read_schema: type[Any],
+    campos_permissao: dict[str, tuple[str, ...]] | None = None,
 ) -> Any:
     if pagina is None:
         return obj
@@ -72,7 +73,33 @@ def _json_visible(
     for campo in campos_ocultaveis:
         if not perfil.pode_ver_campo(user, pagina, campo):
             data.pop(campo, None)
+    for campo_permissao, campos_json in (campos_permissao or {}).items():
+        if not perfil.pode_ver_campo(user, pagina, campo_permissao):
+            for campo_json in campos_json:
+                data.pop(campo_json, None)
     return data
+
+
+def json_visible(
+    obj: Any,
+    user: usuario.Usuario,
+    pagina: str,
+    read_schema: type[Any] | None = None,
+    *,
+    campos_protegidos: tuple[str, ...] = (),
+    campos_permissao: dict[str, tuple[str, ...]] | None = None,
+) -> dict[str, Any]:
+    return cast(
+        dict[str, Any],
+        _json_visible(
+            obj,
+            user,
+            pagina,
+            campos_protegidos,
+            read_schema or type(obj),
+            campos_permissao,
+        ),
+    )
 
 
 def _require_json_operacao(user: usuario.Usuario, pagina: str, operacao: str) -> None:

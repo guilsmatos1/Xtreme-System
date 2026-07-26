@@ -4,7 +4,6 @@ from datetime import date
 from typing import Annotated, Any
 
 from fastapi import Depends, Form, HTTPException, Query
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
@@ -13,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
-from xtreme_system.api.route_factories import register_crud_routes
+from xtreme_system.api.route_factories import json_visible, register_crud_routes
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
     validate_cliente_veiculo_fks,
@@ -189,41 +188,43 @@ register_crud_routes(
 # ---- Fechamento de vendas ----
 
 
-def _require_json_vendas(user: usuario.Usuario) -> None:
-    if not perfil.pode_acessar(user, "vendas"):
-        raise HTTPException(status_code=403, detail="Página não permitida")
-
-
 def _fechamento_preview_json(
     obj: fechamento_venda.FechamentoVendaPreview, user: usuario.Usuario
 ) -> dict[str, Any]:
-    _require_json_vendas(user)
-    data: dict[str, Any] = jsonable_encoder(obj)
-    if not perfil.pode_ver_campo(user, "vendas", "lucro"):
-        for campo in ("custo_veiculo", "custos_operacionais", "lucro_liquido"):
-            data.pop(campo, None)
-    if not perfil.pode_ver_campo(user, "vendas", "debitos"):
-        data.pop("debitos", None)
-    if not perfil.pode_ver_campo(user, "vendas", "participacao"):
-        data.pop("investidores", None)
-    return data
+    return json_visible(
+        obj,
+        user,
+        "vendas",
+        campos_protegidos=("debitos",),
+        campos_permissao={
+            "lucro": (
+                "custo_veiculo",
+                "custos_operacionais",
+                "lucro_liquido",
+            ),
+            "participacao": ("investidores",),
+        },
+    )
 
 
 def _fechamento_json(
     obj: fechamento_venda.FechamentoVenda, user: usuario.Usuario
 ) -> dict[str, Any]:
-    _require_json_vendas(user)
-    data: dict[str, Any] = jsonable_encoder(
-        fechamento_venda.FechamentoVendaRead.model_validate(obj)
+    return json_visible(
+        obj,
+        user,
+        "vendas",
+        fechamento_venda.FechamentoVendaRead,
+        campos_protegidos=("debitos",),
+        campos_permissao={
+            "lucro": (
+                "custo_veiculo",
+                "custos_operacionais",
+                "lucro_liquido",
+            ),
+            "participacao": ("participacoes",),
+        },
     )
-    if not perfil.pode_ver_campo(user, "vendas", "lucro"):
-        for campo in ("custo_veiculo", "custos_operacionais", "lucro_liquido"):
-            data.pop(campo, None)
-    if not perfil.pode_ver_campo(user, "vendas", "debitos"):
-        data.pop("debitos", None)
-    if not perfil.pode_ver_campo(user, "vendas", "participacao"):
-        data.pop("participacoes", None)
-    return data
 
 
 @app.get(
@@ -346,11 +347,7 @@ register_crud_routes(
 
 
 def _compra_json(obj: compra.Compra, user: usuario.Usuario) -> dict[str, Any]:
-    data: dict[str, Any] = jsonable_encoder(compra.CompraRead.model_validate(obj))
-    for campo, _label in perfil.CAMPOS_PROTEGIDOS["compras"]:
-        if not perfil.pode_ver_campo(user, "compras", campo):
-            data.pop(campo, None)
-    return data
+    return json_visible(obj, user, "compras", compra.CompraRead)
 
 
 def _require_compra_operacao(user: usuario.Usuario, operacao: str) -> None:
