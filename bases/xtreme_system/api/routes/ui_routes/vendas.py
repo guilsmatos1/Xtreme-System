@@ -12,7 +12,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
     SessionDep,
@@ -20,7 +22,6 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _uploaded_file_path,
     _uploads_contrato_venda_dir,

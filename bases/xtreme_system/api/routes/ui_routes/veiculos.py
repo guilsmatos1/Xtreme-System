@@ -15,6 +15,7 @@ from xtreme_system.api.crud_ui.responses import (
     list_response,
     rollback_integrity_error_response,
 )
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
     SessionDep,
@@ -23,7 +24,6 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.route_factories import register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
     remover_orfaos,

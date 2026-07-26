@@ -11,8 +11,8 @@ from fastapi.responses import HTMLResponse
 from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
-from xtreme_system.api.route_factories import _csv_response
 from xtreme_system.api.routes.ui_routes.common import (
     IdFiltro,
     PeriodoFiltro,

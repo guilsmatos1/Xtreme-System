@@ -1,11 +1,9 @@
-"""Factories genéricas de rotas CRUD (API JSON e UI HTMX) reutilizadas por entidade."""
+"""Factories genéricas de rotas CRUD JSON reutilizadas por entidade."""
 
-from collections.abc import Callable
 from typing import Annotated, Any, cast
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,29 +12,11 @@ from xtreme_system.api.crud_types import (
     BeforeCreateHook,
     BeforeDeleteHook,
     BeforeUpdateEntityHook,
-    BeforeUpdateHook,
     CreateSchemaT,
     CrudModule,
-    CsvRow,
-    CtxForm,
-    CtxList,
     EntityT,
-    ListFunc,
-    ParseForm,
-    QueryFunc,
     ReadSchemaT,
-    SearchFunc,
-    SearchQueryFunc,
-    SortSpec,
     UpdateSchemaT,
-)
-from xtreme_system.api.crud_ui.query import sort_key
-from xtreme_system.api.crud_ui.responses import csv_response
-from xtreme_system.api.crud_ui.routes import (
-    register_crud_ui_routes as _register_crud_ui_routes_impl,
-)
-from xtreme_system.api.crud_ui.simple import (
-    register_ui_simples as _register_ui_simples_impl,
 )
 from xtreme_system.api.crud_writes import create_with_hook, update_with_hook
 from xtreme_system.api.crud_writes import safe_write as _safe_write
@@ -44,9 +24,6 @@ from xtreme_system.api.deps import CurrentUser, SessionDep, _found
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
-_sort_key = sort_key
-_csv_response = csv_response
-DepFactory = Callable[..., usuario.Usuario]
 JSON_LIST_LIMIT_MAX = 200
 
 
@@ -234,114 +211,3 @@ def register_crud_routes(
                 ) from None
         else:
             module.delete(session, obj, actor_id)
-
-
-def register_ui_simples(
-    app: FastAPI,
-    templates: Jinja2Templates,
-    ui_prefix: str,
-    titulo: str,
-    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
-    create_schema: type[CreateSchemaT],
-    update_schema: type[UpdateSchemaT],
-    export_filename: str,
-) -> None:
-    _register_ui_simples_impl(
-        app,
-        templates,
-        ui_prefix,
-        titulo,
-        module,
-        create_schema,
-        update_schema,
-        export_filename,
-    )
-
-
-def register_crud_ui_routes(
-    app: FastAPI,
-    templates: Jinja2Templates,
-    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
-    prefix: str,
-    label: str,
-    *,
-    create_schema: type[CreateSchemaT],
-    update_schema: type[UpdateSchemaT],
-    list_key: str,
-    item_key: str,
-    list_template: str,
-    list_partial_template: str,
-    ok_partial_template: str,
-    form_template: str,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    ctx_form: CtxForm = lambda _session: {},
-    ctx_list: CtxList[EntityT] = lambda _session, _lista: {},
-    searchable: bool = False,
-    parse_form: ParseForm = dict,
-    before_create: BeforeCreateHook[CreateSchemaT] | None = None,
-    before_update: BeforeUpdateHook[UpdateSchemaT] | None = None,
-    before_delete: BeforeDeleteHook[EntityT] | None = None,
-    after_create: AfterWriteHook[EntityT] | None = None,
-    after_update: AfterWriteHook[EntityT] | None = None,
-    csv_filename: str,
-    csv_headers: list[str],
-    csv_row: CsvRow[EntityT],
-    csv_fields: list[str | None] | None = None,
-    delete_requires_admin: bool = True,
-    register_create: bool = True,
-    register_update: bool = True,
-    register_edit: bool = True,
-    register_delete: bool = True,
-    editar_dep: DepFactory | None = None,
-    excluir_dep: DepFactory | None = None,
-    cadastrar_dep: DepFactory | None = None,
-    pagina: str | None = None,
-    list_func: ListFunc[EntityT] | None = None,
-    search_func: SearchFunc[EntityT] | None = None,
-    sql_sort_fields: dict[str, object] | None = None,
-    query_func: QueryFunc[EntityT] | None = None,
-    search_query_func: SearchQueryFunc[EntityT] | None = None,
-) -> None:
-    _register_crud_ui_routes_impl(
-        app,
-        templates,
-        module,
-        prefix,
-        label,
-        create_schema=create_schema,
-        update_schema=update_schema,
-        list_key=list_key,
-        item_key=item_key,
-        list_template=list_template,
-        list_partial_template=list_partial_template,
-        ok_partial_template=ok_partial_template,
-        form_template=form_template,
-        sort_fields=sort_fields,
-        ctx_form=ctx_form,
-        ctx_list=ctx_list,
-        searchable=searchable,
-        parse_form=parse_form,
-        before_create=before_create,
-        before_update=before_update,
-        before_delete=before_delete,
-        after_create=after_create,
-        after_update=after_update,
-        csv_filename=csv_filename,
-        csv_headers=csv_headers,
-        csv_row=csv_row,
-        csv_fields=csv_fields,
-        delete_requires_admin=delete_requires_admin,
-        register_create=register_create,
-        register_update=register_update,
-        register_edit=register_edit,
-        register_delete=register_delete,
-        editar_dep=editar_dep,
-        excluir_dep=excluir_dep,
-        cadastrar_dep=cadastrar_dep,
-        pagina=pagina,
-        list_func=list_func,
-        search_func=search_func,
-        sql_sort_fields=sql_sort_fields,
-        query_func=query_func,
-        search_query_func=search_query_func,
-    )

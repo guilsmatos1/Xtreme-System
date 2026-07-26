@@ -7,6 +7,7 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.deps import (
     SessionDep,
     UIAdmin,
@@ -15,7 +16,6 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.route_factories import register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _uploads_cliente_dir,
 )

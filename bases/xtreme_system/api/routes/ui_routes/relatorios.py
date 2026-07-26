@@ -9,8 +9,8 @@ from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
-from xtreme_system.api.route_factories import _csv_response
 from xtreme_system.api.routes.ui_routes.common import IdFiltro, PeriodoFiltro
 from xtreme_system.api.setup import app
 from xtreme_system.fechamento_venda import core as fechamento_venda

@@ -10,14 +10,15 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.deps import (
     SessionDep,
     _found,
     require_operacao,
     templates,
 )
-from xtreme_system.api.route_factories import _sort_key, register_crud_ui_routes
 from xtreme_system.api.routes.ui_routes.common import (
     _remover_upload,
     _uploaded_file_path,
