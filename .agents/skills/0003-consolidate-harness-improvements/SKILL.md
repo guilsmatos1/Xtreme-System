@@ -12,7 +12,7 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
 ## Efficiency Rule
 
 - Preserve raw reports; **do not delete or move** `docs/0005-analyze-token-efficiency/GUI-*.md`.
-- Consolidate incrementally: list filenames first, compare them with `Fontes processadas`, and read content **only** from new sources.
+- Consolidate incrementally: list filenames first, compare them with `Processed sources`, and read content **only** from new sources.
 - Do not reread old reports for deduplication. Use only the compact state already summarized in `improvements-harness.md`.
 - To discover new sources, use listing commands (`find`, `rg --files`, `git ls-files`) and filter by path; do not open `.md` content at this stage.
 
@@ -26,7 +26,7 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
 
 ### 1. Locate Target Sources
 
-- Read `improvements-harness.md` first, if it exists, and extract only the accumulated state and the `Fontes processadas` line.
+- Read `improvements-harness.md` first, if it exists, and extract only the accumulated state and the `Processed sources` line.
 - List `docs/0005-analyze-token-efficiency/GUI-*.md` by name/path.
 - If files exist there, process **all reports not yet recorded** in `improvements-harness.md`.
 - If there are no new versioned reports, use the legacy fallback: list `.loop/loop-*`, choose the **latest** by date in the name (`loop-N-YYYY-MM-DD` or similar), break ties with the higher number, and process its `GUI-*.md` files that are not yet recorded.
@@ -37,7 +37,7 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
 
 - If `improvements-harness.md` exists in this skill folder, use the read from step 1 to obtain:
   - the canonical list of already registered improvements, titles, and counts;
-  - the **`Fontes processadas`** list (already counted `docs/.../GUI-*.md` or `.loop/.../GUI-*.md` files).
+  - the **`Processed sources`** list (already counted `docs/.../GUI-*.md` or `.loop/.../GUI-*.md` files).
 - Remove from the queue any source already listed as processed. Avoiding reprocessing prevents double counting. If the user insists on reprocessing, remove that source from the list before recounting.
 - If the file does not exist, start from an empty state.
 
@@ -46,10 +46,10 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
 - Read **only** the new `GUI-*.md` files selected in step 1.
 - Numbered `GUI-NNN.md` format: blocks like
   ```text
-  Melhoria #N: <Title>
-  - Problema: ...
-  - Solução: ...
-  - Economia estimada: <tokens>
+  Improvement #N: <Title>
+  - Problem: ...
+  - Solution: ...
+  - Estimated savings: <tokens>
   ```
   Extract each block as `{title, problem, solution, savings, source}`.
 - Free-text `GUI-Others.md` format: extract each distinct suggestion (subagents, skills, AGENTS.md/hooks rules) as one item, synthesizing problem/solution/savings when present.
@@ -77,32 +77,32 @@ Rules:
 Write the file in this skill folder with this structure:
 
 ```markdown
-# Melhorias de Harness — Ranking Acumulado
+# Harness Improvements — Accumulated Ranking
 
-_Última atualização: <date>. Fontes processadas: <relative-path list>._
+_Last updated: <date>. Processed sources: <relative-path list>._
 
-## Melhorias
+## Improvements
 
 ### <Canonical title 1>
-- **Problema:** ...
-- **Solução:** ...
-- **Economia estimada:** ...
-- **Fontes:** <run/file>, <run/file>, ...
+- **Problem:** ...
+- **Solution:** ...
+- **Estimated savings:** ...
+- **Sources:** <run/file>, <run/file>, ...
 
 ### <Canonical title 2>
 ...
 
-## Ranking por menções
+## Ranking by mentions
 
-| # | Melhoria | Menções | Fontes |
+| # | Improvement | Mentions | Sources |
 |---|----------|---------|---------|
 | 1 | <Title> | 5       | GUI-360, GUI-361 |
 | 2 | ...     | 3       | ... |
 ```
 
 - The table is sorted by **mentions desc** (tie: alphabetical). The top item is the highest priority for upcoming runs.
-- Use `Fontes processadas` in the header to list processed relative paths. If updating an old file that still says `Rodadas processadas`, migrate that field to `Fontes processadas` while preserving existing entries.
-- In the table, the `Fontes` column must show distinct source identifiers extracted from sources, for example `GUI-360`, `GUI-361`, `loop-4-2026-07-24/GUI-350`.
+- Use `Processed sources` in the header to list processed relative paths. If updating an old file that still uses a legacy processed-source header, migrate that field to `Processed sources` while preserving existing entries.
+- In the table, the `Sources` column must show distinct source identifiers extracted from sources, for example `GUI-360`, `GUI-361`, `loop-4-2026-07-24/GUI-350`.
 
 ### 6. Report
 

@@ -57,9 +57,9 @@ def main() -> int:
         BRANCH_ENV: args.source_branch,
     }
     prompt = (
-        "Use a skill 0005-analyze-token-efficiency. "
-        "Analise somente a sessao indicada por CODEX_THREAD_ID, grave o relatorio "
-        "em CODEX_TOKEN_REPORT_PATH e nao altere codigo do produto."
+        "Use skill 0005-analyze-token-efficiency. "
+        "Analyze only the session indicated by CODEX_THREAD_ID, write the report "
+        "to CODEX_TOKEN_REPORT_PATH, and do not alter product code."
     )
     try:
         result = subprocess.run(  # noqa: S603

@@ -1,46 +1,46 @@
-# Implementações de Melhorias de Harness
+# Harness Improvement Implementations
 
-Registro do que a skill `0004-apply-harness-improvements` aplicou de fato ao harness do worker Opencode. Cada bloco corresponde a uma melhoria que saiu do ranking em `improvements-harness.md`.
+Record of what skill `0004-apply-harness-improvements` actually applied to the Codex worker harness. Each block corresponds to an improvement removed from the ranking in `improvements-harness.md`.
 
 ---
 
-### Leitura mínima e sob demanda de docs/arquivos — 2026-07-24
-- **Faixa de risco:** baixo
-- **Arquivos alterados:** `AGENTS.md`
-- **O que mudou:** Novo bloco "Minimal, on-demand reading" na seção "Agent-Readable Workspace Map" (logo após "Shortcuts by intent:"): grep/graphify primeiro e abrir só os arquivos citados pela issue; ler os 4 docs (README/ARCHITECTURE/API/DATABASE) só quando a mudança for ambígua quanto a contrato/arquitetura/auth/schema — bug fix com `file:line` não dispara; ao ter `file:line`, ler `line-30..line+30` em uma única chamada.
-- **Como verificar:** `git diff AGENTS.md` mostra as 6 linhas adicionadas entre "Shortcuts by intent:" e "## 1. Think Before Coding". O Opencode lê `AGENTS.md` nativamente.
-- **Como reverter:** remover o bloco "Minimal, on-demand reading" do `AGENTS.md`.
-- **Origem:** improvements-harness.md #1 (6 menções)
-- **Nota de processo:** um subagent aplicou esta melhoria e, indevidamente, chegou a commitá-la em `master` (`bf26ddd`); o commit foi desfeito com `git reset HEAD~1` (recuperável via reflog), deixando a mudança apenas no working tree.
+### Minimal, on-demand docs/files reading — 2026-07-24
+- **Risk level:** low
+- **Changed files:** `AGENTS.md`
+- **What changed:** New "Minimal, on-demand reading" block in the "Agent-Readable Workspace Map" section, right after "Shortcuts by intent:": grep/graphify first and open only files cited by the issue; read the 4 docs (README/ARCHITECTURE/API/DATABASE) only when the change is ambiguous about contract/architecture/auth/schema; a bug fix with `file:line` does not trigger doc reading; when `file:line` is provided, read `line-30..line+30` in a single call.
+- **How to verify:** `git diff AGENTS.md` shows the 6 added lines between "Shortcuts by intent:" and "## 1. Think Before Coding". Codex reads `AGENTS.md` natively.
+- **How to revert:** remove the "Minimal, on-demand reading" block from `AGENTS.md`.
+- **Source:** improvements-harness.md #1 (6 mentions)
+- **Process note:** a subagent applied this improvement and improperly committed it to `master` (`bf26ddd`); the commit was undone with `git reset HEAD~1` (recoverable through reflog), leaving the change only in the working tree.
 
-### Diff enxuto por padrão — 2026-07-24
-- **Faixa de risco:** baixo
-- **Arquivos alterados:** `AGENTS.md`
-- **O que mudou:** Nova seção "## 4. Lean Diff by Default" (entre Surgical Changes e Goal-Driven Execution): inspecionar com `git diff --stat` + `--name-only` por padrão; ler diff completo no máximo uma vez (antes de commit sensível ou em dúvida real); pular `diff`/`log` quando `git status` está limpo. Seções seguintes renumeradas para manter 1–7 contíguo.
-- **Como verificar:** `grep -n "^## " AGENTS.md` mostra 1..7 sem gaps, com "## 4. Lean Diff by Default".
-- **Como reverter:** remover a seção "## 4. Lean Diff by Default" e restaurar a numeração anterior (Goal-Driven→4, RTK→6→..., como estava).
-- **Origem:** improvements-harness.md #2 (5 menções)
+### Lean diff by default — 2026-07-24
+- **Risk level:** low
+- **Changed files:** `AGENTS.md`
+- **What changed:** New "## 4. Lean Diff by Default" section between Surgical Changes and Goal-Driven Execution: inspect with `git diff --stat` + `--name-only` by default; read the full diff at most once (before a sensitive commit or when genuinely in doubt); skip `diff`/`log` when `git status` is clean. Following sections were renumbered to keep 1-7 contiguous.
+- **How to verify:** `grep -n "^## " AGENTS.md` shows 1..7 with no gaps, including "## 4. Lean Diff by Default".
+- **How to revert:** remove "## 4. Lean Diff by Default" and restore the previous numbering (Goal-Driven -> 4, RTK -> 6, etc.).
+- **Source:** improvements-harness.md #2 (5 mentions)
 
-### Modo comando direto / verbosidade adequada do Linear — 2026-07-24
-- **Faixa de risco:** baixo
-- **Arquivos alterados:** `AGENTS.md`
-- **O que mudou:** Nova seção "## 8. Direct Commands & Linear Verbosity" no fim: se o usuário der um comando exato (ex.: `orca linear issue GUI-XXX --full`), executá-lo exatamente e pular `orca status`/discovery e carregamento de skill (exceto se mutar o Linear); leituras não especificadas default `--json`, `--full` só quando comentários/anexos forem necessários.
-- **Como verificar:** `grep -n "^## 8" AGENTS.md` mostra a seção no fim do arquivo.
-- **Como reverter:** remover a seção "## 8. Direct Commands & Linear Verbosity".
-- **Origem:** improvements-harness.md #3 (5 menções)
+### Direct command mode / appropriate Linear verbosity — 2026-07-24
+- **Risk level:** low
+- **Changed files:** `AGENTS.md`
+- **What changed:** New "## 8. Direct Commands & Linear Verbosity" section at the end: if the user gives an exact command (for example `orca linear issue GUI-XXX --full`), run it exactly and skip `orca status`/discovery and skill loading, except when it mutates Linear; unspecified reads default to `--json`, and `--full` is used only when comments/attachments are needed.
+- **How to verify:** `grep -n "^## 8" AGENTS.md` shows the section at the end of the file.
+- **How to revert:** remove "## 8. Direct Commands & Linear Verbosity".
+- **Source:** improvements-harness.md #3 (5 mentions)
 
-### Reduzir comentários/updates intermediários — 2026-07-24
-- **Faixa de risco:** baixo
-- **Arquivos alterados:** `AGENTS.md`
-- **O que mudou:** Nova seção "## 9. Fewer Intermediate Updates" no fim: silent-unless-blocked para tasks pequenas/médias; limitar a 2–4 updates (início/critério, antes de edição substancial, ao bloquear, verificação final); não emitir update para passos de leitura/teste/status não bloqueantes.
-- **Como verificar:** `grep -n "^## 9" AGENTS.md` mostra a seção no fim.
-- **Como reverter:** remover a seção "## 9. Fewer Intermediate Updates".
-- **Origem:** improvements-harness.md #5 (4 menções)
+### Reduce intermediate comments/updates — 2026-07-24
+- **Risk level:** low
+- **Changed files:** `AGENTS.md`
+- **What changed:** New "## 9. Fewer Intermediate Updates" section at the end: silent-unless-blocked for small/medium tasks; limit progress updates to 2-4 (start/criteria, before substantial edit, when blocked, final verification); do not emit updates for non-blocking read/test/status steps.
+- **How to verify:** `grep -n "^## 9" AGENTS.md` shows the section at the end.
+- **How to revert:** remove "## 9. Fewer Intermediate Updates".
+- **Source:** improvements-harness.md #5 (4 mentions)
 
-### Commit-merge enxuto / fast path — 2026-07-24
-- **Faixa de risco:** médio
-- **Arquivos alterados:** `.agents/skills/commit-merge/SKILL.md`
-- **O que mudou:** Nova seção "## Fast path (check first)" no topo do fluxo (após a intro, antes de "## Triggers"): rodar `git status --porcelain --branch` primeiro; se nada a commitar E `git merge-base --is-ancestor HEAD master` for verdadeiro → no-op, responder compacto e parar sem `git worktree list`/diff/log; só cair no fluxo completo quando houver mudança real.
-- **Como verificar:** o `SKILL.md` de `commit-merge` tem a seção "## Fast path (check first)" antes de "## Triggers"; seções Triggers/Flow intactas.
-- **Como reverter:** remover a seção "## Fast path (check first)" do `commit-merge/SKILL.md`.
-- **Origem:** improvements-harness.md #4 (4 menções)
+### Lean commit-merge / fast path — 2026-07-24
+- **Risk level:** medium
+- **Changed files:** `.agents/skills/commit-merge/SKILL.md`
+- **What changed:** New "## Fast path (check first)" section at the top of the flow, after the intro and before "## Triggers": run `git status --porcelain --branch` first; if there is nothing to commit and `git merge-base --is-ancestor HEAD master` is true, treat it as no-op, respond compactly, and stop without `git worktree list`/diff/log; fall through to the full flow only when there is a real change.
+- **How to verify:** the `commit-merge` `SKILL.md` has "## Fast path (check first)" before "## Triggers"; Triggers/Flow sections are intact.
+- **How to revert:** remove "## Fast path (check first)" from `commit-merge/SKILL.md`.
+- **Source:** improvements-harness.md #4 (4 mentions)

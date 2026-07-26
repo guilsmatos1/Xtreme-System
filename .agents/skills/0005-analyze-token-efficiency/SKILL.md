@@ -61,24 +61,24 @@ mkdir -p "$(dirname "$OUT")"
 Write only the canonical format consumed by `0003-consolidate-harness-improvements`:
 
 ```markdown
-# Eficiência de tokens — <issue>
+# Token Efficiency — <issue>
 _Codex: <session_id> · input: <N> · cached: <N> · output: <N> · total: <N>_
 
-Melhoria #1: <title>
-- Problema: <observed waste>
-- Evidência: <tool/call, repetition, or size>
-- Solução: <Codex channel and concrete change>
-- Economia estimada: ~<N> tokens
-- Teste de mesmo-resultado: <why the deliverable would be identical>
+Improvement #1: <title>
+- Problem: <observed waste>
+- Evidence: <tool/call, repetition, or size>
+- Solution: <Codex channel and concrete change>
+- Estimated savings: ~<N> tokens
+- Same-result test: <why the deliverable would be identical>
 
-Melhoria #2: ... up to #5.
+Improvement #2: ... up to #5.
 ```
 
 When done, respond in one line with session, totals, path, and titles/savings.
 
 ## Guardrails
 
-- Analyze Codex, not Opencode or Claude Code.
+- Analyze Codex worker sessions only.
 - Do not load full outputs just to measure size.
 - Use real profile totals; estimate only isolated costs.
 - Do not include the retrospective itself.

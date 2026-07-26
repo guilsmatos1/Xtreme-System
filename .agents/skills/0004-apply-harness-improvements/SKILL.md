@@ -33,7 +33,7 @@ Ineligible:
 
 ## Done
 
-1. Improvements with **mentions > 3** had their `Solução` refined in the ranking.
+1. Improvements with **mentions > 3** had their `Solution` refined in the ranking.
 2. Eligible improvements were sorted by increasing risk and applied one at a time.
 3. Each approved application was recorded in `implementations.md`.
 4. Applied improvements were removed from the ranking, with table/numbering/total updated.
@@ -42,14 +42,14 @@ Ineligible:
 
 ### 1. Select
 
-- Read the `Ranking por menções` table.
+- Read the `Ranking by mentions` table.
 - Select only items with **mentions > 3** (exactly 3 stays out).
 - Sort by mentions desc; ties by title.
 - Tell the user the selected list before editing.
 
 ### 2. Refine Solutions
 
-For each selected item, rewrite only the `Solução` field or add `**Proposta refinada:**`, keeping title and count unchanged.
+For each selected item, rewrite only the `Solution` field or add `**Refined proposal:**`, keeping title and count unchanged.
 
 The refined proposal must state:
 
@@ -123,7 +123,7 @@ Then remove that improvement from `improvements-harness.md`:
 - delete the item section;
 - delete the table row;
 - renumber remaining entries;
-- update total/footer and `_Última atualização:_`.
+- update total/footer and `_Last updated:_`.
 
 Do this incrementally so the state stays consistent if execution is interrupted.
 
