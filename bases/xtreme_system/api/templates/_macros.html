@@ -157,6 +157,98 @@
 </div>
 {%- endmacro %}
 
+{% macro anexos_modal(
+    title_id,
+    title,
+    anexos,
+    erro,
+    pending_upload_paths,
+    empty_icon,
+    empty_title,
+    empty_text,
+    upload_allowed,
+    upload_url,
+    input_name,
+    accept,
+    drop_icon,
+    drop_text,
+    drop_hint,
+    submit_text,
+    delete_allowed,
+    delete_url_prefix,
+    delete_confirm,
+    delete_label,
+    preview_label,
+    image_alt,
+    doc_label="documento",
+    doc_icon="file",
+    images_only=False
+) -%}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="{{ title_id }}">
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h2 id="{{ title_id }}">
+        {{ title }}
+        {% if anexos %}<span class="mmgr__count">{{ anexos | length }}</span>{% endif %}
+      </h2>
+      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      {% if erro %}{{ alert(erro) }}{% endif %}
+      {% if anexos %}
+      <div class="mmgr__grid">
+        {% for anexo in anexos %}
+        {% set is_imagem = images_only or anexo.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
+        <div class="mmgr__card">
+          {% if arquivo_disponivel(anexo.url, pending_upload_paths) and is_imagem %}
+          <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="{{ preview_label }}">
+            <img src="{{ anexo.url }}" alt="{{ image_alt }}" loading="lazy">
+          </button>
+          <dialog class="image-preview" onclick="if (event.target === this) this.close()">
+            <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ icon("close") }}</button>
+            <img src="{{ anexo.url }}" alt="{{ image_alt }}">
+          </dialog>
+          {% elif arquivo_disponivel(anexo.url, pending_upload_paths) %}
+          <a class="mmgr__doc" href="{{ anexo.url }}" target="_blank" rel="noopener" aria-label="Abrir {{ doc_label }} PDF">
+            <span class="mmgr__doc-icon">{{ icon(doc_icon) }}</span>
+            <span class="mmgr__doc-badge">PDF</span>
+            <span class="mmgr__doc-name">{{ anexo.url.split("/") | last }}</span>
+          </a>
+          {% else %}
+          <div class="mmgr__doc mmgr__doc--missing" aria-disabled="true">
+            <span class="mmgr__doc-icon">{{ icon(doc_icon) }}</span>
+            <span class="mmgr__doc-badge">Indisponível</span>
+            <span class="mmgr__doc-name">{{ anexo.url.split("/") | last }}</span>
+          </div>
+          {% endif %}
+          {% if delete_allowed %}
+          <button class="mmgr__del" type="button" hx-post="{{ delete_url_prefix }}{{ anexo.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="{{ delete_confirm }}" aria-label="{{ delete_label }}">{{ icon("trash") }}</button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        {{ empty(empty_icon, empty_title, empty_text) }}
+      {% endif %}
+    </div>
+    {% if upload_allowed %}
+    <form class="mmgr__upload" hx-post="{{ upload_url }}" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
+      <label class="mmgr__drop">
+        <input type="file" name="{{ input_name }}" accept="{{ accept }}" multiple required
+               onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : '{{ drop_text }}'">
+        <span class="mmgr__drop-icon">{{ icon(drop_icon) }}</span>
+        <span class="mmgr__drop-text">{{ drop_text }}</span>
+        <span class="mmgr__drop-hint">{{ drop_hint }}</span>
+      </label>
+      <div class="mmgr__upload-actions">
+        <button class="btn btn--primary" type="submit">{{ icon("plus") }}{{ submit_text }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
 {% macro paginacao(
     path,
     qs_base,

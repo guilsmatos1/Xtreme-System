@@ -1,67 +1,29 @@
 {% import "_macros.html" as ui %}
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-comprovantes-title">
-  <div class="modal__panel">
-    <div class="modal__head">
-      <h2 id="modal-comprovantes-title">
-        Comprovantes — Placa {{ compra.veiculo.placa }}
-        {% if comprovantes %}<span class="mmgr__count">{{ comprovantes | length }}</span>{% endif %}
-      </h2>
-      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
-    </div>
-    <div class="modal__body">
-      {% if erro %}{{ ui.alert(erro) }}{% endif %}
-      {% if comprovantes %}
-      <div class="mmgr__grid">
-        {% for comp in comprovantes %}
-        {% set is_imagem = comp.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
-        <div class="mmgr__card">
-          {% if arquivo_disponivel(comp.url, pending_upload_paths) and is_imagem %}
-          <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="Ampliar comprovante">
-            <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}" loading="lazy">
-          </button>
-          <dialog class="image-preview" onclick="if (event.target === this) this.close()">
-            <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ ui.icon("close") }}</button>
-            <img src="{{ comp.url }}" alt="Comprovante da compra {{ compra.id }}">
-          </dialog>
-          {% elif arquivo_disponivel(comp.url, pending_upload_paths) %}
-          <a class="mmgr__doc" href="{{ comp.url }}" target="_blank" rel="noopener" aria-label="Abrir comprovante PDF">
-            <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
-            <span class="mmgr__doc-badge">PDF</span>
-            <span class="mmgr__doc-name">{{ comp.url.split("/") | last }}</span>
-          </a>
-          {% else %}
-          <div class="mmgr__doc mmgr__doc--missing" aria-disabled="true">
-            <span class="mmgr__doc-icon">{{ ui.icon("file") }}</span>
-            <span class="mmgr__doc-badge">Indisponível</span>
-            <span class="mmgr__doc-name">{{ comp.url.split("/") | last }}</span>
-          </div>
-          {% endif %}
-          {% if pode_operacao(user, 'compras', 'excluir_comprovante') %}
-          <button class="mmgr__del" type="button" hx-post="/ui/compras/{{ compra.id }}/comprovantes/{{ comp.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este comprovante?" aria-label="Excluir comprovante">{{ ui.icon("trash") }}</button>
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-        {{ ui.empty("file", "Nenhum comprovante", "Envie comprovantes desta compra usando a área abaixo.") }}
-      {% endif %}
-    </div>
-    {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
-    <form class="mmgr__upload" hx-post="/ui/compras/{{ compra.id }}/comprovantes" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
-      <label class="mmgr__drop">
-        <input type="file" name="comprovantes" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
-               onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste comprovantes aqui ou clique para selecionar'">
-        <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
-        <span class="mmgr__drop-text">Arraste comprovantes aqui ou clique para selecionar</span>
-        <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP</span>
-      </label>
-      <div class="mmgr__upload-actions">
-        <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}Enviar comprovantes</button>
-      </div>
-    </form>
-    {% endif %}
-  </div>
-</div>
+{{ ui.anexos_modal(
+  "modal-comprovantes-title",
+  "Comprovantes — Placa " ~ compra.veiculo.placa,
+  comprovantes,
+  erro,
+  pending_upload_paths,
+  "file",
+  "Nenhum comprovante",
+  "Envie comprovantes desta compra usando a área abaixo.",
+  pode_operacao(user, 'compras', 'enviar_comprovante'),
+  "/ui/compras/" ~ compra.id ~ "/comprovantes",
+  "comprovantes",
+  ".pdf,.jpg,.jpeg,.png,.webp",
+  "file",
+  "Arraste comprovantes aqui ou clique para selecionar",
+  "PDF, JPG, PNG ou WEBP",
+  "Enviar comprovantes",
+  pode_operacao(user, 'compras', 'excluir_comprovante'),
+  "/ui/compras/" ~ compra.id ~ "/comprovantes/",
+  "Excluir este comprovante?",
+  "Excluir comprovante",
+  "Ampliar comprovante",
+  "Comprovante da compra " ~ compra.id,
+  "comprovante"
+) }}
 {% if action_oob %}
 {% set c = compra %}
 {% set has_comprovantes = comprovantes %}
