@@ -1856,6 +1856,54 @@ def test_ui_conta_funcionario_exibe_pagina(client: TestClient) -> None:
     assert "conta_user" in resp.text
 
 
+def test_ui_usuario_criar_rejeita_perfil_inexistente(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/usuarios",
+        data={
+            "username": "perfil_invalido",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "999",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "perfil não encontrado" in resp.text
+
+
+def test_ui_usuario_editar_rejeita_perfil_inexistente(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/usuarios",
+        data={"username": "perfil_valido", "senha": "abc", "papel": "funcionario"},
+    )
+    token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
+    token = token_resp.json()["access_token"]
+    usuarios_resp = client.get(
+        "/usuarios", headers={"Authorization": f"Bearer {token}"}
+    )
+    usuario_id = next(
+        item["id"]
+        for item in usuarios_resp.json()
+        if item["username"] == "perfil_valido"
+    )
+
+    resp = client.post(
+        f"/ui/usuarios/{usuario_id}/editar",
+        data={
+            "username": "perfil_valido",
+            "papel": "funcionario",
+            "ativo": "on",
+            "perfil_id": "999",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "perfil não encontrado" in resp.text
+
+
 def test_ui_user_funcionario_sem_perfil_pode_acessar_conta(
     db_session: Session,
 ) -> None:

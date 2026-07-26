@@ -79,6 +79,8 @@ def criar_usuario(
 ) -> usuario.Usuario:
     if usuario.get_by_username(session, data.username) is not None:
         raise HTTPException(status_code=400, detail="username já existe")
+    if data.perfil_id is not None and perfil.get(session, data.perfil_id) is None:
+        raise HTTPException(status_code=400, detail="perfil não encontrado")
     try:
         return usuario.create(session, data, admin.id)
     except usuario.SenhaFracaError as exc:

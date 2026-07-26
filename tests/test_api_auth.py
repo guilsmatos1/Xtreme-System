@@ -49,6 +49,24 @@ def test_get_sem_token(client: TestClient) -> None:
     assert client.get("/investidores").status_code == 401
 
 
+def test_criar_usuario_rejeita_perfil_inexistente(client: TestClient) -> None:
+    token = _token(client, "admin")
+
+    resp = client.post(
+        "/usuarios",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "username": "perfil_invalido",
+            "senha": "senha",
+            "papel": "funcionario",
+            "perfil_id": 999,
+        },
+    )
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "perfil não encontrado"
+
+
 def test_get_current_user_binda_sessao_com_usuario_id(db_session: Session) -> None:
     admin = usuario.Usuario(
         username="admin",
