@@ -30,6 +30,19 @@ def test_token_roundtrip() -> None:
     assert dados.username == "ana"
 
 
+def test_token_nao_carrega_papel() -> None:
+    settings = auth.get_settings()
+
+    token = auth.create_access_token("ana")
+    payload = jwt.decode(
+        token, settings.auth_secret_key, algorithms=[settings.auth_algorithm]
+    )
+
+    assert payload["sub"] == "ana"
+    assert "exp" in payload
+    assert "papel" not in payload
+
+
 def test_token_invalido() -> None:
     with pytest.raises(Exception):  # noqa: B017, PT011
         auth.decode_token("nao-e-um-token")
