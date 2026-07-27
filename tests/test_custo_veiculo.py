@@ -65,6 +65,57 @@ def test_crud_custo_veiculo(db_session: Session) -> None:
     assert custo_veiculo.list_all(db_session) == []
 
 
+def test_list_by_veiculo_filtra_no_banco(db_session: Session) -> None:
+    item = _veiculo(db_session)
+    outro = veiculo.create(
+        db_session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Civic",
+            cor="Preto",
+            ano=2023,
+            placa="CST2A34",
+            km=8000,
+            preco=Decimal("120000.00"),
+            investidor_id=item.investidor_id,
+        ),
+    )
+
+    custo_item_antigo = custo_veiculo.create(
+        db_session,
+        custo_veiculo.CustoVeiculoCreate(
+            veiculo_id=item.id,
+            categoria="Peças",
+            valor=Decimal("150.00"),
+            data_custo="2026-07-13",
+        ),
+    )
+    custo_outro = custo_veiculo.create(
+        db_session,
+        custo_veiculo.CustoVeiculoCreate(
+            veiculo_id=outro.id,
+            categoria="Manutenção",
+            valor=Decimal("250.00"),
+            data_custo="2026-07-14",
+        ),
+    )
+    custo_item_novo = custo_veiculo.create(
+        db_session,
+        custo_veiculo.CustoVeiculoCreate(
+            veiculo_id=item.id,
+            categoria="Revisão",
+            valor=Decimal("350.00"),
+            data_custo="2026-07-15",
+        ),
+    )
+
+    assert custo_veiculo.list_by_veiculo(db_session, item.id) == [
+        custo_item_novo,
+        custo_item_antigo,
+    ]
+    assert custo_outro not in custo_veiculo.list_by_veiculo(db_session, item.id)
+
+
 def test_schema_rejeita_valor_nao_positivo_e_categoria_vazia() -> None:
     with pytest.raises(ValidationError):
         custo_veiculo.CustoVeiculoCreate(

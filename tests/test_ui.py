@@ -28,6 +28,7 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.database.core import get_session, invoke_post_commit
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.documento_veiculo import core as documento_veiculo
@@ -1829,6 +1830,30 @@ def test_ui_admin_crud_custos_veiculos_e_csv(client: TestClient) -> None:
     excluido = client.post(f"/ui/custos-veiculos/{custo_id}/excluir")
     assert excluido.status_code == 200
     assert "Nenhum custo encontrado" in excluido.text
+
+
+def test_ui_detalhe_veiculo_busca_custos_do_veiculo(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    chamados: list[int] = []
+
+    def fake_list_by_veiculo(_session: Session, item_id: int) -> list[Any]:
+        chamados.append(item_id)
+        return []
+
+    def fail_list_all(*_args: Any, **_kwargs: Any) -> list[Any]:
+        raise AssertionError("vehicle detail must not load every custo_veiculo row")
+
+    monkeypatch.setattr(custo_veiculo, "list_by_veiculo", fake_list_by_veiculo)
+    monkeypatch.setattr(custo_veiculo, "list_all", fail_list_all)
+
+    resp = client.get(f"/ui/veiculos/{veiculo_id}/detalhes")
+
+    assert resp.status_code == 200
+    assert chamados == [veiculo_id]
 
 
 def test_ui_custos_veiculos_respeita_permissao_de_perfil(
