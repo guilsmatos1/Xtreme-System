@@ -248,7 +248,7 @@
           {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
           <div class="mmgr__upload">
             <label class="mmgr__drop">
-              <input type="file" name="comprovantes_pagamento" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required
+              <input type="file" name="comprovantes_pagamento" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple
                      onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste o comprovante aqui ou clique para selecionar'">
               <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
               <span class="mmgr__drop-text">Arraste o comprovante aqui ou clique para selecionar</span>
