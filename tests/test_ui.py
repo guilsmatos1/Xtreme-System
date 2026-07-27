@@ -99,6 +99,40 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_veiculos_lista_com_km_vazio(
+    make_client: Callable[..., TestClient],
+) -> None:
+    def seed(session: Session) -> None:
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor KM Vazio")
+        )
+        veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Onix",
+                cor="Prata",
+                ano=2024,
+                placa="KMM0000",
+                km=None,
+                preco=85000,
+                investidor_id=inv.id,
+            ),
+        )
+
+    local_client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=seed,
+    )
+    _login_admin(local_client)
+
+    pagina = local_client.get("/ui/veiculos")
+
+    assert pagina.status_code == 200
+    assert 'data-col="km">-' in pagina.text
+
+
 def test_ui_auditoria_filtrar_aceita_selects_vazios(client: TestClient) -> None:
     _login_admin(client)
 
