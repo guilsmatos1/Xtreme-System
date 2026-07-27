@@ -26,6 +26,14 @@ with nothing left to poll it for `worker_done`/`escalation`, so it never gets fi
 python3 .agents/skills/0002-linear-sequential-worktree/process_issue.py run-backlog --json
 ```
 
+To restrict the run to specific priorities, add `--priority` with one or more names from the
+[Priority mapping](#priority-mapping) table (case-insensitive, comma-separated for more than
+one), e.g. `--priority High` or `--priority Urgent,High`. Raw numeric values (`0`-`4`) are also
+accepted. `--priority` is a floor, not an exact match: it pulls in everything more urgent too, so
+`--priority Medium` processes Urgent, High, and Medium (never Low or No priority), and
+`--priority High` processes Urgent and High. With more than one value, the least urgent one sets
+the floor. Default (no `--priority`) processes the whole Backlog, ordered `1, 2, 3, 4, 0` as before.
+
 Run the command above in the background (a backgrounded Bash call, or your harness's
 detached-process tool) and poll its output/log periodically instead of blocking on one call.
 The helper refuses to start a second instance while one is already active (see Invariants) —
@@ -53,7 +61,7 @@ If the final summary has `status:"error"`, stop and report `errors`/`warnings`. 
 
 - Team: `GUI` (workspace `Guilherme Matos`, id `e7ff0c6a-7f22-4abd-85fe-153bb2c72687`).
 - Repo: `xtreme-system` (selector `name:xtreme-system`).
-- Worker model: `gpt-5.6-sol`.
+- Worker model: chosen per `estimated_effort` (see [Model and reasoning effort selection](#model-and-reasoning-effort-selection)). An explicit `--model` overrides the map for every issue in the run.
 - Worker mode: interactive TUI `codex`; never `codex exec`. The helper launches exactly:
 `codex --dangerously-bypass-approvals-and-sandbox --model <model> --config model_reasoning_effort="<variant>"`.
 - Worker terminal title: `CODEX | <identifier>`, set at creation so the coordinator can tell workers apart.
@@ -133,22 +141,24 @@ keeps waiting.
 - A `worker_done`/`escalation` only counts when `taskId` and `dispatchId` match the processed issue; the helper enforces this.
 - If Orchestration is unavailable, stop and tell the user to enable Settings &gt; Experimental &gt; Orchestration.
 
-## Reasoning effort selection
+## Model and reasoning effort selection
 
-Handled by `process_issue.py`.
-
-
-| `estimated_effort` in JSON description | `model_reasoning_effort` |
-| -------------------------------------- | ------------------------ |
-| `Low`                                  | `low`                    |
-| `Medium`                               | `medium`                 |
-| `High`                                 | `high`                   |
-| missing / invalid JSON / missing key   | `low`                    |
+Handled by `process_issue.py`. `estimated_effort` picks **both** the model and the effort — capability comes from the model, not from the effort alone, so a harder issue gets a stronger model even though its effort value is lower.
 
 
-The helper fetches the full issue, parses only `result.issue.description` as JSON, reads `estimated_effort`, and passes the value straight into the `codex` startup flag `--config model_reasoning_effort="<variant>"`. Because the effort is fixed before the TUI exists, nothing is cycled with keypresses.
+| `estimated_effort` in JSON description | `--model`      | `model_reasoning_effort` |
+| -------------------------------------- | -------------- | ------------------------ |
+| `Low`                                  | `gpt-5.6-luna` | `medium`                 |
+| `Medium`                               | `gpt-5.6-terra`| `medium`                 |
+| `High`                                 | `gpt-5.6-sol`  | `low`                    |
+| missing / invalid JSON / missing key   | `gpt-5.6-luna` | `medium` (falls back to `Low`) |
 
-After `tui-idle`, the helper still confirms the value read-only: `codex` prints the active effort in its startup banner (`model:       gpt-5.6 sol low`), and the helper polls that row for up to 20s. If the banner never reports the requested effort, it returns `status:"error"` instead of dispatching to a worker running at the wrong effort.
+
+The helper fetches the full issue, parses only `result.issue.description` as JSON, reads `estimated_effort`, and passes the resulting pair into the `codex` startup flags `--model <model> --config model_reasoning_effort="<variant>"`. Because both are fixed before the TUI exists, nothing is cycled with keypresses.
+
+Passing `--model` to `start`/`run-backlog` overrides the model column for every issue; the effort column still follows `estimated_effort`. The flag defaults to unset, so passing a model that happens to equal a table entry is still honoured as an explicit override.
+
+After `tui-idle`, the helper still confirms both values read-only: `codex` prints the active model and effort in its startup banner (`model:       -6sol low`), and the helper polls that row for up to 20s. The model name is compared tolerantly because narrow terminals truncate it. If the banner never reports the requested model *and* effort, it returns `status:"error"` instead of dispatching to a worker running the wrong configuration.
 
 ## Priority mapping
 
@@ -164,7 +174,9 @@ Linear `priority` values:
 | `0`   | No priority |
 
 
-This skill processes every Backlog issue, without priority filtering, ordered as `1, 2, 3, 4, 0`.
+By default this skill processes every Backlog issue, ordered as `1, 2, 3, 4, 0`. Pass `--priority`
+to set a floor (by name or numeric value): everything at that priority or more urgent is included,
+in the same `1, 2, 3, 4, 0` order. `list-backlog` accepts the same flag.
 
 ## Debug / resume only
 

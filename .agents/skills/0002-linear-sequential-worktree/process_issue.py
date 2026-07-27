@@ -38,13 +38,31 @@ import time
 
 DEFAULT_WORKSPACE = "e7ff0c6a-7f22-4abd-85fe-153bb2c72687"
 DEFAULT_REPO = "xtreme-system"
-DEFAULT_MODEL = "gpt-5.6-low"
+DEFAULT_MODEL = "gpt-5.6-sol"
+
+# Map task difficulty (variant/estimated_effort) to specific Codex configurations.
+DIFFICULTY_MODELS = {
+    "low": {
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "medium",
+    },
+    "medium": {
+        "model": "gpt-5.6-terra",
+        "reasoning_effort": "medium",
+    },
+    "high": {
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "low",
+    },
+}
 
 VARIANT_VALUES = ("low", "medium", "high")
-# codex prints the active reasoning effort next to the model in its startup
-# banner, e.g. "model:       gpt-5.5 low   /model to change". Before the config
+# codex prints the active model and reasoning effort on the same startup banner
+# row, e.g. "model:       gpt-5.6-sol low   /model to change". Before the config
 # finishes loading the same row reads "model: loading", which this does not match.
-VARIANT_RE = re.compile(r"model:\s*\S+\s+(low|medium|high)\b", re.IGNORECASE)
+# Both groups are captured: the effort alone is not enough to prove codex honoured
+# the --model flag instead of silently falling back to another model.
+VARIANT_RE = re.compile(r"model:\s*(\S+)\s+(low|medium|high)\b", re.IGNORECASE)
 VARIANT_CONFIRM_TIMEOUT_S = 20.0
 WORKER_TITLE_PREFIX = "CODEX | "
 
@@ -58,6 +76,14 @@ MERGE_WAIT_TIMEOUT_S = 300.0
 MERGE_POLL_INTERVAL_S = 5.0
 
 PRIORITY_RANK = {1: 0, 2: 1, 3: 2, 4: 3, 0: 4}
+PRIORITY_NAME_TO_VALUE = {
+    "urgent": 1,
+    "high": 2,
+    "medium": 3,
+    "low": 4,
+    "no priority": 0,
+    "none": 0,
+}
 OUTPUT_SNIPPET_LIMIT = 400
 COMMAND_STRING_LIMIT = 300
 DETAIL_STRING_LIMIT = 240
@@ -213,6 +239,22 @@ def determine_variant(description):
     return effort if effort in VARIANT_VALUES else "low"
 
 
+def resolve_difficulty_config(variant):
+    """Retrieve model and reasoning_effort for a given task difficulty.
+    Supports both dict configs ({"model": ..., "reasoning_effort": ...})
+    and string configs ("model-name").
+    """
+    config = DIFFICULTY_MODELS.get(variant, {"model": DEFAULT_MODEL, "reasoning_effort": variant})
+    if isinstance(config, str):
+        return {"model": config, "reasoning_effort": variant}
+    if isinstance(config, dict):
+        return {
+            "model": config.get("model", DEFAULT_MODEL),
+            "reasoning_effort": config.get("reasoning_effort", variant),
+        }
+    return {"model": DEFAULT_MODEL, "reasoning_effort": variant}
+
+
 def worker_command(model, variant):
     """codex takes the reasoning effort as a startup flag, so the variant is
     fixed before the TUI exists -- there is nothing to cycle afterwards."""
@@ -256,6 +298,7 @@ def preflight(identifier):
 
 
 def read_variant(handle):
+    """Returns (model, effort) as printed by the banner, or (None, None)."""
     read = orca(["terminal", "read", "--terminal", handle])
     tail = read.get("result", {}).get("terminal", {}).get("tail", [])
     # The banner can be re-rendered several times during startup and the rows get
@@ -263,28 +306,43 @@ def read_variant(handle):
     for line in reversed(tail):
         match = VARIANT_RE.search(line)
         if match:
-            return match.group(1).lower()
-    return None
+            return match.group(1).lower(), match.group(2).lower()
+    return None, None
 
 
-def confirm_variant(handle, target_variant, warnings):
-    """Verify codex actually came up with the requested reasoning effort.
+def _model_matches(seen, target):
+    """Narrow terminals truncate the model name in the banner ("-6sol" for
+    "gpt-5.6-sol"), so an equality check would reject a perfectly correct startup.
+    Compare on alphanumerics with containment in either direction: enough to catch
+    a fallback to a different model, tolerant of the truncation."""
+    if not seen:
+        return False
+    normalize = lambda value: re.sub(r"[^a-z0-9]", "", value.lower())
+    seen_key, target_key = normalize(seen), normalize(target)
+    if not seen_key or not target_key:
+        return False
+    return seen_key in target_key or target_key in seen_key
 
-    The effort is already fixed by the startup flag, so this never sends input --
-    it only guards against a flag that codex silently ignored or downgraded. The
-    banner shows "model: loading" for a moment before the real value lands, hence
-    the bounded retry rather than a single read.
+
+def confirm_variant(handle, target_model, target_variant, warnings):
+    """Verify codex actually came up with the requested model and reasoning effort.
+
+    Both are already fixed by startup flags, so this never sends input -- it only
+    guards against a flag codex silently ignored or downgraded. The banner shows
+    "model: loading" for a moment before the real values land, hence the bounded
+    retry rather than a single read.
     """
     deadline = time.monotonic() + VARIANT_CONFIRM_TIMEOUT_S
-    seen = None
+    seen_model = seen_variant = None
     while time.monotonic() < deadline:
-        seen = read_variant(handle)
-        if seen == target_variant:
+        seen_model, seen_variant = read_variant(handle)
+        if seen_variant == target_variant and _model_matches(seen_model, target_model):
             return True
         time.sleep(0.5)
 
     warnings.append(
-        f"codex banner never reported reasoning effort '{target_variant}' (last seen: {seen!r})"
+        f"codex banner never reported model '{target_model}' with reasoning effort "
+        f"'{target_variant}' (last seen: {seen_model!r} {seen_variant!r})"
     )
     return False
 
@@ -555,6 +613,12 @@ def cmd_start(args):
         title = issue_data.get("title", "")
         description = issue_data.get("description", "") or ""
         variant = determine_variant(description)
+        diff_config = resolve_difficulty_config(variant)
+        # An explicit --model always wins; the difficulty map only fills the gap when
+        # the caller passed nothing. Never use the model *value* as the sentinel --
+        # "--model gpt-5.6-sol" is a real override even though it equals DEFAULT_MODEL.
+        model = args.model if getattr(args, "model", None) else diff_config.get("model", DEFAULT_MODEL)
+        reasoning_effort = diff_config.get("reasoning_effort", variant)
 
         wt = orca(["worktree", "create", "--repo", f"name:{args.repo}", "--name", identifier,
                    "--linear-issue", identifier, "--base-branch", "master"])
@@ -579,7 +643,7 @@ def cmd_start(args):
 
         term = orca(["terminal", "create", "--worktree", f"name:{identifier}",
                      "--title", f"{WORKER_TITLE_PREFIX}{identifier}",
-                     "--command", worker_command(args.model, variant)])
+                     "--command", worker_command(model, reasoning_effort)])
         handle = term.get("result", {}).get("terminal", {}).get("handle")
         if not handle:
             return result("error", identifier, reason="terminal create returned no handle",
@@ -592,9 +656,9 @@ def cmd_start(args):
             return result("error", identifier, reason=f"codex TUI failed to reach tui-idle on startup: {exc}",
                           detail={"handle": handle})
 
-        if not confirm_variant(handle, variant, warnings):
+        if not confirm_variant(handle, model, reasoning_effort, warnings):
             return result("error", identifier,
-                          reason=f"codex did not report reasoning effort '{variant}'",
+                          reason=f"codex did not report model '{model}' with reasoning effort '{reasoning_effort}'",
                           detail={"handle": handle}, warnings=warnings)
 
         dispatch = orca(["orchestration", "dispatch", "--task", task_id, "--to", handle,
@@ -730,7 +794,47 @@ def _compact_backlog_issue(issue):
     }
 
 
+def parse_priority_filter(raw):
+    """Parse `--priority` into a set of Linear priority values, or None (no filter).
+
+    `--priority` is a floor, not an exact match: picking a level pulls in
+    everything more urgent than it too (Urgent > High > Medium > Low > No
+    priority), because a run limited to "Medium" that silently skipped a
+    Highs/Urgents would leave more important work sitting in the Backlog.
+    Multiple values pick the least urgent one as the floor and include
+    everything at or above it.
+
+    Accepts priority names from the skill's documented mapping (case-insensitive,
+    e.g. "High", "no priority") or raw integers (0-4), comma-separated for more
+    than one. Raises ValueError on an unrecognized token so a typo fails loudly
+    instead of silently matching nothing.
+    """
+    if not raw:
+        return None
+    values = set()
+    for token in raw.split(","):
+        token = token.strip().lower()
+        if not token:
+            continue
+        if token in PRIORITY_NAME_TO_VALUE:
+            values.add(PRIORITY_NAME_TO_VALUE[token])
+            continue
+        try:
+            value = int(token)
+        except ValueError:
+            valid = ", ".join(sorted(set(PRIORITY_NAME_TO_VALUE) | {"0", "1", "2", "3", "4"}))
+            raise ValueError(f"unrecognized --priority value {token!r}; expected one of: {valid}")
+        if value not in PRIORITY_RANK:
+            raise ValueError(f"unrecognized --priority value {value!r}; expected one of 0-4")
+        values.add(value)
+    if not values:
+        return None
+    floor_rank = max(PRIORITY_RANK[value] for value in values)
+    return {value for value, rank in PRIORITY_RANK.items() if rank <= floor_rank}
+
+
 def load_backlog_queue(args, attempted):
+    priority_filter = parse_priority_filter(getattr(args, "priority", None))
     listing = orca([
         "linear", "list", "--filter", "open", "--team", args.team,
         "--limit", str(args.limit), "--workspace", args.workspace,
@@ -742,6 +846,8 @@ def load_backlog_queue(args, attempted):
             continue
         compact = _compact_backlog_issue(issue)
         if not compact or compact["identifier"] in attempted:
+            continue
+        if priority_filter is not None and compact["priority"] not in priority_filter:
             continue
         queue.append(compact)
     queue.sort(key=lambda item: (PRIORITY_RANK.get(item["priority"], len(PRIORITY_RANK)), item["identifier"]))
@@ -972,7 +1078,7 @@ def build_parser():
     start.add_argument("--identifier", required=True)
     start.add_argument("--coordinator-handle", required=True)
     start.add_argument("--repo", default=DEFAULT_REPO)
-    start.add_argument("--model", default=DEFAULT_MODEL)
+    start.add_argument("--model", default=None)
     start.set_defaults(func=cmd_start)
 
     wait = sub.add_parser("wait", parents=[common])
@@ -986,16 +1092,22 @@ def build_parser():
     list_backlog = sub.add_parser("list-backlog", parents=[common])
     list_backlog.add_argument("--team", default="GUI")
     list_backlog.add_argument("--limit", type=int, default=216)
+    list_backlog.add_argument("--priority", default=None,
+                              help="Only list issues at these priorities (name or 0-4, "
+                                   "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.")
     list_backlog.set_defaults(func=cmd_list_backlog)
 
     run_backlog = sub.add_parser("run-backlog", parents=[common])
     run_backlog.add_argument("--team", default="GUI")
     run_backlog.add_argument("--repo", default=DEFAULT_REPO)
-    run_backlog.add_argument("--model", default=DEFAULT_MODEL)
+    run_backlog.add_argument("--model", default=None)
     run_backlog.add_argument("--coordinator-handle")
     run_backlog.add_argument("--limit", type=int, default=216)
     run_backlog.add_argument("--relist-every", type=int, default=10)
     run_backlog.add_argument("--issue-timeout-seconds", type=int, default=7200)
+    run_backlog.add_argument("--priority", default=None,
+                             help="Only process issues at these priorities (name or 0-4, "
+                                  "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.")
     run_backlog.set_defaults(func=cmd_run_backlog)
 
     return p

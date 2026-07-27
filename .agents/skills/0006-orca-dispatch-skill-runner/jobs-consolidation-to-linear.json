@@ -1,0 +1,21 @@
+{
+  "jobs": [
+    {
+      "name": "send-to-linear",
+      "command": "opencode --auto --model google/gemini-3.5-flash-lite",
+      "skill": "0002-send-to-linear",
+      "skill_args": "Create the issues from \"docs/improvements-consolidation.json\" in the project \"Xtreme System\"",
+      "worktree": {
+        "mode": "current"
+      }
+    },
+    {
+      "name": "triage-linear-duplicates",
+      "command": "opencode --auto --model google/gemini-3.5-flash-lite",
+      "skill": "0002-linear-duplicate-triage",
+      "worktree": {
+        "mode": "current"
+      }
+    }
+  ]
+}
