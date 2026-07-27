@@ -211,13 +211,47 @@ def invoke_post_commit(session: Session) -> None:
 
 
 _READ_ONLY_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+_REQUEST_SESSION_ATTR = "db_session"
 
 
 def _should_commit_session(request: Request) -> bool:
     return request.method.upper() not in _READ_ONLY_METHODS
 
 
+def bind_request_session(request: Request) -> Session:
+    session = SessionLocal()
+    setattr(request.state, _REQUEST_SESSION_ATTR, session)
+    return session
+
+
+def finish_request_session(
+    request: Request, error: BaseException | None = None
+) -> None:
+    session = getattr(request.state, _REQUEST_SESSION_ATTR, None)
+    if session is None:
+        return
+    try:
+        if error is not None:
+            session.rollback()
+        elif _should_commit_session(request):
+            session.commit()
+            invoke_post_commit(session)
+        else:
+            session.rollback()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        delattr(request.state, _REQUEST_SESSION_ATTR)
+
+
 def get_session(request: Request) -> Iterator[Session]:
+    request_session = getattr(request.state, _REQUEST_SESSION_ATTR, None)
+    if request_session is not None:
+        yield request_session
+        return
+
     session = SessionLocal()
     try:
         yield session
