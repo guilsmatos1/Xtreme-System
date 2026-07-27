@@ -38,7 +38,7 @@ import time
 
 DEFAULT_WORKSPACE = "e7ff0c6a-7f22-4abd-85fe-153bb2c72687"
 DEFAULT_REPO = "xtreme-system"
-DEFAULT_MODEL = "gpt-5.5"
+DEFAULT_MODEL = "gpt-5.6-low"
 
 VARIANT_VALUES = ("low", "medium", "high")
 # codex prints the active reasoning effort next to the model in its startup
