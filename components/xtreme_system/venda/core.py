@@ -171,6 +171,35 @@ class VendaUpdate(BaseModel):
         return self
 
 
+def validate_valores_venda_update(venda_obj: Venda, data: VendaUpdate) -> None:
+    valor_venda = (
+        data.valor_venda if data.valor_venda is not None else venda_obj.valor_venda
+    )
+    valor_entrada = (
+        data.valor_entrada
+        if data.valor_entrada is not None
+        else venda_obj.valor_entrada
+    )
+    if valor_entrada is not None and valor_entrada > valor_venda:
+        raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+    pagamento_pendente = (
+        data.pagamento_pendente
+        if "pagamento_pendente" in data.model_fields_set
+        else venda_obj.pagamento_pendente
+    )
+    valor_pendente = (
+        data.valor_pendente
+        if "valor_pendente" in data.model_fields_set
+        else venda_obj.valor_pendente
+    )
+    datas_pagamento = (
+        data.datas_pagamento
+        if "datas_pagamento" in data.model_fields_set
+        else venda_obj.datas_pagamento
+    )
+    validar_coerencia_pagamento(pagamento_pendente, valor_pendente, datas_pagamento)
+
+
 class VendaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -308,28 +337,7 @@ def create(session: Session, data: VendaCreate, actor_id: int | None = None) -> 
 def update(
     session: Session, obj: Venda, data: VendaUpdate, actor_id: int | None = None
 ) -> Venda:
-    valor_venda = data.valor_venda if data.valor_venda is not None else obj.valor_venda
-    valor_entrada = (
-        data.valor_entrada if data.valor_entrada is not None else obj.valor_entrada
-    )
-    if valor_entrada is not None and valor_entrada > valor_venda:
-        raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
-    pagamento_pendente = (
-        data.pagamento_pendente
-        if "pagamento_pendente" in data.model_fields_set
-        else obj.pagamento_pendente
-    )
-    valor_pendente = (
-        data.valor_pendente
-        if "valor_pendente" in data.model_fields_set
-        else obj.valor_pendente
-    )
-    datas_pagamento = (
-        data.datas_pagamento
-        if "datas_pagamento" in data.model_fields_set
-        else obj.datas_pagamento
-    )
-    validar_coerencia_pagamento(pagamento_pendente, valor_pendente, datas_pagamento)
+    validate_valores_venda_update(obj, data)
     veiculo_anterior_id = obj.veiculo_id
     veiculo_troca_anterior_id = obj.veiculo_troca_id
     status_anterior = obj.status
