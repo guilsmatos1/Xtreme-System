@@ -29,7 +29,13 @@ from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
 )
-from xtreme_system.database.core import DatabaseRateLimiterStore, RateLimiterStore
+from xtreme_system.database.core import (
+    DatabaseRateLimiterStore,
+    RateLimiterStore,
+    bind_request_session,
+    finish_request_session,
+    get_session,
+)
 from xtreme_system.documento_contrato_venda.core import DocumentoContratoVenda
 from xtreme_system.documento_procuracao.core import DocumentoProcuracao
 from xtreme_system.documento_veiculo.core import DocumentoVeiculo
@@ -171,6 +177,23 @@ def _warn_proxy_headers_without_trusted_proxies() -> None:
                 "vazio; X-Forwarded-For sera ignorado pelo rate limit."
             ),
         )
+
+
+@app.middleware("http")
+async def _database_session(
+    request: Request,
+    call_next: Callable[[Request], Any],
+) -> Any:
+    if get_session in request.app.dependency_overrides:
+        return await call_next(request)
+    bind_request_session(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        finish_request_session(request, exc)
+        raise
+    finish_request_session(request)
+    return response
 
 
 @app.middleware("http")
