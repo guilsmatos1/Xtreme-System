@@ -21,6 +21,7 @@ from fastapi.responses import (
     Response,
 )
 from fastapi.staticfiles import StaticFiles
+from jwt import InvalidTokenError
 
 from xtreme_system.api.deps import (
     NaoAdminError,
@@ -29,6 +30,7 @@ from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
 )
+from xtreme_system.auth import core as auth
 from xtreme_system.database.core import (
     DatabaseRateLimiterStore,
     RateLimiterStore,
@@ -264,6 +266,29 @@ def _client_ip(request: Request) -> str:
     return peer_host or "desconhecido"
 
 
+def _rate_limit_bucket(request: Request, client_ip: str) -> str:
+    authorization = request.headers.get("authorization", "")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() == "bearer" and token:
+        try:
+            dados = auth.decode_token(token)
+        except InvalidTokenError:
+            pass
+        else:
+            return f"user:{dados.username}"
+
+    access_token = request.cookies.get("access_token")
+    if access_token:
+        try:
+            dados = auth.decode_token(access_token)
+        except InvalidTokenError:
+            pass
+        else:
+            return f"user:{dados.username}"
+
+    return f"ip:{client_ip}"
+
+
 @app.middleware("http")
 async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> Any:
     path = request.url.path
@@ -285,7 +310,8 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
             )
         return await call_next(request)
 
-    allowed, retry_after = store.allow(client_ip, _GERAL_LIMIT, _GERAL_WINDOW_SECONDS)
+    bucket = _rate_limit_bucket(request, client_ip)
+    allowed, retry_after = store.allow(bucket, _GERAL_LIMIT, _GERAL_WINDOW_SECONDS)
     if not allowed:
         return _rate_limit_response(
             request,
