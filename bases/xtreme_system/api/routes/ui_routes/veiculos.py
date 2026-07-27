@@ -278,7 +278,7 @@ def _detalhe_veiculo(
 ) -> HTMLResponse:
     obj = _found(veiculo.get(session, item_id), "Veículo")
     compra_atual = compra.get_latest_by_veiculo(session, item_id)
-    custos = [c for c in custo_veiculo.list_all(session) if c.veiculo_id == item_id]
+    custos = custo_veiculo.list_by_veiculo(session, item_id)
     documentos_vendedor = []
     if compra_atual is not None:
         session.refresh(compra_atual.cliente)

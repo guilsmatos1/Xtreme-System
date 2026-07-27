@@ -63,6 +63,15 @@ def list_all(
     return crud.list_all(session, CustoVeiculo, limit=limit, offset=offset)
 
 
+def list_by_veiculo(session: Session, veiculo_id: int) -> list[CustoVeiculo]:
+    return (
+        session.query(CustoVeiculo)
+        .filter(CustoVeiculo.veiculo_id == veiculo_id)
+        .order_by(CustoVeiculo.data_custo.desc(), CustoVeiculo.id.desc())
+        .all()
+    )
+
+
 def query(session: Session) -> Query[CustoVeiculo]:
     return session.query(CustoVeiculo).join(Veiculo)
 
