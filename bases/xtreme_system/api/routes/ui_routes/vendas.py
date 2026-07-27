@@ -109,12 +109,6 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     return data
 
 
-def _filtrar_campos_ocultos_venda(
-    user: usuario.Usuario, data: dict[str, Any]
-) -> dict[str, Any]:
-    return perfil.filtrar_campos_form_ocultos(user, "vendas", data)
-
-
 def _validate_venda_update(
     session: Session, obj: venda.Venda, data: venda.VendaUpdate
 ) -> None:
@@ -366,8 +360,9 @@ async def _criar_venda(
 
     try:
         data = venda.VendaCreate.model_validate(
-            _filtrar_campos_ocultos_venda(
+            perfil.filtrar_campos_form_ocultos(
                 user,
+                "vendas",
                 {
                     **_parse_venda_form(form),
                     "cliente_id": cliente_obj.id,
@@ -410,7 +405,7 @@ async def _atualizar_venda(
 
     try:
         data = venda.VendaUpdate.model_validate(
-            _filtrar_campos_ocultos_venda(user, _parse_venda_form(form))
+            perfil.filtrar_campos_form_ocultos(user, "vendas", _parse_venda_form(form))
         )
         _validate_venda_update(session, obj, data)
     except (ValidationError, HTTPException) as exc:

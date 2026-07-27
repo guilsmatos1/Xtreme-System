@@ -89,12 +89,6 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
     return data
 
 
-def _filtrar_campos_ocultos_compra(
-    user: usuario.Usuario, data: dict[str, Any]
-) -> dict[str, Any]:
-    return perfil.filtrar_campos_form_ocultos(user, "compras", data)
-
-
 def _ctx_lista_compras(
     session: Session, compras: list[compra.Compra]
 ) -> dict[str, Any]:
@@ -344,8 +338,9 @@ async def _criar_compra(  # noqa: PLR0911
 
     try:
         data = compra.CompraCreate.model_validate(
-            _filtrar_campos_ocultos_compra(
+            perfil.filtrar_campos_form_ocultos(
                 user,
+                "compras",
                 {
                     **_parse_compra_form(form),
                     "cliente_id": cliente_obj.id,
