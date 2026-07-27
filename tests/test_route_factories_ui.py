@@ -539,6 +539,42 @@ class _ConflictModule:
             raise IntegrityError("", {}, Exception())
 
 
+class _ManyItemsModule:
+    def __init__(self) -> None:
+        self.items = [_StubItem(idx, f"Item {idx}") for idx in range(1, 5)]
+
+    def list_all(
+        self, _session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[_StubItem]:
+        return (
+            self.items[offset : offset + limit]
+            if limit is not None
+            else self.items[offset:]
+        )
+
+    def get(self, _session: Session, item_id: int) -> _StubItem | None:
+        return next((item for item in self.items if item.id == item_id), None)
+
+    def create(
+        self, _session: Session, _data: Any, _actor_id: int | None = None
+    ) -> _StubItem:
+        return self.items[0]
+
+    def update(
+        self,
+        _session: Session,
+        obj: _StubItem,
+        _data: Any,
+        _actor_id: int | None = None,
+    ) -> _StubItem:
+        return obj
+
+    def delete(
+        self, _session: Session, _obj: _StubItem, _actor_id: int | None = None
+    ) -> None:
+        return None
+
+
 def _stub_crud_client(
     tmp_path: Path,
     module: Any,
@@ -550,7 +586,7 @@ def _stub_crud_client(
         "lista.html": "<div id='linhas'>{% include 'linhas.html' %}</div>",
         "linhas.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
         "{% for item in itens %}<p>{{ item.nome }}</p>{% endfor %}",
-        "ok.html": "<p>ok</p>",
+        "ok.html": "<p>ok</p>{% for item in itens %}<p>{{ item.nome }}</p>{% endfor %}",
         "form.html": "{% if erro %}<p>{{ erro }}</p>{% endif %}"
         "<input name='nome' value='{{ item.nome if item else \"\" }}'>"
         "{% if user %}<span data-user='{{ user.username }}'></span>{% endif %}",
@@ -675,3 +711,29 @@ def test_crud_ui_delete_integrity_error_retorna_409(
     assert resp.status_code == 409
     assert "Stub possui registros vinculados" in resp.text
     assert "Original" in resp.text
+
+
+@pytest.mark.parametrize(
+    ("path", "method"),
+    [
+        ("/ui/stubs", "post"),
+        ("/ui/stubs/1", "post"),
+        ("/ui/stubs/1/excluir", "post"),
+    ],
+)
+def test_crud_ui_mutation_response_preserva_paginacao_atual(
+    tmp_path: Path, request: pytest.FixtureRequest, path: str, method: str
+) -> None:
+    client = _stub_crud_client(tmp_path, _ManyItemsModule(), request)
+
+    resp = getattr(client, method)(
+        path,
+        data={"nome": "Atualizado"},
+        headers={"HX-Current-URL": "http://testserver/ui/stubs?limit=2&offset=1"},
+    )
+
+    assert resp.status_code == 200
+    assert "Item 1" not in resp.text
+    assert "Item 2" in resp.text
+    assert "Item 3" in resp.text
+    assert "Item 4" not in resp.text

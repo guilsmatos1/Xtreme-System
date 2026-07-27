@@ -1,5 +1,7 @@
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Annotated
+from urllib.parse import parse_qs, urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
@@ -57,6 +59,58 @@ from xtreme_system.usuario import core as usuario
 
 DepFactory = Callable[..., usuario.Usuario]
 LIST_LIMIT_MAX = 200
+
+
+@dataclass(frozen=True)
+class ListState:
+    q: str = ""
+    sort: str = ""
+    order: str = "asc"
+    search_column: str = ""
+    limit: int = 50
+    offset: int = 0
+
+
+def _bounded_int(
+    value: str | None, *, default: int, min_value: int, max_value: int
+) -> int:
+    try:
+        parsed = int(value) if value is not None else default
+    except ValueError:
+        return default
+    return min(max(parsed, min_value), max_value)
+
+
+def _current_list_state(request: Request) -> ListState:
+    current_url = request.headers.get("HX-Current-URL")
+    if current_url:
+        query_params = {
+            key: values[-1]
+            for key, values in parse_qs(
+                urlsplit(current_url).query, keep_blank_values=True
+            ).items()
+        }
+    else:
+        query_params = dict(request.query_params)
+
+    return ListState(
+        q=query_params.get("q", ""),
+        sort=query_params.get("sort", ""),
+        order=query_params.get("order", "asc"),
+        search_column=query_params.get("search_column", ""),
+        limit=_bounded_int(
+            query_params.get("limit"),
+            default=50,
+            min_value=1,
+            max_value=LIST_LIMIT_MAX,
+        ),
+        offset=_bounded_int(
+            query_params.get("offset"),
+            default=0,
+            min_value=0,
+            max_value=10**9,
+        ),
+    )
 
 
 def register_crud_ui_routes(
@@ -176,6 +230,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
             query_func=query_func,
             search_query_func=search_query_func,
             cadastrar_dep=cadastrar_dep,
@@ -200,6 +256,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
             query_func=query_func,
             search_query_func=search_query_func,
             editar_dep=editar_dep,
@@ -220,6 +278,8 @@ def register_crud_ui_routes(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
             query_func=query_func,
             search_query_func=search_query_func,
             excluir_dep=excluir_dep,
@@ -443,18 +503,33 @@ def write_ok_response(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    sort_fields: dict[str, SortSpec[EntityT]],
+    sql_sort_fields: dict[str, object] | None,
     query_func: QueryFunc[EntityT] | None,
     search_query_func: SearchQueryFunc[EntityT] | None,
 ) -> HTMLResponse:
-    lista = query_list(
-        session,
-        module,
-        q="",
-        searchable=searchable,
-        list_func=list_func,
-        search_func=search_func,
-        query_func=query_func,
-        search_query_func=search_query_func,
+    state = _current_list_state(request)
+    lista = sorted_list(
+        query_list(
+            session,
+            module,
+            q=state.q,
+            searchable=searchable,
+            list_func=list_func,
+            search_func=search_func,
+            search_column=state.search_column or None,
+            limit=state.limit,
+            offset=state.offset,
+            sort=state.sort,
+            order=state.order,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
+            query_func=query_func,
+            search_query_func=search_query_func,
+        ),
+        state.sort,
+        state.order,
+        {} if sql_sort_fields is not None else sort_fields,
     )
     return ok_response(
         templates,
@@ -487,6 +562,8 @@ def register_create_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    sort_fields: dict[str, SortSpec[EntityT]],
+    sql_sort_fields: dict[str, object] | None,
     query_func: QueryFunc[EntityT] | None,
     search_query_func: SearchQueryFunc[EntityT] | None,
     cadastrar_dep: DepFactory | None = None,
@@ -563,6 +640,8 @@ def register_create_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
             query_func=query_func,
             search_query_func=search_query_func,
         )
@@ -588,6 +667,8 @@ def register_update_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    sort_fields: dict[str, SortSpec[EntityT]],
+    sql_sort_fields: dict[str, object] | None,
     query_func: QueryFunc[EntityT] | None,
     search_query_func: SearchQueryFunc[EntityT] | None,
     editar_dep: DepFactory | None = None,
@@ -667,6 +748,8 @@ def register_update_route(
             searchable=searchable,
             list_func=list_func,
             search_func=search_func,
+            sort_fields=sort_fields,
+            sql_sort_fields=sql_sort_fields,
             query_func=query_func,
             search_query_func=search_query_func,
         )
@@ -687,6 +770,8 @@ def register_delete_route(
     searchable: bool,
     list_func: ListFunc[EntityT] | None,
     search_func: SearchFunc[EntityT] | None,
+    sort_fields: dict[str, SortSpec[EntityT]],
+    sql_sort_fields: dict[str, object] | None,
     query_func: QueryFunc[EntityT] | None,
     search_query_func: SearchQueryFunc[EntityT] | None,
     excluir_dep: DepFactory | None = None,
@@ -706,15 +791,28 @@ def register_delete_route(
         except IntegrityError:
 
             def build_conflict_response() -> HTMLResponse:
-                lista = query_list(
-                    session,
-                    module,
-                    q="",
-                    searchable=searchable,
-                    list_func=list_func,
-                    search_func=search_func,
-                    query_func=query_func,
-                    search_query_func=search_query_func,
+                state = _current_list_state(request)
+                lista = sorted_list(
+                    query_list(
+                        session,
+                        module,
+                        q=state.q,
+                        searchable=searchable,
+                        list_func=list_func,
+                        search_func=search_func,
+                        search_column=state.search_column or None,
+                        limit=state.limit,
+                        offset=state.offset,
+                        sort=state.sort,
+                        order=state.order,
+                        sort_fields=sort_fields,
+                        sql_sort_fields=sql_sort_fields,
+                        query_func=query_func,
+                        search_query_func=search_query_func,
+                    ),
+                    state.sort,
+                    state.order,
+                    {} if sql_sort_fields is not None else sort_fields,
                 )
                 return list_response(
                     templates,
@@ -724,6 +822,12 @@ def register_delete_route(
                     list_key=list_key,
                     lista=lista,
                     ctx_list=ctx_list(session, lista),
+                    sort=state.sort,
+                    order=state.order,
+                    q=state.q if searchable else None,
+                    search_column=state.search_column,
+                    limit=state.limit,
+                    offset=state.offset,
                     erro=delete_conflict_detail(label),
                     status_code=409,
                 )
@@ -732,15 +836,28 @@ def register_delete_route(
                 session,
                 build_conflict_response,
             )
-        lista = query_list(
-            session,
-            module,
-            q="",
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            query_func=query_func,
-            search_query_func=search_query_func,
+        state = _current_list_state(request)
+        lista = sorted_list(
+            query_list(
+                session,
+                module,
+                q=state.q,
+                searchable=searchable,
+                list_func=list_func,
+                search_func=search_func,
+                search_column=state.search_column or None,
+                limit=state.limit,
+                offset=state.offset,
+                sort=state.sort,
+                order=state.order,
+                sort_fields=sort_fields,
+                sql_sort_fields=sql_sort_fields,
+                query_func=query_func,
+                search_query_func=search_query_func,
+            ),
+            state.sort,
+            state.order,
+            {} if sql_sort_fields is not None else sort_fields,
         )
         return list_response(
             templates,
@@ -750,4 +867,10 @@ def register_delete_route(
             list_key=list_key,
             lista=lista,
             ctx_list=ctx_list(session, lista),
+            sort=state.sort,
+            order=state.order,
+            q=state.q if searchable else None,
+            search_column=state.search_column,
+            limit=state.limit,
+            offset=state.offset,
         )
