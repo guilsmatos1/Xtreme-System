@@ -153,19 +153,6 @@ register_crud_routes(
     after_update=caixa.sincronizar_lancamento_veiculo,
     handle_delete_error=False,
     pagina="veiculos",
-    campos_protegidos=(
-        "tipo",
-        "modelo",
-        "ano",
-        "placa",
-        "km",
-        "preco",
-        "procuracao",
-        "status",
-        "tipo_entrada",
-        "revisao",
-        "investidor",
-    ),
 )
 
 # ---- Caixa dos investidores ----
@@ -339,7 +326,6 @@ register_crud_routes(
     after_create=whatsapp.notificar_venda,
     pagina="vendas",
     actor_field="vendedor_id",
-    campos_protegidos=tuple(perfil.CAMPOS_FORM_PROTEGIDOS["vendas"]),
 )
 
 
