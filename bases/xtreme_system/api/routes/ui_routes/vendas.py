@@ -68,16 +68,14 @@ _VerFechamentoVendaDep = Annotated[
     usuario.Usuario, Depends(require_operacao("vendas", "ver_fechamento"))
 ]
 
-_FORM_LOOKUP_LIMIT = 50
-
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
-    veiculos = veiculo.list_all(session, limit=_FORM_LOOKUP_LIMIT)
+    veiculos = veiculo.list_all(session)
     veiculos_disponiveis = [
         v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel
     ]
     return {
-        "clientes": cliente.list_all(session, limit=_FORM_LOOKUP_LIMIT),
+        "clientes": cliente.list_all(session),
         "veiculos": veiculos_disponiveis,
         "veiculos_troca": veiculos,
         "status": list(venda.StatusVenda),
