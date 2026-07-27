@@ -80,94 +80,6 @@ def state_path(root: Path, session_id: str) -> Path:
     return hook_state_dir(root) / f"{safe_session}.json"
 
 
-def main_checkout(root: Path) -> Path | None:
-    result = subprocess.run(
-        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    return Path(result.stdout.strip()).parent
-
-
-def branch_name(root: Path) -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result.stdout.strip() if result.returncode == 0 else "unknown"
-
-
-def run_token_efficiency(  # noqa: PLR0911
-    checkout: Path,
-    source_branch: str,
-    session_id: str,
-) -> str | None:
-    """Run the token-efficiency retrospective before committing the worktree."""
-    session_id = session_id.strip()
-    if not session_id:
-        return None
-
-    runner = (
-        checkout
-        / ".agents"
-        / "skills"
-        / "0005-analyze-token-efficiency"
-        / "run_hook.py"
-    )
-    if not runner.is_file():
-        return None
-
-    state_dir = checkout / ".codex" / ".hook-state" / "token-efficiency"
-    state_dir.mkdir(parents=True, exist_ok=True)
-    safe_session = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id)
-    marker = state_dir / f"{safe_session}.completed"
-    try:
-        marker.touch(exist_ok=False)
-    except FileExistsError:
-        return None
-
-    log_path = state_dir / f"{safe_session}.log"
-    env = {**os.environ, CHILD_PROCESS_ENV: "1"}
-    try:
-        with log_path.open("ab") as log:
-            result = subprocess.run(  # noqa: S603
-                [
-                    sys.executable,
-                    str(runner),
-                    "--session-id",
-                    session_id,
-                    "--source-branch",
-                    source_branch,
-                ],
-                cwd=checkout,
-                env=env,
-                stdin=subprocess.DEVNULL,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                check=False,
-                timeout=920,
-            )
-        if result.returncode != 0:
-            return f"token-efficiency retrospective failed; see {log_path}"
-    except OSError as exc:
-        marker.unlink(missing_ok=True)
-        log_path.write_text(
-            f"failed to launch retrospective: {exc}\n",
-            encoding="utf-8",
-        )
-        return f"failed to launch token-efficiency retrospective: {exc}"
-    except subprocess.TimeoutExpired:
-        return f"token-efficiency retrospective timed out; see {log_path}"
-    return None
-
-
 def run_checks(
     root: Path,
 ) -> tuple[str, list[str], subprocess.CompletedProcess[str]] | None:
@@ -357,7 +269,6 @@ def integrate_reported(
     root: Path,
     report: dict,
     context: dict | None,
-    session_id: str,
     can_block: bool,
 ) -> bool:
     phase = str(report.get("phase", "")).strip().lower()
@@ -370,16 +281,6 @@ def integrate_reported(
     if phase != "success":
         body = summary or "worker reported failure"
         return finalize(root, context, "failed", body, can_block)
-
-    source_branch = str((context or {}).get("identifier") or branch_name(root))
-    token_error = run_token_efficiency(root, source_branch, session_id)
-    if token_error and can_block:
-        block(
-            f"{token_error}\n\n"
-            "Fix the retrospective, then stop again so the report can be "
-            "committed and merged."
-        )
-        return False
 
     ok, output = run_agent_finish(root)
     if not ok:
@@ -427,7 +328,6 @@ def main() -> int:
         root,
         report,
         context,
-        str(payload.get("session_id", "")),
         can_block,
     )
     return 0
