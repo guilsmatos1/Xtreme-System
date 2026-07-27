@@ -17,6 +17,7 @@ from xtreme_system.api.setup import (
     reset_rate_limiters,
 )
 from xtreme_system.database.core import DatabaseRateLimiterStore, rate_limit_state
+from xtreme_system.usuario import core as usuario
 
 
 @pytest.fixture
@@ -115,6 +116,35 @@ def test_requests_gerais_bloqueiam_apos_limite(client: TestClient) -> None:
     resp = client.get("/investidores")
     assert resp.status_code == 429
     assert "Retry-After" in resp.headers
+
+
+def _token(client: TestClient, username: str) -> str:
+    resp = client.post("/login", data={"username": username, "password": "senha"})
+    assert resp.status_code == 200
+    return str(resp.json()["access_token"])
+
+
+def test_requests_gerais_autenticadas_limitam_por_usuario(
+    make_client: Callable[..., TestClient],
+) -> None:
+    client = make_client(
+        usuarios=[
+            ("ana", usuario.Papel.admin),
+            ("bia", usuario.Papel.admin),
+        ]
+    )
+    ana_headers = {"Authorization": f"Bearer {_token(client, 'ana')}"}
+    bia_headers = {"Authorization": f"Bearer {_token(client, 'bia')}"}
+
+    for _ in range(_GERAL_LIMIT):
+        resp = client.get("/investidores", headers=ana_headers)
+        assert resp.status_code == 200
+
+    resp = client.get("/investidores", headers=ana_headers)
+    assert resp.status_code == 429
+
+    resp = client.get("/investidores", headers=bia_headers)
+    assert resp.status_code == 200
 
 
 def test_rate_limit_respeita_x_forwarded_for(
