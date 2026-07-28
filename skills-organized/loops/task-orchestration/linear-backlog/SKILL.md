@@ -29,7 +29,7 @@ not stop the codex worker it already dispatched: that worker keeps running unsup
 with nothing left to poll it for `worker_done`/`escalation`, so it never gets finalized.
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py run-backlog --json
+python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py run-backlog --json > .loop/backlog_run.log 2>&1
 ```
 
 To restrict the run to specific priorities, add `--priority` with one or more names from the
