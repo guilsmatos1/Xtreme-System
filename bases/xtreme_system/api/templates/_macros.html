@@ -101,7 +101,7 @@
 {%- endif -%}
 {%- endmacro %}
 
-{% macro sortable(col, label, current_sort, current_order, url, target="", extra_qs="") -%}
+{% macro sortable(col, label, current_sort, current_order, url, target="#linhas", extra_qs="") -%}
 {%- set is_active = col == current_sort -%}
 {%- set next_order = "desc" if is_active and current_order == "asc" else "asc" -%}
 {%- set arrow = " ▲" if is_active and current_order == "asc" else (" ▼" if is_active and current_order == "desc" else "") -%}
