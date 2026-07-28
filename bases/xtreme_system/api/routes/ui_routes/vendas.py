@@ -12,14 +12,21 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import SortField
+from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
 )
-from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
+from xtreme_system.api.crud_ui.routes import (
+    CrudUIBehaviorConfig,
+    CrudUIExportConfig,
+    CrudUIResourceConfig,
+    CrudUIRouteConfig,
+    CrudUITemplateConfig,
+    register_crud_ui_routes,
+)
 from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
     SessionDep,
@@ -132,113 +139,127 @@ register_crud_ui_routes(
     templates,
     venda,
     "/ui/vendas",
-    "Venda",
-    create_schema=venda.VendaCreate,
-    update_schema=venda.VendaUpdate,
-    list_key="vendas",
-    item_key="venda",
-    list_template="vendas.html",
-    list_partial_template="_linhas_vendas.html",
-    ok_partial_template="_vendas_ok.html",
-    form_template="_form_venda.html",
-    ctx_form=_ctx_form_venda,
-    ctx_list=_ctx_lista_vendas,
-    searchable=True,
-    search_func=venda.search,
-    parse_form=_parse_venda_form,
-    before_delete=recompute_vehicle_status_on_delete,
-    register_create=False,
-    register_update=False,
-    sort_fields={
-        "cliente": SortField(lambda v: _sort_key(v.cliente.nome), cliente.Cliente.nome),
-        "veiculo": SortField(
-            lambda v: _sort_key(v.veiculo.modelo), veiculo.Veiculo.modelo
-        ),
-        "data": SortField("data_venda", venda.Venda.data_venda),
-        "valor": SortField("valor_venda", venda.Venda.valor_venda),
-        "entrada": SortField("valor_entrada", venda.Venda.valor_entrada),
-        "divida": SortField("valor_pendente", venda.Venda.valor_pendente),
-        "pagamento": SortField("forma_pagamento", venda.Venda.forma_pagamento),
-        "parcelas": SortField("parcelas", venda.Venda.parcelas),
-        "status": SortField("status", venda.Venda.status),
-        "vendedor": SortField(
-            lambda v: _sort_key(
-                (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+    resource=CrudUIResourceConfig(
+        label="Venda",
+        create_schema=venda.VendaCreate,
+        update_schema=venda.VendaUpdate,
+        list_key="vendas",
+        item_key="venda",
+    ),
+    templates_config=CrudUITemplateConfig(
+        list_template="vendas.html",
+        list_partial_template="_linhas_vendas.html",
+        ok_partial_template="_vendas_ok.html",
+        form_template="_form_venda.html",
+    ),
+    behavior=CrudUIBehaviorConfig(
+        ctx_form=_ctx_form_venda,
+        ctx_list=_ctx_lista_vendas,
+        parse_form=_parse_venda_form,
+        before_delete=recompute_vehicle_status_on_delete,
+    ),
+    listing=ListingSpec(
+        searchable=True,
+        search_func=venda.search,
+        query_func=venda.query,
+        search_query_func=venda.search_query,
+        sort_fields={
+            "cliente": SortField(
+                lambda v: _sort_key(v.cliente.nome), cliente.Cliente.nome
             ),
-            usuario.Usuario.nome,
-        ),
-    },
-    query_func=venda.query,
-    search_query_func=venda.search_query,
-    csv_filename="vendas.csv",
-    csv_headers=[
-        "ID",
-        "Cliente",
-        "Veiculo",
-        "Data",
-        "Valor Venda",
-        "Valor Entrada",
-        "Debitos",
-        "KM",
-        "Veiculo Troca",
-        "Valor Diferenca",
-        "Pagamento Pendente",
-        "Valor Pendente",
-        "Datas Pagamento",
-        "Forma Pagamento",
-        "Parcelas",
-        "Status",
-        "Observacoes",
-        "Usuario",
-    ],
-    csv_fields=[
-        None,
-        "cliente",
-        "veiculo",
-        "data_venda",
-        "valor_venda",
-        "valor_entrada",
-        "debitos",
-        "km",
-        "veiculo_troca",
-        "valor_diferenca",
-        "pagamento_pendente",
-        "valor_pendente",
-        "datas_pagamento",
-        "forma_pagamento",
-        "parcelas",
-        "status",
-        "observacoes",
-        "vendedor",
-    ],
-    csv_row=lambda v: [
-        v.id,
-        v.cliente.nome,
-        f"{v.veiculo.modelo} ({v.veiculo.placa})",
-        v.data_venda.isoformat() if v.data_venda is not None else "",
-        f"{v.valor_venda:.2f}",
-        f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
-        f"{v.debitos:.2f}" if v.debitos is not None else "",
-        v.km if v.km is not None else "",
-        (
-            f"{v.veiculo_troca.modelo} ({v.veiculo_troca.placa})"
-            if v.veiculo_troca is not None
-            else ""
-        ),
-        f"{v.valor_diferenca:.2f}" if v.valor_diferenca is not None else "",
-        "Sim" if v.pagamento_pendente else "Não",
-        f"{v.valor_pendente:.2f}" if v.valor_pendente is not None else "",
-        v.datas_pagamento or "",
-        v.forma_pagamento,
-        v.parcelas,
-        v.status.value,
-        v.observacoes or "",
-        (v.vendedor.nome or v.vendedor.username) if v.vendedor else "",
-    ],
-    cadastrar_dep=require_operacao("vendas", "cadastrar"),
-    editar_dep=require_operacao("vendas", "editar"),
-    excluir_dep=require_operacao("vendas", "excluir"),
-    pagina="vendas",
+            "veiculo": SortField(
+                lambda v: _sort_key(v.veiculo.modelo), veiculo.Veiculo.modelo
+            ),
+            "data": SortField("data_venda", venda.Venda.data_venda),
+            "valor": SortField("valor_venda", venda.Venda.valor_venda),
+            "entrada": SortField("valor_entrada", venda.Venda.valor_entrada),
+            "divida": SortField("valor_pendente", venda.Venda.valor_pendente),
+            "pagamento": SortField("forma_pagamento", venda.Venda.forma_pagamento),
+            "parcelas": SortField("parcelas", venda.Venda.parcelas),
+            "status": SortField("status", venda.Venda.status),
+            "vendedor": SortField(
+                lambda v: _sort_key(
+                    (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+                ),
+                usuario.Usuario.nome,
+            ),
+        },
+    ),
+    export=CrudUIExportConfig(
+        csv_filename="vendas.csv",
+        csv_headers=[
+            "ID",
+            "Cliente",
+            "Veiculo",
+            "Data",
+            "Valor Venda",
+            "Valor Entrada",
+            "Debitos",
+            "KM",
+            "Veiculo Troca",
+            "Valor Diferenca",
+            "Pagamento Pendente",
+            "Valor Pendente",
+            "Datas Pagamento",
+            "Forma Pagamento",
+            "Parcelas",
+            "Status",
+            "Observacoes",
+            "Usuario",
+        ],
+        csv_fields=[
+            None,
+            "cliente",
+            "veiculo",
+            "data_venda",
+            "valor_venda",
+            "valor_entrada",
+            "debitos",
+            "km",
+            "veiculo_troca",
+            "valor_diferenca",
+            "pagamento_pendente",
+            "valor_pendente",
+            "datas_pagamento",
+            "forma_pagamento",
+            "parcelas",
+            "status",
+            "observacoes",
+            "vendedor",
+        ],
+        csv_row=lambda v: [
+            v.id,
+            v.cliente.nome,
+            f"{v.veiculo.modelo} ({v.veiculo.placa})",
+            v.data_venda.isoformat() if v.data_venda is not None else "",
+            f"{v.valor_venda:.2f}",
+            f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
+            f"{v.debitos:.2f}" if v.debitos is not None else "",
+            v.km if v.km is not None else "",
+            (
+                f"{v.veiculo_troca.modelo} ({v.veiculo_troca.placa})"
+                if v.veiculo_troca is not None
+                else ""
+            ),
+            f"{v.valor_diferenca:.2f}" if v.valor_diferenca is not None else "",
+            "Sim" if v.pagamento_pendente else "Não",
+            f"{v.valor_pendente:.2f}" if v.valor_pendente is not None else "",
+            v.datas_pagamento or "",
+            v.forma_pagamento,
+            v.parcelas,
+            v.status.value,
+            v.observacoes or "",
+            (v.vendedor.nome or v.vendedor.username) if v.vendedor else "",
+        ],
+        pagina="vendas",
+    ),
+    routes=CrudUIRouteConfig(
+        register_create=False,
+        register_update=False,
+        cadastrar_dep=require_operacao("vendas", "cadastrar"),
+        editar_dep=require_operacao("vendas", "editar"),
+        excluir_dep=require_operacao("vendas", "excluir"),
+    ),
 )
 
 

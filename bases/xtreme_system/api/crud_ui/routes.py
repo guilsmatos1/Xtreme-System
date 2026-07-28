@@ -114,6 +114,9 @@ class CrudUIRouteConfig:
     cadastrar_dep: DepFactory | None = None
 
 
+_DEFAULT_CRUD_UI_ROUTES = CrudUIRouteConfig()
+
+
 def _bounded_int(
     value: str | None, *, default: int, min_value: int, max_value: int
 ) -> int:
@@ -157,80 +160,21 @@ def _current_list_state(request: Request) -> ListState:
 
 
 # pylint: disable=too-many-branches
-def register_crud_ui_routes(  # noqa: PLR0912
+def register_crud_ui_routes(
     app: FastAPI,
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    *legacy_args: str,
-    resource: CrudUIResourceConfig[Any, Any] | None = None,
-    templates_config: CrudUITemplateConfig | None = None,
-    behavior: CrudUIBehaviorConfig[Any, Any, Any] | None = None,
-    listing: CrudUIListConfig[Any] | None = None,
-    export: CrudUIExportConfig[Any] | None = None,
-    routes: CrudUIRouteConfig | None = None,
-    **legacy: Any,
+    *,
+    resource: CrudUIResourceConfig[CreateSchemaT, UpdateSchemaT],
+    templates_config: CrudUITemplateConfig,
+    listing: CrudUIListConfig[EntityT],
+    export: CrudUIExportConfig[EntityT],
+    behavior: CrudUIBehaviorConfig[EntityT, CreateSchemaT, UpdateSchemaT] | None = None,
+    routes: CrudUIRouteConfig = _DEFAULT_CRUD_UI_ROUTES,
 ) -> None:
-    if legacy_args:
-        if len(legacy_args) != 1 or "label" in legacy:
-            raise TypeError
-        legacy["label"] = legacy_args[0]
-    if resource is None:
-        resource = CrudUIResourceConfig(
-            label=legacy.pop("label"),
-            create_schema=legacy.pop("create_schema"),
-            update_schema=legacy.pop("update_schema"),
-            list_key=legacy.pop("list_key"),
-            item_key=legacy.pop("item_key"),
-        )
-    if templates_config is None:
-        templates_config = CrudUITemplateConfig(
-            list_template=legacy.pop("list_template"),
-            list_partial_template=legacy.pop("list_partial_template"),
-            ok_partial_template=legacy.pop("ok_partial_template"),
-            form_template=legacy.pop("form_template"),
-        )
     if behavior is None:
-        behavior = CrudUIBehaviorConfig(
-            ctx_form=legacy.pop("ctx_form", lambda _session: {}),
-            ctx_list=legacy.pop("ctx_list", lambda _session, _lista: {}),
-            parse_form=legacy.pop("parse_form", dict),
-            before_create=legacy.pop("before_create", None),
-            before_update=legacy.pop("before_update", None),
-            before_delete=legacy.pop("before_delete", None),
-            after_create=legacy.pop("after_create", None),
-            after_update=legacy.pop("after_update", None),
-        )
-    if listing is None:
-        listing = CrudUIListConfig(
-            sort_fields=legacy.pop("sort_fields"),
-            searchable=legacy.pop("searchable", False),
-            list_func=legacy.pop("list_func", None),
-            search_func=legacy.pop("search_func", None),
-            query_func=legacy.pop("query_func", None),
-            search_query_func=legacy.pop("search_query_func", None),
-        )
-    if export is None:
-        export = CrudUIExportConfig(
-            csv_filename=legacy.pop("csv_filename"),
-            csv_headers=legacy.pop("csv_headers"),
-            csv_row=legacy.pop("csv_row"),
-            csv_fields=legacy.pop("csv_fields", None),
-            pagina=legacy.pop("pagina", None),
-        )
-    if routes is None:
-        routes = CrudUIRouteConfig(
-            register_create=legacy.pop("register_create", True),
-            register_update=legacy.pop("register_update", True),
-            register_edit=legacy.pop("register_edit", True),
-            register_delete=legacy.pop("register_delete", True),
-            delete_requires_admin=legacy.pop("delete_requires_admin", True),
-            editar_dep=legacy.pop("editar_dep", None),
-            excluir_dep=legacy.pop("excluir_dep", None),
-            cadastrar_dep=legacy.pop("cadastrar_dep", None),
-        )
-    if legacy:
-        raise TypeError
+        behavior = CrudUIBehaviorConfig()
     form = FormSpec(
         templates=templates,
         form_template=templates_config.form_template,
