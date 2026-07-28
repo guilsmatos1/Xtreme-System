@@ -57,6 +57,31 @@ def test_wizard_htmx_cria_veiculo(
     expect(page.get_by_text("E2E1A23")).to_be_visible()
 
 
+@pytest.mark.e2e
+def test_modal_servidor_tem_foco_escape_e_focus_trap(
+    page: Page, live_server_url: str
+) -> None:
+    _login(page, live_server_url)
+    page.goto(f"{live_server_url}/ui/compras")
+
+    opener = page.get_by_role("button", name="Nova compra")
+    opener.click()
+    dialog = page.get_by_role("dialog", name="Nova compra")
+
+    expect(dialog).to_be_visible()
+    expect(page.locator("#cliente-select")).to_be_focused()
+
+    close_button = dialog.get_by_role("button", name="Fechar")
+    last_button = dialog.get_by_role("button", name="Próximo")
+    last_button.focus()
+    page.keyboard.press("Tab")
+    expect(close_button).to_be_focused()
+
+    page.keyboard.press("Escape")
+    expect(dialog).not_to_be_visible()
+    expect(opener).to_be_focused()
+
+
 def _login(page: Page, live_server_url: str) -> None:
     page.goto(f"{live_server_url}/ui/login")
     page.get_by_label("Usuário").fill("admin")
