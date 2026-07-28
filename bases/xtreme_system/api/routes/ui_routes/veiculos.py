@@ -156,6 +156,7 @@ register_crud_ui_routes(
     ),
     listing=ListingSpec(
         searchable=True,
+        paginated=False,
         list_func=_listar_veiculos,
         search_func=_buscar_veiculos,
         query_func=veiculo.query,
