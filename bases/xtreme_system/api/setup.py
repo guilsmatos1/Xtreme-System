@@ -38,16 +38,8 @@ from xtreme_system.database.core import (
     finish_request_session,
     get_session,
 )
-from xtreme_system.documento_contrato_venda.core import DocumentoContratoVenda
-from xtreme_system.documento_procuracao.core import DocumentoProcuracao
-from xtreme_system.documento_veiculo.core import DocumentoVeiculo
-from xtreme_system.empresa.core import EmpresaConfig
-from xtreme_system.imagem_comprovante_compra.core import ImagemComprovanteCompra
-from xtreme_system.imagem_documento_cliente.core import ImagemDocumentoCliente
-from xtreme_system.imagem_veiculo.core import ImagemVeiculo
 from xtreme_system.logging.core import configure_logging
-from xtreme_system.perfil import core as perfil
-from xtreme_system.usuario import core as usuario
+from xtreme_system.upload_file.authorization import pode_acessar_upload
 
 configure_logging()
 logger = structlog.get_logger(__name__)
@@ -70,9 +62,6 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
 }
 _CORS_ALLOWED_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 _CORS_ALLOWED_HEADERS = ["Authorization", "Content-Type"]
-_UPLOAD_MIN_PARTS = 2
-_UPLOAD_RESOURCE_PARTS = 4
-_UPLOAD_VEICULO_IMAGE_PARTS = 3
 
 
 def _trusted_proxy_networks() -> list[IPv4Network | IPv6Network]:
@@ -324,88 +313,13 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
 _ui_dir = Path(__file__).parent
 
 
-def _upload_autorizado(session: SessionDep, user: UIUser, url: str) -> bool:
-    if usuario.is_admin(user):
-        return True
-
-    parts = url.removeprefix("/static/uploads/").split("/")
-    autorizado = False
-
-    if len(parts) < _UPLOAD_MIN_PARTS:
-        pass
-    elif parts[0] == "empresa":
-        autorizado = (
-            session.query(EmpresaConfig).filter_by(logo_url=url).first() is not None
-        )
-
-    elif (
-        parts[0] == "clientes"
-        and len(parts) >= _UPLOAD_RESOURCE_PARTS
-        and parts[2] == "documentos"
-    ):
-        autorizado = (
-            perfil.pode_acessar(user, "clientes")
-            and session.query(ImagemDocumentoCliente).filter_by(url=url).first()
-            is not None
-        )
-
-    elif (
-        parts[0] == "compras"
-        and len(parts) >= _UPLOAD_RESOURCE_PARTS
-        and parts[2] == "comprovantes"
-    ):
-        autorizado = (
-            perfil.pode_operacao(user, "compras", "abrir_comprovante")
-            and session.query(ImagemComprovanteCompra).filter_by(url=url).first()
-            is not None
-        )
-
-    elif (
-        parts[0] == "vendas"
-        and len(parts) >= _UPLOAD_RESOURCE_PARTS
-        and parts[2] == "contrato"
-    ):
-        autorizado = (
-            perfil.pode_operacao(user, "vendas", "baixar_contrato")
-            and session.query(DocumentoContratoVenda).filter_by(url=url).first()
-            is not None
-        )
-
-    elif (
-        parts[0] == "veiculos"
-        and len(parts) >= _UPLOAD_RESOURCE_PARTS
-        and parts[2] == "documentos"
-    ):
-        autorizado = (
-            perfil.pode_operacao(user, "veiculos", "upload_documento")
-            and session.query(DocumentoVeiculo).filter_by(url=url).first() is not None
-        )
-    elif (
-        parts[0] == "veiculos"
-        and len(parts) >= _UPLOAD_RESOURCE_PARTS
-        and parts[2] == "procuracao"
-    ):
-        autorizado = (
-            perfil.pode_operacao(user, "veiculos", "abrir_procuracao")
-            and session.query(DocumentoProcuracao).filter_by(url=url).first()
-            is not None
-        )
-    elif parts[0] == "veiculos" and len(parts) >= _UPLOAD_VEICULO_IMAGE_PARTS:
-        autorizado = (
-            perfil.pode_operacao(user, "veiculos", "abrir_imagens")
-            and session.query(ImagemVeiculo).filter_by(url=url).first() is not None
-        )
-
-    return autorizado
-
-
 @app.get("/static/uploads/{path:path}")
 def uploads_autenticados(path: str, session: SessionDep, user: UIUser) -> FileResponse:
     uploads_root = (_ui_dir / "static" / "uploads").resolve()
     file_path = (uploads_root / path).resolve()
     if not file_path.is_relative_to(uploads_root) or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-    if not _upload_autorizado(session, user, f"/static/uploads/{path}"):
+    if not pode_acessar_upload(session, user, f"/static/uploads/{path}"):
         raise HTTPException(status_code=403, detail="Arquivo não autorizado")
     return FileResponse(file_path)
 
