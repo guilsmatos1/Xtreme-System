@@ -32,12 +32,11 @@ from xtreme_system.api.deps import (
 )
 from xtreme_system.auth import core as auth
 from xtreme_system.database.core import (
-    DatabaseRateLimiterStore,
-    RateLimiterStore,
     bind_request_session,
     finish_request_session,
     get_session,
 )
+from xtreme_system.database.rate_limit import DatabaseRateLimiterStore, RateLimiterStore
 from xtreme_system.logging.core import configure_logging
 from xtreme_system.upload_file.authorization import pode_acessar_upload
 
