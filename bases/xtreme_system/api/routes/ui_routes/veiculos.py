@@ -6,6 +6,7 @@ from typing import Annotated, Any
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -69,7 +70,15 @@ _STATUS_LABELS = {
     "vendido": "Vendido",
     "reservado": "Reservado",
 }
-_DEBITOS_SORT_ATTR = "debitos_sort"
+
+_DEBITOS_SORT_SQL = func.coalesce(
+    select(compra.Compra.debitos)
+    .where(compra.Compra.veiculo_id == veiculo.Veiculo.id)
+    .order_by(compra.Compra.data_compra.desc(), compra.Compra.id.desc())
+    .limit(1)
+    .scalar_subquery(),
+    -1,
+)
 
 
 def _ctx_lista_veiculos(
@@ -80,14 +89,9 @@ def _ctx_lista_veiculos(
         status.value: resumo.get(status, (0, Decimal("0")))[0]
         for status in veiculo.StatusVeiculo
     }
-    if all(hasattr(item, _DEBITOS_SORT_ATTR) for item in veiculos):
-        debitos_por_veiculo = {
-            item.id: getattr(item, _DEBITOS_SORT_ATTR) for item in veiculos
-        }
-    else:
-        debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
-            session, [item.id for item in veiculos]
-        )
+    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
+        session, [item.id for item in veiculos]
+    )
     return {
         "total_estoque": sum(contagens.values()),
         "contagens_estoque": contagens,
@@ -102,38 +106,16 @@ def _ctx_lista_veiculos(
     }
 
 
-def _preparar_veiculos_lista(
-    session: Session,
-    itens: list[veiculo.Veiculo],
-    debitos_por_veiculo: dict[int, Decimal | None] | None = None,
-) -> list[veiculo.Veiculo]:
-    if debitos_por_veiculo is None:
-        debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
-            session, [item.id for item in itens]
-        )
-    for item in itens:
-        object.__setattr__(item, "debitos_sort", debitos_por_veiculo.get(item.id))
-    return itens
-
-
-def _debitos_sort(v: veiculo.Veiculo) -> Decimal:
-    return getattr(v, "debitos_sort", None) or Decimal("-1")
-
-
 def _listar_veiculos(
     session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[veiculo.Veiculo]:
-    return _preparar_veiculos_lista(
-        session, veiculo.list_all(session, limit=limit, offset=offset)
-    )
+    return veiculo.list_all(session, limit=limit, offset=offset)
 
 
 def _buscar_veiculos(
     session: Session, term: str, column: str | None = None
 ) -> list[veiculo.Veiculo]:
-    return _preparar_veiculos_lista(
-        session, veiculo.search(session, term, column=column)
-    )
+    return veiculo.search(session, term, column=column)
 
 
 _VEICULOS_LISTING = ListingSpec(
@@ -190,7 +172,7 @@ register_crud_ui_routes(
             "revisao": SortField("revisao", veiculo.Veiculo.revisao),
             "investidor": SortField("investidor", investidor.Investidor.nome),
             "procuracao": SortField("procuracao", veiculo.Veiculo.procuracao),
-            "debitos": SortField(_debitos_sort),
+            "debitos": SortField("debitos", _DEBITOS_SORT_SQL),
             "tempo_estoque": SortField("criado_em", veiculo.Veiculo.criado_em),
         },
     ),
