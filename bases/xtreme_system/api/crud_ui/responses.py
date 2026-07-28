@@ -34,9 +34,11 @@ def form_response(
     item: EntityT | None,
     user: object = None,
     erro: str | None = None,
+    dados: dict[str, Any] | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
     context = {**ctx_form, item_key: item}
+    context["dados"] = dados or {}
     if user is not None:
         context["user"] = user
     if erro is not None:
@@ -60,6 +62,7 @@ def error_response(
     erro: str,
     status_code: int,
     user: object = None,
+    dados: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     return form_response(
         templates,
@@ -70,6 +73,7 @@ def error_response(
         item=item,
         user=user,
         erro=erro,
+        dados=dados,
         status_code=status_code,
     )
 
@@ -84,6 +88,7 @@ def conflict_form_response(
     item: EntityT | None,
     erro: str,
     user: object = None,
+    dados: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     return error_response(
         templates,
@@ -95,6 +100,7 @@ def conflict_form_response(
         erro=erro,
         status_code=409,
         user=user,
+        dados=dados,
     )
 
 

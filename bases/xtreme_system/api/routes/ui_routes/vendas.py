@@ -274,6 +274,7 @@ def _erro_venda(
     user: usuario.Usuario,
     msg: str,
     venda_obj: venda.Venda | None = None,
+    dados: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     return error_response(
         templates,
@@ -285,6 +286,7 @@ def _erro_venda(
         erro=msg,
         status_code=400,
         user=user,
+        dados=dados,
     )
 
 
@@ -340,17 +342,20 @@ async def _criar_venda(
     offset: int = 0,
 ) -> HTMLResponse:
     form = await request.form()
+    dados_form = dict(form)
 
     cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
     if erro:
-        return _erro_venda(request, session, user, erro)
+        return _erro_venda(request, session, user, erro, dados=dados_form)
 
     novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
         session,
         novo_cliente_data,
         cliente.create,
         user.id,
-        lambda: _erro_venda(request, session, user, "Cliente já existe"),
+        lambda: _erro_venda(
+            request, session, user, "Cliente já existe", dados=dados_form
+        ),
     )
     if response is not None:
         return response
@@ -375,7 +380,7 @@ async def _criar_venda(
     except (ValidationError, HTTPException) as exc:
         rollback_se_criou_aninhados(session, novo_cliente_data)
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-        return _erro_venda(request, session, user, msg)
+        return _erro_venda(request, session, user, msg, dados=dados_form)
 
     try:
         safe_write(
@@ -386,7 +391,10 @@ async def _criar_venda(
         if exc.status_code != status.HTTP_409_CONFLICT:
             raise
         return rollback_integrity_error_response(
-            session, lambda: _erro_venda(request, session, user, "Venda já existe")
+            session,
+            lambda: _erro_venda(
+                request, session, user, "Venda já existe", dados=dados_form
+            ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)
 

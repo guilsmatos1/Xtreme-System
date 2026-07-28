@@ -253,7 +253,11 @@ def _resolver_veiculo(
 
 
 def _erro_compra(
-    request: Request, session: Session, user: usuario.Usuario, msg: str
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    msg: str,
+    dados: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     return error_response(
         templates,
@@ -265,6 +269,7 @@ def _erro_compra(
         erro=msg,
         status_code=400,
         user=user,
+        dados=dados,
     )
 
 
@@ -286,6 +291,7 @@ async def _criar_compra(  # noqa: PLR0911
     request: Request, session: SessionDep, user: _CadastrarCompraDep
 ) -> HTMLResponse:
     form = await request.form()
+    dados_form = dict(form)
 
     comprovantes = cast(
         list[UploadFile],
@@ -299,22 +305,22 @@ async def _criar_compra(  # noqa: PLR0911
         comprovantes = []
     erro = validar_uploads(comprovantes)
     if erro:
-        return _erro_compra(request, session, user, erro)
+        return _erro_compra(request, session, user, erro, dados_form)
 
     cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
     if erro:
-        return _erro_compra(request, session, user, erro)
+        return _erro_compra(request, session, user, erro, dados_form)
 
     veiculo_obj, novo_veiculo_data, erro = _resolver_veiculo(session, form)
     if erro:
-        return _erro_compra(request, session, user, erro)
+        return _erro_compra(request, session, user, erro, dados_form)
 
     novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
         session,
         novo_cliente_data,
         cliente.create,
         user.id,
-        lambda: _erro_compra(request, session, user, "Cliente já existe"),
+        lambda: _erro_compra(request, session, user, "Cliente já existe", dados_form),
     )
     if response is not None:
         return response
@@ -326,7 +332,7 @@ async def _criar_compra(  # noqa: PLR0911
         novo_veiculo_data,
         veiculo.create,
         user.id,
-        lambda: _erro_compra(request, session, user, "Veículo já existe"),
+        lambda: _erro_compra(request, session, user, "Veículo já existe", dados_form),
     )
     if response is not None:
         return response
@@ -353,7 +359,7 @@ async def _criar_compra(  # noqa: PLR0911
     except (ValidationError, HTTPException) as exc:
         rollback_se_criou_aninhados(session, novo_cliente_data, novo_veiculo_data)
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
-        return _erro_compra(request, session, user, msg)
+        return _erro_compra(request, session, user, msg, dados_form)
 
     try:
         obj = compra.create(session, data, user.id)
@@ -370,7 +376,10 @@ async def _criar_compra(  # noqa: PLR0911
         )
     except IntegrityError:
         return rollback_integrity_error_response(
-            session, lambda: _erro_compra(request, session, user, "Compra já existe")
+            session,
+            lambda: _erro_compra(
+                request, session, user, "Compra já existe", dados_form
+            ),
         )
     return _ok_compra(request, session, user)
 
