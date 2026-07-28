@@ -2,15 +2,74 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
+from xtreme_system.upload_file.authorization import (
+    UPLOAD_RULES,
+    UploadRule,
+    pode_acessar_upload,
+)
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+
+class _Query:
+    def __init__(self, result: object | None) -> None:
+        self._result = result
+
+    def filter_by(self, **_filters: str) -> "_Query":
+        return self
+
+    def first(self) -> object | None:
+        return self._result
+
+
+class _Session:
+    def __init__(self, result: object | None = object()) -> None:
+        self._result = result
+
+    def query(self, _model: type[object]) -> _Query:
+        return _Query(self._result)
+
+
+@pytest.mark.parametrize("rule", UPLOAD_RULES)
+def test_regras_de_upload_autorizam_apenas_o_formato_declarado(
+    rule: UploadRule,
+) -> None:
+    if rule.subdir is None and rule.prefix == "empresa":
+        url = "/static/uploads/empresa/logo.png"
+    elif rule.subdir is None:
+        url = f"/static/uploads/{rule.prefix}/1/image.jpg"
+    else:
+        url = f"/static/uploads/{rule.prefix}/1/{rule.subdir}/file.pdf"
+    restricoes = {rule.pagina: {"operacoes": [rule.operacao]}} if rule.operacao else {}
+    user = SimpleNamespace(
+        papel=usuario.Papel.funcionario,
+        perfil=SimpleNamespace(paginas=[rule.pagina], restricoes=restricoes),
+    )
+
+    assert pode_acessar_upload(cast(Session, _Session()), user, url)
+
+
+def test_upload_desconhecido_e_registro_ausente_negam_acesso() -> None:
+    user = SimpleNamespace(
+        papel=usuario.Papel.funcionario,
+        perfil=SimpleNamespace(paginas=["veiculos"], restricoes={}),
+    )
+    url = "/static/uploads/veiculos/1/image.jpg"
+
+    assert not pode_acessar_upload(
+        cast(Session, _Session()), user, "/static/uploads/outro/a.pdf"
+    )
+    assert not pode_acessar_upload(cast(Session, _Session(None)), user, url)
 
 
 def test_upload_exige_permissao_do_recurso(
