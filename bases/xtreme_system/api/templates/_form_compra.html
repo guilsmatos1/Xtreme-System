@@ -58,13 +58,13 @@
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
             <span class="field__label">Valor da compra *</span>
-            <input class="input" name="valor_compra" type="number" step="0.01" min="0.01" value="{{ compra.valor_compra }}" required>
+            <input class="input" name="valor_compra" type="text" inputmode="decimal" value="{{ compra.valor_compra }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos de veículos</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ compra.debitos if compra.debitos is not none else '' }}">
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ compra.debitos if compra.debitos is not none else '' }}">
           </label>
           {% endif %}
 
@@ -226,13 +226,13 @@
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
             <span class="field__label">Valor da compra *</span>
-            <input class="input" name="valor_compra" type="number" step="0.01" min="0.01" value="{{ dados.get('valor_compra', '') }}" required>
+            <input class="input" name="valor_compra" type="text" inputmode="decimal" value="{{ dados.get('valor_compra', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos de veículos</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ dados.get('debitos', '') }}">
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}">
           </label>
           {% endif %}
         </fieldset>
