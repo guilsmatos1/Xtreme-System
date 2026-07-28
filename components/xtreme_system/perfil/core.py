@@ -8,111 +8,37 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.perfil import policy as _policy
 
-# Única fonte da verdade: chave usada na URL (/ui/{chave}) e no menu.
-PAGINAS: list[tuple[str, str]] = [
-    ("veiculos", "Veículos"),
-    ("investidores", "Investidores"),
-    ("clientes", "Clientes"),
-    ("compras", "Compras"),
-    ("custos-veiculos", "Custos"),
-    ("vendas", "Vendas"),
+CAMPOS_FORM_PROTEGIDOS = _policy.CAMPOS_FORM_PROTEGIDOS
+CAMPOS_PROTEGIDOS = _policy.CAMPOS_PROTEGIDOS
+OPERACOES = _policy.OPERACOES
+PAGINAS = _policy.PAGINAS
+PAGINAS_VALIDAS = _policy.PAGINAS_VALIDAS
+ROTAS_DERIVADAS = _policy.ROTAS_DERIVADAS
+
+__all__ = [
+    "CAMPOS_FORM_PROTEGIDOS",
+    "CAMPOS_PROTEGIDOS",
+    "OPERACOES",
+    "PAGINAS",
+    "PAGINAS_VALIDAS",
+    "ROTAS_DERIVADAS",
+    "Perfil",
+    "PerfilCreate",
+    "PerfilRead",
+    "PerfilUpdate",
+    "create",
+    "delete",
+    "filtrar_campos_form_ocultos",
+    "get",
+    "list_all",
+    "pagina_da_rota",
+    "pode_acessar",
+    "pode_operacao",
+    "pode_ver_campo",
+    "update",
 ]
-PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}
-ROTAS_DERIVADAS = {"fechamentos-vendas": "vendas"}
-
-# Campos sensíveis e operações que podem ser restringidos por perfil, por página.
-CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
-    "veiculos": [
-        ("modelo", "Modelo"),
-        ("marca", "Marca"),
-        ("placa", "Placa"),
-        ("chassi", "Chassi"),
-        ("renavam", "RENAVAM"),
-        ("tipo", "Tipo"),
-        ("ano", "Ano"),
-        ("km", "KM"),
-        ("status", "Estado"),
-        ("preco", "Preço de Custo"),
-        ("tipo_entrada", "Tipo de Entrada"),
-        ("investidor", "Investidor"),
-        ("procuracao", "Procurador"),
-        ("proprietario_registrado", "Proprietário Registrado"),
-        ("revisao", "Revisão"),
-        ("debitos", "Débitos"),
-        ("tempo_estoque", "Tempo de Estoque"),
-    ],
-    "compras": [
-        ("data_compra", "Data da Compra"),
-        ("cliente", "Cliente"),
-        ("documento_cliente", "Documento do Cliente"),
-        ("status", "Estado"),
-        ("placa", "Placa"),
-        ("veiculo", "Veículo"),
-        ("valor_compra", "Valor da Compra"),
-        ("debitos", "Débitos"),
-        ("observacoes", "Observações"),
-        ("usuario", "Usuário"),
-    ],
-    "custos-veiculos": [
-        ("valor", "Valor"),
-    ],
-    "vendas": [
-        ("cliente", "Cliente"),
-        ("veiculo", "Veículo"),
-        ("data_venda", "Data da Venda"),
-        ("valor_venda", "Valor da Venda"),
-        ("valor_entrada", "Entrada"),
-        ("debitos", "Débitos"),
-        ("km", "KM"),
-        ("veiculo_troca", "Veículo da Troca"),
-        ("valor_diferenca", "Valor da Diferença"),
-        ("pagamento_pendente", "Pagamento Pendente"),
-        ("valor_pendente", "Valor Pendente"),
-        ("datas_pagamento", "Datas de Pagamento"),
-        ("forma_pagamento", "Forma de Pagamento"),
-        ("parcelas", "Parcelas"),
-        ("status", "Status"),
-        ("observacoes", "Observações"),
-        ("vendedor", "Usuário"),
-        ("lucro", "Lucro Líquido (fechamento)"),
-        ("participacao", "Participação por Investidor (fechamento)"),
-    ],
-}
-
-CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
-    "compras": {
-        "data_compra": "data_compra",
-        "cliente": "cliente_id",
-        "status": "status",
-        "veiculo": "veiculo_id",
-        "valor_compra": "valor_compra",
-        "debitos": "debitos",
-        "observacoes": "observacoes",
-    },
-    "custos-veiculos": {
-        "valor": "valor",
-    },
-    "vendas": {
-        "cliente": "cliente_id",
-        "veiculo": "veiculo_id",
-        "data_venda": "data_venda",
-        "valor_venda": "valor_venda",
-        "valor_entrada": "valor_entrada",
-        "debitos": "debitos",
-        "km": "km",
-        "veiculo_troca": "veiculo_troca_id",
-        "valor_diferenca": "valor_diferenca",
-        "pagamento_pendente": "pagamento_pendente",
-        "valor_pendente": "valor_pendente",
-        "datas_pagamento": "datas_pagamento",
-        "forma_pagamento": "forma_pagamento",
-        "parcelas": "parcelas",
-        "status": "status",
-        "observacoes": "observacoes",
-        "vendedor": "vendedor_id",
-    },
-}
 
 
 def filtrar_campos_form_ocultos(
@@ -124,52 +50,6 @@ def filtrar_campos_form_ocultos(
         if not pode_ver_campo(user, pagina, campo):
             data.pop(campo_form, None)
     return data
-
-
-OPERACOES: dict[str, list[tuple[str, str]]] = {
-    "veiculos": [
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-        ("abrir_cliente_vendedor", "Abrir cliente vendedor"),
-        ("upload_documento", "Upload de documento do veículo"),
-        ("abrir_imagens", "Abrir imagens do veículo"),
-        ("enviar_imagens", "Enviar imagens"),
-        ("excluir_imagens", "Excluir imagens"),
-        ("abrir_procuracao", "Abrir procuração"),
-        ("enviar_procuracao", "Enviar documentos de procuração"),
-        ("excluir_procuracao", "Excluir documentos de procuração"),
-    ],
-    "investidores": [
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-    ],
-    "clientes": [
-        ("cadastrar", "Cadastrar"),
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-        ("excluir_documento", "Excluir documento"),
-    ],
-    "compras": [
-        ("cadastrar", "Cadastrar"),
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-        ("abrir_comprovante", "Abrir comprovantes"),
-        ("enviar_comprovante", "Enviar comprovantes"),
-        ("excluir_comprovante", "Excluir comprovante"),
-    ],
-    "custos-veiculos": [
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-    ],
-    "vendas": [
-        ("cadastrar", "Cadastrar"),
-        ("editar", "Editar"),
-        ("excluir", "Excluir"),
-        ("baixar_contrato", "Baixar contrato"),
-        ("fechar", "Fechar venda"),
-        ("ver_fechamento", "Ver fechamento"),
-    ],
-}
 
 
 class Perfil(Base):

@@ -1,6 +1,7 @@
 """Usuário: enum de papel, model, schemas e CRUD."""
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey
@@ -10,7 +11,9 @@ from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.auth.core import hash_password
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
-from xtreme_system.perfil.core import Perfil
+
+if TYPE_CHECKING:
+    from xtreme_system.perfil.core import Perfil
 
 MIN_SENHA_LENGTH = 3
 
@@ -35,7 +38,7 @@ class Usuario(Base):
     papel: Mapped[Papel] = mapped_column(default=Papel.funcionario)
     ativo: Mapped[bool] = mapped_column(default=True)
     perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"), index=True)
-    perfil: Mapped[Perfil | None] = relationship()
+    perfil: Mapped["Perfil | None"] = relationship()
 
 
 def is_admin(user: Usuario) -> bool:
