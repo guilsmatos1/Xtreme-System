@@ -124,3 +124,19 @@ def test_request_session_commit_failure_returns_error_before_response(
     assert session.commits == 1
     assert session.rollbacks == 1
     assert session.closes == 1
+
+
+def test_detach_request_session_closes_early_and_skips_finalization(
+    monkeypatch: Any,
+) -> None:
+    session = FakeSession()
+    monkeypatch.setattr(core, "SessionLocal", lambda: session)
+    request = _request("POST")
+    core.bind_request_session(request)
+
+    core.detach_request_session(request)
+    core.finish_request_session(request)
+
+    assert session.commits == 0
+    assert session.rollbacks == 1
+    assert session.closes == 1

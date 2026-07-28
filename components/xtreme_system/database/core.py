@@ -1,7 +1,7 @@
 """Configuração de banco: settings, engine, sessão e Base declarativa."""
 
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from functools import lru_cache
 from typing import Protocol
 
@@ -18,6 +18,7 @@ from sqlalchemy import (
     delete,
     event,
     insert,
+    inspect,
     select,
     update,
 )
@@ -212,6 +213,7 @@ def invoke_post_commit(session: Session) -> None:
 
 _READ_ONLY_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 _REQUEST_SESSION_ATTR = "db_session"
+_REQUEST_SESSION_DETACHED_ATTR = "db_session_detached"
 
 
 def _should_commit_session(request: Request) -> bool:
@@ -224,9 +226,35 @@ def bind_request_session(request: Request) -> Session:
     return session
 
 
+def detach_request_session(request: Request, *, keep: Sequence[object] = ()) -> None:
+    """End the request transaction before an external database operation.
+
+    ``pg_dump`` and ``pg_restore`` need the request's database connection to be
+    released. Objects in ``keep`` are loaded and expunged first so they remain
+    usable after the session is detached. Request finalization skips this
+    session because this function has already rolled it back and closed it.
+    """
+    session = getattr(request.state, _REQUEST_SESSION_ATTR, None)
+    if session is None:
+        return
+    for obj in keep:
+        state = inspect(obj)
+        if state is None:
+            raise TypeError
+        for attr in state.mapper.column_attrs:
+            getattr(obj, attr.key)
+        session.expunge(obj)
+    session.rollback()
+    session.close()
+    setattr(request.state, _REQUEST_SESSION_DETACHED_ATTR, True)
+
+
 def finish_request_session(
     request: Request, error: BaseException | None = None
 ) -> None:
+    if getattr(request.state, _REQUEST_SESSION_DETACHED_ATTR, False):
+        delattr(request.state, _REQUEST_SESSION_DETACHED_ATTR)
+        return
     session = getattr(request.state, _REQUEST_SESSION_ATTR, None)
     if session is None:
         return
