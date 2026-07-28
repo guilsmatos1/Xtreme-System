@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import SortField
+from xtreme_system.api.crud_types import ListingSpec, ListState, SortField
 from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
@@ -127,6 +127,13 @@ def _buscar_veiculos(
     return _preparar_veiculos_lista(
         session, veiculo.search(session, term, column=column)
     )
+
+
+_VEICULOS_LISTING = ListingSpec(
+    searchable=True,
+    list_func=_listar_veiculos,
+    search_func=_buscar_veiculos,
+)
 
 
 register_crud_ui_routes(
@@ -290,12 +297,7 @@ def _excluir_veiculo(
 
         def build_conflict_response() -> HTMLResponse:
             lista = query_list(
-                session,
-                veiculo,
-                q="",
-                searchable=True,
-                list_func=_listar_veiculos,
-                search_func=_buscar_veiculos,
+                session, veiculo, listing=_VEICULOS_LISTING, state=ListState()
             )
             return list_response(
                 templates,
@@ -310,14 +312,7 @@ def _excluir_veiculo(
             )
 
         return rollback_integrity_error_response(session, build_conflict_response)
-    lista = query_list(
-        session,
-        veiculo,
-        q="",
-        searchable=True,
-        list_func=_listar_veiculos,
-        search_func=_buscar_veiculos,
-    )
+    lista = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=ListState())
     return list_response(
         templates,
         request,

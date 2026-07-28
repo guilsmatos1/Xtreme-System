@@ -9,10 +9,9 @@ from xtreme_system.api.crud_types import (
     CrudModule,
     EntityT,
     ListFunc,
-    QueryFunc,
+    ListingSpec,
+    ListState,
     SearchableCrudModule,
-    SearchFunc,
-    SearchQueryFunc,
     SortField,
     SortSpec,
     UpdateSchemaT,
@@ -128,53 +127,65 @@ def query_list(
     session: Session,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     *,
-    q: str,
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    search_column: str | None = None,
-    limit: int | None = None,
-    offset: int = 0,
-    sort: str = "",
-    order: str = "asc",
-    sort_fields: Mapping[str, SortField[EntityT]] | None = None,
-    query_func: QueryFunc[EntityT] | None = None,
-    search_query_func: SearchQueryFunc[EntityT] | None = None,
+    listing: ListingSpec[EntityT],
+    state: ListState,
 ) -> list[EntityT]:
-    fields = sort_fields or {}
-    if q and search_query_func is not None:
-        query = search_query_func(session, q, column=search_column)
-        return _query_sorted_list(query, sort, order, fields, limit, offset)
-    if not q and query_func is not None:
-        return _query_sorted_list(
-            query_func(session), sort, order, fields, limit, offset
+    if state.q and listing.search_query_func is not None:
+        query = listing.search_query_func(
+            session, state.q, column=state.search_column or None
         )
-    if q and search_func is not None:
-        lista = _search_list(search_func, session, q, search_column)
-        result = _page_list(sorted_list(lista, sort, order, fields), limit, offset)
-    elif searchable and q:
+        return _query_sorted_list(
+            query,
+            state.sort,
+            state.order,
+            listing.sort_fields,
+            state.limit,
+            state.offset,
+        )
+    if not state.q and listing.query_func is not None:
+        return _query_sorted_list(
+            listing.query_func(session),
+            state.sort,
+            state.order,
+            listing.sort_fields,
+            state.limit,
+            state.offset,
+        )
+    if state.q and listing.search_func is not None:
+        lista = _search_list(
+            listing.search_func, session, state.q, state.search_column or None
+        )
+        result = _page_list(
+            sorted_list(lista, state.sort, state.order, listing.sort_fields),
+            state.limit,
+            state.offset,
+        )
+    elif listing.searchable and state.q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module
         )
         result = _page_list(
             sorted_list(
-                list(searchable_module.search(session, q)),
-                sort,
-                order,
-                fields,
+                list(searchable_module.search(session, state.q)),
+                state.sort,
+                state.order,
+                listing.sort_fields,
             ),
-            limit,
-            offset,
+            state.limit,
+            state.offset,
         )
     else:
-        callable_list = list_func or module.list_all
-        if not sort or sort not in fields:
-            return _paginated_list(callable_list, session, limit, offset)
+        callable_list = listing.list_func or module.list_all
+        if not state.sort or state.sort not in listing.sort_fields:
+            return _paginated_list(callable_list, session, state.limit, state.offset)
         result = _page_list(
             sorted_list(
-                _paginated_list(callable_list, session, None, 0), sort, order, fields
+                _paginated_list(callable_list, session, None, 0),
+                state.sort,
+                state.order,
+                listing.sort_fields,
             ),
-            limit,
-            offset,
+            state.limit,
+            state.offset,
         )
     return result

@@ -16,7 +16,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
-from xtreme_system.api.crud_types import SortField, adapt_search_func
+from xtreme_system.api.crud_types import (
+    ListingSpec,
+    ListState,
+    SortField,
+    adapt_search_func,
+)
 from xtreme_system.api.crud_ui.query import (
     query_list,
     sorted_list,
@@ -259,10 +264,8 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
         query_list(
             session=cast(Session, object()),
             module=investidor,
-            q="ana",
-            searchable=False,
-            list_func=None,
-            search_func=adapt_search_func(search_func),
+            listing=ListingSpec(search_func=adapt_search_func(search_func)),
+            state=ListState(q="ana"),
         )
 
 
@@ -284,12 +287,8 @@ def test_query_list_passa_limit_e_offset_para_list_func_paginal() -> None:
     resultados = query_list(
         session=cast(Session, object()),
         module=investidor,
-        q="",
-        searchable=False,
-        list_func=list_func,
-        search_func=None,
-        limit=2,
-        offset=1,
+        listing=ListingSpec(list_func=list_func),
+        state=ListState(limit=2, offset=1),
     )
 
     assert chamadas == [(2, 1)]
@@ -307,13 +306,11 @@ def test_query_list_usa_sort_field_python_quando_sql_disponivel() -> None:
     ordenados = query_list(
         session=cast(Session, object()),
         module=investidor,
-        q="a",
-        searchable=False,
-        list_func=None,
-        search_func=adapt_search_func(search_func),
-        sort="nome",
-        order="asc",
-        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+        listing=ListingSpec(
+            search_func=adapt_search_func(search_func),
+            sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+        ),
+        state=ListState(q="a", sort="nome", order="asc"),
     )
 
     assert [item.nome for item in ordenados] == ["Ana", "Bruno", "Carla"]
@@ -338,14 +335,11 @@ def test_query_list_ordena_no_sql_quando_query_func_disponivel(
     ordenados = query_list(
         session,
         investidor,
-        q="",
-        searchable=False,
-        list_func=None,
-        search_func=None,
-        sort="nome",
-        order="desc",
-        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
-        query_func=lambda sess: sess.query(investidor.Investidor),
+        listing=ListingSpec(
+            sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+            query_func=lambda sess: sess.query(investidor.Investidor),
+        ),
+        state=ListState(sort="nome", order="desc"),
     )
 
     assert [item.nome for item in ordenados] == ["Carla", "Bruno", "Ana"]
@@ -384,16 +378,11 @@ def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
     query_list(
         session,
         investidor,
-        q="",
-        searchable=False,
-        list_func=None,
-        search_func=None,
-        sort="desconhecido",
-        order="asc",
-        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
-        query_func=lambda sess: sess.query(investidor.Investidor),
-        limit=2,
-        offset=1,
+        listing=ListingSpec(
+            sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+            query_func=lambda sess: sess.query(investidor.Investidor),
+        ),
+        state=ListState(sort="desconhecido", order="asc", limit=2, offset=1),
     )
 
     assert any("ORDER BY investidor.id ASC" in statement for statement in statements)
