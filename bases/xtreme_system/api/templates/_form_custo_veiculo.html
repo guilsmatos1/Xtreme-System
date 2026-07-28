@@ -4,7 +4,7 @@
     <div class="modal__head">
       <h3 id="mcv-title">{{ 'Editar custo' if custo else 'Novo custo' }}</h3>
       <button class="icon-btn" type="button" aria-label="Fechar"
-              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+              onclick="closeModalOnBackdrop(this.closest('.modal'))">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/custos-veiculos{% if custo %}/{{ custo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML">
       <div class="modal__body">
@@ -40,7 +40,7 @@
         </div>
       </div>
       <div class="modal__foot">
-        <button type="button" class="btn btn--default" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
+        <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
