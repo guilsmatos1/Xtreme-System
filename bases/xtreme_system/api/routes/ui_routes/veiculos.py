@@ -41,26 +41,6 @@ from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
-# Campos do form.html que só devem ser aplicados se o perfil puder vê-los.
-_CAMPO_FORM_MAP = {
-    "modelo": "modelo",
-    "marca": "marca",
-    "placa": "placa",
-    "chassi": "chassi",
-    "renavam": "renavam",
-    "tipo": "tipo",
-    "ano": "ano",
-    "km": "km",
-    "status": "status",
-    "preco": "preco",
-    "tipo_entrada": "tipo_entrada",
-    "investidor": "investidor_id",
-    "procuracao": "procuracao",
-    "proprietario_registrado": "proprietario_registrado",
-    "revisao": "revisao",
-    "debitos": "debitos",
-}
-
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
     debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
@@ -400,9 +380,7 @@ async def _atualizar_veiculo(
     obj = _found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
     dados_form = dict(form)
-    for campo, campo_form in _CAMPO_FORM_MAP.items():
-        if not perfil.pode_ver_campo(user, "veiculos", campo):
-            dados_form.pop(campo_form, None)
+    perfil.filtrar_campos_form_ocultos(user, "veiculos", dados_form)
 
     try:
         data = veiculo.VeiculoUpdate.model_validate(dados_form)
