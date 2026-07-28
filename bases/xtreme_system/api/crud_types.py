@@ -1,6 +1,8 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from typing import Any, Protocol, TypeVar
 
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Query, Session
 
@@ -118,6 +120,27 @@ SearchFunc = ColumnSearchFunc
 type QueryFunc[EntityT] = Callable[[Session], Query[EntityT]]
 type SearchQueryFunc[EntityT] = Callable[..., Query[EntityT]]
 CsvRow = Callable[[EntityT], list[Any]]
+
+
+@dataclass(frozen=True)
+class ListingSpec[EntityT]:
+    searchable: bool = False
+    list_func: ListFunc[EntityT] | None = None
+    search_func: SearchFunc[EntityT] | None = None
+    sort_fields: Mapping[str, SortSpec[EntityT]] = field(default_factory=dict)
+    sql_sort_fields: Mapping[str, Any] | None = None
+    query_func: QueryFunc[EntityT] | None = None
+    search_query_func: SearchQueryFunc[EntityT] | None = None
+
+
+@dataclass(frozen=True)
+class FormSpec:
+    templates: Jinja2Templates
+    form_template: str
+    ctx_form: CtxForm
+    item_key: str
+
+
 BeforeCreateHook = Callable[[Session, CreateSchemaT], None]
 BeforeUpdateHook = Callable[[Session, UpdateSchemaT], None]
 BeforeUpdateEntityHook = Callable[[Session, EntityT, UpdateSchemaT], None]
