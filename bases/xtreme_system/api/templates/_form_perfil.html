@@ -1,5 +1,5 @@
 {% import "_macros.html" as ui %}
-<div class="modal" onclick="if(event.target===this)this.remove()">
+<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mp-title">
     <div class="modal__head">
       <h3 id="mp-title">{{ 'Editar perfil' if perfil else 'Novo perfil' }}</h3>

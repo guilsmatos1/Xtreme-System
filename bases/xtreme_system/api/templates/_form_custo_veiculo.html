@@ -1,5 +1,5 @@
 {% import "_macros.html" as ui %}
-<div class="modal" onclick="if(event.target===this)this.remove()">
+<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mcv-title">
     <div class="modal__head">
       <h3 id="mcv-title">{{ 'Editar custo' if custo else 'Novo custo' }}</h3>

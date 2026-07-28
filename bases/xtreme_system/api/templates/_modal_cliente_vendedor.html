@@ -1,5 +1,5 @@
 {% import "_macros.html" as ui %}
-<div class="modal" onclick="if(event.target===this)this.remove()" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-vendedor-title">
+<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-vendedor-title">
   <div class="modal__panel">
     <div class="modal__head">
       <h3 id="modal-cliente-vendedor-title">Cliente vendedor — {{ veiculo.modelo }} ({{ veiculo.placa }})</h3>
