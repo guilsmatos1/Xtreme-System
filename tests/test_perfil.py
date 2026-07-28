@@ -123,6 +123,27 @@ def test_campos_protegidos_editaveis_de_venda_tem_mapa_de_form() -> None:
     assert campos_protegidos & campos_editaveis <= campos_form
 
 
+def test_campos_protegidos_de_veiculos_tem_mapa_de_form() -> None:
+    assert perfil.CAMPOS_FORM_PROTEGIDOS["veiculos"] == {
+        "modelo": "modelo",
+        "marca": "marca",
+        "placa": "placa",
+        "chassi": "chassi",
+        "renavam": "renavam",
+        "tipo": "tipo",
+        "ano": "ano",
+        "km": "km",
+        "status": "status",
+        "preco": "preco",
+        "tipo_entrada": "tipo_entrada",
+        "investidor": "investidor_id",
+        "procuracao": "procuracao",
+        "proprietario_registrado": "proprietario_registrado",
+        "revisao": "revisao",
+        "debitos": "debitos",
+    }
+
+
 def test_filtrar_campos_form_ocultos_remove_inputs_mapeados(
     db_session: Session,
 ) -> None:

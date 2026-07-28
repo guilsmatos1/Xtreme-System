@@ -69,6 +69,24 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
 }
 
 CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
+    "veiculos": {
+        "modelo": "modelo",
+        "marca": "marca",
+        "placa": "placa",
+        "chassi": "chassi",
+        "renavam": "renavam",
+        "tipo": "tipo",
+        "ano": "ano",
+        "km": "km",
+        "status": "status",
+        "preco": "preco",
+        "tipo_entrada": "tipo_entrada",
+        "investidor": "investidor_id",
+        "procuracao": "procuracao",
+        "proprietario_registrado": "proprietario_registrado",
+        "revisao": "revisao",
+        "debitos": "debitos",
+    },
     "compras": {
         "data_compra": "data_compra",
         "cliente": "cliente_id",
