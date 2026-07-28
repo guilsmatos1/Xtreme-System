@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     error_response,
@@ -409,28 +410,26 @@ register_crud_ui_routes(
     register_create=False,
     cadastrar_dep=require_operacao("compras", "cadastrar"),
     sort_fields={
-        "cliente": lambda c: _sort_key(c.cliente.nome),
-        "documento": lambda c: _sort_key(c.cliente.documento or ""),
-        "modelo": lambda c: _sort_key(c.veiculo.modelo),
-        "placa": lambda c: _sort_key(c.veiculo.placa),
-        "data": "data_compra",
-        "valor": "valor_compra",
-        "status": "status",
-        "observacoes": lambda c: _sort_key(c.observacoes or ""),
-        "usuario": lambda c: _sort_key(
-            (c.usuario.nome or c.usuario.username) if c.usuario else ""
+        "cliente": SortField(lambda c: _sort_key(c.cliente.nome), cliente.Cliente.nome),
+        "documento": SortField(
+            lambda c: _sort_key(c.cliente.documento or ""), cliente.Cliente.documento
         ),
-    },
-    sql_sort_fields={
-        "cliente": cliente.Cliente.nome,
-        "documento": cliente.Cliente.documento,
-        "modelo": veiculo.Veiculo.modelo,
-        "placa": veiculo.Veiculo.placa,
-        "data": compra.Compra.data_compra,
-        "valor": compra.Compra.valor_compra,
-        "status": compra.Compra.status,
-        "observacoes": compra.Compra.observacoes,
-        "usuario": usuario.Usuario.nome,
+        "modelo": SortField(
+            lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
+        ),
+        "placa": SortField(lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa),
+        "data": SortField("data_compra", compra.Compra.data_compra),
+        "valor": SortField("valor_compra", compra.Compra.valor_compra),
+        "status": SortField("status", compra.Compra.status),
+        "observacoes": SortField(
+            lambda c: _sort_key(c.observacoes or ""), compra.Compra.observacoes
+        ),
+        "usuario": SortField(
+            lambda c: _sort_key(
+                (c.usuario.nome or c.usuario.username) if c.usuario else ""
+            ),
+            usuario.Usuario.nome,
+        ),
     },
     query_func=compra.query,
     search_query_func=compra.search_query,

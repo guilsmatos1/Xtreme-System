@@ -25,7 +25,7 @@ from xtreme_system.api.crud_types import (
     ParseForm,
     UpdateSchemaT,
 )
-from xtreme_system.api.crud_ui.query import query_list, sorted_list
+from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import (
     conflict_form_response,
     csv_response,
@@ -216,7 +216,6 @@ def register_crud_ui_routes(  # noqa: PLR0912
             searchable=legacy.pop("searchable", False),
             list_func=legacy.pop("list_func", None),
             search_func=legacy.pop("search_func", None),
-            sql_sort_fields=legacy.pop("sql_sort_fields", None),
             query_func=legacy.pop("query_func", None),
             search_query_func=legacy.pop("search_query_func", None),
         )
@@ -360,27 +359,21 @@ def register_list_route(
         limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
         offset: Annotated[int, Query(ge=0)] = 0,
     ) -> HTMLResponse:
-        lista = sorted_list(
-            query_list(
-                session,
-                module,
-                q=q,
-                searchable=listing.searchable,
-                list_func=listing.list_func,
-                search_func=listing.search_func,
-                search_column=search_column or None,
-                limit=limit,
-                offset=offset,
-                sort=sort,
-                order=order,
-                sort_fields=listing.sort_fields,
-                sql_sort_fields=listing.sql_sort_fields,
-                query_func=listing.query_func,
-                search_query_func=listing.search_query_func,
-            ),
-            sort,
-            order,
-            {} if listing.sql_sort_fields is not None else listing.sort_fields,
+        lista = query_list(
+            session,
+            module,
+            q=q,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            search_column=search_column or None,
+            limit=limit,
+            offset=offset,
+            sort=sort,
+            order=order,
+            sort_fields=listing.sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
         )
         template = (
             list_partial_template
@@ -536,27 +529,21 @@ def write_ok_response(
     listing: ListingSpec[EntityT],
 ) -> HTMLResponse:
     state = _current_list_state(request)
-    lista = sorted_list(
-        query_list(
-            session,
-            module,
-            q=state.q,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            search_column=state.search_column or None,
-            limit=state.limit,
-            offset=state.offset,
-            sort=state.sort,
-            order=state.order,
-            sort_fields=listing.sort_fields,
-            sql_sort_fields=listing.sql_sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
-        ),
-        state.sort,
-        state.order,
-        {} if listing.sql_sort_fields is not None else listing.sort_fields,
+    lista = query_list(
+        session,
+        module,
+        q=state.q,
+        searchable=listing.searchable,
+        list_func=listing.list_func,
+        search_func=listing.search_func,
+        search_column=state.search_column or None,
+        limit=state.limit,
+        offset=state.offset,
+        sort=state.sort,
+        order=state.order,
+        sort_fields=listing.sort_fields,
+        query_func=listing.query_func,
+        search_query_func=listing.search_query_func,
     )
     return ok_response(
         templates,
@@ -781,27 +768,21 @@ def register_delete_route(
 
             def build_conflict_response() -> HTMLResponse:
                 state = _current_list_state(request)
-                lista = sorted_list(
-                    query_list(
-                        session,
-                        module,
-                        q=state.q,
-                        searchable=listing.searchable,
-                        list_func=listing.list_func,
-                        search_func=listing.search_func,
-                        search_column=state.search_column or None,
-                        limit=state.limit,
-                        offset=state.offset,
-                        sort=state.sort,
-                        order=state.order,
-                        sort_fields=listing.sort_fields,
-                        sql_sort_fields=listing.sql_sort_fields,
-                        query_func=listing.query_func,
-                        search_query_func=listing.search_query_func,
-                    ),
-                    state.sort,
-                    state.order,
-                    {} if listing.sql_sort_fields is not None else listing.sort_fields,
+                lista = query_list(
+                    session,
+                    module,
+                    q=state.q,
+                    searchable=listing.searchable,
+                    list_func=listing.list_func,
+                    search_func=listing.search_func,
+                    search_column=state.search_column or None,
+                    limit=state.limit,
+                    offset=state.offset,
+                    sort=state.sort,
+                    order=state.order,
+                    sort_fields=listing.sort_fields,
+                    query_func=listing.query_func,
+                    search_query_func=listing.search_query_func,
                 )
                 return list_response(
                     templates,
@@ -826,27 +807,21 @@ def register_delete_route(
                 build_conflict_response,
             )
         state = _current_list_state(request)
-        lista = sorted_list(
-            query_list(
-                session,
-                module,
-                q=state.q,
-                searchable=listing.searchable,
-                list_func=listing.list_func,
-                search_func=listing.search_func,
-                search_column=state.search_column or None,
-                limit=state.limit,
-                offset=state.offset,
-                sort=state.sort,
-                order=state.order,
-                sort_fields=listing.sort_fields,
-                sql_sort_fields=listing.sql_sort_fields,
-                query_func=listing.query_func,
-                search_query_func=listing.search_query_func,
-            ),
-            state.sort,
-            state.order,
-            {} if listing.sql_sort_fields is not None else listing.sort_fields,
+        lista = query_list(
+            session,
+            module,
+            q=state.q,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            search_column=state.search_column or None,
+            limit=state.limit,
+            offset=state.offset,
+            sort=state.sort,
+            order=state.order,
+            sort_fields=listing.sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
         )
         return list_response(
             templates,

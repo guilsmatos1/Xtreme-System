@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     error_response,
@@ -149,30 +150,23 @@ register_crud_ui_routes(
     register_create=False,
     register_update=False,
     sort_fields={
-        "cliente": lambda v: _sort_key(v.cliente.nome),
-        "veiculo": lambda v: _sort_key(v.veiculo.modelo),
-        "data": "data_venda",
-        "valor": "valor_venda",
-        "entrada": "valor_entrada",
-        "divida": "valor_pendente",
-        "pagamento": "forma_pagamento",
-        "parcelas": "parcelas",
-        "status": "status",
-        "vendedor": lambda v: _sort_key(
-            (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+        "cliente": SortField(lambda v: _sort_key(v.cliente.nome), cliente.Cliente.nome),
+        "veiculo": SortField(
+            lambda v: _sort_key(v.veiculo.modelo), veiculo.Veiculo.modelo
         ),
-    },
-    sql_sort_fields={
-        "cliente": cliente.Cliente.nome,
-        "veiculo": veiculo.Veiculo.modelo,
-        "data": venda.Venda.data_venda,
-        "valor": venda.Venda.valor_venda,
-        "entrada": venda.Venda.valor_entrada,
-        "divida": venda.Venda.valor_pendente,
-        "pagamento": venda.Venda.forma_pagamento,
-        "parcelas": venda.Venda.parcelas,
-        "status": venda.Venda.status,
-        "vendedor": usuario.Usuario.nome,
+        "data": SortField("data_venda", venda.Venda.data_venda),
+        "valor": SortField("valor_venda", venda.Venda.valor_venda),
+        "entrada": SortField("valor_entrada", venda.Venda.valor_entrada),
+        "divida": SortField("valor_pendente", venda.Venda.valor_pendente),
+        "pagamento": SortField("forma_pagamento", venda.Venda.forma_pagamento),
+        "parcelas": SortField("parcelas", venda.Venda.parcelas),
+        "status": SortField("status", venda.Venda.status),
+        "vendedor": SortField(
+            lambda v: _sort_key(
+                (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+            ),
+            usuario.Usuario.nome,
+        ),
     },
     query_func=venda.query,
     search_query_func=venda.search_query,

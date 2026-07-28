@@ -7,7 +7,7 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import ListingSpec
+from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.routes import (
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
@@ -271,24 +271,16 @@ def _register_clientes_page(
         ),
         listing=ListingSpec(
             sort_fields={
-                "nome": "nome",
-                "documento": "documento",
-                "telefone": "telefone",
-                "tipo": "tipo",
-                "cidade": "cidade",
-                "estado": "estado",
+                "nome": SortField("nome", cliente.Cliente.nome),
+                "documento": SortField("documento", cliente.Cliente.documento),
+                "telefone": SortField("telefone", cliente.Cliente.telefone),
+                "tipo": SortField("tipo", cliente.Cliente.tipo),
+                "cidade": SortField("cidade", cliente.Cliente.cidade),
+                "estado": SortField("estado", cliente.Cliente.estado),
             },
             searchable=True,
             list_func=list_func,
             search_func=search_func,
-            sql_sort_fields={
-                "nome": cliente.Cliente.nome,
-                "documento": cliente.Cliente.documento,
-                "telefone": cliente.Cliente.telefone,
-                "tipo": cliente.Cliente.tipo,
-                "cidade": cliente.Cliente.cidade,
-                "estado": cliente.Cliente.estado,
-            },
             query_func=query_func,
             search_query_func=search_query_func,
         ),
