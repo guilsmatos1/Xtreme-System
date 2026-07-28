@@ -1,0 +1,4 @@
+interface:
+  display_name: "Single Session Token Efficiency"
+  short_description: "Analyze token efficiency for one Codex session"
+  default_prompt: "Use $0007-analyze-single-session-token-efficiency to analyze one specified Codex session."

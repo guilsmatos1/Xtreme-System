@@ -1,17 +1,17 @@
 ---
 name: 0004-consolidate-harness-improvements
-description: Consolidates harness-improvement suggestions produced by worktree runs. Reads versioned GUI-*.md reports in docs/0003-analyze-token-efficiency/ and, for legacy runs, the latest .loop folder; groups equivalent improvements through semantic deduplication and maintains an accumulated ranking (improvements-harness.md, inside this skill). Use when asked to consolidate harness suggestions, rank run improvements, or feed the continuous-improvement loop.
+description: Consolidates harness-improvement suggestions produced by worktree runs. Reads versioned GUI-*.md reports in docs/analyze-token-efficiency/ and, for legacy runs, the latest .loop folder; groups equivalent improvements through semantic deduplication and maintains an accumulated ranking (improvements-harness.md, inside this skill). Use when asked to consolidate harness suggestions, rank run improvements, or feed the continuous-improvement loop.
 ---
 
 # Consolidate Harness Improvements
 
-Consolidate, into one accumulated ranking, the harness-improvement suggestions that each worktree run leaves in `docs/0003-analyze-token-efficiency/GUI-*.md`. For legacy reports, the latest `.loop` folder can also be used. Equivalent improvements, even with different names, count as **one** item, and the mention count shows which harness changes should have the highest return in future runs.
+Consolidate, into one accumulated ranking, the harness-improvement suggestions that each worktree run leaves in `docs/analyze-token-efficiency/GUI-*.md`. For legacy reports, the latest `.loop` folder can also be used. Equivalent improvements, even with different names, count as **one** item, and the mention count shows which harness changes should have the highest return in future runs.
 
 The deliverable is **`improvements-harness.md`**, written **inside this skill folder**. It **accumulates history** across runs: each new source adds mentions to the existing state.
 
 ## Efficiency Rule
 
-- Preserve raw reports; **do not delete or move** `docs/0003-analyze-token-efficiency/GUI-*.md`.
+- Preserve raw reports; **do not delete or move** `docs/analyze-token-efficiency/GUI-*.md`.
 - Consolidate incrementally: list filenames first, compare them with `Processed sources`, and read content **only** from new sources.
 - Do not reread old reports for deduplication. Use only the compact state already summarized in `improvements-harness.md`.
 - To discover new sources, use listing commands (`find`, `rg --files`, `git ls-files`) and filter by path; do not open `.md` content at this stage.
@@ -27,7 +27,7 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
 ### 1. Locate Target Sources
 
 - Read `improvements-harness.md` first, if it exists, and extract only the accumulated state and the `Processed sources` line.
-- List `docs/0003-analyze-token-efficiency/GUI-*.md` by name/path.
+- List `docs/analyze-token-efficiency/GUI-*.md` by name/path.
 - If files exist there, process **all reports not yet recorded** in `improvements-harness.md`.
 - If there are no new versioned reports, use the legacy fallback: list `.loop/loop-*`, choose the **latest** by date in the name (`loop-N-YYYY-MM-DD` or similar), break ties with the higher number, and process its `GUI-*.md` files that are not yet recorded.
 - **Require at least one new source.** If all reports are already listed as processed, tell the user and stop.
@@ -53,7 +53,7 @@ The deliverable is **`improvements-harness.md`**, written **inside this skill fo
   ```
   Extract each block as `{title, problem, solution, savings, source}`.
 - Free-text `GUI-Others.md` format: extract each distinct suggestion (subagents, skills, AGENTS.md/hooks rules) as one item, synthesizing problem/solution/savings when present.
-- `source` = full relative path, for example `docs/0003-analyze-token-efficiency/GUI-360.md` or `.loop/loop-4-2026-07-24/GUI-350.md`.
+- `source` = full relative path, for example `docs/analyze-token-efficiency/GUI-360--<session-id>.md` or `.loop/loop-4-2026-07-24/GUI-350.md`.
 
 ### 4. Consolidate By Semantic Deduplication
 

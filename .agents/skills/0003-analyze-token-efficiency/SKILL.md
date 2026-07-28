@@ -1,86 +1,51 @@
 ---
 name: 0003-analyze-token-efficiency
-description: Analyzes the compact profile of the latest Codex worker session and identifies up to 5 harness improvements that would have produced the SAME result with fewer tokens. Requires evidence, estimated savings, and same-result testing. Use in token retrospectives or to feed skill 0004.
+description: Discovers unanalyzed Codex worker sessions for xtreme-system and dispatches one isolated token-efficiency analysis agent per session, sequentially, through 0006-orca-dispatch-skill-runner. Use for token retrospectives or to feed skill 0004.
 ---
 
 # Analyze Token Efficiency
 
-Identify harness improvements that would have produced exactly the same deliverable with fewer tokens. Do not reduce investigation, tests, or quality.
+Process every eligible, unanalyzed Codex worker session with a fresh agent and
+context. This skill coordinates the batch; it does not analyze sessions itself.
 
 ## Flow
 
-### 1. Extract The Profile
+1. Discover pending sessions and generate a temporary jobs file once:
 
-Run the extractor once. It reads the rollout indicated by `CODEX_THREAD_ID`, uses the latest `token_count` as the cutoff to exclude this retrospective, and returns only compact aggregates and candidates:
+   ```bash
+   python3 .agents/skills/0003-analyze-token-efficiency/build_jobs.py prepare
+   ```
 
-```bash
-python .agents/skills/0003-analyze-token-efficiency/profile_session.py \
-  --session-id "${CODEX_THREAD_ID:?}" > /tmp/codex-token-profile.json
-```
+2. Read the compact JSON summary printed by `prepare` and retain the exact
+   absolute `jobs_file` value for the remaining commands.
+   - If `pending` is zero, report that there are no eligible pending sessions and stop.
+   - Do not inspect rollout contents or alter the generated jobs.
 
-Read `/tmp/codex-token-profile.json` once. Do not read the rollout directly unless the extractor fails or indispensable evidence is missing.
+3. Invoke skill `0006-orca-dispatch-skill-runner` with the generated jobs file.
+   Follow that skill exactly: run its helper detached, poll its JSONL output, and
+   wait for its final summary. It provides the required strict sequencing and
+   fresh Orca terminal for every analysis.
 
-The profile contains:
+4. After the dispatcher finishes, audit the expected artifacts:
 
-- `tokens`: real Codex totals; `cached_input_tokens` is already part of `input_tokens`;
-- `tool_counts`;
-- `largest_outputs`: highest-volume calls;
-- `duplicate_calls`: repeated identical calls;
-- `failed_calls`: failed attempts;
-- `task_prompt`: user request, truncated.
+   ```bash
+   python3 .agents/skills/0003-analyze-token-efficiency/build_jobs.py \
+     verify --jobs-file "<jobs_file from prepare>"
+   ```
 
-`estimated_output_tokens` uses 4 characters per token and is only an estimate. Do not attribute the whole cache to one specific call.
+5. Report the discovery counts, dispatcher summary, completed reports, and any
+   missing or invalid reports. A missing report remains pending for the next run.
 
-### 2. Choose Improvements
+## Fixed Policy
 
-Cross-check candidates against the task. An improvement is valid only when it:
-
-1. has evidence in the profile;
-2. changes a channel consumed by Codex: `AGENTS.md`, skill, RTK, graphify, worker prompt/script, hook/config/plugin, or tool strategy;
-3. removes duplicated information, unused output, avoidable attempts, or unnecessary volume;
-4. preserves code, tests, and final deliverable as equally correct and complete.
-
-Sort by estimated savings desc. Produce up to 5 improvements; if there are fewer valid candidates, do not invent any.
-
-### 3. Write One Canonical Representation
-
-When `CODEX_TOKEN_REPORT_PATH` is set by the hook, use it unchanged. Otherwise, locate the main checkout and current run:
-
-```bash
-if [ -n "${CODEX_TOKEN_REPORT_PATH:-}" ]; then
-  OUT="$CODEX_TOKEN_REPORT_PATH"
-else
-  MAIN="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-  LOOP="$(find "$MAIN/.loop" -maxdepth 1 -type d -name 'loop-*' 2>/dev/null | sort | tail -1)"
-  ISSUE="${CODEX_SOURCE_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
-  OUT="${LOOP:-$MAIN/docs/0003-analyze-token-efficiency}/$ISSUE.md"
-fi
-mkdir -p "$(dirname "$OUT")"
-```
-
-Write only the canonical format consumed by `0004-consolidate-harness-improvements`:
-
-```markdown
-# Token Efficiency — <issue>
-_Codex: <session_id> · input: <N> · cached: <N> · output: <N> · total: <N>_
-
-Improvement #1: <title>
-- Problem: <observed waste>
-- Evidence: <tool/call, repetition, or size>
-- Solution: <Codex channel and concrete change>
-- Estimated savings: ~<N> tokens
-- Same-result test: <why the deliverable would be identical>
-
-Improvement #2: ... up to #5.
-```
-
-When done, respond in one line with session, totals, path, and titles/savings.
-
-## Guardrails
-
-- Analyze Codex worker sessions only.
-- Do not load full outputs just to measure size.
-- Use real profile totals; estimate only isolated costs.
-- Do not include the retrospective itself.
-- Do not edit product code.
-- In automatic execution, write only to `CODEX_TOKEN_REPORT_PATH`; do not alter `.codex/.hook-state` or orchestration files.
+- Select only `codex-tui` sessions under an
+  `orca/workspaces/xtreme-system/GUI-NNN` worktree.
+- Require at least one `token_count` event.
+- Exclude `CODEX_THREAD_ID` and rollouts modified in the last 10 minutes.
+- Treat only current `docs/analyze-token-efficiency/*.md` reports containing the
+  session ID as analyzed.
+- Process all pending sessions oldest first.
+- Use worktree mode `current`.
+- Use Codex `gpt-5.6-luna` with reasoning effort `medium`.
+- Continue the dispatcher after job-level failures, escalations, or timeouts.
+- Never invoke this batch from the Codex Stop hook.
