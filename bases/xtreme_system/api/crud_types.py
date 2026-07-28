@@ -63,8 +63,58 @@ SortSpec = str | Callable[[EntityT], Any]
 CtxForm = Callable[[Session], dict[str, Any]]
 CtxList = Callable[[Session, list[EntityT]], dict[str, Any]]
 ParseForm = Callable[[Any], dict[str, Any]]
-ListFunc = Callable[..., list[EntityT]]
-SearchFunc = Callable[[Session, str], list[EntityT]]
+
+
+class PlainListFunc(Protocol[EntityT]):
+    def __call__(self, session: Session, /) -> list[EntityT]: ...
+
+
+class PaginatedListFunc(Protocol[EntityT]):
+    def __call__(
+        self,
+        session: Session,
+        /,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[EntityT]: ...
+
+
+class PlainSearchFunc(Protocol[EntityT]):
+    def __call__(self, session: Session, term: str, /) -> list[EntityT]: ...
+
+
+class ColumnSearchFunc(Protocol[EntityT]):
+    def __call__(
+        self,
+        session: Session,
+        term: str,
+        /,
+        *,
+        column: str | None = None,
+    ) -> list[EntityT]: ...
+
+
+def adapt_list_func[M](func: PlainListFunc[M]) -> PaginatedListFunc[M]:
+    def adapted(
+        session: Session, *, limit: int | None = None, offset: int = 0
+    ) -> list[M]:
+        del limit, offset
+        return func(session)
+
+    return adapted
+
+
+def adapt_search_func[M](func: PlainSearchFunc[M]) -> ColumnSearchFunc[M]:
+    def adapted(session: Session, term: str, *, column: str | None = None) -> list[M]:
+        del column
+        return func(session, term)
+
+    return adapted
+
+
+ListFunc = PaginatedListFunc
+SearchFunc = ColumnSearchFunc
 type QueryFunc[EntityT] = Callable[[Session], Query[EntityT]]
 type SearchQueryFunc[EntityT] = Callable[..., Query[EntityT]]
 CsvRow = Callable[[EntityT], list[Any]]

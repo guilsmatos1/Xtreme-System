@@ -1,10 +1,10 @@
 from collections.abc import Callable, Mapping
-from inspect import Parameter, signature
 from typing import Any, cast
 
 from sqlalchemy.orm import Query, Session
 
 from xtreme_system.api.crud_types import (
+    ColumnSearchFunc,
     CreateSchemaT,
     CrudModule,
     EntityT,
@@ -70,18 +70,6 @@ def sorted_list(
     return sorted(lista, key=sort_key_fn(spec), reverse=order == "desc")
 
 
-def _accepts_list_pagination(list_func: ListFunc[EntityT]) -> bool:
-    parameters = signature(list_func).parameters.values()
-    return any(
-        parameter.kind is Parameter.VAR_KEYWORD
-        or (
-            parameter.name in {"limit", "offset"}
-            and parameter.kind is not Parameter.POSITIONAL_ONLY
-        )
-        for parameter in parameters
-    )
-
-
 def _query_sorted_list(
     query: Query[EntityT],
     sort: str,
@@ -110,16 +98,6 @@ def _query_sorted_list(
     return list(query.all())
 
 
-def _accepts_column(func: Callable[..., Any]) -> bool:
-    params = signature(func).parameters.values()
-    return any(
-        param.kind == Parameter.VAR_KEYWORD
-        or (param.kind == Parameter.KEYWORD_ONLY and param.name == "column")
-        or (param.kind == Parameter.POSITIONAL_OR_KEYWORD and param.name == "column")
-        for param in params
-    )
-
-
 def _page_list(lista: list[EntityT], limit: int | None, offset: int) -> list[EntityT]:
     if limit is None:
         return lista[offset:]
@@ -127,14 +105,12 @@ def _page_list(lista: list[EntityT], limit: int | None, offset: int) -> list[Ent
 
 
 def _search_list(
-    search_func: SearchFunc[EntityT],
+    search_func: ColumnSearchFunc[EntityT],
     session: Session,
     q: str,
     search_column: str | None,
 ) -> list[EntityT]:
-    if _accepts_column(search_func):
-        return list(search_func(session, q, column=search_column))  # type: ignore[call-arg]
-    return list(search_func(session, q))
+    return list(search_func(session, q, column=search_column))
 
 
 def _paginated_list(
@@ -142,10 +118,8 @@ def _paginated_list(
     session: Session,
     limit: int | None,
     offset: int,
-) -> list[EntityT] | None:
-    if _accepts_list_pagination(list_func):
-        return list(list_func(session, limit=limit, offset=offset))
-    return None
+) -> list[EntityT]:
+    return list(list_func(session, limit=limit, offset=offset))
 
 
 def query_list(
@@ -168,10 +142,7 @@ def query_list(
 ) -> list[EntityT]:
     python_sort_fields = sort_fields or {}
     if q and search_query_func is not None:
-        if _accepts_column(search_query_func):
-            query = search_query_func(session, q, column=search_column)
-        else:
-            query = search_query_func(session, q)
+        query = search_query_func(session, q, column=search_column)
         return _query_sorted_list(query, sort, order, sql_sort_fields, limit, offset)
     if not q and query_func is not None:
         return _query_sorted_list(
@@ -198,15 +169,5 @@ def query_list(
         )
     else:
         callable_list = list_func or module.list_all
-        paginated_result = _paginated_list(callable_list, session, limit, offset)
-        if paginated_result is None:
-            result = _page_list(
-                sorted_list(
-                    list(callable_list(session)), sort, order, python_sort_fields
-                ),
-                limit,
-                offset,
-            )
-        else:
-            result = paginated_result
+        result = _paginated_list(callable_list, session, limit, offset)
     return result
