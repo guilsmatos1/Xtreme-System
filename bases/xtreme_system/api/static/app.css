@@ -404,6 +404,7 @@ thead th {
   text-transform: uppercase; color: var(--text-secondary);
   padding: var(--s-2) var(--s-3); background: var(--surface-2);
   border-bottom: 1px solid var(--border-strong); white-space: nowrap;
+  position: sticky; top: 0; z-index: 2;
 }
 tbody td { padding: 6px var(--s-3); border-bottom: 1px solid var(--border); vertical-align: middle; }
 tbody tr:last-child td { border-bottom: none; }
@@ -414,7 +415,13 @@ tbody tr:hover { background: var(--surface-hover); }
 .cell-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .table--wide { min-width: 900px; }
 .row-actions { display: flex; gap: var(--s-1); justify-content: flex-end; }
-th.col-actions, td.col-actions { text-align: right; width: 1%; white-space: nowrap; }
+th.col-actions, td.col-actions {
+  text-align: right; width: 1%; white-space: nowrap;
+  position: sticky; right: 0;
+}
+th.col-actions { z-index: 3; }
+td.col-actions { background: var(--surface); z-index: 1; }
+tbody tr:hover td.col-actions { background: var(--surface-hover); }
 
 /* ---- 11. Badge ----------------------------------------------------------- */
 .badge {
