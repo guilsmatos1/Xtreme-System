@@ -100,6 +100,25 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/veiculos")
+
+    assert pagina.status_code == 200
+    assert 'hx-get="/ui/veiculos?sort=modelo&amp;order=asc' in pagina.text
+    assert 'hx-target="#linhas"' in pagina.text
+
+    ordenada = client.get(
+        "/ui/veiculos?sort=modelo&order=asc",
+        headers={"HX-Request": "true"},
+    )
+
+    assert ordenada.status_code == 200
+    assert '<tbody id="linhas"' in ordenada.text
+    assert "<html" not in ordenada.text
+
+
 def test_ui_veiculos_kpis_contam_todo_o_estoque(
     make_client: Callable[..., TestClient],
 ) -> None:
