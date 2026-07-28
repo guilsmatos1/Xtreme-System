@@ -36,14 +36,16 @@ CHILD_PROCESS_ENV = "CODEX_TOKEN_EFFICIENCY_CHILD"
 # each other's runs and get blocked by failures that are not theirs. The SQLite
 # fallback keeps each worktree isolated; `make test` in CI remains the real gate
 # against the Alembic-migrated Postgres schema.
+RTK = shutil.which("rtk") or "/opt/homebrew/bin/rtk"
+
 CHECKS = [
-    ("ruff-fix", ["uv", "run", "ruff", "check", "--fix"], {}),
-    ("ruff", ["uv", "run", "ruff", "check", "."], {}),
-    ("ruff-format", ["uv", "run", "ruff", "format", ".", "--check"], {}),
-    ("mypy", ["uv", "run", "mypy"], {}),
+    ("ruff-fix", ["uv", "run", RTK, "ruff", "check", "--fix"], {}),
+    ("ruff", ["uv", "run", RTK, "ruff", "check", "."], {}),
+    ("ruff-format", ["uv", "run", RTK, "ruff", "format", "."], {}),
+    ("mypy", ["uv", "run", RTK, "mypy"], {}),
     (
         "pytest",
-        ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", "pytest", "-n", "4"],
+        ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", RTK, "pytest", "-n", "4"],
         {},
     ),
 ]

@@ -30,6 +30,7 @@ Read these files according to the task, if necessary:
 
 RTK is active — every shell command is auto-rewritten for token savings. See `.agents/RTK.md`.
 
+- Write commands using their RTK equivalents directly (e.g., `rtk read`, `rtk git`, `rtk grep`, `rtk find`, `rtk ls`) instead of the standard commands to ensure maximum token efficiency and avoid proxy overhead.
 - Do not repeat an identical read, `rg`, status/diff, or validation call within a task unless the working tree or scope changed.
 - Before a command likely to fail or produce large output, confirm target path and use the smallest useful invocation.
 
