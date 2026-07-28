@@ -524,7 +524,7 @@ async def _confirmar_fechamento_venda(
         msg = str(exc)
         if isinstance(exc, ValidationError):
             msg = "Dados inválidos"
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "_modal_fechamento_venda.html",
             {
@@ -536,6 +536,9 @@ async def _confirmar_fechamento_venda(
             },
             status_code=400,
         )
+        response.headers["HX-Retarget"] = "#modal"
+        response.headers["HX-Reswap"] = "innerHTML"
+        return response
     vendas = venda.list_all(session, limit=limit, offset=offset)
     return templates.TemplateResponse(
         request,

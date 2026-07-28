@@ -2,7 +2,7 @@
 {% macro money(valor) -%}
 R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}
 {%- endmacro %}
-<div class="modal" role="dialog" aria-modal="true">
+<div id="modal-content" class="modal" role="dialog" aria-modal="true">
   <div class="modal__panel">
     <div class="modal__head">
       <h3>Fechamento da venda #{{ venda.id }}</h3>
@@ -35,7 +35,7 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
       <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Fechar</button>
     </div>
     {% else %}
-    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML">
+    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita.">
       <div class="modal__body">
         <dl class="details-list">
           <div><dt>Receita</dt><dd>{{ money(preview.receita) }}</dd></div>
@@ -53,16 +53,36 @@ R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace(
           <label class="field">
             <span class="field__label">{{ investidor.nome }}</span>
             <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
-            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00">
+            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00" required>
           </label>
           {% endfor %}
+          <p id="rateio-total" role="status" aria-live="polite">Total: 0,00% — deve somar 100%</p>
         </div>
         {% endif %}
       </div>
       <div class="modal__foot">
         <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
-        <button class="btn btn--primary" type="submit" {% if not preview.elegivel %}disabled{% endif %}>Confirmar fechamento</button>
+        <button class="btn btn--primary" type="submit" {% if not preview.elegivel or (preview.lucro_liquido > 0 and preview.investidores and pode_ver_campo(user, 'vendas', 'participacao')) %}disabled{% endif %}>Confirmar fechamento</button>
       </div>
+      <script>
+        (function () {
+          var form = document.currentScript.closest("form");
+          var fields = form.querySelectorAll('input[name="percentual"]');
+          var total = form.querySelector("#rateio-total");
+          var submit = form.querySelector('button[type="submit"]');
+          if (!fields.length || !total) return;
+          function updateTotal() {
+            var sum = 0;
+            fields.forEach(function (field) { sum += Number(field.value) || 0; });
+            var valid = Math.round(sum * 100) === 10000;
+            total.textContent = "Total: " + sum.toFixed(2).replace(".", ",") + (valid ? "% ✓" : "% — deve somar 100%");
+            total.style.color = valid ? "var(--success)" : "var(--danger)";
+            submit.disabled = !valid;
+          }
+          fields.forEach(function (field) { field.addEventListener("input", updateTotal); });
+          updateTotal();
+        })();
+      </script>
     </form>
     {% endif %}
   </div>
