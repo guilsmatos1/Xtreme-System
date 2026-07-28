@@ -1,1 +1,0 @@
-{"phase": "success", "summary": "Migrated all CRUD UI registrations to typed configs, removed the legacy Any shim, and passed focused tests plus lint, format, and mypy checks."}
