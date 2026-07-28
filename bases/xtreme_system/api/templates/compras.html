@@ -30,6 +30,8 @@
 {% if pode_ver_campo(user, 'compras', 'observacoes') %}{% set _ = search_colunas.append({"key": "observacoes", "label": "Observações"}) %}{% endif %}
 
 <div class="toolbar" id="busca-compras">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input type="hidden" name="order" value="{{ order }}">
   <div class="search-filter-group">
     <div class="search">
       {{ ui.icon("search") }}
