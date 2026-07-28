@@ -87,6 +87,11 @@ _DEBITOS_SORT_ATTR = "debitos_sort"
 def _ctx_lista_veiculos(
     session: Session, veiculos: list[veiculo.Veiculo]
 ) -> dict[str, Any]:
+    resumo = veiculo.resumo_estoque(session)
+    contagens = {
+        status.value: resumo.get(status, (0, Decimal("0")))[0]
+        for status in veiculo.StatusVeiculo
+    }
     if all(hasattr(item, _DEBITOS_SORT_ATTR) for item in veiculos):
         debitos_por_veiculo = {
             item.id: getattr(item, _DEBITOS_SORT_ATTR) for item in veiculos
@@ -96,6 +101,8 @@ def _ctx_lista_veiculos(
             session, [item.id for item in veiculos]
         )
     return {
+        "total_estoque": sum(contagens.values()),
+        "contagens_estoque": contagens,
         "debitos_por_veiculo": debitos_por_veiculo,
         "filtro_tipos": [(t.value, t.value.capitalize()) for t in veiculo.TipoVeiculo],
         "filtro_status": [

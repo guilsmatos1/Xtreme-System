@@ -100,6 +100,44 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_veiculos_kpis_contam_todo_o_estoque(
+    make_client: Callable[..., TestClient],
+) -> None:
+    def seed(session: Session) -> None:
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor KPI")
+        )
+        for index in range(51):
+            veiculo.create(
+                session,
+                veiculo.VeiculoCreate(
+                    tipo=veiculo.TipoVeiculo.carro,
+                    modelo=f"KPI {index}",
+                    cor="Prata",
+                    ano=2024,
+                    placa=f"KPI{index:04d}",
+                    km=12000,
+                    preco=85000,
+                    investidor_id=inv.id,
+                ),
+            )
+
+    local_client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=seed,
+    )
+    _login_admin(local_client)
+
+    pagina = local_client.get("/ui/veiculos")
+
+    assert pagina.status_code == 200
+    assert re.search(
+        r"Total no estoque</div>\s*<div class=\"stat__value cell-num\">51</div>",
+        pagina.text,
+    )
+
+
 def test_ui_veiculos_lista_com_km_vazio(
     make_client: Callable[..., TestClient],
 ) -> None:
