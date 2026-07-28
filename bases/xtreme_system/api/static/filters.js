@@ -42,6 +42,12 @@
   });
 
   document.body.addEventListener("htmx:configRequest", function (e) {
+    document.querySelectorAll('input[inputmode="decimal"]').forEach(function (input) {
+      if (e.detail.parameters[input.name] !== undefined) {
+        e.detail.parameters[input.name] = e.detail.parameters[input.name].replace(",", ".");
+      }
+    });
+
     if (!e.target.closest("[data-omit-empty-params]")) return;
 
     Object.keys(e.detail.parameters).forEach(function (key) {

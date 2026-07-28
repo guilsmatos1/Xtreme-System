@@ -18,7 +18,7 @@
           </label>
           <label class="field">
             <span class="field__label">Valor (R$)</span>
-            <input class="input" name="valor" type="number" step="0.01" min="0.01" value="{{ lancamento.valor if lancamento else '' }}" required>
+            <input class="input" name="valor" type="text" inputmode="decimal" value="{{ lancamento.valor if lancamento else '' }}" required>
           </label>
           <label class="field field--full">
             <span class="field__label">Descrição</span>

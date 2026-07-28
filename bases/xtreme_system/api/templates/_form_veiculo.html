@@ -66,7 +66,7 @@
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
             <span class="field__label">Preço de Compra (R$) *</span>
-            <input class="input" name="preco" type="number" step="0.01" min="0.01" value="{{ veiculo.preco }}" required>
+            <input class="input" name="preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
           </label>
           {% endif %}
 
@@ -84,7 +84,7 @@
           {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
           <label class="field">
             <span class="field__label">Débito (R$)</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
           </label>
           {% endif %}
 
@@ -153,12 +153,12 @@
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
           <label class="field">
             <span class="field__label">Preço de Compra (R$) *</span>
-            <input class="input" name="preco" type="number" step="0.01" min="0.01" value="{{ dados.get('preco', '') }}" required>
+            <input class="input" name="preco" type="text" inputmode="decimal" value="{{ dados.get('preco', '') }}" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos (R$)</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ dados.get('debitos', '') }}">
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}">
           </label>
           {% endif %}
           <label class="field">
