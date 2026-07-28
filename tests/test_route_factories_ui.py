@@ -23,7 +23,14 @@ from xtreme_system.api.crud_ui.query import (
 from xtreme_system.api.crud_ui.query import (
     sort_key as _sort_key,
 )
-from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
+from xtreme_system.api.crud_ui.routes import (
+    CrudUIBehaviorConfig,
+    CrudUIExportConfig,
+    CrudUIListConfig,
+    CrudUIResourceConfig,
+    CrudUITemplateConfig,
+    register_crud_ui_routes,
+)
 from xtreme_system.api.crud_ui.simple import register_ui_simples
 from xtreme_system.api.deps import get_ui_user
 from xtreme_system.api.routes.ui_routes.investidores import (
@@ -615,20 +622,26 @@ def _stub_crud_client(
         templates,
         module,
         "/ui/stubs",
-        "Stub",
-        create_schema=_StubSchema,
-        update_schema=_StubSchema,
-        list_key="itens",
-        item_key="item",
-        list_template="lista.html",
-        list_partial_template="linhas.html",
-        ok_partial_template="ok.html",
-        form_template="form.html",
-        sort_fields={},
-        before_create=before_create,
-        csv_filename="stubs.csv",
-        csv_headers=["ID", "Nome"],
-        csv_row=lambda item: [item.id, item.nome],
+        resource=CrudUIResourceConfig(
+            label="Stub",
+            create_schema=_StubSchema,
+            update_schema=_StubSchema,
+            list_key="itens",
+            item_key="item",
+        ),
+        templates_config=CrudUITemplateConfig(
+            list_template="lista.html",
+            list_partial_template="linhas.html",
+            ok_partial_template="ok.html",
+            form_template="form.html",
+        ),
+        behavior=CrudUIBehaviorConfig(before_create=before_create),
+        listing=CrudUIListConfig(sort_fields={}),
+        export=CrudUIExportConfig[_StubItem](
+            csv_filename="stubs.csv",
+            csv_headers=["ID", "Nome"],
+            csv_row=lambda item: [item.id, item.nome],
+        ),
     )
     app.dependency_overrides[get_session] = lambda: session
     app.dependency_overrides[get_ui_user] = lambda: admin

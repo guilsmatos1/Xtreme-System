@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urlsplit
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from xtreme_system.api.crud_types import (
@@ -71,6 +71,69 @@ class ListState:
     offset: int = 0
 
 
+@dataclass(frozen=True)
+class CrudUIResourceConfig[CreateSchemaT: BaseModel, UpdateSchemaT: BaseModel]:
+    label: str
+    create_schema: type[CreateSchemaT]
+    update_schema: type[UpdateSchemaT]
+    list_key: str
+    item_key: str
+
+
+@dataclass(frozen=True)
+class CrudUITemplateConfig:
+    list_template: str
+    list_partial_template: str
+    ok_partial_template: str
+    form_template: str
+
+
+# pylint: disable=too-many-instance-attributes
+@dataclass(frozen=True)
+class CrudUIBehaviorConfig[EntityT, CreateSchemaT: BaseModel, UpdateSchemaT: BaseModel]:
+    ctx_form: CtxForm = lambda _session: {}
+    ctx_list: CtxList[EntityT] = lambda _session, _lista: {}
+    parse_form: ParseForm = dict
+    before_create: BeforeCreateHook[CreateSchemaT] | None = None
+    before_update: BeforeUpdateHook[UpdateSchemaT] | None = None
+    before_delete: BeforeDeleteHook[EntityT] | None = None
+    after_create: AfterWriteHook[EntityT] | None = None
+    after_update: AfterWriteHook[EntityT] | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIListConfig[EntityT]:
+    sort_fields: dict[str, SortSpec[EntityT]]
+    searchable: bool = False
+    list_func: ListFunc[EntityT] | None = None
+    search_func: SearchFunc[EntityT] | None = None
+    sql_sort_fields: dict[str, object] | None = None
+    query_func: QueryFunc[EntityT] | None = None
+    search_query_func: SearchQueryFunc[EntityT] | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIExportConfig[EntityT]:
+    csv_filename: str
+    csv_headers: list[str]
+    csv_row: CsvRow[EntityT]
+    csv_fields: list[str | None] | None = None
+    pagina: str | None = None
+
+
+# pylint: disable=too-many-instance-attributes
+@dataclass(frozen=True)
+class CrudUIRouteConfig:
+    register_create: bool = True
+    register_update: bool = True
+    register_edit: bool = True
+    register_delete: bool = True
+    delete_requires_admin: bool = True
+    editar_dep: DepFactory | None = None
+    excluir_dep: DepFactory | None = None
+    cadastrar_dep: DepFactory | None = None
+
+
 def _bounded_int(
     value: str | None, *, default: int, min_value: int, max_value: int
 ) -> int:
@@ -113,176 +176,208 @@ def _current_list_state(request: Request) -> ListState:
     )
 
 
-def register_crud_ui_routes(
+# pylint: disable=too-many-branches
+def register_crud_ui_routes(  # noqa: PLR0912
     app: FastAPI,
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    label: str,
-    *,
-    create_schema: type[CreateSchemaT],
-    update_schema: type[UpdateSchemaT],
-    list_key: str,
-    item_key: str,
-    list_template: str,
-    list_partial_template: str,
-    ok_partial_template: str,
-    form_template: str,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    ctx_form: CtxForm = lambda _session: {},
-    ctx_list: CtxList[EntityT] = lambda _session, _lista: {},
-    searchable: bool = False,
-    parse_form: ParseForm = dict,
-    before_create: BeforeCreateHook[CreateSchemaT] | None = None,
-    before_update: BeforeUpdateHook[UpdateSchemaT] | None = None,
-    before_delete: BeforeDeleteHook[EntityT] | None = None,
-    after_create: AfterWriteHook[EntityT] | None = None,
-    after_update: AfterWriteHook[EntityT] | None = None,
-    csv_filename: str,
-    csv_headers: list[str],
-    csv_row: CsvRow[EntityT],
-    csv_fields: list[str | None] | None = None,
-    delete_requires_admin: bool = True,
-    register_create: bool = True,
-    register_update: bool = True,
-    register_edit: bool = True,
-    register_delete: bool = True,
-    editar_dep: DepFactory | None = None,
-    excluir_dep: DepFactory | None = None,
-    cadastrar_dep: DepFactory | None = None,
-    pagina: str | None = None,
-    list_func: ListFunc[EntityT] | None = None,
-    search_func: SearchFunc[EntityT] | None = None,
-    sql_sort_fields: dict[str, object] | None = None,
-    query_func: QueryFunc[EntityT] | None = None,
-    search_query_func: SearchQueryFunc[EntityT] | None = None,
+    *legacy_args: str,
+    resource: CrudUIResourceConfig[Any, Any] | None = None,
+    templates_config: CrudUITemplateConfig | None = None,
+    behavior: CrudUIBehaviorConfig[Any, Any, Any] | None = None,
+    listing: CrudUIListConfig[Any] | None = None,
+    export: CrudUIExportConfig[Any] | None = None,
+    routes: CrudUIRouteConfig | None = None,
+    **legacy: Any,
 ) -> None:
+    if legacy_args:
+        if len(legacy_args) != 1 or "label" in legacy:
+            raise TypeError
+        legacy["label"] = legacy_args[0]
+    if resource is None:
+        resource = CrudUIResourceConfig(
+            label=legacy.pop("label"),
+            create_schema=legacy.pop("create_schema"),
+            update_schema=legacy.pop("update_schema"),
+            list_key=legacy.pop("list_key"),
+            item_key=legacy.pop("item_key"),
+        )
+    if templates_config is None:
+        templates_config = CrudUITemplateConfig(
+            list_template=legacy.pop("list_template"),
+            list_partial_template=legacy.pop("list_partial_template"),
+            ok_partial_template=legacy.pop("ok_partial_template"),
+            form_template=legacy.pop("form_template"),
+        )
+    if behavior is None:
+        behavior = CrudUIBehaviorConfig(
+            ctx_form=legacy.pop("ctx_form", lambda _session: {}),
+            ctx_list=legacy.pop("ctx_list", lambda _session, _lista: {}),
+            parse_form=legacy.pop("parse_form", dict),
+            before_create=legacy.pop("before_create", None),
+            before_update=legacy.pop("before_update", None),
+            before_delete=legacy.pop("before_delete", None),
+            after_create=legacy.pop("after_create", None),
+            after_update=legacy.pop("after_update", None),
+        )
+    if listing is None:
+        listing = CrudUIListConfig(
+            sort_fields=legacy.pop("sort_fields"),
+            searchable=legacy.pop("searchable", False),
+            list_func=legacy.pop("list_func", None),
+            search_func=legacy.pop("search_func", None),
+            sql_sort_fields=legacy.pop("sql_sort_fields", None),
+            query_func=legacy.pop("query_func", None),
+            search_query_func=legacy.pop("search_query_func", None),
+        )
+    if export is None:
+        export = CrudUIExportConfig(
+            csv_filename=legacy.pop("csv_filename"),
+            csv_headers=legacy.pop("csv_headers"),
+            csv_row=legacy.pop("csv_row"),
+            csv_fields=legacy.pop("csv_fields", None),
+            pagina=legacy.pop("pagina", None),
+        )
+    if routes is None:
+        routes = CrudUIRouteConfig(
+            register_create=legacy.pop("register_create", True),
+            register_update=legacy.pop("register_update", True),
+            register_edit=legacy.pop("register_edit", True),
+            register_delete=legacy.pop("register_delete", True),
+            delete_requires_admin=legacy.pop("delete_requires_admin", True),
+            editar_dep=legacy.pop("editar_dep", None),
+            excluir_dep=legacy.pop("excluir_dep", None),
+            cadastrar_dep=legacy.pop("cadastrar_dep", None),
+        )
+    if legacy:
+        raise TypeError
     register_list_route(
         app,
         templates,
         module,
         prefix,
-        list_key=list_key,
-        list_template=list_template,
-        list_partial_template=list_partial_template,
-        sort_fields=sort_fields,
-        ctx_list=ctx_list,
-        searchable=searchable,
-        list_func=list_func,
-        search_func=search_func,
-        sql_sort_fields=sql_sort_fields,
-        query_func=query_func,
-        search_query_func=search_query_func,
+        list_key=resource.list_key,
+        list_template=templates_config.list_template,
+        list_partial_template=templates_config.list_partial_template,
+        sort_fields=listing.sort_fields,
+        ctx_list=behavior.ctx_list,
+        searchable=listing.searchable,
+        list_func=listing.list_func,
+        search_func=listing.search_func,
+        sql_sort_fields=listing.sql_sort_fields,
+        query_func=listing.query_func,
+        search_query_func=listing.search_query_func,
     )
     register_export_route(
         app,
         module,
         prefix,
-        searchable=searchable,
-        list_func=list_func,
-        search_func=search_func,
-        query_func=query_func,
-        search_query_func=search_query_func,
-        csv_filename=csv_filename,
-        csv_headers=csv_headers,
-        csv_row=csv_row,
-        csv_fields=csv_fields,
-        pagina=pagina,
+        searchable=listing.searchable,
+        list_func=listing.list_func,
+        search_func=listing.search_func,
+        query_func=listing.query_func,
+        search_query_func=listing.search_query_func,
+        csv_filename=export.csv_filename,
+        csv_headers=export.csv_headers,
+        csv_row=export.csv_row,
+        csv_fields=export.csv_fields,
+        pagina=export.pagina,
     )
     register_new_route(
         app,
         templates,
         prefix,
-        form_template=form_template,
-        ctx_form=ctx_form,
-        item_key=item_key,
-        cadastrar_dep=cadastrar_dep,
+        form_template=templates_config.form_template,
+        ctx_form=behavior.ctx_form,
+        item_key=resource.item_key,
+        cadastrar_dep=routes.cadastrar_dep,
     )
-    if register_edit:
+    if routes.register_edit:
         register_edit_route(
             app,
             templates,
             module,
             prefix,
-            label,
-            form_template=form_template,
-            ctx_form=ctx_form,
-            item_key=item_key,
-            editar_dep=editar_dep,
+            resource.label,
+            form_template=templates_config.form_template,
+            ctx_form=behavior.ctx_form,
+            item_key=resource.item_key,
+            editar_dep=routes.editar_dep,
         )
-    if register_create:
+    if routes.register_create:
         register_create_route(
             app,
             templates,
             module,
             prefix,
-            label,
-            create_schema=create_schema,
-            list_key=list_key,
-            item_key=item_key,
-            form_template=form_template,
-            ok_partial_template=ok_partial_template,
-            ctx_form=ctx_form,
-            ctx_list=ctx_list,
-            parse_form=parse_form,
-            before_create=before_create,
-            after_create=after_create,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
-            cadastrar_dep=cadastrar_dep,
+            resource.label,
+            create_schema=resource.create_schema,
+            list_key=resource.list_key,
+            item_key=resource.item_key,
+            form_template=templates_config.form_template,
+            ok_partial_template=templates_config.ok_partial_template,
+            ctx_form=behavior.ctx_form,
+            ctx_list=behavior.ctx_list,
+            parse_form=behavior.parse_form,
+            before_create=behavior.before_create,
+            after_create=behavior.after_create,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            sort_fields=listing.sort_fields,
+            sql_sort_fields=listing.sql_sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
+            cadastrar_dep=routes.cadastrar_dep,
         )
-    if register_update:
+    if routes.register_update:
         register_update_route(
             app,
             templates,
             module,
             prefix,
-            label,
-            update_schema=update_schema,
-            list_key=list_key,
-            item_key=item_key,
-            form_template=form_template,
-            ok_partial_template=ok_partial_template,
-            ctx_form=ctx_form,
-            ctx_list=ctx_list,
-            parse_form=parse_form,
-            before_update=before_update,
-            after_update=after_update,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
-            editar_dep=editar_dep,
-            pagina=pagina,
+            resource.label,
+            update_schema=resource.update_schema,
+            list_key=resource.list_key,
+            item_key=resource.item_key,
+            form_template=templates_config.form_template,
+            ok_partial_template=templates_config.ok_partial_template,
+            ctx_form=behavior.ctx_form,
+            ctx_list=behavior.ctx_list,
+            parse_form=behavior.parse_form,
+            before_update=behavior.before_update,
+            after_update=behavior.after_update,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            sort_fields=listing.sort_fields,
+            sql_sort_fields=listing.sql_sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
+            editar_dep=routes.editar_dep,
+            pagina=export.pagina,
         )
-    if register_delete:
+    if routes.register_delete:
         register_delete_route(
             app,
             templates,
             module,
             prefix,
-            label,
-            list_key=list_key,
-            list_partial_template=list_partial_template,
-            ctx_list=ctx_list,
-            before_delete=before_delete,
-            delete_requires_admin=delete_requires_admin,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
-            excluir_dep=excluir_dep,
+            resource.label,
+            list_key=resource.list_key,
+            list_partial_template=templates_config.list_partial_template,
+            ctx_list=behavior.ctx_list,
+            before_delete=behavior.before_delete,
+            delete_requires_admin=routes.delete_requires_admin,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            sort_fields=listing.sort_fields,
+            sql_sort_fields=listing.sql_sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
+            excluir_dep=routes.excluir_dep,
         )
 
 
