@@ -21,20 +21,17 @@ from xtreme_system.api.routes.ui_routes.common import (
     validar_uploads,
 )
 from xtreme_system.api.setup import app
-from xtreme_system.database.core import register_post_commit, register_post_rollback
+from xtreme_system.database.core import (
+    detach_request_session,
+    register_post_commit,
+    register_post_rollback,
+)
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
 
 logger = structlog.get_logger(__name__)
-
-
-def _fechar_transacao_da_rota(session: Session, user: usuario.Usuario) -> None:
-    _ = user.id, user.username, user.papel, user.perfil_id
-    session.expunge(user)
-    session.rollback()
-    session.close()
 
 
 @app.get("/ui/configuracoes")
@@ -244,7 +241,7 @@ def ui_configuracoes_exportar(
     session: SessionDep,
     user: UIAdmin,
 ) -> Response:
-    _fechar_transacao_da_rota(session, user)
+    detach_request_session(request, keep=(user,))
     with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
         tmp_path = f.name
     try:
@@ -288,7 +285,7 @@ async def ui_configuracoes_importar(
         tmp_path = f.name
         while chunk := await arquivo.read(1024 * 1024):
             f.write(chunk)
-    _fechar_transacao_da_rota(session, user)
+    detach_request_session(request, keep=(user,))
     try:
         await run_in_threadpool(exportacao.restore_database_from_file, tmp_path)
     except exportacao.ExportacaoError as exc:
