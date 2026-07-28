@@ -214,7 +214,12 @@ def cmd_create(args):
     output = {"jobs": jobs}
 
     if args.output and args.output != "-":
-        with open(args.output, "w", encoding="utf-8") as f:
+        out_path = args.output
+        if not os.path.isabs(out_path):
+            dispatcher_dir = os.path.abspath(os.path.join(_SCRIPT_DIR, "..", "skill-dispatcher"))
+            out_path = os.path.abspath(os.path.join(dispatcher_dir, out_path))
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
             f.write("\n")
         # Also print a summary to stdout.
@@ -225,7 +230,7 @@ def cmd_create(args):
             summary.append({"name": j["name"], "agent": agent, "skill": skill_or_prompt})
         print(json.dumps({
             "event": "jobs_generated",
-            "output_file": os.path.abspath(args.output),
+            "output_file": out_path,
             "count": len(jobs),
             "jobs": summary,
         }, indent=2))

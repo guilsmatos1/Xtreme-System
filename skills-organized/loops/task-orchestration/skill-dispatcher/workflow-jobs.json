@@ -23,7 +23,7 @@
         "base_branch": "master"
       },
       "skill": "devops--linear--send",
-      "skill_args": "Create the issues from \".loop/running/improvements-llm-adherence.json\" in the project \"Xtreme System\"",
+      "skill_args": "\"Xtreme-System\" .loop/running/improvements-llm-adherence.json",
       "retries": 2,
       "retry_delay_seconds": 10
     },
@@ -42,7 +42,7 @@
     },
     {
       "name": "loops-task-orchestration-linear-backlog",
-      "agent": "antigravity",
+      "agent": "agy",
       "worktree": {
         "mode": "current",
         "name": "loops-task-orchestration-linear-backlog",

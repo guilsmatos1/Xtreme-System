@@ -5,13 +5,13 @@
     { "prefix": "coding--refactor",                "agent": "claude"      },
     { "prefix": "devops--deploy",                  "agent": "codex"       },
     { "prefix": "devops--linear",                  "agent": "opencode"    },
-    { "prefix": "devops--skill-organizer",         "agent": "antigravity" },
+    { "prefix": "devops--skill-organizer",         "agent": "agy" },
     { "prefix": "loops--loop-runner",              "agent": "opencode"    },
     { "prefix": "loops--state-management",         "agent": "opencode"    },
-    { "prefix": "loops--task-orchestration",       "agent": "antigravity" }
+    { "prefix": "loops--task-orchestration",       "agent": "agy" }
   ],
 
-  "default_agent": "antigravity",
+  "default_agent": "agy",
 
   "defaults": {
     "worktree": {
