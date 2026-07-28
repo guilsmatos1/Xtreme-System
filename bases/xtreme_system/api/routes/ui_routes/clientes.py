@@ -7,10 +7,10 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import ListingSpec
 from xtreme_system.api.crud_ui.routes import (
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
-    CrudUIListConfig,
     CrudUIResourceConfig,
     CrudUIRouteConfig,
     CrudUITemplateConfig,
@@ -269,7 +269,7 @@ def _register_clientes_page(
                 vehicles_label=vehicles_label,
             ),
         ),
-        listing=CrudUIListConfig(
+        listing=ListingSpec(
             sort_fields={
                 "nome": "nome",
                 "documento": "documento",

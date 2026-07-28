@@ -20,12 +20,9 @@ from xtreme_system.api.crud_types import (
     CtxForm,
     CtxList,
     EntityT,
-    ListFunc,
+    FormSpec,
+    ListingSpec,
     ParseForm,
-    QueryFunc,
-    SearchFunc,
-    SearchQueryFunc,
-    SortSpec,
     UpdateSchemaT,
 )
 from xtreme_system.api.crud_ui.query import query_list, sorted_list
@@ -101,15 +98,7 @@ class CrudUIBehaviorConfig[EntityT, CreateSchemaT: BaseModel, UpdateSchemaT: Bas
     after_update: AfterWriteHook[EntityT] | None = None
 
 
-@dataclass(frozen=True)
-class CrudUIListConfig[EntityT]:
-    sort_fields: dict[str, SortSpec[EntityT]]
-    searchable: bool = False
-    list_func: ListFunc[EntityT] | None = None
-    search_func: SearchFunc[EntityT] | None = None
-    sql_sort_fields: dict[str, object] | None = None
-    query_func: QueryFunc[EntityT] | None = None
-    search_query_func: SearchQueryFunc[EntityT] | None = None
+CrudUIListConfig = ListingSpec
 
 
 @dataclass(frozen=True)
@@ -252,6 +241,12 @@ def register_crud_ui_routes(  # noqa: PLR0912
         )
     if legacy:
         raise TypeError
+    form = FormSpec(
+        templates=templates,
+        form_template=templates_config.form_template,
+        ctx_form=behavior.ctx_form,
+        item_key=resource.item_key,
+    )
     register_list_route(
         app,
         templates,
@@ -260,24 +255,14 @@ def register_crud_ui_routes(  # noqa: PLR0912
         list_key=resource.list_key,
         list_template=templates_config.list_template,
         list_partial_template=templates_config.list_partial_template,
-        sort_fields=listing.sort_fields,
+        listing=listing,
         ctx_list=behavior.ctx_list,
-        searchable=listing.searchable,
-        list_func=listing.list_func,
-        search_func=listing.search_func,
-        sql_sort_fields=listing.sql_sort_fields,
-        query_func=listing.query_func,
-        search_query_func=listing.search_query_func,
     )
     register_export_route(
         app,
         module,
         prefix,
-        searchable=listing.searchable,
-        list_func=listing.list_func,
-        search_func=listing.search_func,
-        query_func=listing.query_func,
-        search_query_func=listing.search_query_func,
+        listing=listing,
         csv_filename=export.csv_filename,
         csv_headers=export.csv_headers,
         csv_row=export.csv_row,
@@ -286,75 +271,51 @@ def register_crud_ui_routes(  # noqa: PLR0912
     )
     register_new_route(
         app,
-        templates,
+        form,
         prefix,
-        form_template=templates_config.form_template,
-        ctx_form=behavior.ctx_form,
-        item_key=resource.item_key,
         cadastrar_dep=routes.cadastrar_dep,
     )
     if routes.register_edit:
         register_edit_route(
             app,
-            templates,
+            form,
             module,
             prefix,
             resource.label,
-            form_template=templates_config.form_template,
-            ctx_form=behavior.ctx_form,
-            item_key=resource.item_key,
             editar_dep=routes.editar_dep,
         )
     if routes.register_create:
         register_create_route(
             app,
-            templates,
+            form,
             module,
             prefix,
             resource.label,
             create_schema=resource.create_schema,
             list_key=resource.list_key,
-            item_key=resource.item_key,
-            form_template=templates_config.form_template,
             ok_partial_template=templates_config.ok_partial_template,
-            ctx_form=behavior.ctx_form,
             ctx_list=behavior.ctx_list,
             parse_form=behavior.parse_form,
             before_create=behavior.before_create,
             after_create=behavior.after_create,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            sort_fields=listing.sort_fields,
-            sql_sort_fields=listing.sql_sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
+            listing=listing,
             cadastrar_dep=routes.cadastrar_dep,
         )
     if routes.register_update:
         register_update_route(
             app,
-            templates,
+            form,
             module,
             prefix,
             resource.label,
             update_schema=resource.update_schema,
             list_key=resource.list_key,
-            item_key=resource.item_key,
-            form_template=templates_config.form_template,
             ok_partial_template=templates_config.ok_partial_template,
-            ctx_form=behavior.ctx_form,
             ctx_list=behavior.ctx_list,
             parse_form=behavior.parse_form,
             before_update=behavior.before_update,
             after_update=behavior.after_update,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            sort_fields=listing.sort_fields,
-            sql_sort_fields=listing.sql_sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
+            listing=listing,
             editar_dep=routes.editar_dep,
             pagina=export.pagina,
         )
@@ -370,13 +331,7 @@ def register_crud_ui_routes(  # noqa: PLR0912
             ctx_list=behavior.ctx_list,
             before_delete=behavior.before_delete,
             delete_requires_admin=routes.delete_requires_admin,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            sort_fields=listing.sort_fields,
-            sql_sort_fields=listing.sql_sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
+            listing=listing,
             excluir_dep=routes.excluir_dep,
         )
 
@@ -390,14 +345,8 @@ def register_list_route(
     list_key: str,
     list_template: str,
     list_partial_template: str,
-    sort_fields: dict[str, SortSpec[EntityT]],
+    listing: ListingSpec[EntityT],
     ctx_list: CtxList[EntityT],
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    sql_sort_fields: dict[str, object] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
 ) -> None:
     @app.get(prefix)
     def _list(
@@ -416,22 +365,22 @@ def register_list_route(
                 session,
                 module,
                 q=q,
-                searchable=searchable,
-                list_func=list_func,
-                search_func=search_func,
+                searchable=listing.searchable,
+                list_func=listing.list_func,
+                search_func=listing.search_func,
                 search_column=search_column or None,
                 limit=limit,
                 offset=offset,
                 sort=sort,
                 order=order,
-                sort_fields=sort_fields,
-                sql_sort_fields=sql_sort_fields,
-                query_func=query_func,
-                search_query_func=search_query_func,
+                sort_fields=listing.sort_fields,
+                sql_sort_fields=listing.sql_sort_fields,
+                query_func=listing.query_func,
+                search_query_func=listing.search_query_func,
             ),
             sort,
             order,
-            {} if sql_sort_fields is not None else sort_fields,
+            {} if listing.sql_sort_fields is not None else listing.sort_fields,
         )
         template = (
             list_partial_template
@@ -448,7 +397,7 @@ def register_list_route(
             ctx_list=ctx_list(session, lista),
             sort=sort,
             order=order,
-            q=q if searchable else None,
+            q=q if listing.searchable else None,
             search_column=search_column,
             limit=limit,
             offset=offset,
@@ -460,11 +409,7 @@ def register_export_route(
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     *,
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
+    listing: ListingSpec[EntityT],
     csv_filename: str,
     csv_headers: list[str],
     csv_row: CsvRow[EntityT],
@@ -477,11 +422,11 @@ def register_export_route(
             session,
             module,
             q=q,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            query_func=query_func,
-            search_query_func=search_query_func,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
         )
         headers = csv_headers
         rows = [csv_row(obj) for obj in lista]
@@ -498,12 +443,9 @@ def register_export_route(
 
 def register_new_route(
     app: FastAPI,
-    templates: Jinja2Templates,
+    form: FormSpec,
     prefix: str,
     *,
-    form_template: str,
-    ctx_form: CtxForm,
-    item_key: str,
     cadastrar_dep: DepFactory | None = None,
 ) -> None:
     dep = cadastrar_dep or require_ui_admin
@@ -515,11 +457,11 @@ def register_new_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         return form_response(
-            templates,
+            form.templates,
             request,
-            form_template,
-            ctx_form=ctx_form(session),
-            item_key=item_key,
+            form.form_template,
+            ctx_form=form.ctx_form(session),
+            item_key=form.item_key,
             item=None,
             user=user,
         )
@@ -527,14 +469,11 @@ def register_new_route(
 
 def register_edit_route(
     app: FastAPI,
-    templates: Jinja2Templates,
+    form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     label: str,
     *,
-    form_template: str,
-    ctx_form: CtxForm,
-    item_key: str,
     editar_dep: DepFactory | None = None,
 ) -> None:
     dep = editar_dep or require_ui_admin
@@ -548,11 +487,11 @@ def register_edit_route(
     ) -> HTMLResponse:
         obj = _found(module.get(session, item_id), label)
         return form_response(
-            templates,
+            form.templates,
             request,
-            form_template,
-            ctx_form=ctx_form(session),
-            item_key=item_key,
+            form.form_template,
+            ctx_form=form.ctx_form(session),
+            item_key=form.item_key,
             item=obj,
             user=user,
         )
@@ -560,12 +499,9 @@ def register_edit_route(
 
 def write_conflict_response(
     session: SessionDep,
-    templates: Jinja2Templates,
     request: Request,
-    form_template: str,
+    form: FormSpec,
     *,
-    ctx_form: CtxForm,
-    item_key: str,
     item: object,
     user: usuario.Usuario,
     erro: str,
@@ -574,11 +510,11 @@ def write_conflict_response(
     return rollback_integrity_error_response(
         session,
         lambda: conflict_form_response(
-            templates,
+            form.templates,
             request,
-            form_template,
-            ctx_form=ctx_form(session),
-            item_key=item_key,
+            form.form_template,
+            ctx_form=form.ctx_form(session),
+            item_key=form.item_key,
             item=item,
             user=user,
             erro=erro,
@@ -597,13 +533,7 @@ def write_ok_response(
     user: usuario.Usuario,
     list_key: str,
     ctx_list: CtxList[EntityT],
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    sql_sort_fields: dict[str, object] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
+    listing: ListingSpec[EntityT],
 ) -> HTMLResponse:
     state = _current_list_state(request)
     lista = sorted_list(
@@ -611,22 +541,22 @@ def write_ok_response(
             session,
             module,
             q=state.q,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
+            searchable=listing.searchable,
+            list_func=listing.list_func,
+            search_func=listing.search_func,
             search_column=state.search_column or None,
             limit=state.limit,
             offset=state.offset,
             sort=state.sort,
             order=state.order,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
+            sort_fields=listing.sort_fields,
+            sql_sort_fields=listing.sql_sort_fields,
+            query_func=listing.query_func,
+            search_query_func=listing.search_query_func,
         ),
         state.sort,
         state.order,
-        {} if sql_sort_fields is not None else sort_fields,
+        {} if listing.sql_sort_fields is not None else listing.sort_fields,
     )
     return ok_response(
         templates,
@@ -641,28 +571,19 @@ def write_ok_response(
 
 def register_create_route(
     app: FastAPI,
-    templates: Jinja2Templates,
+    form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     label: str,
     *,
     create_schema: type[CreateSchemaT],
     list_key: str,
-    item_key: str,
-    form_template: str,
     ok_partial_template: str,
-    ctx_form: CtxForm,
     ctx_list: CtxList[EntityT],
     parse_form: ParseForm,
     before_create: BeforeCreateHook[CreateSchemaT] | None,
     after_create: AfterWriteHook[EntityT] | None,
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    sql_sort_fields: dict[str, object] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
+    listing: ListingSpec[EntityT],
     cadastrar_dep: DepFactory | None = None,
 ) -> None:
     dep = cadastrar_dep or require_ui_admin
@@ -673,17 +594,17 @@ def register_create_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        form = await request.form()
-        dados_form = parse_form(form)
+        form_data = await request.form()
+        dados_form = parse_form(form_data)
         try:
             data = create_schema.model_validate(dados_form)
         except ValidationError:
             return error_response(
-                templates,
+                form.templates,
                 request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
+                form.form_template,
+                ctx_form=form.ctx_form(session),
+                item_key=form.item_key,
                 item=None,
                 user=user,
                 erro="Dados inválidos",
@@ -707,22 +628,19 @@ def register_create_route(
             if exc.status_code == status.HTTP_409_CONFLICT:
                 return write_conflict_response(
                     session,
-                    templates,
                     request,
-                    form_template,
-                    ctx_form=ctx_form,
-                    item_key=item_key,
+                    form=form,
                     item=data,
                     user=user,
                     erro=erro,
                     dados=dados_form,
                 )
             return error_response(
-                templates,
+                form.templates,
                 request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
+                form.form_template,
+                ctx_form=form.ctx_form(session),
+                item_key=form.item_key,
                 item=None,
                 user=user,
                 erro=erro,
@@ -731,47 +649,32 @@ def register_create_route(
             )
         return write_ok_response(
             session,
-            templates,
+            form.templates,
             request,
             module,
             ok_partial_template,
             user=user,
             list_key=list_key,
             ctx_list=ctx_list,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
+            listing=listing,
         )
 
 
 def register_update_route(
     app: FastAPI,
-    templates: Jinja2Templates,
+    form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     label: str,
     *,
     update_schema: type[UpdateSchemaT],
     list_key: str,
-    item_key: str,
-    form_template: str,
     ok_partial_template: str,
-    ctx_form: CtxForm,
     ctx_list: CtxList[EntityT],
     parse_form: ParseForm,
     before_update: BeforeUpdateHook[UpdateSchemaT] | None,
     after_update: AfterWriteHook[EntityT] | None,
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    sql_sort_fields: dict[str, object] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
+    listing: ListingSpec[EntityT],
     editar_dep: DepFactory | None = None,
     pagina: str | None = None,
 ) -> None:
@@ -785,19 +688,19 @@ def register_update_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         obj = _found(module.get(session, item_id), label)
-        form = await request.form()
-        dados_form = parse_form(form)
+        form_data = await request.form()
+        dados_form = parse_form(form_data)
         perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
         try:
             data = update_schema.model_validate(dados_form)
             run_hook(before_update, session, data)
         except ValidationError:
             return error_response(
-                templates,
+                form.templates,
                 request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
+                form.form_template,
+                ctx_form=form.ctx_form(session),
+                item_key=form.item_key,
                 item=obj,
                 user=user,
                 erro="Dados inválidos",
@@ -805,11 +708,11 @@ def register_update_route(
             )
         except HTTPException as exc:
             return error_response(
-                templates,
+                form.templates,
                 request,
-                form_template,
-                ctx_form=ctx_form(session),
-                item_key=item_key,
+                form.form_template,
+                ctx_form=form.ctx_form(session),
+                item_key=form.item_key,
                 item=obj,
                 user=user,
                 erro=str(exc.detail),
@@ -828,31 +731,22 @@ def register_update_route(
             erro = str(exc.detail)
             return write_conflict_response(
                 session,
-                templates,
                 request,
-                form_template,
-                ctx_form=ctx_form,
-                item_key=item_key,
+                form=form,
                 item=obj,
                 user=user,
                 erro=erro,
             )
         return write_ok_response(
             session,
-            templates,
+            form.templates,
             request,
             module,
             ok_partial_template,
             user=user,
             list_key=list_key,
             ctx_list=ctx_list,
-            searchable=searchable,
-            list_func=list_func,
-            search_func=search_func,
-            sort_fields=sort_fields,
-            sql_sort_fields=sql_sort_fields,
-            query_func=query_func,
-            search_query_func=search_query_func,
+            listing=listing,
         )
 
 
@@ -868,13 +762,7 @@ def register_delete_route(
     ctx_list: CtxList[EntityT],
     before_delete: BeforeDeleteHook[EntityT] | None,
     delete_requires_admin: bool,
-    searchable: bool,
-    list_func: ListFunc[EntityT] | None,
-    search_func: SearchFunc[EntityT] | None,
-    sort_fields: dict[str, SortSpec[EntityT]],
-    sql_sort_fields: dict[str, object] | None,
-    query_func: QueryFunc[EntityT] | None,
-    search_query_func: SearchQueryFunc[EntityT] | None,
+    listing: ListingSpec[EntityT],
     excluir_dep: DepFactory | None = None,
 ) -> None:
     dep = excluir_dep or (require_ui_admin if delete_requires_admin else get_ui_user)
@@ -898,22 +786,22 @@ def register_delete_route(
                         session,
                         module,
                         q=state.q,
-                        searchable=searchable,
-                        list_func=list_func,
-                        search_func=search_func,
+                        searchable=listing.searchable,
+                        list_func=listing.list_func,
+                        search_func=listing.search_func,
                         search_column=state.search_column or None,
                         limit=state.limit,
                         offset=state.offset,
                         sort=state.sort,
                         order=state.order,
-                        sort_fields=sort_fields,
-                        sql_sort_fields=sql_sort_fields,
-                        query_func=query_func,
-                        search_query_func=search_query_func,
+                        sort_fields=listing.sort_fields,
+                        sql_sort_fields=listing.sql_sort_fields,
+                        query_func=listing.query_func,
+                        search_query_func=listing.search_query_func,
                     ),
                     state.sort,
                     state.order,
-                    {} if sql_sort_fields is not None else sort_fields,
+                    {} if listing.sql_sort_fields is not None else listing.sort_fields,
                 )
                 return list_response(
                     templates,
@@ -925,7 +813,7 @@ def register_delete_route(
                     ctx_list=ctx_list(session, lista),
                     sort=state.sort,
                     order=state.order,
-                    q=state.q if searchable else None,
+                    q=state.q if listing.searchable else None,
                     search_column=state.search_column,
                     limit=state.limit,
                     offset=state.offset,
@@ -943,22 +831,22 @@ def register_delete_route(
                 session,
                 module,
                 q=state.q,
-                searchable=searchable,
-                list_func=list_func,
-                search_func=search_func,
+                searchable=listing.searchable,
+                list_func=listing.list_func,
+                search_func=listing.search_func,
                 search_column=state.search_column or None,
                 limit=state.limit,
                 offset=state.offset,
                 sort=state.sort,
                 order=state.order,
-                sort_fields=sort_fields,
-                sql_sort_fields=sql_sort_fields,
-                query_func=query_func,
-                search_query_func=search_query_func,
+                sort_fields=listing.sort_fields,
+                sql_sort_fields=listing.sql_sort_fields,
+                query_func=listing.query_func,
+                search_query_func=listing.search_query_func,
             ),
             state.sort,
             state.order,
-            {} if sql_sort_fields is not None else sort_fields,
+            {} if listing.sql_sort_fields is not None else listing.sort_fields,
         )
         return list_response(
             templates,
@@ -970,7 +858,7 @@ def register_delete_route(
             ctx_list=ctx_list(session, lista),
             sort=state.sort,
             order=state.order,
-            q=state.q if searchable else None,
+            q=state.q if listing.searchable else None,
             search_column=state.search_column,
             limit=state.limit,
             offset=state.offset,
