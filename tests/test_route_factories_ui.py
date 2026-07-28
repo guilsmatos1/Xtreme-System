@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
+from xtreme_system.api.crud_types import adapt_search_func
 from xtreme_system.api.crud_ui.query import (
     query_list,
     sorted_list,
@@ -254,7 +255,7 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
             q="ana",
             searchable=False,
             list_func=None,
-            search_func=search_func,
+            search_func=adapt_search_func(search_func),
         )
 
 
@@ -302,7 +303,7 @@ def test_query_list_usa_sort_fields_python_quando_sql_sort_fields_existe() -> No
         q="a",
         searchable=False,
         list_func=None,
-        search_func=search_func,
+        search_func=adapt_search_func(search_func),
         sort="nome",
         order="asc",
         sort_fields={"nome": "nome"},
