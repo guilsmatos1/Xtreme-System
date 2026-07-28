@@ -1,0 +1,21 @@
+managed:
+    coding--analyze--duplicates: coding/analyze/duplicates
+    coding--analyze--features: coding/analyze/features
+    coding--analyze--general: coding/analyze/general
+    coding--analyze--llm-adherence: coding/analyze/llm-adherence
+    coding--analyze--session-efficiency: coding/analyze/session-efficiency
+    coding--analyze--ui-ux: coding/analyze/ui-ux
+    coding--debug--playwright-cli: coding/debug/playwright-cli
+    coding--refactor--design-overhaul: coding/refactor/design-overhaul
+    devops--deploy--commit-merge: devops/deploy/commit-merge
+    devops--deploy--git-push: devops/deploy/git-push
+    devops--linear--duplicate-triage: devops/linear/duplicate-triage
+    devops--linear--send: devops/linear/send
+    devops--skill-organizer: devops/skill-organizer
+    loops--loop-runner--apply-harness: loops/loop-runner/apply-harness
+    loops--loop-runner--token-efficiency: loops/loop-runner/token-efficiency
+    loops--state-management--consolidate-harness: loops/state-management/consolidate-harness
+    loops--task-orchestration--job-generator: loops/task-orchestration/job-generator
+    loops--task-orchestration--linear-backlog: loops/task-orchestration/linear-backlog
+    loops--task-orchestration--sequential-workers: loops/task-orchestration/sequential-workers
+    loops--task-orchestration--skill-dispatcher: loops/task-orchestration/skill-dispatcher
