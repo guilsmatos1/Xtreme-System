@@ -605,7 +605,14 @@ def cmd_start(args):
     except OrcaError as exc:
         return result("error", identifier, reason=f"preflight failed: {exc}")
     if skip_reason:
-        return result("skipped", identifier, reason=skip_reason)
+        if skip_reason == "skipped: existing local branch":
+            try:
+                r = orca(["linear", "status", "set", identifier, "--to", "Done", "--workspace", args.workspace])
+                if not r.get("result", {}).get("ok", r.get("ok")):
+                    warnings.append("failed to set status to Done for existing branch")
+            except OrcaError as exc:
+                warnings.append(f"failed to set status to Done for existing branch: {exc}")
+        return result("skipped", identifier, reason=skip_reason, warnings=warnings)
 
     try:
         issue = orca(["linear", "issue", identifier, "--full"])
