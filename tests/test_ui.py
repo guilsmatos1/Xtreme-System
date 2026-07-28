@@ -830,6 +830,23 @@ def test_ctx_form_venda_carrega_todos_clientes_e_veiculos(
     ]
 
 
+def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    resp = client.get("/ui/vendas/novo")
+
+    assert resp.status_code == 200
+    assert 'id="veiculo-search" name="veiculo_id" type="hidden"' in resp.text
+    assert 'id="veiculo-input"' in resp.text
+    assert 'id="veiculo-input"' in resp.text
+    assert 'list="veiculos-list" required' in resp.text
+    assert 'id="veiculo-selecao"' in resp.text
+    assert "Selecione um veículo da lista" in resp.text
+    assert "input, select, textarea" in resp.text
+
+
 def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
