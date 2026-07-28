@@ -147,6 +147,16 @@ class ListingSpec[EntityT]:
 
 
 @dataclass(frozen=True)
+class ListState:
+    q: str = ""
+    sort: str = ""
+    order: str = "asc"
+    search_column: str = ""
+    limit: int | None = None
+    offset: int = 0
+
+
+@dataclass(frozen=True)
 class FormSpec:
     templates: Jinja2Templates
     form_template: str

@@ -22,6 +22,7 @@ from xtreme_system.api.crud_types import (
     EntityT,
     FormSpec,
     ListingSpec,
+    ListState,
     ParseForm,
     UpdateSchemaT,
 )
@@ -56,16 +57,6 @@ from xtreme_system.usuario import core as usuario
 
 DepFactory = Callable[..., usuario.Usuario]
 LIST_LIMIT_MAX = 200
-
-
-@dataclass(frozen=True)
-class ListState:
-    q: str = ""
-    sort: str = ""
-    order: str = "asc"
-    search_column: str = ""
-    limit: int = 50
-    offset: int = 0
 
 
 @dataclass(frozen=True)
@@ -359,22 +350,15 @@ def register_list_route(
         limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
         offset: Annotated[int, Query(ge=0)] = 0,
     ) -> HTMLResponse:
-        lista = query_list(
-            session,
-            module,
+        state = ListState(
             q=q,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            search_column=search_column or None,
-            limit=limit,
-            offset=offset,
             sort=sort,
             order=order,
-            sort_fields=listing.sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
+            search_column=search_column,
+            limit=limit,
+            offset=offset,
         )
+        lista = query_list(session, module, listing=listing, state=state)
         template = (
             list_partial_template
             if request.headers.get("HX-Request")
@@ -411,16 +395,7 @@ def register_export_route(
 ) -> None:
     @app.get(f"{prefix}/exportar")
     def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
-        lista = query_list(
-            session,
-            module,
-            q=q,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
-        )
+        lista = query_list(session, module, listing=listing, state=ListState(q=q))
         headers = csv_headers
         rows = [csv_row(obj) for obj in lista]
         if pagina and csv_fields:
@@ -529,22 +504,7 @@ def write_ok_response(
     listing: ListingSpec[EntityT],
 ) -> HTMLResponse:
     state = _current_list_state(request)
-    lista = query_list(
-        session,
-        module,
-        q=state.q,
-        searchable=listing.searchable,
-        list_func=listing.list_func,
-        search_func=listing.search_func,
-        search_column=state.search_column or None,
-        limit=state.limit,
-        offset=state.offset,
-        sort=state.sort,
-        order=state.order,
-        sort_fields=listing.sort_fields,
-        query_func=listing.query_func,
-        search_query_func=listing.search_query_func,
-    )
+    lista = query_list(session, module, listing=listing, state=state)
     return ok_response(
         templates,
         request,
@@ -768,22 +728,7 @@ def register_delete_route(
 
             def build_conflict_response() -> HTMLResponse:
                 state = _current_list_state(request)
-                lista = query_list(
-                    session,
-                    module,
-                    q=state.q,
-                    searchable=listing.searchable,
-                    list_func=listing.list_func,
-                    search_func=listing.search_func,
-                    search_column=state.search_column or None,
-                    limit=state.limit,
-                    offset=state.offset,
-                    sort=state.sort,
-                    order=state.order,
-                    sort_fields=listing.sort_fields,
-                    query_func=listing.query_func,
-                    search_query_func=listing.search_query_func,
-                )
+                lista = query_list(session, module, listing=listing, state=state)
                 return list_response(
                     templates,
                     request,
@@ -796,7 +741,7 @@ def register_delete_route(
                     order=state.order,
                     q=state.q if listing.searchable else None,
                     search_column=state.search_column,
-                    limit=state.limit,
+                    limit=state.limit if state.limit is not None else 50,
                     offset=state.offset,
                     erro=delete_conflict_detail(label),
                     status_code=409,
@@ -807,22 +752,7 @@ def register_delete_route(
                 build_conflict_response,
             )
         state = _current_list_state(request)
-        lista = query_list(
-            session,
-            module,
-            q=state.q,
-            searchable=listing.searchable,
-            list_func=listing.list_func,
-            search_func=listing.search_func,
-            search_column=state.search_column or None,
-            limit=state.limit,
-            offset=state.offset,
-            sort=state.sort,
-            order=state.order,
-            sort_fields=listing.sort_fields,
-            query_func=listing.query_func,
-            search_query_func=listing.search_query_func,
-        )
+        lista = query_list(session, module, listing=listing, state=state)
         return list_response(
             templates,
             request,
@@ -835,6 +765,6 @@ def register_delete_route(
             order=state.order,
             q=state.q if listing.searchable else None,
             search_column=state.search_column,
-            limit=state.limit,
+            limit=state.limit if state.limit is not None else 50,
             offset=state.offset,
         )
