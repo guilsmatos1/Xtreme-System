@@ -139,6 +139,7 @@ CsvRow = Callable[[EntityT], list[Any]]
 @dataclass(frozen=True)
 class ListingSpec[EntityT]:
     searchable: bool = False
+    paginated: bool = True
     list_func: ListFunc[EntityT] | None = None
     search_func: SearchFunc[EntityT] | None = None
     sort_fields: Mapping[str, SortField[EntityT]] = field(default_factory=dict)

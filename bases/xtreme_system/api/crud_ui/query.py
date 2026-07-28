@@ -130,6 +130,8 @@ def query_list(
     listing: ListingSpec[EntityT],
     state: ListState,
 ) -> list[EntityT]:
+    limit = state.limit if listing.paginated else None
+    offset = state.offset if listing.paginated else 0
     if state.q and listing.search_query_func is not None:
         query = listing.search_query_func(
             session, state.q, column=state.search_column or None
@@ -139,8 +141,8 @@ def query_list(
             state.sort,
             state.order,
             listing.sort_fields,
-            state.limit,
-            state.offset,
+            limit,
+            offset,
         )
     if not state.q and listing.query_func is not None:
         return _query_sorted_list(
@@ -148,8 +150,8 @@ def query_list(
             state.sort,
             state.order,
             listing.sort_fields,
-            state.limit,
-            state.offset,
+            limit,
+            offset,
         )
     if state.q and listing.search_func is not None:
         lista = _search_list(
@@ -157,8 +159,8 @@ def query_list(
         )
         result = _page_list(
             sorted_list(lista, state.sort, state.order, listing.sort_fields),
-            state.limit,
-            state.offset,
+            limit,
+            offset,
         )
     elif listing.searchable and state.q:
         searchable_module = cast(
@@ -171,13 +173,13 @@ def query_list(
                 state.order,
                 listing.sort_fields,
             ),
-            state.limit,
-            state.offset,
+            limit,
+            offset,
         )
     else:
         callable_list = listing.list_func or module.list_all
         if not state.sort or state.sort not in listing.sort_fields:
-            return _paginated_list(callable_list, session, state.limit, state.offset)
+            return _paginated_list(callable_list, session, limit, offset)
         result = _page_list(
             sorted_list(
                 _paginated_list(callable_list, session, None, 0),
@@ -185,7 +187,7 @@ def query_list(
                 state.order,
                 listing.sort_fields,
             ),
-            state.limit,
-            state.offset,
+            limit,
+            offset,
         )
     return result

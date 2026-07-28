@@ -136,6 +136,8 @@ def test_ui_veiculos_kpis_contam_todo_o_estoque(
         r"Total no estoque</div>\s*<div class=\"stat__value cell-num\">51</div>",
         pagina.text,
     )
+    assert pagina.text.count('id="veiculo-') == 51
+    assert "Próxima" not in pagina.text
 
 
 def test_ui_veiculos_lista_com_km_vazio(
