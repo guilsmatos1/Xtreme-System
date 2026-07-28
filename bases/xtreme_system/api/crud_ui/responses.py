@@ -162,6 +162,7 @@ def list_response(
         "offset_anterior": offset - limit if offset - limit > 0 else 0,
         "offset_proximo": offset + limit,
         "qs_base": urlencode(qs_params),
+        "oob": bool(request.headers.get("HX-Request")),
         **ctx_list,
     }
     if q is not None:

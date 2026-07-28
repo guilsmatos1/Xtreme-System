@@ -260,10 +260,11 @@
     offset_anterior,
     offset_proximo,
     tem_anterior,
-    tem_proximo
+    tem_proximo,
+    oob=False
 ) -%}
 {%- set sep = '&' if qs_base else '' -%}
-<div class="toolbar" style="margin-top:var(--s-4)">
+<div id="paginacao"{% if oob %} hx-swap-oob="outerHTML"{% endif %} class="toolbar" style="margin-top:var(--s-4)">
   <span class="page-head__subtitle">
     {% if page_count %}
       Mostrando {{ page_start }}–{{ page_end }}
