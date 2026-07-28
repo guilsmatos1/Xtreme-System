@@ -1,6 +1,6 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
-<div class="modal" onclick="if(event.target===this)this.remove()">
+<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel{% if not venda %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mv-title">
     <div class="modal__head">
       <h3 id="mv-title">{{ 'Editar venda' if venda else 'Nova venda' }}</h3>
