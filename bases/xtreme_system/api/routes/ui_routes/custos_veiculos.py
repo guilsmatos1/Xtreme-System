@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
 from xtreme_system.api.deps import require_operacao, templates
@@ -65,20 +66,16 @@ register_crud_ui_routes(
     before_create=_validar_veiculo_fk,
     before_update=_validar_veiculo_fk,
     sort_fields={
-        "veiculo": lambda c: _sort_key(c.veiculo.modelo),
-        "placa": lambda c: _sort_key(c.veiculo.placa),
-        "categoria": "categoria",
-        "data": "data_custo",
-        "valor": "valor",
-        "descricao": lambda c: _sort_key(c.descricao or ""),
-    },
-    sql_sort_fields={
-        "veiculo": veiculo.Veiculo.modelo,
-        "placa": veiculo.Veiculo.placa,
-        "categoria": custo_veiculo.CustoVeiculo.categoria,
-        "data": custo_veiculo.CustoVeiculo.data_custo,
-        "valor": custo_veiculo.CustoVeiculo.valor,
-        "descricao": custo_veiculo.CustoVeiculo.descricao,
+        "veiculo": SortField(
+            lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
+        ),
+        "placa": SortField(lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa),
+        "categoria": SortField("categoria", custo_veiculo.CustoVeiculo.categoria),
+        "data": SortField("data_custo", custo_veiculo.CustoVeiculo.data_custo),
+        "valor": SortField("valor", custo_veiculo.CustoVeiculo.valor),
+        "descricao": SortField(
+            lambda c: _sort_key(c.descricao or ""), custo_veiculo.CustoVeiculo.descricao
+        ),
     },
     query_func=custo_veiculo.query,
     search_query_func=custo_veiculo.search_query,

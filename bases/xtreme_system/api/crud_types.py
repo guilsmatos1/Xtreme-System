@@ -62,6 +62,20 @@ class SearchableCrudModule(
 
 
 SortSpec = str | Callable[[EntityT], Any]
+
+
+@dataclass(frozen=True)
+class SortField[EntityT]:
+    """One sort contract; ``sql=None`` explicitly means Python-only."""
+
+    python: SortSpec[EntityT]
+    sql: Any | None = None
+
+    def __post_init__(self) -> None:
+        if self.sql is not None and not hasattr(self.sql, "asc"):
+            raise TypeError
+
+
 CtxForm = Callable[[Session], dict[str, Any]]
 CtxList = Callable[[Session, list[EntityT]], dict[str, Any]]
 ParseForm = Callable[[Any], dict[str, Any]]
@@ -127,8 +141,7 @@ class ListingSpec[EntityT]:
     searchable: bool = False
     list_func: ListFunc[EntityT] | None = None
     search_func: SearchFunc[EntityT] | None = None
-    sort_fields: Mapping[str, SortSpec[EntityT]] = field(default_factory=dict)
-    sql_sort_fields: Mapping[str, Any] | None = None
+    sort_fields: Mapping[str, SortField[EntityT]] = field(default_factory=dict)
     query_func: QueryFunc[EntityT] | None = None
     search_query_func: SearchQueryFunc[EntityT] | None = None
 

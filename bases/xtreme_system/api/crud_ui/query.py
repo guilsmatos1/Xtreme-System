@@ -13,6 +13,7 @@ from xtreme_system.api.crud_types import (
     SearchableCrudModule,
     SearchFunc,
     SearchQueryFunc,
+    SortField,
     SortSpec,
     UpdateSchemaT,
 )
@@ -48,13 +49,13 @@ def filter_list(
     lista: list[EntityT],
     filter_col: str,
     filter_val: str,
-    sort_fields: Mapping[str, SortSpec[EntityT]],
+    sort_fields: Mapping[str, SortField[EntityT]],
 ) -> list[EntityT]:
-    spec = sort_fields.get(filter_col)
+    field = sort_fields.get(filter_col)
     needle = filter_val.strip().lower()
-    if spec is None or not needle:
+    if field is None or not needle:
         return lista
-    getter = sort_key_fn(spec)
+    getter = sort_key_fn(field.python)
     return [obj for obj in lista if needle in _filter_repr(getter(obj))]
 
 
@@ -62,23 +63,24 @@ def sorted_list(
     lista: list[EntityT],
     sort: str,
     order: str,
-    sort_fields: Mapping[str, SortSpec[EntityT]],
+    sort_fields: Mapping[str, SortField[EntityT]],
 ) -> list[EntityT]:
-    spec = sort_fields.get(sort)
-    if spec is None:
+    field = sort_fields.get(sort)
+    if field is None:
         return lista
-    return sorted(lista, key=sort_key_fn(spec), reverse=order == "desc")
+    return sorted(lista, key=sort_key_fn(field.python), reverse=order == "desc")
 
 
 def _query_sorted_list(
     query: Query[EntityT],
     sort: str,
     order: str,
-    sort_fields: Mapping[str, Any] | None,
+    sort_fields: Mapping[str, SortField[EntityT]],
     limit: int | None,
     offset: int,
 ) -> list[EntityT]:
-    spec = sort_fields.get(sort) if sort_fields is not None else None
+    field = sort_fields.get(sort)
+    spec = field.sql if field is not None else None
     entity = None
     if query.column_descriptions:
         entity = query.column_descriptions[0].get("entity")
@@ -135,24 +137,21 @@ def query_list(
     offset: int = 0,
     sort: str = "",
     order: str = "asc",
-    sort_fields: Mapping[str, SortSpec[EntityT]] | None = None,
-    sql_sort_fields: Mapping[str, Any] | None = None,
+    sort_fields: Mapping[str, SortField[EntityT]] | None = None,
     query_func: QueryFunc[EntityT] | None = None,
     search_query_func: SearchQueryFunc[EntityT] | None = None,
 ) -> list[EntityT]:
-    python_sort_fields = sort_fields or {}
+    fields = sort_fields or {}
     if q and search_query_func is not None:
         query = search_query_func(session, q, column=search_column)
-        return _query_sorted_list(query, sort, order, sql_sort_fields, limit, offset)
+        return _query_sorted_list(query, sort, order, fields, limit, offset)
     if not q and query_func is not None:
         return _query_sorted_list(
-            query_func(session), sort, order, sql_sort_fields, limit, offset
+            query_func(session), sort, order, fields, limit, offset
         )
     if q and search_func is not None:
         lista = _search_list(search_func, session, q, search_column)
-        result = _page_list(
-            sorted_list(lista, sort, order, python_sort_fields), limit, offset
-        )
+        result = _page_list(sorted_list(lista, sort, order, fields), limit, offset)
     elif searchable and q:
         searchable_module = cast(
             SearchableCrudModule[EntityT, CreateSchemaT, UpdateSchemaT], module
@@ -162,12 +161,20 @@ def query_list(
                 list(searchable_module.search(session, q)),
                 sort,
                 order,
-                python_sort_fields,
+                fields,
             ),
             limit,
             offset,
         )
     else:
         callable_list = list_func or module.list_all
-        result = _paginated_list(callable_list, session, limit, offset)
+        if not sort or sort not in fields:
+            return _paginated_list(callable_list, session, limit, offset)
+        result = _page_list(
+            sorted_list(
+                _paginated_list(callable_list, session, None, 0), sort, order, fields
+            ),
+            limit,
+            offset,
+        )
     return result

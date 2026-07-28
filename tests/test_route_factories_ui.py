@@ -16,7 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from tests.database import create_test_engine
-from xtreme_system.api.crud_types import adapt_search_func
+from xtreme_system.api.crud_types import SortField, adapt_search_func
 from xtreme_system.api.crud_ui.query import (
     query_list,
     sorted_list,
@@ -209,7 +209,9 @@ def test_sorted_list_aceita_sort_multicampo() -> None:
         "status_nome",
         "asc",
         {
-            "status_nome": lambda item: (_sort_key(item.status), _sort_key(item.nome)),
+            "status_nome": SortField(
+                lambda item: (_sort_key(item.status), _sort_key(item.nome))
+            ),
         },
     )
 
@@ -227,7 +229,7 @@ def test_sorted_list_aplica_desc() -> None:
         itens,
         "prioridade",
         "desc",
-        {"prioridade": "prioridade"},
+        {"prioridade": SortField("prioridade")},
     )
 
     assert [item.prioridade for item in ordenados] == [3, 2, 1]
@@ -242,6 +244,11 @@ def test_sorted_list_sem_spec_retorna_lista_original() -> None:
     ordenados = sorted_list(itens, "inexistente", "asc", {})
 
     assert ordenados is itens
+
+
+def test_sort_field_rejeita_callable_como_spec_sql() -> None:
+    with pytest.raises(TypeError):
+        SortField("nome", lambda item: item.nome)
 
 
 def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
@@ -289,7 +296,7 @@ def test_query_list_passa_limit_e_offset_para_list_func_paginal() -> None:
     assert [item.nome for item in resultados] == ["Bruno", "Carla"]
 
 
-def test_query_list_usa_sort_fields_python_quando_sql_sort_fields_existe() -> None:
+def test_query_list_usa_sort_field_python_quando_sql_disponivel() -> None:
     def search_func(_session: Session, _term: str) -> list[investidor.Investidor]:
         return [
             investidor.Investidor(nome="Carla"),
@@ -306,8 +313,7 @@ def test_query_list_usa_sort_fields_python_quando_sql_sort_fields_existe() -> No
         search_func=adapt_search_func(search_func),
         sort="nome",
         order="asc",
-        sort_fields={"nome": "nome"},
-        sql_sort_fields={"nome": investidor.Investidor.nome},
+        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
     )
 
     assert [item.nome for item in ordenados] == ["Ana", "Bruno", "Carla"]
@@ -338,7 +344,7 @@ def test_query_list_ordena_no_sql_quando_query_func_disponivel(
         search_func=None,
         sort="nome",
         order="desc",
-        sql_sort_fields={"nome": investidor.Investidor.nome},
+        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
         query_func=lambda sess: sess.query(investidor.Investidor),
     )
 
@@ -384,7 +390,7 @@ def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
         search_func=None,
         sort="desconhecido",
         order="asc",
-        sql_sort_fields={"nome": investidor.Investidor.nome},
+        sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
         query_func=lambda sess: sess.query(investidor.Investidor),
         limit=2,
         offset=1,
