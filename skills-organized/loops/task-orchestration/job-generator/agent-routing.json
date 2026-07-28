@@ -1,0 +1,25 @@
+{
+  "routing": [
+    { "prefix": "coding--analyze",                 "agent": "claude"      },
+    { "prefix": "coding--debug",                   "agent": "claude"      },
+    { "prefix": "coding--refactor",                "agent": "claude"      },
+    { "prefix": "devops--deploy",                  "agent": "codex"       },
+    { "prefix": "devops--linear",                  "agent": "opencode"    },
+    { "prefix": "devops--skill-organizer",         "agent": "antigravity" },
+    { "prefix": "loops--loop-runner",              "agent": "opencode"    },
+    { "prefix": "loops--state-management",         "agent": "opencode"    },
+    { "prefix": "loops--task-orchestration",       "agent": "antigravity" }
+  ],
+
+  "default_agent": "antigravity",
+
+  "defaults": {
+    "worktree": {
+      "mode": "current",
+      "repo": "name:xtreme-system",
+      "base_branch": "master"
+    },
+    "retries": 2,
+    "retry_delay_seconds": 10
+  }
+}

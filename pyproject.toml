@@ -66,7 +66,7 @@ markers = [
 line-length = 88
 target-version = "py312"
 src = ["tests", "bases", "components", "development", "projects"]
-exclude = [".agents/skills", "alembic"]
+exclude = ["skills-organized", "alembic"]
 
 [tool.ruff.lint]
 select = [
