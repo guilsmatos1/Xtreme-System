@@ -16,7 +16,7 @@ from xtreme_system.api.setup import (
     _MemoryRateLimiterStore,
     reset_rate_limiters,
 )
-from xtreme_system.database.core import DatabaseRateLimiterStore, rate_limit_state
+from xtreme_system.database.rate_limit import DatabaseRateLimiterStore, rate_limit_state
 from xtreme_system.usuario import core as usuario
 
 
