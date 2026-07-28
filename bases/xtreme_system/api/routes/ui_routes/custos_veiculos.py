@@ -7,9 +7,16 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import SortField
+from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
-from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
+from xtreme_system.api.crud_ui.routes import (
+    CrudUIBehaviorConfig,
+    CrudUIExportConfig,
+    CrudUIResourceConfig,
+    CrudUIRouteConfig,
+    CrudUITemplateConfig,
+    register_crud_ui_routes,
+)
 from xtreme_system.api.deps import require_operacao, templates
 from xtreme_system.api.setup import app
 from xtreme_system.custo_veiculo import core as custo_veiculo
@@ -49,57 +56,72 @@ register_crud_ui_routes(
     templates,
     custo_veiculo,
     "/ui/custos-veiculos",
-    "Custo de veículo",
-    create_schema=custo_veiculo.CustoVeiculoCreate,
-    update_schema=custo_veiculo.CustoVeiculoUpdate,
-    list_key="custos",
-    item_key="custo",
-    list_template="custos_veiculos.html",
-    list_partial_template="_linhas_custos_veiculos.html",
-    ok_partial_template="_custos_veiculos_ok.html",
-    form_template="_form_custo_veiculo.html",
-    ctx_form=_ctx_form_custo,
-    ctx_list=_ctx_list_custos,
-    parse_form=_parse_custo_form,
-    searchable=True,
-    search_func=custo_veiculo.search,
-    before_create=_validar_veiculo_fk,
-    before_update=_validar_veiculo_fk,
-    sort_fields={
-        "veiculo": SortField(
-            lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
-        ),
-        "placa": SortField(lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa),
-        "categoria": SortField("categoria", custo_veiculo.CustoVeiculo.categoria),
-        "data": SortField("data_custo", custo_veiculo.CustoVeiculo.data_custo),
-        "valor": SortField("valor", custo_veiculo.CustoVeiculo.valor),
-        "descricao": SortField(
-            lambda c: _sort_key(c.descricao or ""), custo_veiculo.CustoVeiculo.descricao
-        ),
-    },
-    query_func=custo_veiculo.query,
-    search_query_func=custo_veiculo.search_query,
-    csv_filename="custos_veiculos.csv",
-    csv_headers=[
-        "ID",
-        "Veiculo",
-        "Placa",
-        "Categoria",
-        "Data",
-        "Valor",
-        "Descricao",
-    ],
-    csv_fields=[None, None, None, None, None, "valor", None],
-    csv_row=lambda c: [
-        c.id,
-        c.veiculo.modelo,
-        c.veiculo.placa,
-        c.categoria,
-        c.data_custo.isoformat(),
-        f"{c.valor:.2f}",
-        c.descricao or "",
-    ],
-    editar_dep=require_operacao("custos-veiculos", "editar"),
-    excluir_dep=require_operacao("custos-veiculos", "excluir"),
-    pagina="custos-veiculos",
+    resource=CrudUIResourceConfig(
+        label="Custo de veículo",
+        create_schema=custo_veiculo.CustoVeiculoCreate,
+        update_schema=custo_veiculo.CustoVeiculoUpdate,
+        list_key="custos",
+        item_key="custo",
+    ),
+    templates_config=CrudUITemplateConfig(
+        list_template="custos_veiculos.html",
+        list_partial_template="_linhas_custos_veiculos.html",
+        ok_partial_template="_custos_veiculos_ok.html",
+        form_template="_form_custo_veiculo.html",
+    ),
+    behavior=CrudUIBehaviorConfig(
+        ctx_form=_ctx_form_custo,
+        ctx_list=_ctx_list_custos,
+        parse_form=_parse_custo_form,
+        before_create=_validar_veiculo_fk,
+        before_update=_validar_veiculo_fk,
+    ),
+    listing=ListingSpec(
+        searchable=True,
+        search_func=custo_veiculo.search,
+        query_func=custo_veiculo.query,
+        search_query_func=custo_veiculo.search_query,
+        sort_fields={
+            "veiculo": SortField(
+                lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
+            ),
+            "placa": SortField(
+                lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa
+            ),
+            "categoria": SortField("categoria", custo_veiculo.CustoVeiculo.categoria),
+            "data": SortField("data_custo", custo_veiculo.CustoVeiculo.data_custo),
+            "valor": SortField("valor", custo_veiculo.CustoVeiculo.valor),
+            "descricao": SortField(
+                lambda c: _sort_key(c.descricao or ""),
+                custo_veiculo.CustoVeiculo.descricao,
+            ),
+        },
+    ),
+    export=CrudUIExportConfig(
+        csv_filename="custos_veiculos.csv",
+        csv_headers=[
+            "ID",
+            "Veiculo",
+            "Placa",
+            "Categoria",
+            "Data",
+            "Valor",
+            "Descricao",
+        ],
+        csv_fields=[None, None, None, None, None, "valor", None],
+        csv_row=lambda c: [
+            c.id,
+            c.veiculo.modelo,
+            c.veiculo.placa,
+            c.categoria,
+            c.data_custo.isoformat(),
+            f"{c.valor:.2f}",
+            c.descricao or "",
+        ],
+        pagina="custos-veiculos",
+    ),
+    routes=CrudUIRouteConfig(
+        editar_dep=require_operacao("custos-veiculos", "editar"),
+        excluir_dep=require_operacao("custos-veiculos", "excluir"),
+    ),
 )

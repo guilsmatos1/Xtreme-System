@@ -10,14 +10,21 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import SortField
+from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
 )
-from xtreme_system.api.crud_ui.routes import register_crud_ui_routes
+from xtreme_system.api.crud_ui.routes import (
+    CrudUIBehaviorConfig,
+    CrudUIExportConfig,
+    CrudUIResourceConfig,
+    CrudUIRouteConfig,
+    CrudUITemplateConfig,
+    register_crud_ui_routes,
+)
 from xtreme_system.api.deps import (
     SessionDep,
     _found,
@@ -390,87 +397,104 @@ register_crud_ui_routes(
     templates,
     compra,
     "/ui/compras",
-    "Compra",
-    create_schema=compra.CompraCreate,
-    update_schema=compra.CompraUpdate,
-    list_key="compras",
-    item_key="compra",
-    list_template="compras.html",
-    list_partial_template="_linhas_compras.html",
-    ok_partial_template="_compras_ok.html",
-    form_template="_form_compra.html",
-    ctx_form=_ctx_form_compra,
-    ctx_list=_ctx_lista_compras,
-    searchable=True,
-    search_func=compra.search,
-    parse_form=_parse_compra_form,
-    before_create=validate_cliente_veiculo_fks,
-    before_update=validate_cliente_veiculo_fks,
-    before_delete=_deletar_compra_e_veiculo,
-    register_create=False,
-    cadastrar_dep=require_operacao("compras", "cadastrar"),
-    sort_fields={
-        "cliente": SortField(lambda c: _sort_key(c.cliente.nome), cliente.Cliente.nome),
-        "documento": SortField(
-            lambda c: _sort_key(c.cliente.documento or ""), cliente.Cliente.documento
-        ),
-        "modelo": SortField(
-            lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
-        ),
-        "placa": SortField(lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa),
-        "data": SortField("data_compra", compra.Compra.data_compra),
-        "valor": SortField("valor_compra", compra.Compra.valor_compra),
-        "status": SortField("status", compra.Compra.status),
-        "observacoes": SortField(
-            lambda c: _sort_key(c.observacoes or ""), compra.Compra.observacoes
-        ),
-        "usuario": SortField(
-            lambda c: _sort_key(
-                (c.usuario.nome or c.usuario.username) if c.usuario else ""
+    resource=CrudUIResourceConfig(
+        label="Compra",
+        create_schema=compra.CompraCreate,
+        update_schema=compra.CompraUpdate,
+        list_key="compras",
+        item_key="compra",
+    ),
+    templates_config=CrudUITemplateConfig(
+        list_template="compras.html",
+        list_partial_template="_linhas_compras.html",
+        ok_partial_template="_compras_ok.html",
+        form_template="_form_compra.html",
+    ),
+    behavior=CrudUIBehaviorConfig(
+        ctx_form=_ctx_form_compra,
+        ctx_list=_ctx_lista_compras,
+        parse_form=_parse_compra_form,
+        before_create=validate_cliente_veiculo_fks,
+        before_update=validate_cliente_veiculo_fks,
+        before_delete=_deletar_compra_e_veiculo,
+    ),
+    listing=ListingSpec(
+        searchable=True,
+        search_func=compra.search,
+        query_func=compra.query,
+        search_query_func=compra.search_query,
+        sort_fields={
+            "cliente": SortField(
+                lambda c: _sort_key(c.cliente.nome), cliente.Cliente.nome
             ),
-            usuario.Usuario.nome,
-        ),
-    },
-    query_func=compra.query,
-    search_query_func=compra.search_query,
-    csv_filename="compras.csv",
-    csv_headers=[
-        "ID",
-        "Data",
-        "Nome do Cliente",
-        "Documento do Cliente",
-        "Estado",
-        "Placa",
-        "Veiculo",
-        "Valor Compra",
-        "Observacoes",
-        "Usuario",
-    ],
-    csv_fields=[
-        None,
-        "data_compra",
-        "cliente",
-        "documento_cliente",
-        "status",
-        "placa",
-        "veiculo",
-        "valor_compra",
-        "observacoes",
-        "usuario",
-    ],
-    csv_row=lambda c: [
-        c.id,
-        c.data_compra.isoformat(),
-        c.cliente.nome,
-        c.cliente.documento or "",
-        c.status.value,
-        c.veiculo.placa,
-        c.veiculo.modelo,
-        f"{c.valor_compra:.2f}",
-        c.observacoes or "",
-        (c.usuario.nome or c.usuario.username) if c.usuario else "",
-    ],
-    editar_dep=require_operacao("compras", "editar"),
-    excluir_dep=require_operacao("compras", "excluir"),
-    pagina="compras",
+            "documento": SortField(
+                lambda c: _sort_key(c.cliente.documento or ""),
+                cliente.Cliente.documento,
+            ),
+            "modelo": SortField(
+                lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
+            ),
+            "placa": SortField(
+                lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa
+            ),
+            "data": SortField("data_compra", compra.Compra.data_compra),
+            "valor": SortField("valor_compra", compra.Compra.valor_compra),
+            "status": SortField("status", compra.Compra.status),
+            "observacoes": SortField(
+                lambda c: _sort_key(c.observacoes or ""), compra.Compra.observacoes
+            ),
+            "usuario": SortField(
+                lambda c: _sort_key(
+                    (c.usuario.nome or c.usuario.username) if c.usuario else ""
+                ),
+                usuario.Usuario.nome,
+            ),
+        },
+    ),
+    export=CrudUIExportConfig(
+        csv_filename="compras.csv",
+        csv_headers=[
+            "ID",
+            "Data",
+            "Nome do Cliente",
+            "Documento do Cliente",
+            "Estado",
+            "Placa",
+            "Veiculo",
+            "Valor Compra",
+            "Observacoes",
+            "Usuario",
+        ],
+        csv_fields=[
+            None,
+            "data_compra",
+            "cliente",
+            "documento_cliente",
+            "status",
+            "placa",
+            "veiculo",
+            "valor_compra",
+            "observacoes",
+            "usuario",
+        ],
+        csv_row=lambda c: [
+            c.id,
+            c.data_compra.isoformat(),
+            c.cliente.nome,
+            c.cliente.documento or "",
+            c.status.value,
+            c.veiculo.placa,
+            c.veiculo.modelo,
+            f"{c.valor_compra:.2f}",
+            c.observacoes or "",
+            (c.usuario.nome or c.usuario.username) if c.usuario else "",
+        ],
+        pagina="compras",
+    ),
+    routes=CrudUIRouteConfig(
+        register_create=False,
+        cadastrar_dep=require_operacao("compras", "cadastrar"),
+        editar_dep=require_operacao("compras", "editar"),
+        excluir_dep=require_operacao("compras", "excluir"),
+    ),
 )
