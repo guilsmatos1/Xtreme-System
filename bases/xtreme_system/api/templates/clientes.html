@@ -29,6 +29,8 @@
 ] %}
 
 <div class="toolbar" id="busca-clientes">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input type="hidden" name="order" value="{{ order }}">
   <div class="search-filter-group">
     <div class="search">
       {{ ui.icon("search") }}

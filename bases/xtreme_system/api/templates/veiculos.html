@@ -53,6 +53,8 @@
 {% if pode_ver_campo(user, 'veiculos', 'debitos') %}{% set _ = search_colunas.append({"key": "debitos", "label": "Débitos"}) %}{% endif %}
 
 <div class="toolbar" id="busca-veiculos">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input type="hidden" name="order" value="{{ order }}">
   <div class="search-filter-group">
     <div class="search">
       {{ ui.icon("search") }}

@@ -31,6 +31,8 @@
 {% if pode_ver_campo(user, 'vendas', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
 
 <div class="toolbar" id="busca-vendas">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input type="hidden" name="order" value="{{ order }}">
   <div class="search-filter-group">
     <div class="search">
       {{ ui.icon("search") }}

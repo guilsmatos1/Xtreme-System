@@ -109,6 +109,10 @@ def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:
     assert 'hx-get="/ui/veiculos?sort=modelo&amp;order=asc' in pagina.text
     assert 'hx-target="#linhas"' in pagina.text
 
+    busca_ordenada = client.get("/ui/veiculos?sort=preco&order=desc&q=ABC")
+    assert 'name="sort" value="preco"' in busca_ordenada.text
+    assert 'name="order" value="desc"' in busca_ordenada.text
+
     ordenada = client.get(
         "/ui/veiculos?sort=modelo&order=asc",
         headers={"HX-Request": "true"},
