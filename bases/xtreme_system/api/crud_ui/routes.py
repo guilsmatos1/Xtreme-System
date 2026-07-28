@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import parse_qs, urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
@@ -474,6 +474,7 @@ def write_conflict_response(
     item: object,
     user: usuario.Usuario,
     erro: str,
+    dados: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     return rollback_integrity_error_response(
         session,
@@ -486,6 +487,7 @@ def write_conflict_response(
             item=item,
             user=user,
             erro=erro,
+            dados=dados,
         ),
     )
 
@@ -577,8 +579,9 @@ def register_create_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         form = await request.form()
+        dados_form = parse_form(form)
         try:
-            data = create_schema.model_validate(parse_form(form))
+            data = create_schema.model_validate(dados_form)
         except ValidationError:
             return error_response(
                 templates,
@@ -590,6 +593,7 @@ def register_create_route(
                 user=user,
                 erro="Dados inválidos",
                 status_code=400,
+                dados=dados_form,
             )
         try:
             safe_write(
@@ -616,6 +620,7 @@ def register_create_route(
                     item=data,
                     user=user,
                     erro=erro,
+                    dados=dados_form,
                 )
             return error_response(
                 templates,
@@ -627,6 +632,7 @@ def register_create_route(
                 user=user,
                 erro=erro,
                 status_code=400,
+                dados=dados_form,
             )
         return write_ok_response(
             session,

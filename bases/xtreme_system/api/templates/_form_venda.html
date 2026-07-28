@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% set dados = dados or {} %}
 <div class="modal" onclick="if(event.target===this)this.remove()">
   <div class="modal__panel{% if not venda %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mv-title">
     <div class="modal__head">
@@ -119,6 +120,7 @@
           {% endif %}
         </div>
         {% else %}
+        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ dados.get('wizard_step', 1) }}">
         <div class="stepper">
           <div class="stepper__item is-active" data-stepper="1">
             <span class="stepper__num">1</span>
@@ -141,61 +143,61 @@
           </div>
         </div>
 
-        <fieldset class="wizard-step form-grid is-active" data-step="1">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1">
           {% if pode_ver_campo(user, 'vendas', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
             <select class="select" id="cliente-select" name="cliente_id" autofocus>
               <option value="">➕ Cadastrar novo cliente</option>
-              {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }} ({{ c.documento }})</option>{% endfor %}
+              {% for c in clientes %}<option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }} ({{ c.documento }})</option>{% endfor %}
             </select>
           </label>
           <label class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-novo-cliente required>
+            <input class="input" name="cli_nome" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
           </label>
           {% endif %}
           <label class="field">
             <span class="field__label">Documento *</span>
-            <input class="input" name="cli_documento" data-novo-cliente required>
+            <input class="input" name="cli_documento" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="cli_tipo" data-novo-cliente>
-              {% for t in tipos %}<option value="{{ t.value }}">{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('cli_tipo', '') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Telefone</span>
-            <input class="input" name="cli_telefone" data-novo-cliente>
+            <input class="input" name="cli_telefone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}">
           </label>
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" type="email" data-novo-cliente>
+            <input class="input" name="cli_email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
           </label>
           <label class="field field--full">
             <span class="field__label">Endereço</span>
-            <input class="input" name="cli_endereco" data-novo-cliente>
+            <input class="input" name="cli_endereco" data-novo-cliente value="{{ dados.get('cli_endereco', '') }}">
           </label>
           <label class="field">
             <span class="field__label">Cidade</span>
-            <input class="input" name="cli_cidade" data-novo-cliente>
+            <input class="input" name="cli_cidade" data-novo-cliente value="{{ dados.get('cli_cidade', '') }}">
           </label>
           <label class="field">
             <span class="field__label">Estado</span>
-            <input class="input" name="cli_estado" data-novo-cliente>
+            <input class="input" name="cli_estado" data-novo-cliente value="{{ dados.get('cli_estado', '') }}">
           </label>
           <label class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente>
+            <input class="input" name="cli_cep" data-novo-cliente value="{{ dados.get('cli_cep', '') }}">
           </label>
         </fieldset>
 
-        <fieldset class="wizard-step form-grid" data-step="2">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2">
           {% if pode_ver_campo(user, 'vendas', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo *</span>
-            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" required>
+            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" value="{{ dados.get('veiculo_id', '') }}" required>
             <input class="input" id="veiculo-input" placeholder="Buscar por placa ou modelo" list="veiculos-list">
             <datalist id="veiculos-list">
               {% for veic in veiculos %}
@@ -207,7 +209,7 @@
           {% if pode_ver_campo(user, 'vendas', 'km') %}
           <label class="field">
             <span class="field__label">KM</span>
-            <input class="input" name="km" type="number" min="0">
+            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'status') %}
@@ -215,43 +217,43 @@
             <span class="field__label">Status *</span>
             <select class="select" name="status" required>
               {% for s in status %}
-              <option value="{{ s.value }}">{{ s.value | replace("_", " ") | title }}</option>
+              <option value="{{ s.value }}"{% if dados.get('status', '') == s.value %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
               {% endfor %}
             </select>
           </label>
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid" data-step="3">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" type="number" step="0.01" min="0.01" required>
+            <input class="input" name="valor_venda" type="number" step="0.01" min="0.01" value="{{ dados.get('valor_venda', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
-            <input class="input" name="valor_entrada" type="number" step="0.01" min="0">
+            <input class="input" name="valor_entrada" type="number" step="0.01" min="0" value="{{ dados.get('valor_entrada', '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos do veículo</span>
-            <input class="input" name="debitos" type="number" step="0.01" min="0">
+            <input class="input" name="debitos" type="number" step="0.01" min="0" value="{{ dados.get('debitos', '') }}">
           </label>
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
           <label class="field">
             <span class="field__label">Forma de pagamento *</span>
-            <input class="input" name="forma_pagamento" required>
+            <input class="input" name="forma_pagamento" value="{{ dados.get('forma_pagamento', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
           <label class="field">
             <span class="field__label">Parcelas</span>
-            <input class="input" name="parcelas" type="number" min="1">
+            <input class="input" name="parcelas" type="number" min="1" value="{{ dados.get('parcelas', '') }}">
           </label>
           {% endif %}
 
@@ -259,7 +261,7 @@
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
             <label>
-              <input name="pagamento_pendente" type="checkbox">
+              <input name="pagamento_pendente" type="checkbox"{% if dados.get('pagamento_pendente') %} checked{% endif %}>
               Faltou parte do pagamento?
             </label>
           </label>
@@ -267,23 +269,23 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="number" step="0.01" min="0">
+            <input class="input" name="valor_pendente" type="number" step="0.01" min="0" value="{{ dados.get('valor_pendente', '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
           <label class="field field--full">
             <span class="field__label">Datas de pagamento</span>
-            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03">
+            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', '') }}">
           </label>
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid" data-step="4">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4">
           {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') or pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
-              <input id="houve-troca" type="checkbox">
+              <input id="houve-troca" type="checkbox"{% if dados.get('veiculo_troca_id') %} checked{% endif %}>
               Houve troca de veículo?
             </label>
           </label>
@@ -291,7 +293,7 @@
           {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
           <label class="field" data-troca>
             <span class="field__label">Veículo da troca</span>
-            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden">
+            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ dados.get('veiculo_troca_id', '') }}">
             <input class="input" id="veiculo-troca-input" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list">
             <datalist id="veiculos-troca-list">
               {% for veic in veiculos_troca %}
@@ -303,14 +305,14 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
-            <input class="input" name="valor_diferenca" type="number" step="0.01" min="0">
+            <input class="input" name="valor_diferenca" type="number" step="0.01" min="0" value="{{ dados.get('valor_diferenca', '') }}">
           </label>
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
-            <textarea class="input" name="observacoes" rows="4"></textarea>
+            <textarea class="input" name="observacoes" rows="4">{{ dados.get('observacoes', '') }}</textarea>
           </label>
           {% endif %}
         </fieldset>
@@ -373,11 +375,14 @@
   var stepperItems = Array.prototype.slice.call(form.querySelectorAll('[data-stepper]'));
   var connectors = Array.prototype.slice.call(form.querySelectorAll('[data-connector]'));
   var total = steps.length;
-  var current = 1;
+  var stepInput = document.getElementById('wizard-step');
+  var current = Number(stepInput.value) || 1;
 
   var btnVoltar = document.getElementById('wizard-voltar');
   var btnProximo = document.getElementById('wizard-proximo');
   var btnSalvar = document.getElementById('wizard-salvar');
+
+  form.addEventListener('submit', function () { stepInput.value = current; });
 
   function stepEl(n) {
     return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
