@@ -197,8 +197,9 @@
           {% if pode_ver_campo(user, 'vendas', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo *</span>
-            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" value="{{ dados.get('veiculo_id', '') }}" required>
-            <input class="input" id="veiculo-input" placeholder="Buscar por placa ou modelo" list="veiculos-list">
+            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" value="{{ dados.get('veiculo_id', '') }}">
+            <input class="input" id="veiculo-input" placeholder="Buscar por placa ou modelo" list="veiculos-list" required aria-describedby="veiculo-selecao">
+            <small id="veiculo-selecao" class="field__hint" aria-live="polite"></small>
             <datalist id="veiculos-list">
               {% for veic in veiculos %}
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
@@ -356,13 +357,24 @@
   if (veiculoInput && veiculoSearch) {
     function sincronizarVeiculo() {
       var id = '';
+      var modelo = '';
       veiculoOptions.forEach(function (option) {
         if (option.value === veiculoInput.value) {
           id = option.dataset.id || '';
+          modelo = option.textContent || '';
         }
       });
       veiculoSearch.value = id;
+      veiculoInput.setCustomValidity(id ? '' : 'Selecione um veículo da lista');
+      var selecao = document.getElementById('veiculo-selecao');
+      if (selecao) selecao.textContent = id ? 'Veículo selecionado: ' + modelo : '';
     }
+    veiculoInput.addEventListener('input', function () {
+      veiculoSearch.value = '';
+      veiculoInput.setCustomValidity('');
+      var selecao = document.getElementById('veiculo-selecao');
+      if (selecao) selecao.textContent = '';
+    });
     veiculoInput.addEventListener('change', sincronizarVeiculo);
   }
 })();
@@ -404,7 +416,7 @@
   }
 
   function validStep(n) {
-    var controls = stepEl(n).querySelectorAll('input, select');
+    var controls = stepEl(n).querySelectorAll('input, select, textarea');
     for (var i = 0; i < controls.length; i++) {
       var el = controls[i];
       if (el.disabled) continue;
