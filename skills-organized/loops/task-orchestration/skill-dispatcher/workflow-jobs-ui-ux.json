@@ -23,7 +23,7 @@
         "base_branch": "master"
       },
       "skill": "devops--linear--send",
-      "skill_args": "\"Xtreme-System\" .loop/running/improvements-ui-ux.json",
+      "skill_args": "\"Xtreme System\" .loop/running/improvements-ui-ux.json",
       "retries": 2,
       "retry_delay_seconds": 10
     },
