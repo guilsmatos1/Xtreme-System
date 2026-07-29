@@ -1,11 +1,19 @@
 {% import "_macros.html" as ui %}
 <tr id="cliente-{{ c.id }}">
-  <td class="cell-strong" data-col="nome">{{ c.nome }}</td>
-  <td class="cell-mono" data-col="documento">{{ c.documento | formatar_documento }}</td>
-  <td data-col="tipo"><span class="badge badge--plain {% if c.tipo.value == 'pessoa_fisica' %}badge--info{% elif c.tipo.value == 'pessoa_juridica' %}badge--success{% endif %}">{{ c.tipo.value | replace("_", " ") | title }}</span></td>
-  <td data-col="telefone">{{ c.telefone | formatar_telefone }}</td>
-  <td data-col="cidade">{{ c.cidade or "-" }}</td>
-  <td data-col="estado">{{ c.estado or "-" }}</td>
+  {% for column in columns %}
+  {% set value = column.value(c) %}
+  {% if column.key == "nome" %}
+  <td class="cell-strong" data-col="{{ column.key }}">{{ value }}</td>
+  {% elif column.key == "documento" %}
+  <td class="cell-mono" data-col="{{ column.key }}">{{ value | formatar_documento }}</td>
+  {% elif column.key == "tipo" %}
+  <td data-col="{{ column.key }}"><span class="badge badge--plain {% if value == 'pessoa_fisica' %}badge--info{% elif value == 'pessoa_juridica' %}badge--success{% endif %}">{{ value | replace("_", " ") | title }}</span></td>
+  {% elif column.key == "telefone" %}
+  <td data-col="{{ column.key }}">{{ value | formatar_telefone }}</td>
+  {% else %}
+  <td data-col="{{ column.key }}">{{ value or "-" }}</td>
+  {% endif %}
+  {% endfor %}
   {% set pode_editar = pode_operacao(user, 'clientes', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'clientes', 'excluir') %}
   {% if pode_editar or pode_excluir or is_admin(user) %}

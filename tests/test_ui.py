@@ -575,6 +575,7 @@ def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
     assert (
         export.headers["content-disposition"] == 'attachment; filename="clientes.csv"'
     )
+    assert export.text.splitlines()[0] == "ID,Nome,Documento,Tipo,Telefone,Cidade,UF"
     assert "Ana Compradora" in export.text
     assert "Caio Ambos" not in export.text
 

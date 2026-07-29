@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any
 from urllib.parse import parse_qs, urlsplit
@@ -57,6 +57,7 @@ from xtreme_system.usuario import core as usuario
 
 DepFactory = Callable[..., usuario.Usuario]
 LIST_LIMIT_MAX = 200
+_MISSING_EXPORT_CONFIG = "A exportação exige columns ou csv_headers/csv_row"
 
 
 @dataclass(frozen=True)
@@ -93,10 +94,21 @@ CrudUIListConfig = ListingSpec
 
 
 @dataclass(frozen=True)
+class ColumnSpec[EntityT]:
+    key: str
+    label: str
+    value: Callable[[EntityT], Any]
+    field: str | None = None
+    table: bool = True
+    export: bool = True
+
+
+@dataclass(frozen=True)
 class CrudUIExportConfig[EntityT]:
     csv_filename: str
-    csv_headers: list[str]
-    csv_row: CsvRow[EntityT]
+    columns: Sequence[ColumnSpec[EntityT]] | None = None
+    csv_headers: list[str] | None = None
+    csv_row: CsvRow[EntityT] | None = None
     csv_fields: list[str | None] | None = None
     pagina: str | None = None
 
@@ -175,6 +187,18 @@ def register_crud_ui_routes(
 ) -> None:
     if behavior is None:
         behavior = CrudUIBehaviorConfig()
+    ctx_list = behavior.ctx_list
+    if export.columns is not None:
+        base_ctx_list = ctx_list
+
+        def column_ctx_list(session: Any, lista: list[EntityT]) -> dict[str, Any]:
+            return {
+                **base_ctx_list(session, lista),
+                "columns": [column for column in export.columns or () if column.table],
+            }
+
+        ctx_list = column_ctx_list
+
     form = FormSpec(
         templates=templates,
         form_template=templates_config.form_template,
@@ -190,7 +214,9 @@ def register_crud_ui_routes(
         list_template=templates_config.list_template,
         list_partial_template=templates_config.list_partial_template,
         listing=listing,
-        ctx_list=behavior.ctx_list,
+        ctx_list=ctx_list,
+        columns=export.columns,
+        pagina=export.pagina,
     )
     register_export_route(
         app,
@@ -198,6 +224,7 @@ def register_crud_ui_routes(
         prefix,
         listing=listing,
         csv_filename=export.csv_filename,
+        columns=export.columns,
         csv_headers=export.csv_headers,
         csv_row=export.csv_row,
         csv_fields=export.csv_fields,
@@ -228,7 +255,7 @@ def register_crud_ui_routes(
             create_schema=resource.create_schema,
             list_key=resource.list_key,
             ok_partial_template=templates_config.ok_partial_template,
-            ctx_list=behavior.ctx_list,
+            ctx_list=ctx_list,
             parse_form=behavior.parse_form,
             before_create=behavior.before_create,
             after_create=behavior.after_create,
@@ -245,7 +272,7 @@ def register_crud_ui_routes(
             update_schema=resource.update_schema,
             list_key=resource.list_key,
             ok_partial_template=templates_config.ok_partial_template,
-            ctx_list=behavior.ctx_list,
+            ctx_list=ctx_list,
             parse_form=behavior.parse_form,
             before_update=behavior.before_update,
             after_update=behavior.after_update,
@@ -262,7 +289,7 @@ def register_crud_ui_routes(
             resource.label,
             list_key=resource.list_key,
             list_partial_template=templates_config.list_partial_template,
-            ctx_list=behavior.ctx_list,
+            ctx_list=ctx_list,
             before_delete=behavior.before_delete,
             delete_requires_admin=routes.delete_requires_admin,
             listing=listing,
@@ -281,6 +308,8 @@ def register_list_route(
     list_partial_template: str,
     listing: ListingSpec[EntityT],
     ctx_list: CtxList[EntityT],
+    columns: Sequence[ColumnSpec[EntityT]] | None = None,
+    pagina: str | None = None,
 ) -> None:
     @app.get(prefix)
     def _list(
@@ -308,6 +337,18 @@ def register_list_route(
             if request.headers.get("HX-Request")
             else list_template
         )
+        context = ctx_list(session, lista)
+        if columns is not None:
+            context["columns"] = [
+                column
+                for column in columns
+                if column.table
+                and (
+                    pagina is None
+                    or column.field is None
+                    or perfil.pode_ver_campo(user, pagina, column.field)
+                )
+            ]
         return list_response(
             templates,
             request,
@@ -315,7 +356,7 @@ def register_list_route(
             user=user,
             list_key=list_key,
             lista=lista,
-            ctx_list=ctx_list(session, lista),
+            ctx_list=context,
             sort=sort or listing.default_sort,
             order=order if sort else listing.default_order,
             q=q if listing.searchable else None,
@@ -332,17 +373,34 @@ def register_export_route(
     *,
     listing: ListingSpec[EntityT],
     csv_filename: str,
-    csv_headers: list[str],
-    csv_row: CsvRow[EntityT],
+    columns: Sequence[ColumnSpec[EntityT]] | None = None,
+    csv_headers: list[str] | None = None,
+    csv_row: CsvRow[EntityT] | None = None,
     csv_fields: list[str | None] | None = None,
     pagina: str | None = None,
 ) -> None:
     @app.get(f"{prefix}/exportar")
     def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
         lista = query_list(session, module, listing=listing, state=ListState(q=q))
-        headers = csv_headers
-        rows = [csv_row(obj) for obj in lista]
-        if pagina and csv_fields:
+        if columns is not None:
+            export_columns = [
+                column
+                for column in columns
+                if column.export
+                and (
+                    pagina is None
+                    or column.field is None
+                    or perfil.pode_ver_campo(user, pagina, column.field)
+                )
+            ]
+            headers = [column.label for column in export_columns]
+            rows = [[column.value(obj) for column in export_columns] for obj in lista]
+        elif csv_headers is not None and csv_row is not None:
+            headers = csv_headers
+            rows = [csv_row(obj) for obj in lista]
+        else:
+            raise RuntimeError(_MISSING_EXPORT_CONFIG)
+        if columns is None and pagina and csv_fields:
             indices = [
                 idx
                 for idx, campo in enumerate(csv_fields)

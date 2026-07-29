@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.routes import (
+    ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
     CrudUIResourceConfig,
@@ -268,15 +269,24 @@ def _register_clientes_page(
         ),
         export=CrudUIExportConfig[cliente.Cliente](
             csv_filename=csv_filename,
-            csv_headers=["ID", "Nome", "CPF", "Telefone", "Tipo", "Cidade", "Estado"],
-            csv_row=lambda c: [
-                c.id,
-                c.nome,
-                c.documento,
-                c.telefone or "",
-                c.tipo.value,
-                c.cidade or "",
-                c.estado or "",
+            pagina="clientes",
+            columns=[
+                ColumnSpec("id", "ID", lambda c: c.id, table=False),
+                ColumnSpec("nome", "Nome", lambda c: c.nome, field="nome"),
+                ColumnSpec(
+                    "documento", "Documento", lambda c: c.documento, field="documento"
+                ),
+                ColumnSpec("tipo", "Tipo", lambda c: c.tipo.value, field="tipo"),
+                ColumnSpec(
+                    "telefone",
+                    "Telefone",
+                    lambda c: c.telefone or "",
+                    field="telefone",
+                ),
+                ColumnSpec(
+                    "cidade", "Cidade", lambda c: c.cidade or "", field="cidade"
+                ),
+                ColumnSpec("estado", "UF", lambda c: c.estado or "", field="estado"),
             ],
         ),
         routes=CrudUIRouteConfig(
