@@ -2,6 +2,7 @@
 
 import uuid
 from collections.abc import Iterator
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session
 from tests.database import create_test_engine
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.caixa import core as caixa
+from xtreme_system.cliente import core as cliente
+from xtreme_system.compra import core as compra
 from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as investidor
@@ -364,8 +367,28 @@ def _investidor_e_veiculo(
             ano=2018,
             placa=placa,
             km=70000,
-            preco=Decimal("32000.00"),
+            preco=Decimal("45000.00"),
             investidor_id=inv.id,
+        ),
+        actor_id,
+    )
+    # o custo do veículo vem da compra, não do preço anunciado
+    cliente_obj = cliente.create(
+        session,
+        cliente.ClienteCreate(
+            nome="Vendedor Ana",
+            documento=f"{abs(hash(placa)) % 10**11:011d}",
+            tipo=cliente.TipoCliente.pessoa_fisica,
+        ),
+        actor_id,
+    )
+    compra.create(
+        session,
+        compra.CompraCreate(
+            cliente_id=cliente_obj.id,
+            veiculo_id=v.id,
+            data_compra=date(2026, 7, 1),
+            valor_compra=Decimal("32000.00"),
         ),
         actor_id,
     )
@@ -403,8 +426,9 @@ def test_atualizar_preco_ou_investidor_sincroniza_lancamento(
         session, atualizado, session.info["usuario_id"]
     )
 
+    # o lançamento acompanha o investidor, mas o valor continua sendo o da compra
     assert caixa.saldo(session, inv.id) == Decimal("0")
-    assert caixa.saldo(session, outro.id) == Decimal("-40000.00")
+    assert caixa.saldo(session, outro.id) == Decimal("-32000.00")
 
 
 def test_excluir_veiculo_apaga_lancamento_em_cascata(

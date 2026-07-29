@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% set _grupos = grupos or [{"titulo": None, "registros": registros, "kind": modal_kind, "empty_text": modal_empty_text}] %}
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-veiculos-title">
   <div class="modal__panel">
     <div class="modal__head">
@@ -6,7 +7,9 @@
       <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
-      {% if registros %}
+      {% for grupo in _grupos %}
+      {% if grupo.titulo %}<h3 class="modal__section">{{ grupo.titulo }}</h3>{% endif %}
+      {% if grupo.registros %}
       <div class="table-wrap">
         <table>
           <thead>
@@ -20,22 +23,23 @@
             </tr>
           </thead>
           <tbody>
-            {% for v in registros %}
+            {% for v in grupo.registros %}
             <tr>
               <td class="cell-strong">{{ v.veiculo.modelo }}</td>
               <td class="cell-mono">{{ v.veiculo.placa }}</td>
               <td>{{ v.veiculo.ano }}</td>
-              <td class="cell-num">R$ {{ "{:,.2f}".format(v.valor_venda if modal_kind == "comprador" else v.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+              <td class="cell-num">R$ {{ "{:,.2f}".format(v.valor_venda if grupo.kind == "comprador" else v.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
               <td><span class="badge {% if v.status.value == 'finalizado' %}badge--success{% elif v.status.value == 'cancelado' %}badge--danger{% else %}badge--warning{% endif %}">{{ v.status.value | replace("_", " ") | title }}</span></td>
-              <td>{{ (v.data_venda if modal_kind == "comprador" else v.data_compra).strftime("%d/%m/%Y") if (v.data_venda if modal_kind == "comprador" else v.data_compra) else "-" }}</td>
+              <td>{{ (v.data_venda if grupo.kind == "comprador" else v.data_compra).strftime("%d/%m/%Y") if (v.data_venda if grupo.kind == "comprador" else v.data_compra) else "-" }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      {{ ui.empty("vehicles", "Nenhum veículo", modal_empty_text or "Este cliente ainda não possui veículos vinculados.") }}
+      {{ ui.empty("vehicles", "Nenhum veículo", grupo.empty_text or "Este cliente ainda não possui veículos vinculados.") }}
       {% endif %}
+      {% endfor %}
     </div>
   </div>
 </div>

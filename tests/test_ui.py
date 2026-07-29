@@ -123,6 +123,112 @@ def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:
     assert "<html" not in ordenada.text
 
 
+def _seed_veiculos_com_e_sem_compra(session: Session) -> None:
+    """Um veículo comprado (tem custo) e um consignado (não tem)."""
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor C"))
+    cliente_obj = cliente.create(
+        session,
+        cliente.ClienteCreate(
+            nome="Vendedor Custo",
+            documento="12312312312",
+            tipo=cliente.TipoCliente.pessoa_fisica,
+        ),
+    )
+    comprado = veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Comprado",
+            cor="Prata",
+            ano=2024,
+            placa="CPR1234",
+            km=1000,
+            preco=90000,
+            investidor_id=inv.id,
+        ),
+    )
+    veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Consignado",
+            cor="Preto",
+            ano=2024,
+            placa="CSG1234",
+            km=2000,
+            preco=70000,
+            tipo_entrada=veiculo.TipoEntrada.consignacao,
+            investidor_id=inv.id,
+        ),
+    )
+    compra.create(
+        session,
+        compra.CompraCreate(
+            cliente_id=cliente_obj.id,
+            veiculo_id=comprado.id,
+            data_compra="2026-07-09",
+            valor_compra=75000,
+        ),
+    )
+
+
+def test_ui_veiculos_lista_mostra_so_preco_anunciado(
+    make_client: Callable[..., TestClient],
+) -> None:
+    """A tabela /ui/veiculos não tem coluna de custo — só o detalhe do veículo tem."""
+    local_client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=_seed_veiculos_com_e_sem_compra,
+    )
+    _login_admin(local_client)
+
+    pagina = local_client.get("/ui/veiculos")
+
+    assert pagina.status_code == 200
+    assert 'data-col-label="Preço Anunciado"' in pagina.text
+    assert 'data-col-label="Preço de Custo"' not in pagina.text
+    assert 'data-col="custo"' not in pagina.text
+    assert '<td class="cell-num cell-strong" data-col="preco">R$ 90.000,00</td>' in (
+        pagina.text
+    )
+
+
+def test_ui_veiculo_detalhe_mostra_preco_de_custo_da_compra(
+    make_client: Callable[..., TestClient],
+) -> None:
+    local_client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=_seed_veiculos_com_e_sem_compra,
+    )
+    _login_admin(local_client)
+
+    comprado = local_client.get("/ui/veiculos/1/detalhes")
+    assert comprado.status_code == 200
+    assert "Preço Anunciado" in comprado.text
+    assert "R$ 90.000,00" in comprado.text
+    # custo vem do valor da compra, não do preço anunciado
+    assert "R$ 75.000,00" in comprado.text
+
+    consignado = local_client.get("/ui/veiculos/2/detalhes")
+    assert consignado.status_code == 200
+    assert "Preço de Custo" in consignado.text
+
+
+def test_ui_perfis_novo_exibe_campo_preco_de_custo_de_veiculos(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    pagina = client.get("/ui/perfis/novo")
+
+    assert pagina.status_code == 200
+    assert 'name="oculto__veiculos__custo"' in pagina.text
+    assert 'name="oculto__veiculos__preco"' in pagina.text
+    assert "Preço Anunciado" in pagina.text
+
+
 def test_ui_veiculos_kpis_contam_todo_o_estoque(
     make_client: Callable[..., TestClient],
 ) -> None:
@@ -352,7 +458,7 @@ def test_modal_imagens_veiculo_get_renderiza_acoes_com_imagem_existente(
     assert 'name="imagens"' in resp.text
 
 
-def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0915
+def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
     client: TestClient,
 ) -> None:
     _login_admin(client)
@@ -448,7 +554,7 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     )
 
     editado = client.post(
-        f"/ui/clientes/compradores/{comprador_id}",
+        f"/ui/clientes/todos/{comprador_id}",
         data={
             "nome": "Ana Compradora",
             "documento": "12345678901",
@@ -459,53 +565,100 @@ def test_ui_clientes_compradores_e_vendedores_filtram_por_vinculo(  # noqa: PLR0
     assert editado.status_code == 200
     assert "Ana Compradora" in editado.text
     assert "São Paulo" in editado.text
-    assert "Bia Vendedora" not in editado.text
 
-    compradores = client.get("/ui/clientes/compradores")
-    assert compradores.status_code == 200
-    assert "Clientes Compradores" in compradores.text
-    assert "Novo cliente" in compradores.text
-    assert "Ana Compradora" in compradores.text
-    assert "Caio Ambos" in compradores.text
-    assert 'badge badge--plain badge--info">Pessoa Fisica' in compradores.text
-    assert "Bia Vendedora" not in compradores.text
-    assert "Dora Sem Vinculo" not in compradores.text
-
-    vendedores = client.get("/ui/clientes/vendedores")
-    assert vendedores.status_code == 200
-    assert "Clientes Vendedores" in vendedores.text
-    assert "Bia Vendedora" in vendedores.text
-    assert "Caio Ambos" in vendedores.text
-    assert 'badge badge--plain badge--success">Pessoa Juridica' in vendedores.text
-    assert "Ana Compradora" not in vendedores.text
-    assert "Dora Sem Vinculo" not in vendedores.text
-
-    busca = client.get("/ui/clientes/compradores?q=Ana")
+    busca = client.get("/ui/clientes/todos?q=Ana")
     assert "Ana Compradora" in busca.text
     assert "Caio Ambos" not in busca.text
 
-    export_compradores = client.get("/ui/clientes/compradores/exportar?q=Ana")
-    assert export_compradores.status_code == 200
+    export = client.get("/ui/clientes/todos/exportar?q=Ana")
+    assert export.status_code == 200
     assert (
-        export_compradores.headers["content-disposition"]
-        == 'attachment; filename="clientes-compradores.csv"'
+        export.headers["content-disposition"] == 'attachment; filename="clientes.csv"'
     )
-    assert "Ana Compradora" in export_compradores.text
-    assert "Caio Ambos" not in export_compradores.text
+    assert "Ana Compradora" in export.text
+    assert "Caio Ambos" not in export.text
 
-    modal_comprador = client.get(f"/ui/clientes/compradores/{comprador_id}/veiculos")
+    modal_comprador = client.get(f"/ui/clientes/todos/{comprador_id}/veiculos")
     assert modal_comprador.status_code == 200
     assert "Veículos comprados" in modal_comprador.text
     assert "R$ 85.000,00" in modal_comprador.text
 
-    modal_vendedor = client.get(f"/ui/clientes/vendedores/{vendedor_id}/veiculos")
+    modal_vendedor = client.get(f"/ui/clientes/todos/{vendedor_id}/veiculos")
     assert modal_vendedor.status_code == 200
     assert "Veículos vendidos" in modal_vendedor.text
     assert "R$ 80.000,00" in modal_vendedor.text
 
+    todos = client.get("/ui/clientes/todos")
+    assert todos.status_code == 200
+    assert "Ana Compradora" in todos.text
+    assert "Bia Vendedora" in todos.text
+    assert "Caio Ambos" in todos.text
+    assert "Dora Sem Vinculo" in todos.text
+
+    modal_todos = client.get(f"/ui/clientes/todos/{ambos_id}/veiculos")
+    assert modal_todos.status_code == 200
+    assert "Veículos comprados" in modal_todos.text
+    assert "Veículos vendidos" in modal_todos.text
+
     redirecionamento = client.get("/ui/clientes", follow_redirects=False)
     assert redirecionamento.status_code == 303
-    assert redirecionamento.headers["location"] == "/ui/clientes/compradores"
+    assert redirecionamento.headers["location"] == "/ui/clientes/todos"
+
+
+def test_ui_clientes_compradores_e_vendedores_nao_existem_mais(
+    client: TestClient,
+) -> None:
+    assert client.get("/ui/clientes/compradores").status_code == 404
+    assert client.get("/ui/clientes/vendedores").status_code == 404
+    menu = client.get("/ui/clientes/todos").text
+    assert "Clientes Compradores" not in menu
+    assert "Clientes Vendedores" not in menu
+
+
+def test_ui_clientes_e_compras_formatam_documento_e_telefone(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    pessoa_fisica_id = _criar_cliente(client, headers, "Ana CPF", "12345678901")
+    edicao = client.post(
+        f"/ui/clientes/todos/{pessoa_fisica_id}",
+        data={
+            "nome": "Ana CPF",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+            "telefone": "11999990000",
+        },
+    )
+    assert edicao.status_code == 200, edicao.text
+    client.post(
+        "/clientes",
+        json={
+            "nome": "Empresa CNPJ",
+            "documento": "12345678000102",
+            "tipo": "pessoa_juridica",
+        },
+        headers=headers,
+    )
+
+    pagina_clientes = client.get("/ui/clientes/todos").text
+    assert "123.456.789-01" in pagina_clientes
+    assert "12.345.678/0001-02" in pagina_clientes
+    assert "(11) 99999-0000" in pagina_clientes
+
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    client.post(
+        "/compras",
+        json={
+            "cliente_id": pessoa_fisica_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "10000.00",
+        },
+        headers=headers,
+    )
+    pagina_compras = client.get("/ui/compras").text
+    assert "123.456.789-01" in pagina_compras
 
 
 def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
@@ -642,7 +795,7 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
         },
         headers=headers,
     )
-    pagina_clientes = client.get("/ui/clientes/compradores").text
+    pagina_clientes = client.get("/ui/clientes/todos").text
     assert "action-file" not in _classes_do_botao(
         pagina_clientes, f"action-cliente-{cliente_id}-documentos"
     )
@@ -2711,7 +2864,7 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
 ) -> None:
     headers = _admin_headers(client)
     inv = client.post("/investidores", json={"nome": "Carla"}, headers=headers).json()
-    client.post(
+    v = client.post(
         "/veiculos",
         json={
             "tipo": "carro",
@@ -2724,13 +2877,34 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
             "investidor_id": inv["id"],
         },
         headers=headers,
+    ).json()
+    cli = client.post(
+        "/clientes",
+        json={
+            "nome": "Vendedor Carla",
+            "documento": "11122233344",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    ).json()
+    client.post(
+        "/compras",
+        json={
+            "cliente_id": cli["id"],
+            "veiculo_id": v["id"],
+            "data_compra": "2026-07-01",
+            "valor_compra": "18000.00",
+        },
+        headers=headers,
     )
 
     _login_admin(client)
     pagina = client.get(f"/ui/investidores/{inv['id']}/lancamentos")
     assert pagina.status_code == 200
     assert "HB20" in pagina.text
-    assert "20.000,00" in pagina.text
+    # o lançamento de custo reflete o valor da compra, não o preço anunciado
+    assert "18.000,00" in pagina.text
+    assert "20.000,00" not in pagina.text
 
 
 def test_ui_nao_exclui_investidor_com_lancamentos(client: TestClient) -> None:
@@ -2807,6 +2981,27 @@ def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
         headers=headers,
     ).json()
 
+    cli = client.post(
+        "/clientes",
+        json={
+            "nome": "Vendedor Eva",
+            "documento": "55566677788",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    ).json()
+    compra_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cli["id"],
+            "veiculo_id": v["id"],
+            "data_compra": "2026-07-01",
+            "valor_compra": "13000.00",
+        },
+        headers=headers,
+    )
+    assert compra_resp.status_code == 201, compra_resp.text
+
     resp = client.patch(
         f"/veiculos/{v['id']}",
         json={"preco": "17000.00", "investidor_id": outro["id"]},
@@ -2816,8 +3011,20 @@ def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
 
     lancamentos = client.get("/lancamentos-caixa", headers=headers).json()
     lanc = next(item for item in lancamentos if item["veiculo_id"] == v["id"])
-    assert lanc["valor"] == "17000.00"
+    # editar o preço anunciado não mexe no custo; o investidor, sim
+    assert lanc["valor"] == "13000.00"
     assert lanc["investidor_id"] == outro["id"]
+
+    # já editar o valor da compra reflete no lançamento de custo
+    patch_compra = client.patch(
+        f"/compras/{compra_resp.json()['id']}",
+        json={"valor_compra": "14500.00"},
+        headers=headers,
+    )
+    assert patch_compra.status_code == 200, patch_compra.text
+    lancamentos = client.get("/lancamentos-caixa", headers=headers).json()
+    lanc = next(item for item in lancamentos if item["veiculo_id"] == v["id"])
+    assert lanc["valor"] == "14500.00"
 
 
 def test_ui_dashboard_mostra_kpis(client: TestClient) -> None:

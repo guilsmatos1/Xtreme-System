@@ -133,3 +133,17 @@ def test_api_clientes_rejeita_documento_invalido(
     )
 
     assert resp.status_code == 422
+
+
+def test_formatar_documento_cpf_e_cnpj() -> None:
+    assert cliente.formatar_documento("12345678901") == "123.456.789-01"
+    assert cliente.formatar_documento("12345678000102") == "12.345.678/0001-02"
+    assert cliente.formatar_documento(None) == "-"
+    assert cliente.formatar_documento("123") == "123"
+
+
+def test_formatar_telefone_celular_e_fixo() -> None:
+    assert cliente.formatar_telefone("11999990000") == "(11) 99999-0000"
+    assert cliente.formatar_telefone("1140040000") == "(11) 4004-0000"
+    assert cliente.formatar_telefone(None) == "-"
+    assert cliente.formatar_telefone("123") == "123"

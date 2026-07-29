@@ -65,7 +65,7 @@
 
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
-            <span class="field__label">Preço de Compra (R$) *</span>
+            <span class="field__label">Preço Anunciado (R$) *</span>
             <input class="input" name="preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
           </label>
           {% endif %}
@@ -152,7 +152,7 @@
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
           <label class="field">
-            <span class="field__label">Preço de Compra (R$) *</span>
+            <span class="field__label">Preço Anunciado (R$) *</span>
             <input class="input" name="preco" type="text" inputmode="decimal" value="{{ dados.get('preco', '') }}" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}

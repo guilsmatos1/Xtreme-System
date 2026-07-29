@@ -1,0 +1,769 @@
+{
+  "analysis_timestamp": "2026-07-28T00:00:00Z",
+  "total_opportunities": 12,
+  "opportunities": [
+    {
+      "id": "imp-20260728-001",
+      "short_title": "Veículos UI hand-rolls edit/update/delete and silently loses list state on delete",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/veiculos.py",
+        "line_start": 302,
+        "line_end": 343,
+        "function": "_excluir_veiculo",
+        "snippet": "@app.post(\"/ui/veiculos/{item_id}/excluir\")\ndef _excluir_veiculo(\n    item_id: int, request: Request, session: SessionDep, user: _ExcluirDep\n) -> HTMLResponse:\n    obj = _found(veiculo.get(session, item_id), \"Veículo\")\n    try:\n        delete_with_hook(veiculo, session, obj, caixa.deletar_lancamento_veiculo, user.id)\n    except IntegrityError:\n        ...\n    lista = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=ListState())\n    return list_response(templates, request, \"_linhas_veiculos.html\", user=user,\n        list_key=\"veiculos\", lista=lista, ctx_list=_ctx_lista_veiculos(session, lista))"
+      },
+      "impact": "High",
+      "category": "Parallel implementations",
+      "estimated_effort": "Medium",
+      "potential_savings": "Removes ~110 duplicated lines in veiculos.py and eliminates one of two divergent delete/update/edit code paths for the same resource.",
+      "description": "veiculos.py disables the generic CRUD UI factory for edit/create/update/delete (`CrudUIRouteConfig(register_create=False, register_update=False, register_edit=False, register_delete=False)` at veiculos.py:246-251) and hand-rolls each handler. The hand-rolled handlers are near-copies of the factory versions but diverge in three concrete ways: (1) `_excluir_veiculo` (veiculos.py:302-343) builds its list with `state=ListState()` instead of `_current_list_state(request)` used by `register_delete_route` (crud_ui/routes.py:698-714), so the sort, search term, search_column, limit and offset the user had applied are discarded after a delete; (2) `_editar_veiculo` (veiculos.py:260-269) calls `templates.TemplateResponse` directly rather than `form_response`, so the `dados` key that every other edit form receives is absent; (3) `_atualizar_veiculo` (veiculos.py:377-424) calls `veiculo.update` directly and catches `IntegrityError`, whereas `register_update_route` (crud_ui/routes.py:612-630) wraps the write in `safe_write` and catches `HTTPException` 409 — so the veículos path is not going through the project's centralized write/rollback contract in `crud_writes.safe_write`.",
+      "why_it_matters": "The list-state loss is a user-visible regression that only affects veículos: after deleting a vehicle from a filtered/sorted page, the table silently resets to the unfiltered first page. The write-path divergence means a change to conflict handling in `safe_write`/`register_update_route` will not reach veículos, which is exactly the drift the factory was built to prevent.",
+      "concrete_fix": "Keep the veículos-specific behavior as hooks rather than as parallel handlers: the debitos coercion and the `compra.update` side-effect in `_atualizar_veiculo` can move into a `CrudUIBehaviorConfig.before_update`/`after_update` pair, and `_ctx_form_veiculo` is already a `ctx_form`. Then re-enable `register_edit`, `register_update` and `register_delete` in `CrudUIRouteConfig` and delete `_editar_veiculo`, `_excluir_veiculo`, `_atualizar_veiculo`, `_ok_veiculo` and `_erro_veiculo`. If the vehicle-specific `debitos` handling cannot be expressed as a hook, the minimal behavior-preserving step is to replace `state=ListState()` with `_current_list_state(request)` in `_excluir_veiculo` and to route the update through `safe_write` — that alone closes the two divergences without a structural change.",
+      "example": "before (veiculos.py:334): lista = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=ListState())\nafter  (matches crud_ui/routes.py:698): state = _current_list_state(request); lista = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=state)",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["crud-factory", "veiculos", "list-state", "htmx", "divergence"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/veiculos.py",
+          "bases/xtreme_system/api/crud_ui/routes.py"
+        ],
+        "related_opportunities": ["imp-20260728-002", "imp-20260728-011"],
+        "duplicate_type": "parallel implementation",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/routes/ui_routes/veiculos.py:260",
+          "bases/xtreme_system/api/routes/ui_routes/veiculos.py:302",
+          "bases/xtreme_system/api/routes/ui_routes/veiculos.py:377",
+          "bases/xtreme_system/api/crud_ui/routes.py:382",
+          "bases/xtreme_system/api/crud_ui/routes.py:554",
+          "bases/xtreme_system/api/crud_ui/routes.py:644"
+        ],
+        "differences_between_copies": "Factory delete reads `_current_list_state(request)` (HX-Current-URL aware) and passes sort/order/q/search_column/limit/offset into `list_response`; the veículos copy passes a default `ListState()` and omits all six. Factory edit uses `form_response` (adds `dados={}`); the veículos copy uses a raw `TemplateResponse` with `{**ctx_form, 'veiculo': obj, 'user': user}`. Factory update wraps writes in `safe_write` and handles `HTTPException` 409 via `write_conflict_response`; the veículos copy calls `veiculo.update` directly and catches `IntegrityError` via `rollback_integrity_error_response`. The veículos copy additionally handles the `debitos` field and `compra.update`, which the factory has no equivalent for — that part must be preserved.",
+        "behavior_preservation": "The union of behavior is: factory list-state preservation + factory write contract + the veículos-only debitos/compra side-effect and the `perfil.pode_ver_campo(user, 'veiculos', 'debitos')` guard. All three survive if the debitos logic is moved into hooks. The 409 vs 400 status codes on conflict must be checked: `rollback_integrity_error_response` in the veículos path returns the `_erro_veiculo` 400 form, while `write_conflict_response` returns 409 — consolidating changes the status code for a duplicate placa, which is a real (probably desirable) behavior change that must be called out and covered by a test.",
+        "verification": [
+          "tests/test_ui.py (97 tests, includes veículos UI flows)",
+          "tests/test_route_factories_ui.py (22 tests covering the generic factory)",
+          "new test needed: delete a vehicle while ?sort=preco&order=desc&q=gol is active and assert the returned _linhas_veiculos.html still carries sort/order/q",
+          "new test needed: assert conflict status code for duplicate placa on update is unchanged (or intentionally changed)"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": [
+          "Both sides read in full; the `ListState()` vs `_current_list_state(request)` difference is verifiable at veiculos.py:319/334 against crud_ui/routes.py:698",
+          "The route-disabling config at veiculos.py:246-251 confirms this is a deliberate bypass, not an accident of naming"
+        ],
+        "weaknesses": [
+          "I did not confirm whether the `debitos` + `compra.update` logic can be expressed cleanly as a `before_update`/`after_update` hook given the hooks receive `data` but not the raw form — the `debitos` value is read from `form`, not from `VeiculoUpdate`, so a hook signature change or a `parse_form` may be required",
+          "The 409-vs-400 status change on conflict is a genuine behavior change, so this is not a purely mechanical merge"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Trace how `debitos` reaches the handler to decide whether `parse_form` can carry it into `VeiculoUpdate`-adjacent state",
+          "Grep tests for an assertion on the delete response status/order to size the blast radius"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-002",
+      "short_title": "investidores.py is a full reimplementation of register_ui_simples, which has zero production callers",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/investidores.py",
+        "line_start": 187,
+        "line_end": 213,
+        "function": "ui_investidor_criar",
+        "snippet": "@app.post(\"/ui/investidores\")\nasync def ui_investidor_criar(request: Request, session: SessionDep, user: UIAdmin) -> HTMLResponse:\n    form = await request.form()\n    nome = str(form.get(\"nome\") or \"\").strip()\n    if not nome:\n        return templates.TemplateResponse(request, \"_form_simples.html\",\n            _form_ctx_investidor(None, \"Nome obrigatório\"), status_code=400)\n    try:\n        obj = investidor.create(session, investidor.InvestidorCreate(nome=nome), user.id)\n    except IntegrityError:\n        return rollback_integrity_error_response(session, lambda: templates.TemplateResponse(\n            request, \"_form_simples.html\",\n            _form_ctx_investidor(None, \"Investidores já existe\"), status_code=409))"
+      },
+      "impact": "High",
+      "category": "Redundant layers",
+      "estimated_effort": "Medium",
+      "potential_savings": "Either ~150 of investidores.py's 291 lines collapse into a factory call, or 168 dead lines of crud_ui/simple.py get deleted. One of the two must go.",
+      "description": "`crud_ui/simple.py::register_ui_simples` (168 lines) implements exactly the 'name-only entity CRUD over `_form_simples.html` / `_linhas_simples.html` / `simples.html`' pattern: list with `sort=nome`, CSV export, `novo`, `editar`, `criar`, `atualizar`, `excluir`, `Nome obrigatório` on blank name, `{titulo} já existe` on `IntegrityError` via `rollback_integrity_error_response`. `rg register_ui_simples -g '*.py'` returns its definition plus only `tests/test_route_factories_ui.py` — no production module calls it. Meanwhile `investidores.py` re-implements that entire shape by hand (`_form_ctx_investidor` mirrors `_form_ctx`, `ui_investidor_criar`/`ui_investidor_atualizar`/`ui_investidor_excluir` mirror `_criar`/`_atualizar`/`_excluir`) against `_form_simples.html` — the same template the factory renders.",
+      "why_it_matters": "Two implementations of the same CRUD shape exist and neither is authoritative: the factory is exercised only by tests, so it can rot without anyone noticing, while the live copy in investidores.py silently diverges. The divergence is already visible: the factory returns HTTP 200 with `msg` for a delete conflict, investidores returns 409; the factory catches `IntegrityError` on delete, investidores instead pre-checks `caixa.list_by_investidor` and never handles `IntegrityError` at all. Anyone extending the 'simples' pattern (e.g. adding pagination or a permission dep) must remember to patch both.",
+      "concrete_fix": "Extend `register_ui_simples` with the two hooks investidores actually needs — an `extra_ctx(session)` callback for the metrics block (`saldos`, `agregados_investidores`, `ordenar_investidores`) and an `after_create(session, obj, form, actor_id)` for the aporte inicial — then call it from investidores.py with `ui_prefix=\"/ui/investidores\"`, `titulo=\"Investidores\"`, plus the custom list/export templates. If the metrics make the factory too generic to be worth it, take the opposite decision explicitly: delete `crud_ui/simple.py` and its tests so there is exactly one implementation of the pattern.",
+      "example": "factory (simple.py:98-115) vs investidores (investidores.py:194-213): identical control flow, identical template, identical error strings modulo `titulo` interpolation.",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["dead-code", "crud-factory", "investidores", "simples"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py",
+          "bases/xtreme_system/api/crud_ui/simple.py",
+          "tests/test_route_factories_ui.py"
+        ],
+        "related_opportunities": ["imp-20260728-001", "imp-20260728-011"],
+        "duplicate_type": "redundant layer",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/crud_ui/simple.py:19",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:116",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:162",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:187",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:240",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:270"
+        ],
+        "differences_between_copies": "Factory `_ctx` sorts only on `sort == 'nome'`; investidores has `ordenar_investidores` with five sort keys. Factory list/export use `_linhas_simples.html`/`simples.html` and `['ID','Nome']`; investidores uses `_linhas_investidores.html`/`investidores.html` and a five-column CSV with saldo/veículos/aportes. Factory delete catches `IntegrityError` and returns 200 with `msg`; investidores pre-checks `caixa.list_by_investidor` and returns 409. Factory create takes only `nome`; investidores additionally parses `valor_investido` and creates an `aporte` lançamento. Auth: factory uses `UIAdmin` for edit/delete; investidores uses `require_operacao('investidores', ...)`.",
+        "behavior_preservation": "All investidores-specific behavior (metrics ctx, five sort keys, 409 pre-check, aporte inicial, `require_operacao` deps) must be preserved as parameters/hooks. The `UIAdmin`-vs-`require_operacao` gap means the factory needs the same `*_dep` parameters `register_crud_ui_routes` already has, otherwise consolidation would weaken permissions — which is unacceptable.",
+        "verification": [
+          "tests/test_route_factories_ui.py::test_register_ui_simples_aceita_templates_injetado",
+          "tests/test_route_factories_ui.py::test_register_ui_simples_rolls_back_when_write_fails_late",
+          "new test needed: investidor delete with lançamentos still returns 409 and the 'Não é possível excluir investidor com lançamentos.' message",
+          "new test needed: aporte inicial still created on POST /ui/investidores with valor_investido"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": [
+          "The zero-production-caller status of `register_ui_simples` was verified by grep across all .py files",
+          "Both implementations were read end to end and render the same `_form_simples.html` with the same error strings"
+        ],
+        "weaknesses": [
+          "The metrics/aporte/permission surface is large enough that folding investidores into the factory may end up more complex than the duplication it removes — the 'delete simple.py instead' branch may be the better call and I did not pick a side definitively",
+          "I did not check whether any other planned entity was meant to use `register_ui_simples`"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Check git history for what `register_ui_simples` used to serve before deciding which side to delete"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-003",
+      "short_title": "Venda create/update validation chain implemented twice, in json.py and in the HTMX route",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/json.py",
+        "line_start": 303,
+        "line_end": 312,
+        "function": "_validate_venda_create / _validate_venda_update",
+        "snippet": "def _validate_venda_create(session: Session, data: Any) -> None:\n    validate_cliente_veiculo_fks(session, data)\n    validate_veiculo_disponivel_para_venda(session, data.veiculo_id)\n\n\ndef _validate_venda_update(session: Session, obj: Any, data: Any) -> None:\n    validate_cliente_veiculo_fks(session, data)\n    validate_valores_venda_update(obj, data)\n    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:\n        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)"
+      },
+      "impact": "High",
+      "category": "Parallel implementations",
+      "estimated_effort": "Low",
+      "potential_savings": "Removes one of two copies of the venda validation chain; guarantees the JSON API and the HTMX form enforce the same vehicle-availability rule.",
+      "description": "The venda update validation chain exists twice with identical bodies and different signatures: `json.py:308-312` (`_validate_venda_update(session, obj, data)`) and `ui_routes/vendas.py:120-126` (`_validate_venda_update(session, obj, data)` — same three steps, same order, same `veiculo_id != obj.veiculo_id` guard). The create chain is likewise duplicated: `json.py:303-305` wraps it in `_validate_venda_create`, while `ui_routes/vendas.py:393-394` inlines the same two calls (`validate_cliente_veiculo_fks` then `validate_veiculo_disponivel_para_venda`). Both files already import the four primitives from the same `routes/workflows.py`, which is the natural home for the composed chain but currently only holds the primitives.",
+      "why_it_matters": "`validate_veiculo_disponivel_para_venda` takes a `SELECT ... FOR UPDATE` on the vehicle row and rejects a sale of a non-`disponivel` vehicle — it is the guard that stops the same car being sold twice. Having that composition written in two places means a future refinement (e.g. also locking `veiculo_troca_id`, or allowing `reservado`) applied to one file leaves the other path able to sell a vehicle the first path rejects. This is precisely the drift class the shared `workflows.py` module was created to prevent.",
+      "concrete_fix": "Move both chains into `bases/xtreme_system/api/routes/workflows.py` as `validate_venda_create(session, data)` and `validate_venda_update(session, obj, data)`, then have `json.py` pass them directly as `before_create`/`before_update` to `register_crud_routes` and have `ui_routes/vendas.py:120-126` and `vendas.py:393-394` call them. No signature change is needed — the HTMX copy already has the same `(session, obj, data)` shape.",
+      "example": "after: from xtreme_system.api.routes.workflows import validate_venda_create, validate_venda_update  # used by json.py:323-324 and vendas.py:433,393",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "low",
+        "tags": ["business-rule", "vendas", "validation", "workflows", "drift"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/json.py",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/routes/workflows.py"
+        ],
+        "related_opportunities": ["imp-20260728-012"],
+        "duplicate_type": "parallel implementation",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/routes/json.py:303",
+          "bases/xtreme_system/api/routes/json.py:308",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py:120",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py:393"
+        ],
+        "differences_between_copies": "The update copies are logically byte-identical; only the type annotations differ (`obj: Any, data: Any` in json.py vs `obj: venda.Venda, data: venda.VendaUpdate` in vendas.py). For create, json.py has a named wrapper and vendas.py inlines the two calls inside the `try` at vendas.py:393-394 — same two calls, same order.",
+        "behavior_preservation": "Fully preserving. Both copies raise `HTTPException` and both callers already catch `(ValidationError, HTTPException)` (vendas.py:395) or let it propagate to FastAPI (json.py). Consolidating on the stricter type annotations from vendas.py is safe because json.py's `register_crud_routes` passes the real `Venda`/`VendaUpdate` instances.",
+        "verification": [
+          "tests/test_api_vendas.py (24 tests, covers JSON venda create/update)",
+          "tests/test_ui.py (covers HTMX venda create/update)",
+          "new test needed: one shared test asserting both POST /vendas and POST /ui/vendas reject a `vendido` vehicle with the same detail"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.5,
+        "strengths": [
+          "Both files read in full; the two update functions are line-for-line the same and both already import from workflows.py",
+          "The consolidation target (workflows.py) already exists and already holds every primitive involved"
+        ],
+        "weaknesses": [
+          "The HTMX create path additionally calls `perfil.filtrar_campos_form_ocultos` before validation (vendas.py:383-392) — that stays in the route, but it means the two paths are not fully identical end to end"
+        ],
+        "uncertain": false,
+        "suggested_improvements": []
+      }
+    },
+    {
+      "id": "imp-20260728-004",
+      "short_title": "Inline 'novo cliente' fieldset duplicated across three form templates and already diverged",
+      "location": {
+        "file": "bases/xtreme_system/api/templates/_form_venda.html",
+        "line_start": 155,
+        "line_end": 193,
+        "function": "wizard-step 1 fieldset",
+        "snippet": "<input class=\"input\" name=\"cli_nome\" data-novo-cliente value=\"{{ dados.get('cli_nome', '') }}\" required>\n<input class=\"input\" name=\"cli_documento\" data-novo-cliente value=\"{{ dados.get('cli_documento', '') }}\" required>\n<select class=\"select\" name=\"cli_tipo\" data-novo-cliente>\n  {% for t in tipos %}<option value=\"{{ t.value }}\"{% if dados.get('cli_tipo', '') == t.value %} selected{% endif %}>{{ t.value | replace(\"_\", \" \") | title }}</option>{% endfor %}\n</select>\n<input class=\"input\" name=\"cli_telefone\" data-novo-cliente value=\"{{ dados.get('cli_telefone', '') }}\">\n<input class=\"input\" name=\"cli_email\" type=\"email\" data-novo-cliente value=\"{{ dados.get('cli_email', '') }}\">\n<input class=\"input\" name=\"cli_endereco\" data-novo-cliente value=\"{{ dados.get('cli_endereco', '') }}\">\n<input class=\"input\" name=\"cli_cidade\" data-novo-cliente value=\"{{ dados.get('cli_cidade', '') }}\">\n<input class=\"input\" name=\"cli_estado\" data-novo-cliente value=\"{{ dados.get('cli_estado', '') }}\">\n<input class=\"input\" name=\"cli_cep\" data-novo-cliente value=\"{{ dados.get('cli_cep', '') }}\">"
+      },
+      "impact": "High",
+      "category": "Template consolidation",
+      "estimated_effort": "Medium",
+      "potential_savings": "~40 duplicated markup lines × 3 templates plus ~15 lines of duplicated toggle JS × 3; one canonical definition of the `cli_*` form contract.",
+      "description": "The same nine `cli_*` inputs plus the `cliente-select` dropdown are hand-written three times: `_form_venda.html:150-193`, `_form_compra.html:111-156` and `_form_veiculo.html:183-217`. All three exist purely to feed one server-side parser, `resolver_cliente` in `routes/ui_routes/common.py:168-213`, which reads exactly `cliente_id`, `cli_nome`, `cli_documento`, `cli_tipo`, `cli_telefone`, `cli_email`, `cli_endereco`, `cli_cidade`, `cli_estado`, `cli_cep`. The accompanying show/hide script (`querySelectorAll('[data-novo-cliente]')` → `campo.disabled = existente`) is also written three times (`_form_venda.html:445-460`, `_form_compra.html:336-349`, `_form_veiculo.html:289-295`). The copies have already drifted: `cli_telefone` carries `required` in `_form_compra.html:134` but not in the venda or veículo copies, and the `cli_tipo` options iterate `tipos` in `_form_venda.html:167` versus `tipos_cliente` in the other two — so venda and compra pass different context keys for the same widget.",
+      "why_it_matters": "These field names are an undocumented contract between three templates and one Python function. Adding a field to `ClienteCreate` (e.g. `bairro`, `profissao`, both already on the model at cliente/core.py:222,226) requires editing three templates plus `resolver_cliente`, and missing one silently drops the field on that form only. The existing `cli_telefone` divergence already means the same 'create a client inline' operation has different mandatory fields depending on which screen the user is on.",
+      "concrete_fix": "Add a `novo_cliente_fields(dados, tipos, telefone_required=False)` macro to `_macros.html` (which already hosts `anexos_modal`, a macro of comparable size that successfully unified five modals) emitting the ten inputs, and a `toggle_novo_cliente(form_id, select_id)` macro for the script. Replace the three inline blocks with macro calls, passing `telefone_required=True` only from `_form_compra.html` so the current per-screen behavior is preserved exactly. Standardize the context key to `tipos_cliente` by adding it alongside `tipos` in `_ctx_form_venda` (vendas.py:85-91) rather than renaming, so no template breaks mid-migration.",
+      "example": "before: 40 lines of <label class=\"field\">…<input name=\"cli_*\"> repeated per template\nafter:  {{ ui.novo_cliente_fields(dados, tipos_cliente, telefone_required=True) }}",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["jinja", "macros", "forms", "cliente", "drift", "htmx"],
+        "files_affected": [
+          "bases/xtreme_system/api/templates/_form_venda.html",
+          "bases/xtreme_system/api/templates/_form_compra.html",
+          "bases/xtreme_system/api/templates/_form_veiculo.html",
+          "bases/xtreme_system/api/templates/_macros.html",
+          "bases/xtreme_system/api/routes/ui_routes/common.py"
+        ],
+        "related_opportunities": ["imp-20260728-005", "imp-20260728-007"],
+        "duplicate_type": "template consolidation",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/templates/_form_venda.html:150",
+          "bases/xtreme_system/api/templates/_form_compra.html:111",
+          "bases/xtreme_system/api/templates/_form_veiculo.html:183",
+          "bases/xtreme_system/api/templates/_form_venda.html:445",
+          "bases/xtreme_system/api/templates/_form_compra.html:336",
+          "bases/xtreme_system/api/templates/_form_veiculo.html:289"
+        ],
+        "differences_between_copies": "(1) `cli_telefone` has `required` only in _form_compra.html:134. (2) `cli_tipo` iterates `tipos` in _form_venda.html:167 vs `tipos_cliente` in _form_compra.html:129 and _form_veiculo.html:192. (3) The cliente `<option>` label is `{{ c.nome }} ({{ c.documento }})` in venda vs `{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}` in compra. (4) The venda toggle script lives in its own `{% if not venda %}` IIFE while the compra copy is folded into the wizard IIFE and additionally re-enables `[data-novo-veiculo]` fields. Everything else — the nine input names, the `data-novo-cliente` attribute, the `dados.get(...)` defaults, the disable-and-hide logic — is identical.",
+        "behavior_preservation": "Preserve the union by parameterizing the three differences: `telefone_required`, the tipos variable name, and the option label format. The compra-only `[data-novo-veiculo]` re-enable must stay outside the shared macro since it belongs to a different fieldset.",
+        "verification": [
+          "tests/test_ui.py (covers the inline-cliente creation path via POST /ui/vendas and /ui/compras)",
+          "tests/e2e/test_ui_browser.py (Playwright, would catch a broken toggle)",
+          "new test needed: assert POST /ui/veiculos, /ui/vendas and /ui/compras all accept the same `cli_*` payload and produce an equivalent Cliente"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": [
+          "The three sites and the single consumer (`resolver_cliente`) were read directly; the field list matches one-for-one",
+          "The `cli_telefone` required divergence and the `tipos`/`tipos_cliente` split are concrete, cited drift, not speculation",
+          "`_macros.html` already proves this pattern works — `anexos_modal` unified five modal templates"
+        ],
+        "weaknesses": [
+          "I read the `cli_*` blocks via targeted greps plus surrounding context rather than diffing all three fieldsets line by line, so minor label/placeholder differences may exist that I have not enumerated",
+          "Jinja macros cannot easily emit the `<script>` blocks with per-form ids without care; the JS half of this consolidation is less clean than the markup half"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Do a literal three-way diff of the fieldsets before writing the macro signature"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-005",
+      "short_title": "Search + column-filter toolbar copy-pasted into five list templates while an unused filter macro exists",
+      "location": {
+        "file": "bases/xtreme_system/api/templates/vendas.html",
+        "line_start": 33,
+        "line_end": 59,
+        "function": "toolbar busca-vendas",
+        "snippet": "<div class=\"toolbar\" id=\"busca-vendas\">\n  <div class=\"search-filter-group\">\n    <div class=\"search\">\n      {{ ui.icon(\"search\") }}\n      <input class=\"input\" type=\"search\" name=\"q\"\n             hx-get=\"/ui/vendas\" hx-trigger=\"keyup changed delay:300ms, search\" hx-include=\"#busca-vendas\"\n             hx-target=\"#linhas\" hx-swap=\"outerHTML\"\n             placeholder=\"Buscar por qualquer campo…\"\n             value=\"{{ q or '' }}\" aria-label=\"Buscar vendas\">\n    </div>\n    <div class=\"filter-separator\"></div>\n    <div class=\"filter-control\">\n      <label class=\"filter-label\">{{ ui.icon(\"filter\") }} Coluna:</label>\n      <select class=\"input filter-select\" name=\"search_column\" hx-get=\"/ui/vendas\" ..."
+      },
+      "impact": "Medium",
+      "category": "Template consolidation",
+      "estimated_effort": "Low",
+      "potential_savings": "~27 lines × 5 templates ≈ 135 lines collapse to five one-line macro calls.",
+      "description": "The `search-filter-group` toolbar — search input with `keyup changed delay:300ms` HTMX trigger, `filter-separator`, `search_column` select over `search_colunas`, and the `filter-badge` — appears verbatim in five list templates: `vendas.html:33-59`, `compras.html:32-58`, `clientes.html:31-57`, `veiculos.html:55-81`, `custos_veiculos.html`. The only variables are the endpoint URL, the container id (`busca-<recurso>`) and the `aria-label`. All five target `#linhas` with `hx-swap=\"outerHTML\"` and include `#busca-<recurso>`. Separately, `_macros.html:52-82` defines a `filtro_tabela` macro for a related filter form that `rg filtro_tabela` shows is referenced nowhere outside its own definition — a dead macro sitting next to the duplication it was presumably meant to remove.",
+      "why_it_matters": "Any change to search behavior — debounce delay, adding a clear button, an `hx-indicator`, or an accessibility fix — currently has to be applied five times, and the dead `filtro_tabela` macro makes it ambiguous which of the two is the intended pattern. The `page-head` + 'Exportar dados' block above it is duplicated across ten templates with the same structure, compounding the maintenance surface on these pages.",
+      "concrete_fix": "Add `busca_toolbar(url, recurso, search_colunas, q, search_column)` to `_macros.html`, emitting the block with `id=\"busca-{{ recurso }}\"` and `aria-label=\"Buscar {{ recurso }}\"`. Replace the five copies with the macro call. Then either delete the unused `filtro_tabela` macro or document why it is retained — leaving a dead macro adjacent to the live duplication is what created the ambiguity.",
+      "example": "after: {{ ui.busca_toolbar(\"/ui/vendas\", \"vendas\", search_colunas, q, search_column) }}",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["jinja", "macros", "htmx", "search", "dead-code"],
+        "files_affected": [
+          "bases/xtreme_system/api/templates/vendas.html",
+          "bases/xtreme_system/api/templates/compras.html",
+          "bases/xtreme_system/api/templates/clientes.html",
+          "bases/xtreme_system/api/templates/veiculos.html",
+          "bases/xtreme_system/api/templates/custos_veiculos.html",
+          "bases/xtreme_system/api/templates/_macros.html"
+        ],
+        "related_opportunities": ["imp-20260728-004"],
+        "duplicate_type": "template consolidation",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/templates/vendas.html:33",
+          "bases/xtreme_system/api/templates/compras.html:32",
+          "bases/xtreme_system/api/templates/clientes.html:31",
+          "bases/xtreme_system/api/templates/veiculos.html:55",
+          "bases/xtreme_system/api/templates/custos_veiculos.html:63",
+          "bases/xtreme_system/api/templates/_macros.html:52"
+        ],
+        "differences_between_copies": "Only three tokens vary per copy: the `hx-get` URL (`/ui/vendas` vs `/ui/compras` vs `{{ route_prefix or '/ui/clientes' }}` vs `/ui/veiculos`), the toolbar id / `hx-include` selector, and the `aria-label` noun. clientes.html additionally uses `route_prefix or '/ui/clientes'` because it is registered twice (compradores/vendedores), so the macro must accept the URL as a parameter rather than deriving it. Markup, classes, HTMX attributes and the `search_colunas` loop are byte-identical.",
+        "behavior_preservation": "Byte-identical output if the three tokens are passed through. `search_colunas` is already built per-template above the toolbar (guarded by `pode_ver_campo`) and stays there, so no permission logic moves.",
+        "verification": [
+          "tests/test_ui.py (asserts list pages render)",
+          "tests/e2e/test_ui_browser.py (Playwright, exercises search interaction)",
+          "new test needed: none strictly — a rendered-HTML snapshot comparison before/after per page is sufficient"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": [
+          "Four of the five copies were read in full and are byte-identical modulo the three named tokens",
+          "`filtro_tabela` having no callers was verified by recursive grep across the template directory"
+        ],
+        "weaknesses": [
+          "custos_veiculos.html was identified by grep count only, not read — its copy may differ more than the other four",
+          "Purely structural: no correctness bug, so the payoff is maintenance only"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Read custos_veiculos.html:63 before fixing the macro signature"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-006",
+      "short_title": "Cliente compradores/vendedores: four identical function pairs differing only in the joined model",
+      "location": {
+        "file": "components/xtreme_system/cliente/core.py",
+        "line_start": 351,
+        "line_end": 410,
+        "function": "list_compradores / list_vendedores",
+        "snippet": "def list_compradores(session, *, limit=None, offset=0) -> list[Cliente]:\n    sql_query = query_compradores(session)\n    if limit is not None:\n        sql_query = sql_query.limit(limit)\n    if offset:\n        sql_query = sql_query.offset(offset)\n    return list(sql_query.all())\n\ndef query_compradores(session) -> Query[Cliente]:\n    from xtreme_system.venda.core import Venda\n    return session.query(Cliente).join(Venda).distinct().order_by(Cliente.id)\n\n# ...list_vendedores / query_vendedores are the same 12 lines with Compra in place of Venda"
+      },
+      "impact": "Medium",
+      "category": "Literal duplication",
+      "estimated_effort": "Low",
+      "potential_savings": "8 public functions → 2 parameterized builders plus 8 thin aliases; ~35 duplicated lines removed.",
+      "description": "`cliente/core.py:351-410` contains four function pairs that are byte-identical except for the joined model: `list_compradores`/`list_vendedores`, `query_compradores`/`query_vendedores`, `search_compradores`/`search_vendedores`, `search_query_compradores`/`search_query_vendedores`. Each pair differs only in `from xtreme_system.venda.core import Venda` vs `from xtreme_system.compra.core import Compra` and the corresponding `.join(...)` argument. The pagination logic (`if limit is not None: ... if offset: ...`) is written out twice, and neither copy matches the `crud.list_all(session, Cliente, limit=..., offset=...)` used by `list_all` at cliente/core.py:297-300.",
+      "why_it_matters": "This is the highest-density literal duplication in the components layer, and it sits on a paginated path: the two hand-written limit/offset blocks can drift from each other and from `crud.list_all`. `clientes.py:308-334` registers two CRUD UI pages that differ only by which quartet they pass, so a bug in one quartet produces a page that behaves differently from its sibling for no reason a reader can see.",
+      "concrete_fix": "Introduce two private builders parameterized by the related model — `_query_com_relacao(session, modelo)` and `_search_query_com_relacao(session, modelo, term, column)` — and reduce the eight public functions to one-line delegations that pass `Venda` or `Compra`. Keep all eight public names so `clientes.py:315-318,329-332` and any tests continue to work unchanged. Optionally route the limit/offset through the same helper `crud.list_all` uses so pagination has one implementation.",
+      "example": "def query_compradores(session): from xtreme_system.venda.core import Venda; return _query_com_relacao(session, Venda)\ndef query_vendedores(session): from xtreme_system.compra.core import Compra; return _query_com_relacao(session, Compra)",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["components", "cliente", "query-builder", "pagination"],
+        "files_affected": [
+          "components/xtreme_system/cliente/core.py",
+          "bases/xtreme_system/api/routes/ui_routes/clientes.py"
+        ],
+        "related_opportunities": ["imp-20260728-009"],
+        "duplicate_type": "literal duplication",
+        "duplicate_sites": [
+          "components/xtreme_system/cliente/core.py:351",
+          "components/xtreme_system/cliente/core.py:362",
+          "components/xtreme_system/cliente/core.py:368",
+          "components/xtreme_system/cliente/core.py:374",
+          "components/xtreme_system/cliente/core.py:382",
+          "components/xtreme_system/cliente/core.py:393",
+          "components/xtreme_system/cliente/core.py:399",
+          "components/xtreme_system/cliente/core.py:405"
+        ],
+        "differences_between_copies": "Byte-identical apart from the imported/joined model (`Venda` vs `Compra`) and the function name suffix (`_compradores` vs `_vendedores`). Both quartets funnel into the same `_search_com_vinculo` at cliente/core.py:413-427, confirming the search half is already partially factored — only the join differs.",
+        "behavior_preservation": "Fully preserving: the public signatures and the `noqa: PLC0415` local imports (needed to avoid a circular import with venda/compra) are kept; only the shared body moves. The local-import placement must be retained inside the delegating wrappers, not hoisted to module level, or the circular import returns.",
+        "verification": [
+          "tests/test_cliente.py",
+          "tests/test_ui.py (exercises /ui/clientes/compradores and /ui/clientes/vendedores)",
+          "new test needed: parametrized test asserting compradores and vendedores honor limit/offset identically"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.5,
+        "strengths": [
+          "All eight functions read in one contiguous block; the only token that varies is the model",
+          "`_search_com_vinculo` already demonstrates the intended factoring for half the quartet"
+        ],
+        "weaknesses": [
+          "Low correctness risk means the payoff is readability rather than a bug fix"
+        ],
+        "uncertain": false,
+        "suggested_improvements": []
+      }
+    },
+    {
+      "id": "imp-20260728-007",
+      "short_title": "resolver_cliente and _resolver_veiculo are the same resolve-or-build routine written twice",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/compras.py",
+        "line_start": 219,
+        "line_end": 236,
+        "function": "_resolver_veiculo",
+        "snippet": "def _resolver_veiculo(session, form):\n    veiculo_sel = str(form.get(\"veiculo_id\") or \"\").strip()\n    if veiculo_sel:\n        try:\n            existente = veiculo.get(session, int(veiculo_sel))\n        except ValueError:\n            existente = None\n        if existente is None:\n            return None, None, \"Veículo inválido ou inexistente\"\n        return existente, None, None\n\n    placa = str(form.get(\"vei_placa\") or \"\").strip().upper()\n    if not placa:\n        return None, None, \"Informe a placa do veículo\"\n    if veiculo.get_by_placa(session, placa):\n        return None, None, \"Placa já cadastrada — selecione o veículo na lista\""
+      },
+      "impact": "Medium",
+      "category": "Near duplication",
+      "estimated_effort": "Medium",
+      "potential_savings": "One shared 'resolve existing FK or validate a nested create' routine instead of two; ~25 lines of structural duplication removed and a third instance avoided when the pattern is next needed.",
+      "description": "`resolver_cliente` (`routes/ui_routes/common.py:168-213`) and `_resolver_veiculo` (`routes/ui_routes/compras.py:219-260`) implement the identical three-phase routine with different field prefixes: (1) read `<entity>_id` from the form, `int()`-parse it inside a `try/except ValueError`, look it up, return `(existente, None, None)` or an 'inválido ou inexistente' error; (2) if no id was selected, read the natural key (`cli_documento` / `vei_placa`), reject if blank, and reject with a 'já cadastrada — selecione … na lista' message if a lookup by that natural key already finds a row; (3) `model_validate` the remaining `<prefix>_*` fields into a `*Create` schema inside a `try/except ValidationError`, returning `(None, data, None)` or a 'Dados … inválidos' error. Both return the same `tuple[Entity|None, CreateSchema|None, str|None]` shape and both feed the same downstream helper, `criar_aninhado_ou_resposta_conflito` (common.py:216-228). `resolver_cliente` was already generalized once — it takes `cliente_field`, `required_msg`, `invalid_selected_msg` and `invalid_new_msg` as parameters — which is evidence the generalization was started and then not extended to the vehicle case.",
+      "why_it_matters": "Two copies of the 'select an existing record or create one inline' rule means the duplicate-detection guard (step 2) can diverge: the cliente path checks `get_by_documento` and the veículo path checks `get_by_placa`, but a future change such as 'also match on normalized whitespace' or 'allow reusing a soft-deleted record' would be applied to whichever file the author had open. The routine also lives in two different modules (a shared `common.py` and a resource-specific `compras.py`), so a reader looking for 'how does inline creation work' finds only half the story.",
+      "concrete_fix": "Generalize into a single `resolver_ou_criar(session, form, spec)` in `common.py`, where `spec` carries: the id field name, the getter (`cliente.get` / `veiculo.get`), the natural-key field and its normalizer (`str.strip` vs `.strip().upper()`), the uniqueness lookup (`get_by_documento` / `get_by_placa`), the `*Create` schema, the field-mapping callable, and the four message strings. Reimplement `resolver_cliente` and `_resolver_veiculo` as two thin `spec` instances so both call sites (vendas.py:362, compras.py:318,322) are untouched.",
+      "example": "resolver_cliente = partial(resolver_ou_criar, spec=CLIENTE_SPEC)\n_resolver_veiculo = partial(resolver_ou_criar, spec=VEICULO_SPEC)",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["forms", "nested-create", "cliente", "veiculo", "htmx"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/common.py",
+          "bases/xtreme_system/api/routes/ui_routes/compras.py",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py"
+        ],
+        "related_opportunities": ["imp-20260728-004"],
+        "duplicate_type": "near duplication",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/routes/ui_routes/common.py:168",
+          "bases/xtreme_system/api/routes/ui_routes/compras.py:219"
+        ],
+        "differences_between_copies": "(1) `resolver_cliente` requires both `cli_nome` and `cli_documento` before proceeding; `_resolver_veiculo` requires only `vei_placa`. (2) `_resolver_veiculo` upper-cases the placa; `resolver_cliente` only strips. (3) `_resolver_veiculo` catches `(ValidationError, ValueError)` because it calls `int(form.get('vei_ano') or 0)` and `int(form.get('vei_investidor_id') or 0)` inline; `resolver_cliente` catches only `ValidationError`. (4) `resolver_cliente` exposes four message strings as keyword parameters; `_resolver_veiculo` hardcodes all four. (5) The field-mapping dicts are entirely different (9 cliente fields vs 12 veículo fields). The control flow, the tuple contract and the error semantics are otherwise the same.",
+        "behavior_preservation": "The `(ValidationError, ValueError)` catch must be the shared behavior — narrowing it to `ValidationError` would turn a non-numeric `vei_ano` into a 500. The per-entity normalizers (upper-casing placa) and the differing required-field sets must be carried on the spec, not unified, or compra would start accepting a client without a name.",
+        "verification": [
+          "tests/test_api_compras.py",
+          "tests/test_ui.py (inline cliente + inline veículo creation via POST /ui/compras)",
+          "new test needed: non-numeric `vei_ano` still yields 'Dados do veículo inválidos' rather than a 500",
+          "new test needed: blank `cli_nome` with a filled `cli_documento` still yields 'Informe os dados do cliente'"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 7.5,
+        "strengths": [
+          "Both functions read in full and the three-phase structure matches step for step",
+          "`resolver_cliente`'s existing message-string parameters are direct evidence the generalization was intended"
+        ],
+        "weaknesses": [
+          "The field-mapping dicts are genuinely different, so the shared portion is control flow rather than data — the spec object may end up nearly as long as the duplication it removes",
+          "This is the weakest-value finding in the list: real structural duplication, but the abstraction cost is close to the savings"
+        ],
+        "uncertain": true,
+        "suggested_improvements": [
+          "Prototype the spec dataclass first; if it exceeds ~25 lines per entity, prefer leaving the duplication and instead moving `_resolver_veiculo` into common.py next to `resolver_cliente` so the pattern is at least visible in one place"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-008",
+      "short_title": "'Cancelled sales don't count' rule repeated across six analytics queries",
+      "location": {
+        "file": "components/xtreme_system/venda/core.py",
+        "line_start": 406,
+        "line_end": 437,
+        "function": "resumo_mes / ticket_medio / receita_por_tipo",
+        "snippet": "def resumo_mes(session) -> tuple[int, Decimal]:\n    resultado = (session.query(func.count(Venda.id), func.sum(Venda.valor_venda))\n        .filter(Venda.data_venda >= _mes_atual_inicio())\n        .filter(Venda.status != StatusVenda.cancelado).all())\n    ...\n\ndef ticket_medio(session) -> Decimal:\n    valor = (session.query(func.avg(Venda.valor_venda))\n        .filter(Venda.status != StatusVenda.cancelado).scalar())\n    ...\n\ndef receita_por_tipo(session) -> dict[TipoVeiculo, Decimal]:\n    rows = (session.query(Veiculo.tipo, func.sum(Venda.valor_venda))\n        .join(Venda, Venda.veiculo_id == Veiculo.id)\n        .filter(Venda.status != StatusVenda.cancelado).group_by(Veiculo.tipo).all())"
+      },
+      "impact": "Medium",
+      "category": "Parallel implementations",
+      "estimated_effort": "Low",
+      "potential_savings": "One named predicate replaces six inline copies; the one intentional exception becomes explicit instead of implicit.",
+      "description": "The business rule 'cancelled sales are excluded from revenue reporting' is spelled `.filter(Venda.status != StatusVenda.cancelado)` inline in six separate queries in `venda/core.py`: `resumo_mes:411`, `ticket_medio:423`, `receita_por_tipo:433`, `ranking_vendedores:466`, `tendencia_por_periodo:501` and `desempenho_vendas_mensal:589`. `funil_status:440-449` deliberately omits it because the funnel is supposed to show cancelled sales — but nothing in the code says so, so the omission is indistinguishable from an oversight. Related: `tendencia_por_periodo:481-495` and `desempenho_vendas_mensal:570-576` each independently compute an 'N months back, wrapping the year' start date with the same arithmetic (one uses `if mes_inicial <= 0`, the other `while mes_inicial <= 0`), and both then build the same `extract('year'/'month')` group-by aggregation over the same three filters.",
+      "why_it_matters": "Six inline copies of one revenue rule is a correctness liability: if the domain grows a second non-revenue status (a `estornado`, say), five of the six sites will be updated and one will quietly keep counting it, producing dashboard figures that disagree with each other. The undocumented exception in `funil_status` compounds this — a reader auditing the rule cannot tell whether that omission is intended.",
+      "concrete_fix": "Add a module-level `VENDAS_VALIDAS = Venda.status != StatusVenda.cancelado` (or a `def _somente_vendas_validas(q): return q.filter(...)`) near the `StatusVenda` definition, and use it at all six sites. Add a one-line comment on `funil_status` stating that it intentionally includes cancelled sales. Separately, extract `_inicio_n_meses_atras(hoje, meses)` and use it in both `tendencia_por_periodo` and `desempenho_vendas_mensal`, standardizing on the `while` form (correct for any `meses`, whereas the `if` form only handles a single wrap).",
+      "example": "VENDAS_VALIDAS = Venda.status != StatusVenda.cancelado\n# then: .filter(VENDAS_VALIDAS) at venda/core.py:411,423,433,466,501,589",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["business-rule", "vendas", "analytics", "dashboard", "sqlalchemy"],
+        "files_affected": ["components/xtreme_system/venda/core.py"],
+        "related_opportunities": ["imp-20260728-003", "imp-20260728-009"],
+        "duplicate_type": "parallel implementation",
+        "duplicate_sites": [
+          "components/xtreme_system/venda/core.py:411",
+          "components/xtreme_system/venda/core.py:423",
+          "components/xtreme_system/venda/core.py:433",
+          "components/xtreme_system/venda/core.py:466",
+          "components/xtreme_system/venda/core.py:501",
+          "components/xtreme_system/venda/core.py:589"
+        ],
+        "differences_between_copies": "The six filter expressions are byte-identical. The month-arithmetic copies differ in one token: `tendencia_por_periodo:485` uses `if mes_inicial <= 0` (handles one 12-month wrap, sufficient for its hardcoded 11-month lookback) while `desempenho_vendas_mensal:573` uses `while mes_inicial <= 0` (handles any `meses` parameter). The group-by bodies differ only in the extra `dia_expr` grouping in the weekly branch.",
+        "behavior_preservation": "Substituting a named predicate for the inline expression is byte-equivalent SQL. Standardizing the month arithmetic on `while` is also behavior-preserving for the current callers because `tendencia_por_periodo` is only ever called with an 11-month lookback, where `if` and `while` agree.",
+        "verification": [
+          "tests/test_relatorio_dre.py",
+          "tests/test_api_vendas.py",
+          "new test needed: assert a cancelled venda is excluded from resumo_mes, ticket_medio, receita_por_tipo, ranking_vendedores, tendencia_por_periodo and desempenho_vendas_mensal, and included in funil_status"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": [
+          "All six sites cited with exact line numbers from a full read of venda/core.py",
+          "The `if` vs `while` divergence in the month arithmetic is concrete evidence the two copies have already drifted"
+        ],
+        "weaknesses": [
+          "I inferred that `funil_status` omits the filter intentionally from its docstring ('incluindo cancelado') rather than confirming with a product owner — the docstring is good evidence but not proof",
+          "The dashboard consumers of these six functions were not traced, so I cannot quantify the reporting impact"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Grep dashboard.py / relatorios.py for which of the six are surfaced together, to confirm the cross-figure inconsistency risk is real"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-009",
+      "short_title": "caixa lançamento creation duplicated: two hand-rolled add/flush/auditar bodies that bypass crud.create",
+      "location": {
+        "file": "components/xtreme_system/caixa/core.py",
+        "line_start": 170,
+        "line_end": 194,
+        "function": "criar_lancamento_veiculo",
+        "snippet": "def criar_lancamento_veiculo(session, veiculo_obj, actor_id=None) -> LancamentoInvestimento:\n    obj = LancamentoInvestimento(\n        investidor_id=veiculo_obj.investidor_id, veiculo_id=veiculo_obj.id,\n        fechamento_venda_id=None, tipo=TipoLancamento.custo,\n        origem=OrigemLancamento.veiculo, valor=veiculo_obj.preco,\n        descricao=_descricao_veiculo(veiculo_obj))\n    session.add(obj)\n    session.flush()\n    session.refresh(obj)\n    auditar(session, actor_id=actor_id, tabela=\"lancamento_investimento\",\n            tipo_acao=\"CREATE\", registro_id=obj.id, dados_depois=snapshot(obj))\n    crud.flush(session)\n    return obj"
+      },
+      "impact": "Medium",
+      "category": "Reimplemented helpers",
+      "estimated_effort": "Low",
+      "potential_savings": "~20 duplicated lines; both automatic-lançamento paths routed through one audited insert instead of two hand-rolled ones.",
+      "description": "`criar_lancamento_veiculo` (caixa/core.py:170-194) and `criar_lancamento_fechamento` (caixa/core.py:263-294) have byte-identical bodies after the constructor call: `session.add(obj)` → `session.flush()` → `session.refresh(obj)` → `auditar(session, actor_id=..., tabela=\"lancamento_investimento\", tipo_acao=\"CREATE\", registro_id=obj.id, dados_depois=snapshot(obj))` → `crud.flush(session)` → `return obj`. Only the `LancamentoInvestimento(...)` kwargs differ. Both also bypass `crud.create`, which `caixa.create` (caixa/core.py:90-95) uses for the manual path — so the same table is inserted into by two different mechanisms depending on whether the lançamento is manual or automatic.",
+      "why_it_matters": "The audit trail for `lancamento_investimento` is written by three code paths (`crud.create` plus two hand-rolled copies). Any change to how creates are audited — an extra field on the snapshot, a new `dados_antes` convention, a different flush ordering — has to be replicated in all three, and the two hand-rolled copies are the ones most likely to be missed because they do not look like CRUD calls. `sincronizar_lancamento_veiculo` (caixa/core.py:197-221) shows the same pattern for the UPDATE case.",
+      "concrete_fix": "Extract `_criar_lancamento_auditado(session, obj, actor_id)` holding the six shared lines, and reduce both functions to a constructor call plus a delegation. If `crud.create`'s signature can accept an already-constructed instance (or a Pydantic schema covering `origem`/`veiculo_id`/`fechamento_venda_id`), prefer routing through it so the table has one audited insert path — but that is the larger change; the local helper is the minimal behavior-preserving step.",
+      "example": "def _criar_lancamento_auditado(session, obj, actor_id):\n    session.add(obj); session.flush(); session.refresh(obj)\n    auditar(session, actor_id=actor_id, tabela=\"lancamento_investimento\", tipo_acao=\"CREATE\", registro_id=obj.id, dados_depois=snapshot(obj))\n    crud.flush(session)\n    return obj",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["components", "caixa", "auditoria", "crud"],
+        "files_affected": ["components/xtreme_system/caixa/core.py"],
+        "related_opportunities": ["imp-20260728-008"],
+        "duplicate_type": "reimplemented helper",
+        "duplicate_sites": [
+          "components/xtreme_system/caixa/core.py:170",
+          "components/xtreme_system/caixa/core.py:263",
+          "components/xtreme_system/caixa/core.py:90"
+        ],
+        "differences_between_copies": "Byte-identical from `session.add(obj)` through `return obj`. The constructors differ: veiculo sets `veiculo_id=veiculo_obj.id, fechamento_venda_id=None, tipo=custo, origem=veiculo, valor=veiculo_obj.preco, descricao=_descricao_veiculo(...)`; fechamento sets `veiculo_id=None, fechamento_venda_id=..., tipo/valor/descricao` from keyword arguments and `origem=fechamento_venda`. `caixa.create` at line 90 goes through `crud.create` instead and is therefore a third, structurally different insert path for the same table.",
+        "behavior_preservation": "Fully preserving for the local-helper version: the flush/refresh/audit ordering is identical in both copies, so hoisting it changes nothing observable. Routing through `crud.create` would be a larger change and must be validated against the `origem` and nullable-FK columns that `LancamentoInvestimentoCreate` does not currently expose.",
+        "verification": [
+          "tests/test_auditoria.py",
+          "tests/test_fechamento_venda.py",
+          "tests/test_custo_veiculo.py",
+          "new test needed: assert an auditoria CREATE row is written for both the veículo-origin and fechamento-origin lançamentos with the same shape"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": [
+          "Both functions read in full in the same file; the shared tail is line-for-line identical",
+          "The third path (`crud.create`) is in the same module, making the three-way inconsistency easy to confirm"
+        ],
+        "weaknesses": [
+          "Small absolute size (~20 lines) — real but not urgent",
+          "I did not verify whether `crud.create` performs additional work (e.g. `session.info['usuario_id']` handling) that the hand-rolled copies skip; if it does, the divergence is more serious than reported"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Read components/xtreme_system/crud/core.py to confirm whether the hand-rolled path skips anything crud.create does"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-010",
+      "short_title": "_persistir_contrato_venda reimplements the atomic write + post-rollback cleanup of salvar_arquivos",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+        "line_start": 324,
+        "line_end": 348,
+        "function": "_persistir_contrato_venda",
+        "snippet": "    upload_dir.mkdir(parents=True, exist_ok=True)\n    try:\n        tmp_path.write_bytes(pdf)\n        with tmp_path.open(\"rb\") as arquivo:\n            os.fsync(arquivo.fileno())\n        os.replace(tmp_path, path)\n    except Exception:\n        tmp_path.unlink(missing_ok=True)\n        raise\n\n    def _cleanup_contract_on_rollback(*, path: Path = path, tmp_path: Path = tmp_path) -> None:\n        path.unlink(missing_ok=True)\n        tmp_path.unlink(missing_ok=True)\n\n    register_post_rollback(session, _cleanup_contract_on_rollback)\n    documento_contrato_venda.create(session, documento_contrato_venda.DocumentoContratoVendaCreate(\n        venda_id=obj.id, url=f\"/static/uploads/vendas/{obj.id}/contrato/{filename}\"), actor_id)"
+      },
+      "impact": "Medium",
+      "category": "Reimplemented helpers",
+      "estimated_effort": "Medium",
+      "potential_savings": "One durable-write-plus-rollback-cleanup implementation instead of two; ~25 lines removed and the contract PDF gains the batch cleanup guarantee the uploads helper already provides.",
+      "description": "`salvar_arquivos` (`routes/ui_routes/uploads.py:30-83`) is the project's helper for 'write a file durably and create its DB row so that a rollback removes the file': it builds a `uuid4().hex` filename, writes to a `.<name>.tmp` sibling, `os.fsync`es it, `os.replace`s it into position, registers a `register_post_rollback` cleanup closure with default-argument binding, then calls `create_fn(session, data, actor_id)`. `_persistir_contrato_venda` (`ui_routes/vendas.py:308-348`) performs the same eight steps in the same order against the same directory layout — `uuid4().hex` filename, tmp sibling, `write_bytes`, `fsync`, `os.replace`, `register_post_rollback` with the identical `def _cleanup(*, path=path, tmp_path=tmp_path)` binding idiom, then `documento_contrato_venda.create(...)`. It differs only in that the bytes come from `documento_contrato_venda.gerar_pdf(...)` rather than an `UploadFile`.",
+      "why_it_matters": "Durability and rollback-cleanup logic is exactly the kind of code that should exist once. The two copies already differ in their failure handling: `salvar_arquivos` accumulates `cleanup_paths` and, on any exception, unlinks every file written in the batch (uploads.py:79-83), whereas `_persistir_contrato_venda`'s `except` only unlinks `tmp_path` and leaves an already-`os.replace`d `path` behind if `documento_contrato_venda.create` later raises outside the try. The post-rollback hook covers that case, but only when the transaction actually rolls back — the two copies do not fail the same way.",
+      "concrete_fix": "Extract the durable-write core from `salvar_arquivos` into `escrever_arquivo_atomico(session, upload_dir, filename, content) -> Path` in `uploads.py`, containing the mkdir / tmp-write / fsync / os.replace / `register_post_rollback` sequence plus the cleanup-on-exception. Have `salvar_arquivos` call it in its loop and have `_persistir_contrato_venda` call it with the generated PDF bytes, keeping the contract-specific parts (logo resolution, `gerar_pdf`, the `DocumentoContratoVendaCreate` row) in vendas.py.",
+      "example": "path = escrever_arquivo_atomico(session, upload_dir, f\"{uuid4().hex}.pdf\", pdf)\ndocumento_contrato_venda.create(session, DocumentoContratoVendaCreate(venda_id=obj.id, url=...), actor_id)",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["uploads", "durability", "rollback", "vendas", "contrato"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/uploads.py",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/routes/ui_routes/configuracoes.py"
+        ],
+        "related_opportunities": [],
+        "duplicate_type": "reimplemented helper",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/routes/ui_routes/uploads.py:48",
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py:324",
+          "bases/xtreme_system/api/routes/ui_routes/configuracoes.py:201"
+        ],
+        "differences_between_copies": "(1) Source of bytes: `arquivo.file.read()` vs `documento_contrato_venda.gerar_pdf(...)`. (2) `salvar_arquivos` mkdirs inside the loop before appending to `cleanup_paths`; `_persistir_contrato_venda` mkdirs after computing paths but before the try. (3) On exception `salvar_arquivos` unlinks both `path` and `tmp_path` for every file in the batch; `_persistir_contrato_venda` unlinks only `tmp_path`. (4) `salvar_arquivos` branches on `actor_id is None` when calling `create_fn`; `_persistir_contrato_venda` always passes `actor_id`. The tmp-write / fsync / os.replace / `register_post_rollback` closure idiom is identical. `configuracoes.py:201` is a third `register_post_rollback` site (logo upload) that should be checked for the same pattern.",
+        "behavior_preservation": "The union to preserve is the stronger cleanup: unlink both `path` and `tmp_path` on exception, which is what `salvar_arquivos` already does and what `_persistir_contrato_venda` currently misses. Adopting that in the shared helper strictly improves the contract path without weakening the uploads path.",
+        "verification": [
+          "tests/test_uploads.py",
+          "tests/test_documento_contrato_venda.py",
+          "tests/test_venda_regerar_contrato.py",
+          "tests/test_route_factories_atomicity.py",
+          "new test needed: simulate a failure in documento_contrato_venda.create after os.replace and assert no orphan PDF remains on disk"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 8.0,
+        "strengths": [
+          "Both implementations read in full; the tmp/fsync/os.replace/register_post_rollback sequence and the default-argument closure idiom match exactly",
+          "The cleanup-scope difference is concrete and cited to specific lines"
+        ],
+        "weaknesses": [
+          "configuracoes.py:201 was found by grep only and not read, so I list it as a candidate third site rather than a confirmed one",
+          "Whether the current `_persistir_contrato_venda` orphan-file window is reachable in practice depends on `get_session`'s rollback behavior, which I did not trace end to end"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Read configuracoes.py:180-215 to confirm whether the logo upload is a third copy",
+          "Trace components/xtreme_system/database/core.py::get_session to confirm the post-rollback hook always fires on the failure path"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-011",
+      "short_title": "Conflict-message helpers exist but four write paths inline their own divergent strings",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/responses.py",
+        "line_start": 197,
+        "line_end": 203,
+        "function": "write_conflict_detail / delete_conflict_detail",
+        "snippet": "def write_conflict_detail(label: str) -> str:\n    return f\"{label} já existe\"\n\n\ndef delete_conflict_detail(label: str) -> str:\n    return f\"{label} possui registros vinculados\"\n\n# but: route_factories.py:210 -> f\"{label} possui veículos vinculados\"\n#      crud_ui/simple.py:163  -> f\"{titulo} possui veículos vinculados\""
+      },
+      "impact": "Medium",
+      "category": "Reimplemented helpers",
+      "estimated_effort": "Low",
+      "potential_savings": "Four inlined message sites collapse onto two existing helpers; the JSON API and the HTMX UI stop reporting the same conflict with different wording.",
+      "description": "`crud_ui/responses.py:197-203` defines `write_conflict_detail(label)` and `delete_conflict_detail(label)` as the canonical conflict messages, and `crud_ui/routes.py` uses them (lines 515, 617, 690). But the JSON factory bypasses both: `route_factories.py:161` and `:186` inline `f\"{label} já existe\"` and `:210` inlines `f\"{label} possui veículos vinculados\"`. `crud_ui/simple.py:112,141,163` likewise inlines `f\"{titulo} já existe\"` and `f\"{titulo} possui veículos vinculados\"`, and `investidores.py:210,261` hardcodes the literal `\"Investidores já existe\"`. The delete-conflict wording has therefore already forked: the HTMX CRUD factory says 'possui registros vinculados' while the JSON API and the simples factory say 'possui veículos vinculados' — for the same `IntegrityError` on the same tables, including tables like `cliente` and `perfil` where 'veículos' is simply wrong.",
+      "why_it_matters": "The same failure produces different user-facing text depending on which surface triggered it, and one of the two variants is factually incorrect for non-vehicle entities. Because the strings are inlined, the incorrect variant is invisible to anyone reading `responses.py` and looking for 'where are conflict messages defined'.",
+      "concrete_fix": "Import `write_conflict_detail` and `delete_conflict_detail` in `route_factories.py` and `crud_ui/simple.py` and replace the five inlined f-strings. Decide which delete wording wins — 'possui registros vinculados' is the correct general form — and accept that the JSON API's message text changes for vehicle-linked conflicts, updating any test that asserts the old string. In `investidores.py`, replace the hardcoded `\"Investidores já existe\"` with `write_conflict_detail(titulo)`.",
+      "example": "route_factories.py:210\n- raise HTTPException(status_code=409, detail=f\"{label} possui veículos vinculados\")\n+ raise HTTPException(status_code=409, detail=delete_conflict_detail(label))",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["error-messages", "consistency", "json-api", "htmx", "i18n"],
+        "files_affected": [
+          "bases/xtreme_system/api/route_factories.py",
+          "bases/xtreme_system/api/crud_ui/simple.py",
+          "bases/xtreme_system/api/crud_ui/responses.py",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py"
+        ],
+        "related_opportunities": ["imp-20260728-002", "imp-20260728-001"],
+        "duplicate_type": "reimplemented helper",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/route_factories.py:161",
+          "bases/xtreme_system/api/route_factories.py:186",
+          "bases/xtreme_system/api/route_factories.py:210",
+          "bases/xtreme_system/api/crud_ui/simple.py:112",
+          "bases/xtreme_system/api/crud_ui/simple.py:141",
+          "bases/xtreme_system/api/crud_ui/simple.py:163",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:210",
+          "bases/xtreme_system/api/routes/ui_routes/investidores.py:261"
+        ],
+        "differences_between_copies": "The write-conflict copies are textually identical to `write_conflict_detail` (`f\"{label} já existe\"`) — pure duplication, no drift. The delete-conflict copies HAVE drifted: `delete_conflict_detail` returns 'possui registros vinculados' while route_factories.py:210 and simple.py:163 return 'possui veículos vinculados'. investidores.py hardcodes the label into the literal rather than interpolating.",
+        "behavior_preservation": "The write-conflict substitutions are byte-identical and fully preserving. The delete-conflict substitution deliberately changes user-facing text on the JSON API and the simples factory — this is the point of the finding, but it is a visible change and any test asserting `detail == \"... possui veículos vinculados\"` must be updated in the same commit.",
+        "verification": [
+          "tests/test_api_compras.py, tests/test_api_vendas.py (assert JSON conflict details)",
+          "tests/test_route_factories_ui.py",
+          "new test needed: assert a delete conflict on a non-vehicle entity (cliente or perfil) does not mention 'veículos' on either surface"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": [
+          "All eight sites cited with line numbers from full reads of responses.py, route_factories.py, simple.py and investidores.py",
+          "The 'veículos' wording on non-vehicle entities is a demonstrable correctness issue, not just inconsistency"
+        ],
+        "weaknesses": [
+          "I did not grep the test suite for assertions on the exact conflict strings, so the migration cost is estimated rather than measured",
+          "Low structural value on its own — this is a small, high-confidence cleanup rather than an architectural win"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "rg 'possui veículos vinculados' across tests/ before changing the wording"
+        ]
+      }
+    },
+    {
+      "id": "imp-20260728-012",
+      "short_title": "Usuario username/perfil validation implemented three times across JSON and two UI handlers",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/usuarios.py",
+        "line_start": 103,
+        "line_end": 116,
+        "function": "ui_usuario_criar",
+        "snippet": "    if usuario.get_by_username(session, username) is not None:\n        return templates.TemplateResponse(request, \"_form_usuario.html\",\n            {\"perfis\": perfil.list_all(session), \"erro\": \"username já existe\"}, status_code=400)\n    if perfil_id is not None and perfil.get(session, perfil_id) is None:\n        return templates.TemplateResponse(request, \"_form_usuario.html\",\n            {\"perfis\": perfil.list_all(session), \"erro\": \"perfil não encontrado\"}, status_code=400)\n\n# json.py:80-83 -- same two rules, HTTPException\n# usuarios.py:254-278 -- same two rules again, _form_usuario_editar.html"
+      },
+      "impact": "Medium",
+      "category": "Parallel implementations",
+      "estimated_effort": "Medium",
+      "potential_savings": "Two validation rules defined once instead of three times; eight near-identical error-render blocks reduced to one helper.",
+      "description": "The rules 'username must be unique' and 'perfil_id must reference an existing perfil' are implemented three times: `json.py:80-83` (raises `HTTPException(400, 'username já existe')` / `'perfil não encontrado'`), `usuarios.py:103-116` (`ui_usuario_criar`, returns a 400 `_form_usuario.html`), and `usuarios.py:254-278` (`ui_usuario_editar`, returns a 400 `_form_usuario_editar.html` and additionally guards `username != obj.username`). `SenhaFracaError` handling is likewise written three times (json.py:86-87, usuarios.py:129-135, usuarios.py:290-296). On top of that, `usuarios.py` repeats the literal error-render `templates.TemplateResponse(request, <form>, {\"perfis\": perfil.list_all(session), \"erro\": <msg>}, status_code=400)` eight times across lines 104, 111, 130, 258, 269, 291 and the perfil-form variants at 212. Separately, `_usuarios_ctx` (usuarios.py:31-41) hardcodes `\"sort\": \"\"` / `\"order\": \"asc\"` while `ui_usuarios` (usuarios.py:60-66) builds an equivalent context dict inline with the real sort/order — two context builders for one template family, already diverged.",
+      "why_it_matters": "Three copies of the same two rules means the JSON API and the two UI forms can accept different inputs. The create path checks `get_by_username(username) is not None` unconditionally while the edit path checks it only when `username != obj.username` — correct, but the asymmetry is invisible unless both are read side by side, and a future rule (case-insensitive usernames, a reserved-name blocklist) would need three edits. The `_usuarios_ctx`-vs-inline-ctx split already causes a real inconsistency: every non-list response resets the table's sort indicator to the default.",
+      "concrete_fix": "Add `validate_usuario_fields(session, username, perfil_id, *, obj=None) -> None` to `routes/workflows.py` (the existing home for cross-surface validation, already used by json.py and the HTMX routes) raising `HTTPException` for both rules, with the `obj` parameter encoding the edit-path's 'only if the username changed' variant. Have json.py:80-83 and both usuarios.py handlers call it, wrapping the call in `try/except HTTPException` in the UI handlers. Add a local `_erro_usuario(request, session, template, msg)` helper in usuarios.py for the eight repeated 400 renders. Make `ui_usuarios` build its context via `_usuarios_ctx(session, user, sort=sort, order=order)` so there is one context builder.",
+      "example": "try:\n    validate_usuario_fields(session, username, perfil_id, obj=obj)\nexcept HTTPException as exc:\n    return _erro_usuario(request, session, \"_form_usuario_editar.html\", str(exc.detail))",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["usuarios", "validation", "workflows", "json-api", "htmx", "duplication"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py",
+          "bases/xtreme_system/api/routes/json.py",
+          "bases/xtreme_system/api/routes/workflows.py"
+        ],
+        "related_opportunities": ["imp-20260728-003"],
+        "duplicate_type": "parallel implementation",
+        "duplicate_sites": [
+          "bases/xtreme_system/api/routes/json.py:80",
+          "bases/xtreme_system/api/routes/json.py:86",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:103",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:110",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:129",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:254",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:268",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:290",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:31",
+          "bases/xtreme_system/api/routes/ui_routes/usuarios.py:60"
+        ],
+        "differences_between_copies": "The error strings ('username já existe', 'perfil não encontrado') are identical across all three. The transport differs: json.py raises `HTTPException`, the UI handlers return rendered 400 forms against two different templates. The edit path adds the `username != obj.username` precondition that the create path (correctly) lacks. The `SenhaFracaError` handling differs only in transport. `_usuarios_ctx` hardcodes sort/order defaults; the inline ctx in `ui_usuarios` passes the request's real sort/order and applies `_USUARIO_SORT_FIELDS` sorting first.",
+        "behavior_preservation": "The `username != obj.username` precondition must live on the edit branch (via the `obj` parameter) or editing a user without changing their username would start failing with 'username já existe'. The three different response transports stay at the call sites; only the rule moves. Unifying the two context builders means non-list responses will start echoing the active sort/order — a small, desirable behavior change that should be stated explicitly.",
+        "verification": [
+          "tests/test_api_auth.py, tests/test_api_perfil.py",
+          "tests/test_auth.py, tests/test_perfil.py",
+          "tests/test_ui.py (usuarios CRUD via HTMX)",
+          "new test needed: editing a user without changing the username still succeeds",
+          "new test needed: POST /usuarios and POST /ui/usuarios reject the same duplicate username with the same message"
+        ]
+      },
+      "self_critique": {
+        "confidence_score": 8.0,
+        "strengths": [
+          "All three implementations read in full; the two rules and their exact message strings match across surfaces",
+          "The `_usuarios_ctx` vs inline-ctx divergence is verifiable by comparing usuarios.py:31-41 with usuarios.py:60-66"
+        ],
+        "weaknesses": [
+          "`workflows.py` currently holds only entity-FK validators; adding a usuario validator that takes loose `username`/`perfil_id` arguments rather than a schema is a slightly different shape and may not be the right home",
+          "The eight repeated error renders and the two-rule duplication are really two separate findings bundled together; splitting them would make each easier to action"
+        ],
+        "uncertain": false,
+        "suggested_improvements": [
+          "Decide whether the usuario validator belongs in workflows.py or in components/xtreme_system/usuario/core.py next to `SenhaFracaError`, which would let the JSON and UI layers share it without a routes-layer dependency"
+        ]
+      }
+    }
+  ],
+  "discarded_candidates": [
+    {
+      "title": "veiculo_tem_outra_venda_concluida / veiculo_tem_outra_troca_concluida (venda/core.py:249-270)",
+      "reason": "Genuine literal duplication — the two functions are identical except for `Venda.veiculo_id` vs `Venda.veiculo_troca_id` — but only ~10 lines each, both are consumed by a single caller (`recomputar_status_veiculo_por_vendas`), and merging them behind a column parameter would make that caller harder to read. Real, but Low impact; excluded rather than used to pad the list. Related to imp-20260728-008."
+    },
+    {
+      "title": "ClienteCreate/ClienteUpdate and VeiculoCreate/VeiculoUpdate duplicate their field_validators verbatim",
+      "reason": "cliente/core.py duplicates seven `@field_validator` normalizers between Create and Update (lines ~170-207 vs 228-268), and veiculo/core.py duplicates three (lines ~140-157 vs 178-194). This is real near-duplication with drift risk on normalization rules, and a shared mixin base class would fix it. Excluded because the Update variants must differ in nullability semantics (`normalizar_placa(value) if value is not None else None` vs the unconditional form), so a mixin would need per-field overrides that erode most of the saving — Medium confidence at best, and weaker than the twelve reported."
+    },
+    {
+      "title": "uploads.py::remover_orfaos is a documented no-op with no production callers",
+      "reason": "Dead code (uploads.py:135-145 returns immediately; the only references are two tests) rather than duplication, so it is out of scope for a consolidation analysis. Worth deleting, but it belongs in a dead-code pass."
+    },
+    {
+      "title": "_ok_<recurso> / _erro_<recurso> helper pairs across vendas.py, compras.py, veiculos.py and lancamentos.py",
+      "reason": "These look like four copies of one pattern, but each is already a thin two-line wrapper over the shared `ok_response`/`error_response` in crud_ui/responses.py, and each binds genuinely different templates, list keys and ctx builders. The shared part is already factored; what remains is per-resource configuration, not duplication."
+    },
+    {
+      "title": "_parse_venda_form / _parse_compra_form empty-string-to-None coercion",
+      "reason": "vendas.py:94-117 and compras.py:89-97 both blank-coerce form fields, and a generic `blank_to_none(data, fields)` helper would unify the loop. Excluded because the field lists share no members, the venda copy also handles a boolean checkbox and both set a default date — so a helper would remove roughly six lines total. Low impact."
+    },
+    {
+      "title": "_comprovantes_modal (compras.py:134-157) vs _documentos_modal (clientes.py:121-140)",
+      "reason": "Structurally similar modal builders, but the underlying Jinja duplication has already been solved: both render templates that delegate to the shared `anexos_modal` macro in _macros.html, which five modal templates now use. The remaining Python-side similarity is per-resource wiring."
+    }
+  ],
+  "risks": [
+    "imp-20260728-001 and imp-20260728-011 both change user-visible HTTP status codes or error strings on conflict paths. These are behavior changes, not pure consolidation — land them with explicit test updates rather than folding them into a 'refactor only' commit.",
+    "imp-20260728-002 requires picking a winner between crud_ui/simple.py and investidores.py. Consolidating onto the factory must carry the `require_operacao` dependencies investidores uses; the factory currently hardcodes `UIAdmin`, so a careless merge would widen who can edit investidores. Permissions must be a parameter, never a default.",
+    "imp-20260728-004 touches the undocumented `cli_*` naming contract between three templates and resolver_cliente. Renaming any field during the macro extraction silently breaks inline client creation on that screen — the server-side parser fails soft, returning 'Informe os dados do cliente' rather than an error a test would obviously catch.",
+    "Several components-layer duplicates (imp-20260728-006, -009) rely on function-local imports to avoid circular imports between cliente/venda/compra. Hoisting those imports while extracting shared helpers will reintroduce the cycle; keep the `noqa: PLC0415` local imports inside the delegating wrappers.",
+    "The project's transaction contract is centralized in crud_writes.safe_write and database.core.get_session. Any consolidation that moves a write between the 'catches IntegrityError locally' style and the 'raises HTTPException 409 and lets get_session roll back' style must be checked against the CLAUDE.md rule that a handler catching IntegrityError internally and returning without session.rollback() leaves the session dirty.",
+    "imp-20260728-010 changes durability/cleanup code. A partially-applied extraction could leave the contract PDF written but its DB row missing, or vice versa. This one needs the atomicity tests (tests/test_route_factories_atomicity.py) green before and after, plus the new orphan-file test."
+  ]
+}

@@ -39,16 +39,21 @@
       {% endif %}
 
       {% if user and (pode_acessar(user, 'veiculos') or pode_acessar(user, 'compras') or pode_acessar(user, 'custos-veiculos') or pode_acessar(user, 'vendas')) %}
-      <div class="sidebar__section">Operações</div>
+      <div class="sidebar__section">Veículos</div>
       <nav class="nav">
         {% if user and pode_acessar(user, 'veiculos') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/veiculos') }}" href="/ui/veiculos">
-          {{ ui.icon("vehicles") }} Veículos
+          {{ ui.icon("vehicles") }} Estoque
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'compras') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/compras') }}" href="/ui/compras">
-          {{ ui.icon("inbox") }} Compras
+          {{ ui.icon("package") }} Compras
+        </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'vendas') %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/vendas') }}" href="/ui/vendas">
+          {{ ui.icon("trending-up") }} Vendas
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'custos-veiculos') %}
@@ -56,28 +61,29 @@
           {{ ui.icon("cash") }} Custos
         </a>
         {% endif %}
-        {% if user and pode_acessar(user, 'vendas') %}
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/vendas') }}" href="/ui/vendas">
-          {{ ui.icon("cash") }} Vendas
-        </a>
-        {% endif %}
       </nav>
       {% endif %}
 
-      {% if user and (pode_acessar(user, 'investidores') or pode_acessar(user, 'clientes')) %}
+      {% if user and pode_acessar(user, 'clientes') %}
       <div class="sidebar__section">Pessoas</div>
+      <nav class="nav">
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/todos') }}" href="/ui/clientes/todos">
+          {{ ui.icon("users") }} Clientes
+        </a>
+      </nav>
+      {% endif %}
+
+      {% if user and (pode_acessar(user, 'investidores') or is_admin(user)) %}
+      <div class="sidebar__section">Financeiro</div>
       <nav class="nav">
         {% if user and pode_acessar(user, 'investidores') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/investidores') }}" href="/ui/investidores">
           {{ ui.icon("wallet") }} Investidores
         </a>
         {% endif %}
-        {% if user and pode_acessar(user, 'clientes') %}
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/compradores') }}" href="/ui/clientes/compradores">
-          {{ ui.icon("users") }} Clientes Compradores
-        </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/clientes/vendedores') }}" href="/ui/clientes/vendedores">
-          {{ ui.icon("users") }} Clientes Vendedores
+        {% if user and is_admin(user) %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/relatorios') }}" href="/ui/relatorios/dre">
+          {{ ui.icon("receipt") }} DRE
         </a>
         {% endif %}
       </nav>
@@ -89,17 +95,18 @@
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/usuarios') }}" href="/ui/usuarios">
           {{ ui.icon("users") }} Usuários
         </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/relatorios') }}" href="/ui/relatorios/dre">
-          {{ ui.icon("receipt") }} DRE
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/perfis') }}" href="/ui/perfis">
+          {{ ui.icon("tag") }} Perfis
         </a>
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/auditoria') }}" href="/ui/auditoria">
           {{ ui.icon("file") }} Auditoria
         </a>
-        <a class="nav__link {{ 'is-active' if path.startswith('/ui/perfis') }}" href="/ui/perfis">
-          {{ ui.icon("tag") }} Perfis
-        </a>
+      </nav>
+
+      <div class="sidebar__section">Configurações</div>
+      <nav class="nav">
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/configuracoes') }}" href="/ui/configuracoes">
-          {{ ui.icon("settings") }} Configurações
+          {{ ui.icon("settings") }} Gerais
         </a>
       </nav>
       {% endif %}
@@ -170,26 +177,57 @@
       el.setAttribute("data-theme", next);
       localStorage.setItem("theme", next);
     }
+    // Styled replacement for window.confirm(), shared by the discard-changes
+    // flow below and the htmx:confirm handler.
+    function showConfirmDialog(question, onConfirm) {
+      var box = document.createElement("div");
+      box.className = "modal";
+      box.innerHTML =
+        '<div class="modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-q" style="max-width:400px">' +
+          '<div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-q"></p></div>' +
+          '<div class="modal__foot">' +
+            '<button type="button" class="btn btn--default" data-cancel>Cancelar</button>' +
+            '<button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent" data-ok>Confirmar</button>' +
+          '</div>' +
+        '</div>';
+      box.querySelector("#confirm-q").textContent = question;
+      document.body.appendChild(box);
+      box.querySelector("[data-ok]").focus();
+      function close() { box.remove(); document.removeEventListener("keydown", onKey); }
+      function onKey(ev) { if (ev.key === "Escape") close(); }
+      document.addEventListener("keydown", onKey);
+      box.addEventListener("click", function (ev) { if (ev.target === box) close(); });
+      box.querySelector("[data-cancel]").addEventListener("click", close);
+      box.querySelector("[data-ok]").addEventListener("click", function () {
+        close();
+        onConfirm();
+      });
+    }
+
     function closeModalOnBackdrop(modal) {
       var form = modal.querySelector("form");
-      if (form) {
-        var changed = Array.prototype.some.call(form.elements, function (field) {
-          if (field.disabled) return false;
-          if (field.type === "file") return field.files && field.files.length > 0;
-          if (field.type === "checkbox" || field.type === "radio") {
-            return field.checked !== field.defaultChecked;
-          }
-          if (field.tagName === "SELECT") {
-            return Array.prototype.some.call(field.options, function (option) {
-              return option.selected !== option.defaultSelected;
-            });
-          }
-          return field.value !== field.defaultValue;
-        });
-        if (changed && !window.confirm("Descartar as alterações?")) return;
+      var changed = form && Array.prototype.some.call(form.elements, function (field) {
+        if (field.disabled) return false;
+        if (field.type === "file") return field.files && field.files.length > 0;
+        if (field.type === "checkbox" || field.type === "radio") {
+          return field.checked !== field.defaultChecked;
+        }
+        if (field.tagName === "SELECT") {
+          return Array.prototype.some.call(field.options, function (option) {
+            return option.selected !== option.defaultSelected;
+          });
+        }
+        return field.value !== field.defaultValue;
+      });
+      function discard() {
+        modal.remove();
+        if (modal === activeServerModal) restoreModalFocus();
       }
-      modal.remove();
-      if (modal === activeServerModal) restoreModalFocus();
+      if (changed) {
+        showConfirmDialog("Descartar as alterações?", discard);
+      } else {
+        discard();
+      }
     }
 
     document.body.addEventListener("htmx:beforeRequest", function (e) {
@@ -254,28 +292,7 @@
     document.body.addEventListener("htmx:confirm", function (e) {
       if (!e.detail.question) return;
       e.preventDefault();
-      var box = document.createElement("div");
-      box.className = "modal";
-      box.innerHTML =
-        '<div class="modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-q" style="max-width:400px">' +
-          '<div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-q"></p></div>' +
-          '<div class="modal__foot">' +
-            '<button type="button" class="btn btn--default" data-cancel>Cancelar</button>' +
-            '<button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent" data-ok>Confirmar</button>' +
-          '</div>' +
-        '</div>';
-      box.querySelector("#confirm-q").textContent = e.detail.question;
-      document.body.appendChild(box);
-      box.querySelector("[data-ok]").focus();
-      function close() { box.remove(); document.removeEventListener("keydown", onKey); }
-      function onKey(ev) { if (ev.key === "Escape") close(); }
-      document.addEventListener("keydown", onKey);
-      box.addEventListener("click", function (ev) { if (ev.target === box) close(); });
-      box.querySelector("[data-cancel]").addEventListener("click", close);
-      box.querySelector("[data-ok]").addEventListener("click", function () {
-        close();
-        e.detail.issueRequest(true);
-      });
+      showConfirmDialog(e.detail.question, function () { e.detail.issueRequest(true); });
     });
   </script>
 </body>

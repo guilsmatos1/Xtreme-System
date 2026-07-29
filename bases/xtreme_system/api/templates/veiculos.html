@@ -45,7 +45,7 @@
 {% if pode_ver_campo(user, 'veiculos', 'ano') %}{% set _ = search_colunas.append({"key": "ano", "label": "Ano"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'km') %}{% set _ = search_colunas.append({"key": "km", "label": "KM"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = search_colunas.append({"key": "preco", "label": "Preço"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = search_colunas.append({"key": "preco", "label": "Preço Anunciado"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}{% set _ = search_colunas.append({"key": "tipo_entrada", "label": "Tipo de Entrada"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'investidor') %}{% set _ = search_colunas.append({"key": "investidor", "label": "Investidor"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}{% set _ = search_colunas.append({"key": "procuracao", "label": "Procurador"}) %}{% endif %}
@@ -93,7 +93,7 @@
       {% if pode_ver_campo(user, 'veiculos', 'ano') %}<th data-col="ano" data-col-label="Ano">{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'km') %}<th data-col="km" data-col-label="KM">{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'status') %}<th data-col="status" data-col-label="Estado">{{ ui.sortable("status", "Estado", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'preco') %}<th data-col="preco" data-col-label="Preço de Custo">{{ ui.sortable("preco", "Preço de Custo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'preco') %}<th data-col="preco" data-col-label="Preço Anunciado">{{ ui.sortable("preco", "Preço Anunciado", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<th data-col="tipo_entrada" data-col-label="Tipo de Entrada">{{ ui.sortable("tipo_entrada", "Tipo de Entrada", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<th data-col="investidor" data-col-label="Investidor">{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<th data-col="procuracao" data-col-label="Procurador">{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}

@@ -10,6 +10,7 @@ from sqlalchemy import ForeignKey, Numeric, case, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column
 
 from xtreme_system.auditoria.core import auditar, snapshot
+from xtreme_system.compra import core as compra
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
 from xtreme_system.veiculo.core import Veiculo
@@ -167,6 +168,17 @@ def _descricao_veiculo(veiculo_obj: Veiculo) -> str:
     return f"Compra do veículo {veiculo_obj.modelo} - placa {veiculo_obj.placa}"
 
 
+def _custo_veiculo(session: Session, veiculo_obj: Veiculo) -> Decimal:
+    """Custo de aquisição = valor da compra mais recente do veículo.
+
+    Veículos sem compra (consignação, por exemplo) não têm custo de aquisição.
+    """
+    compra_atual = compra.get_latest_by_veiculo(session, veiculo_obj.id)
+    if compra_atual is None:
+        return Decimal("0")
+    return compra_atual.valor_compra
+
+
 def criar_lancamento_veiculo(
     session: Session, veiculo_obj: Veiculo, actor_id: int | None = None
 ) -> LancamentoInvestimento:
@@ -176,7 +188,7 @@ def criar_lancamento_veiculo(
         fechamento_venda_id=None,
         tipo=TipoLancamento.custo,
         origem=OrigemLancamento.veiculo,
-        valor=veiculo_obj.preco,
+        valor=_custo_veiculo(session, veiculo_obj),
         descricao=_descricao_veiculo(veiculo_obj),
     )
     session.add(obj)
@@ -205,7 +217,7 @@ def sincronizar_lancamento_veiculo(
     if lancamento is None:
         return
     antes = snapshot(lancamento)
-    lancamento.valor = veiculo_obj.preco
+    lancamento.valor = _custo_veiculo(session, veiculo_obj)
     lancamento.investidor_id = veiculo_obj.investidor_id
     lancamento.descricao = _descricao_veiculo(veiculo_obj)
     session.flush()

@@ -91,6 +91,41 @@ def normalizar_telefone(value: str | None) -> str | None:
     return _digits(value)
 
 
+_CPF_LEN = 11
+_CNPJ_LEN = 14
+
+
+def formatar_documento(value: str | None) -> str:
+    """CPF (11 dígitos) -> 000.000.000-00; CNPJ (14 dígitos) -> 00.000.000/0000-00."""
+    digitos = _digits(value)
+    if digitos is None:
+        return "-"
+    if len(digitos) == _CPF_LEN:
+        return f"{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}"
+    if len(digitos) == _CNPJ_LEN:
+        return (
+            f"{digitos[:2]}.{digitos[2:5]}.{digitos[5:8]}"
+            f"/{digitos[8:12]}-{digitos[12:]}"
+        )
+    return value or "-"
+
+
+_TELEFONE_FIXO_LEN = 10
+_TELEFONE_CELULAR_LEN = 11
+
+
+def formatar_telefone(value: str | None) -> str:
+    """(DDD) XXXXX-XXXX para celular (11 dígitos) ou (DDD) XXXX-XXXX para fixo (10)."""
+    digitos = _digits(value)
+    if digitos is None:
+        return "-"
+    if len(digitos) == _TELEFONE_CELULAR_LEN:
+        return f"({digitos[:2]}) {digitos[2:7]}-{digitos[7:]}"
+    if len(digitos) == _TELEFONE_FIXO_LEN:
+        return f"({digitos[:2]}) {digitos[2:6]}-{digitos[6:]}"
+    return value or "-"
+
+
 def normalizar_cep(value: str | None) -> str | None:
     cep = _digits(value)
     if cep is not None and len(cep) != _CEP_LENGTH:
@@ -346,68 +381,6 @@ def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[Cliente]:
     return _search_com_vinculo(session, term, column)
-
-
-def list_compradores(
-    session: Session, *, limit: int | None = None, offset: int = 0
-) -> list[Cliente]:
-    sql_query = query_compradores(session)
-    if limit is not None:
-        sql_query = sql_query.limit(limit)
-    if offset:
-        sql_query = sql_query.offset(offset)
-    return list(sql_query.all())
-
-
-def query_compradores(session: Session) -> Query[Cliente]:
-    from xtreme_system.venda.core import Venda  # noqa: PLC0415
-
-    return session.query(Cliente).join(Venda).distinct().order_by(Cliente.id)
-
-
-def search_compradores(
-    session: Session, term: str, column: str | None = None
-) -> list[Cliente]:
-    return list(search_query_compradores(session, term, column).all())
-
-
-def search_query_compradores(
-    session: Session, term: str, column: str | None = None
-) -> Query[Cliente]:
-    from xtreme_system.venda.core import Venda  # noqa: PLC0415
-
-    return _search_com_vinculo(session, term, column).join(Venda).distinct()
-
-
-def list_vendedores(
-    session: Session, *, limit: int | None = None, offset: int = 0
-) -> list[Cliente]:
-    sql_query = query_vendedores(session)
-    if limit is not None:
-        sql_query = sql_query.limit(limit)
-    if offset:
-        sql_query = sql_query.offset(offset)
-    return list(sql_query.all())
-
-
-def query_vendedores(session: Session) -> Query[Cliente]:
-    from xtreme_system.compra.core import Compra  # noqa: PLC0415
-
-    return session.query(Cliente).join(Compra).distinct().order_by(Cliente.id)
-
-
-def search_vendedores(
-    session: Session, term: str, column: str | None = None
-) -> list[Cliente]:
-    return list(search_query_vendedores(session, term, column).all())
-
-
-def search_query_vendedores(
-    session: Session, term: str, column: str | None = None
-) -> Query[Cliente]:
-    from xtreme_system.compra.core import Compra  # noqa: PLC0415
-
-    return _search_com_vinculo(session, term, column).join(Compra).distinct()
 
 
 def _search_com_vinculo(

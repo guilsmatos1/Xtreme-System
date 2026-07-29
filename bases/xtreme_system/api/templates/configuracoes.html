@@ -92,9 +92,12 @@
             <span>A importação substitui <strong>todos os dados atuais</strong> do banco. Esta ação é irreversível.</span>
           </div>
           <form method="post" action="/ui/configuracoes/importar" enctype="multipart/form-data">
-            <label class="field">
-              <span class="field__label">Arquivo .dump</span>
-              <input class="input" type="file" name="arquivo" accept=".dump" required>
+            <label class="mmgr__drop">
+              <input type="file" name="arquivo" accept=".dump" required
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste o arquivo .dump aqui ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("upload") }}</span>
+              <span class="mmgr__drop-text">Arraste o arquivo .dump aqui ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">Apenas arquivos .dump</span>
             </label>
             <div class="field settings-actions">
               <button class="btn btn--danger" type="submit">
@@ -200,34 +203,6 @@
         <p class="page-head__subtitle">Informações cadastrais usadas em documentos e contratos.</p>
       </div>
 
-      <div class="card card--pad settings-form">
-        <div class="modal-section">
-          <h3 class="field__label">Logo</h3>
-          {% if config_empresa.logo_url and arquivo_disponivel(config_empresa.logo_url) %}
-          <div class="mmgr__card" style="max-width:220px">
-            <img src="{{ config_empresa.logo_url }}" alt="Logo da empresa" style="max-width:100%;display:block">
-            <form method="post" action="/ui/configuracoes/empresa/logo/excluir" onsubmit="return confirm('Remover o logo da empresa?')">
-              <button class="mmgr__del" type="submit" aria-label="Remover logo">{{ ui.icon("trash") }}</button>
-            </form>
-          </div>
-          {% elif config_empresa.logo_url %}
-          {{ ui.alert("O arquivo do logo não está mais disponível. Envie um novo.") }}
-          {% endif %}
-          <form class="mmgr__upload" method="post" action="/ui/configuracoes/empresa/logo" enctype="multipart/form-data">
-            <label class="mmgr__drop">
-              <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp" required
-                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste o logo aqui ou clique para selecionar'">
-              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
-              <span class="mmgr__drop-text">Arraste o logo aqui ou clique para selecionar</span>
-              <span class="mmgr__drop-hint">JPG, PNG ou WEBP — usado no cabeçalho do contrato de venda</span>
-            </label>
-            <div class="mmgr__upload-actions">
-              <button class="btn btn--primary" type="submit">{{ ui.icon("plus") }}{% if config_empresa.logo_url %}Substituir logo{% else %}Enviar logo{% endif %}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
       <form method="post" action="/ui/configuracoes/empresa" class="card card--pad settings-form">
         <div class="modal-section">
           <div class="form-grid">
@@ -274,6 +249,39 @@
           <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
         </div>
       </form>
+
+      <div class="card card--pad settings-form">
+        <div class="modal-section">
+          <h3 class="field__label">Logo</h3>
+          <p class="muted">
+            Logo da empresa exibido em documentos e contratos.
+          </p>
+          {% if config_empresa.logo_url and arquivo_disponivel(config_empresa.logo_url) %}
+          <div class="mmgr__card" style="max-width:220px; margin-bottom:1rem">
+            <img src="{{ config_empresa.logo_url }}" alt="Logo da empresa" style="max-width:100%;display:block">
+            <form method="post" action="/ui/configuracoes/empresa/logo/excluir" onsubmit="return confirm('Remover o logo da empresa?')">
+              <button class="mmgr__del" type="submit" aria-label="Remover logo">{{ ui.icon("trash") }}</button>
+            </form>
+          </div>
+          {% elif config_empresa.logo_url %}
+          {{ ui.alert("O arquivo do logo não está mais disponível. Envie um novo.") }}
+          {% endif %}
+          <form method="post" action="/ui/configuracoes/empresa/logo" enctype="multipart/form-data">
+            <label class="mmgr__drop">
+              <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp" required
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files[0].name : 'Arraste a imagem do logo aqui ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("upload") }}</span>
+              <span class="mmgr__drop-text">Arraste a imagem do logo aqui ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">Apenas uma imagem (JPG, PNG ou WEBP)</span>
+            </label>
+            <div class="field settings-actions">
+              <button class="btn btn--primary" type="submit">
+                {{ ui.icon("upload") }} {% if config_empresa.logo_url %}Substituir logo{% else %}Enviar logo{% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </section>
 
     <section class="settings-tabs__panel settings-tabs__panel--tema">

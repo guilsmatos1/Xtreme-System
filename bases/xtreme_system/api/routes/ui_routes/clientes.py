@@ -80,40 +80,32 @@ def _ctx_lista_cliente(
     return _ctx
 
 
-def _veiculos_comprador_modal(
+def _veiculos_cliente_modal(
     request: Request, session: Session, cliente_id: int
 ) -> HTMLResponse:
     item = _found(cliente.get(session, cliente_id), "Cliente")
-    vendas = venda.list_by_cliente(session, cliente_id)
     return templates.TemplateResponse(
         request,
         "_modal_veiculos_cliente.html",
         {
             "cliente": item,
-            "registros": vendas,
-            "modal_empty_text": "Este cliente ainda não comprou nenhum veículo.",
-            "modal_title": "Veículos comprados",
-            "modal_kind": "comprador",
-        },
-    )
-
-
-def _veiculos_vendedor_modal(
-    request: Request, session: Session, cliente_id: int
-) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
-    compras = compra.list_by_cliente(session, cliente_id)
-    return templates.TemplateResponse(
-        request,
-        "_modal_veiculos_cliente.html",
-        {
-            "cliente": item,
-            "registros": compras,
-            "modal_empty_text": (
-                "Este cliente ainda não vendeu nenhum veículo para a loja."
-            ),
-            "modal_title": "Veículos vendidos",
-            "modal_kind": "vendedor",
+            "modal_title": "Veículos",
+            "grupos": [
+                {
+                    "titulo": "Veículos comprados",
+                    "registros": venda.list_by_cliente(session, cliente_id),
+                    "kind": "comprador",
+                    "empty_text": "Este cliente ainda não comprou nenhum veículo.",
+                },
+                {
+                    "titulo": "Veículos vendidos",
+                    "registros": compra.list_by_cliente(session, cliente_id),
+                    "kind": "vendedor",
+                    "empty_text": (
+                        "Este cliente ainda não vendeu nenhum veículo para a loja."
+                    ),
+                },
+            ],
         },
     )
 
@@ -203,27 +195,17 @@ def ui_cliente_documentos_excluir(
 
 @app.get("/ui/clientes")
 def ui_clientes_redirect(_: UIUser) -> RedirectResponse:
-    return RedirectResponse("/ui/clientes/compradores", status_code=303)
+    return RedirectResponse("/ui/clientes/todos", status_code=303)
 
 
-@app.get("/ui/clientes/compradores/{cliente_id}/veiculos")
-def ui_cliente_comprador_veiculos(
+@app.get("/ui/clientes/todos/{cliente_id}/veiculos")
+def ui_cliente_veiculos(
     request: Request,
     session: SessionDep,
     _: UIAdmin,
     cliente_id: int,
 ) -> HTMLResponse:
-    return _veiculos_comprador_modal(request, session, cliente_id)
-
-
-@app.get("/ui/clientes/vendedores/{cliente_id}/veiculos")
-def ui_cliente_vendedor_veiculos(
-    request: Request,
-    session: SessionDep,
-    _: UIAdmin,
-    cliente_id: int,
-) -> HTMLResponse:
-    return _veiculos_vendedor_modal(request, session, cliente_id)
+    return _veiculos_cliente_modal(request, session, cliente_id)
 
 
 def _register_clientes_page(
@@ -306,29 +288,15 @@ def _register_clientes_page(
 
 
 _register_clientes_page(
-    prefix="/ui/clientes/compradores",
-    page_title="Clientes Compradores",
-    page_subtitle="Clientes que compram na loja",
+    prefix="/ui/clientes/todos",
+    page_title="Clientes",
+    page_subtitle="Todos os clientes cadastrados",
     empty_title="Nenhum cliente encontrado",
     empty_text="Crie um novo cliente para começar.",
-    vehicles_label="Veículos comprados",
-    list_func=cliente.list_compradores,
-    search_func=cliente.search_compradores,
-    query_func=cliente.query_compradores,
-    search_query_func=cliente.search_query_compradores,
-    csv_filename="clientes-compradores.csv",
-)
-
-_register_clientes_page(
-    prefix="/ui/clientes/vendedores",
-    page_title="Clientes Vendedores",
-    page_subtitle="Clientes que vendem para a loja",
-    empty_title="Nenhum cliente encontrado",
-    empty_text="Crie um novo cliente para começar.",
-    vehicles_label="Veículos vendidos",
-    list_func=cliente.list_vendedores,
-    search_func=cliente.search_vendedores,
-    query_func=cliente.query_vendedores,
-    search_query_func=cliente.search_query_vendedores,
-    csv_filename="clientes-vendedores.csv",
+    vehicles_label="Veículos",
+    list_func=cliente.list_all,
+    search_func=cliente.search,
+    query_func=cliente.query,
+    search_query_func=cliente.search_query,
+    csv_filename="clientes.csv",
 )

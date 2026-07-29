@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.routes.ui_routes.common import arquivo_disponivel
 from xtreme_system.auth import core as auth
+from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -26,6 +27,8 @@ templates.env.globals["operacoes_disponiveis"] = perfil.OPERACOES
 templates.env.globals["is_admin"] = usuario.is_admin
 templates.env.globals["Papel"] = usuario.Papel
 templates.env.globals["arquivo_disponivel"] = arquivo_disponivel
+templates.env.filters["formatar_documento"] = cliente.formatar_documento
+templates.env.filters["formatar_telefone"] = cliente.formatar_telefone
 
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

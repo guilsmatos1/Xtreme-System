@@ -52,9 +52,8 @@ from xtreme_system.veiculo import core as veiculo
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
-    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
-        session, veiculo.list_ids(session)
-    )
+    veiculo_ids = veiculo.list_ids(session)
+    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(session, veiculo_ids)
     return {
         "tipos": list(veiculo.TipoVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
@@ -89,9 +88,8 @@ def _ctx_lista_veiculos(
         status.value: resumo.get(status, (0, Decimal("0")))[0]
         for status in veiculo.StatusVeiculo
     }
-    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(
-        session, [item.id for item in veiculos]
-    )
+    veiculo_ids = [item.id for item in veiculos]
+    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(session, veiculo_ids)
     return {
         "total_estoque": sum(contagens.values()),
         "contagens_estoque": contagens,
@@ -186,7 +184,7 @@ register_crud_ui_routes(
             "Tipo",
             "Ano",
             "KM",
-            "Preco",
+            "Preco Anunciado",
             "Estado",
             "Tipo de Entrada",
             "Revisao",

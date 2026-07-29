@@ -340,6 +340,15 @@ def _validate_compra_update(session: Session, _obj: Any, data: Any) -> None:
     validate_cliente_veiculo_fks(session, data)
 
 
+def _sincronizar_caixa_compra(
+    session: Session, obj: compra.Compra, actor_id: int | None = None
+) -> None:
+    """O lançamento de custo do veículo espelha o valor da compra."""
+    veiculo_obj = veiculo.get(session, obj.veiculo_id)
+    if veiculo_obj is not None:
+        caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
+
+
 register_crud_routes(
     app,
     compra,
@@ -350,6 +359,8 @@ register_crud_routes(
     update_schema=compra.CompraUpdate,
     before_create=_validate_compra_create,
     before_update=_validate_compra_update,
+    after_create=_sincronizar_caixa_compra,
+    after_update=_sincronizar_caixa_compra,
     pagina="compras",
     actor_field="usuario_id",
 )

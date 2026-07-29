@@ -21,37 +21,6 @@
         <div><dt>Débitos</dt><dd>{% if compra.debitos is not none %}R$ {{ "{:,.2f}".format(compra.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</dd></div>
       </dl>
 
-      <div class="modal-section">
-        <h4>Documentos</h4>
-        {% if documentos %}
-        <ul class="midia-list">
-          {% for doc in documentos %}
-          <li class="midia-list__item">
-            {{ ui.icon("file") }}
-            {% if doc.url %}
-            <a href="{{ doc.url }}" target="_blank" rel="noopener">Documento {{ loop.index }}</a>
-            {% else %}
-            <span aria-disabled="true">Documento {{ loop.index }} indisponível</span>
-            {% endif %}
-            {% if is_admin(user) %}<button class="btn btn--ghost btn--sm btn--danger" type="button"
-                    hx-post="/ui/veiculos/{{ veiculo.id }}/cliente-vendedor/documentos/{{ doc.id }}/excluir"
-                    hx-target="#modal" hx-swap="innerHTML" hx-confirm="Excluir este documento?">
-              {{ ui.icon("trash") }}
-            </button>{% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        {{ ui.empty("file", "Nenhum documento", "Não há documentos cadastrados para este cliente.") }}
-        {% endif %}
-      </div>
-      {% if is_admin(user) %}<form class="modal__foot"
-            hx-post="/ui/veiculos/{{ veiculo.id }}/cliente-vendedor/documentos"
-            hx-target="#modal" hx-swap="innerHTML"
-            hx-encoding="multipart/form-data" enctype="multipart/form-data">
-        <input class="input" type="file" name="documentos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required>
-        <button class="btn btn--primary" type="submit">Enviar documentos</button>
-      </form>{% endif %}
       {% else %}
       {{ ui.empty("user", "Cliente vendedor não encontrado", "Este veículo ainda não possui uma compra vinculada.") }}
       {% endif %}

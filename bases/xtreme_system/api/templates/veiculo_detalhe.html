@@ -35,8 +35,14 @@
 <section class="stats" aria-label="Resumo do veículo">
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}
   <article class="card stat stat--info">
-    <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
+    <div class="stat__label">{{ ui.icon("cash") }} Preço Anunciado</div>
     <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(veiculo.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+  </article>
+  {% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'custo') %}
+  <article class="card stat stat--info">
+    <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}R$ {{ "{:,.2f}".format(compra_atual.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
