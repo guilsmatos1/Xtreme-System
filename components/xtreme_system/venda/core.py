@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import (
     Boolean,
     Date,
+    DateTime,
     ForeignKey,
     Numeric,
     extract,
@@ -76,6 +77,7 @@ class Venda(Base):
         ForeignKey("usuario.id"), index=True
     )
     data_venda: Mapped[date | None] = mapped_column(Date)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     valor_venda: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     valor_entrada: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
@@ -209,6 +211,7 @@ class VendaRead(BaseModel):
     veiculo_troca: VeiculoRead | None
     vendedor: UsuarioRead | None
     data_venda: date | None
+    criado_em: datetime
     valor_venda: Decimal
     valor_entrada: Decimal | None
     debitos: Decimal | None

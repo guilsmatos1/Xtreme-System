@@ -137,12 +137,14 @@ CsvRow = Callable[[EntityT], list[Any]]
 
 
 @dataclass(frozen=True)
-class ListingSpec[EntityT]:
+class ListingSpec[EntityT]:  # pylint: disable=too-many-instance-attributes
     searchable: bool = False
     paginated: bool = True
     list_func: ListFunc[EntityT] | None = None
     search_func: SearchFunc[EntityT] | None = None
     sort_fields: Mapping[str, SortField[EntityT]] = field(default_factory=dict)
+    default_sort: str = ""
+    default_order: str = "asc"
     query_func: QueryFunc[EntityT] | None = None
     search_query_func: SearchQueryFunc[EntityT] | None = None
 

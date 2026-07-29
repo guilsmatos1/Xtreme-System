@@ -345,6 +345,68 @@ def test_query_list_ordena_no_sql_quando_query_func_disponivel(
     assert [item.nome for item in ordenados] == ["Carla", "Bruno", "Ana"]
 
 
+def test_query_list_aplica_ordenacao_padrao_no_sql(
+    request: pytest.FixtureRequest,
+) -> None:
+    engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
+    session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
+    session.add_all(
+        [
+            investidor.Investidor(nome="Ana"),
+            investidor.Investidor(nome="Carla"),
+            investidor.Investidor(nome="Bruno"),
+        ]
+    )
+    session.flush()
+
+    ordenados = query_list(
+        session,
+        investidor,
+        listing=ListingSpec(
+            sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+            default_sort="nome",
+            default_order="desc",
+            query_func=lambda sess: sess.query(investidor.Investidor),
+        ),
+        state=ListState(),
+    )
+
+    assert [item.nome for item in ordenados] == ["Carla", "Bruno", "Ana"]
+
+
+def test_query_list_ordenacao_explicita_substitui_padrao(
+    request: pytest.FixtureRequest,
+) -> None:
+    engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
+    session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
+    session.add_all(
+        [
+            investidor.Investidor(nome="Ana"),
+            investidor.Investidor(nome="Carla"),
+            investidor.Investidor(nome="Bruno"),
+        ]
+    )
+    session.flush()
+
+    ordenados = query_list(
+        session,
+        investidor,
+        listing=ListingSpec(
+            sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
+            default_sort="nome",
+            default_order="desc",
+            query_func=lambda sess: sess.query(investidor.Investidor),
+        ),
+        state=ListState(sort="nome", order="asc"),
+    )
+
+    assert [item.nome for item in ordenados] == ["Ana", "Bruno", "Carla"]
+
+
 def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
     request: pytest.FixtureRequest,
 ) -> None:

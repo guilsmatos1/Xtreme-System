@@ -126,6 +126,7 @@ Registro de vendas de veículos.
 | `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
 | `vendedor_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
 | `data_venda` | `DATE` | Sim | - | |
+| `criado_em` | `DATETIME` | Não | `now()` | Momento de criação do registro |
 | `valor_venda` | `NUMERIC(12,2)` | Não | - | |
 | `valor_entrada` | `NUMERIC(12,2)` | Sim | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
@@ -181,6 +182,7 @@ Registro de compras de veículos.
 | `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
 | `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
 | `data_compra` | `DATE` | Não | - | |
+| `criado_em` | `DATETIME` | Não | `now()` | Momento de criação do registro |
 | `valor_compra` | `NUMERIC(12,2)` | Não | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
 | `observacoes` | `VARCHAR` | Sim | - | |

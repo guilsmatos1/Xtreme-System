@@ -221,11 +221,24 @@ class VeiculoRead(BaseModel):
 def list_all(
     session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[Veiculo]:
-    return crud.list_all(session, Veiculo, limit=limit, offset=offset)
+    sql_query = (
+        session.query(Veiculo)
+        .filter(Veiculo.status != StatusVeiculo.cancelado)
+        .order_by(Veiculo.id)
+    )
+    if limit is not None:
+        sql_query = sql_query.limit(limit)
+    if offset:
+        sql_query = sql_query.offset(offset)
+    return list(sql_query.all())
 
 
 def query(session: Session) -> Query[Veiculo]:
-    return session.query(Veiculo).join(Investidor)
+    return (
+        session.query(Veiculo)
+        .join(Investidor)
+        .filter(Veiculo.status != StatusVeiculo.cancelado)
+    )
 
 
 def list_ids(session: Session) -> list[int]:

@@ -130,6 +130,8 @@ def query_list(
     listing: ListingSpec[EntityT],
     state: ListState,
 ) -> list[EntityT]:
+    sort = state.sort or listing.default_sort
+    order = state.order if state.sort else listing.default_order
     limit = state.limit if listing.paginated else None
     offset = state.offset if listing.paginated else 0
     if state.q and listing.search_query_func is not None:
@@ -138,8 +140,8 @@ def query_list(
         )
         return _query_sorted_list(
             query,
-            state.sort,
-            state.order,
+            sort,
+            order,
             listing.sort_fields,
             limit,
             offset,
@@ -147,8 +149,8 @@ def query_list(
     if not state.q and listing.query_func is not None:
         return _query_sorted_list(
             listing.query_func(session),
-            state.sort,
-            state.order,
+            sort,
+            order,
             listing.sort_fields,
             limit,
             offset,
@@ -158,7 +160,7 @@ def query_list(
             listing.search_func, session, state.q, state.search_column or None
         )
         result = _page_list(
-            sorted_list(lista, state.sort, state.order, listing.sort_fields),
+            sorted_list(lista, sort, order, listing.sort_fields),
             limit,
             offset,
         )
@@ -169,8 +171,8 @@ def query_list(
         result = _page_list(
             sorted_list(
                 list(searchable_module.search(session, state.q)),
-                state.sort,
-                state.order,
+                sort,
+                order,
                 listing.sort_fields,
             ),
             limit,
@@ -178,13 +180,13 @@ def query_list(
         )
     else:
         callable_list = listing.list_func or module.list_all
-        if not state.sort or state.sort not in listing.sort_fields:
+        if not sort or sort not in listing.sort_fields:
             return _paginated_list(callable_list, session, limit, offset)
         result = _page_list(
             sorted_list(
                 _paginated_list(callable_list, session, None, 0),
-                state.sort,
-                state.order,
+                sort,
+                order,
                 listing.sort_fields,
             ),
             limit,

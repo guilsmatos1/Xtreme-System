@@ -1,11 +1,11 @@
 """Compra: model (com FKs para cliente e veiculo), schemas e CRUD."""
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, ForeignKey, Numeric, func, select
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func, select
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -37,6 +37,7 @@ class Compra(Base):
         ForeignKey("usuario.id", ondelete="SET NULL"), index=True
     )
     data_compra: Mapped[date] = mapped_column(Date)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     observacoes: Mapped[str | None]
@@ -79,6 +80,7 @@ class CompraRead(BaseModel):
     veiculo: VeiculoRead
     usuario: UsuarioRead | None
     data_compra: date
+    criado_em: datetime
     valor_compra: Decimal
     debitos: Decimal | None
     observacoes: str | None

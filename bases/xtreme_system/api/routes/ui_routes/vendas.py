@@ -164,6 +164,7 @@ register_crud_ui_routes(
         query_func=venda.query,
         search_query_func=venda.search_query,
         sort_fields={
+            "criado_em": SortField("criado_em", venda.Venda.criado_em),
             "cliente": SortField(
                 lambda v: _sort_key(v.cliente.nome), cliente.Cliente.nome
             ),
@@ -184,6 +185,8 @@ register_crud_ui_routes(
                 usuario.Usuario.nome,
             ),
         },
+        default_sort="criado_em",
+        default_order="desc",
     ),
     export=CrudUIExportConfig(
         csv_filename="vendas.csv",

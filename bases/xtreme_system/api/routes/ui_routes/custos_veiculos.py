@@ -82,6 +82,7 @@ register_crud_ui_routes(
         query_func=custo_veiculo.query,
         search_query_func=custo_veiculo.search_query,
         sort_fields={
+            "criado_em": SortField("criado_em", custo_veiculo.CustoVeiculo.criado_em),
             "veiculo": SortField(
                 lambda c: _sort_key(c.veiculo.modelo), veiculo.Veiculo.modelo
             ),
@@ -96,6 +97,8 @@ register_crud_ui_routes(
                 custo_veiculo.CustoVeiculo.descricao,
             ),
         },
+        default_sort="criado_em",
+        default_order="desc",
     ),
     export=CrudUIExportConfig(
         csv_filename="custos_veiculos.csv",
