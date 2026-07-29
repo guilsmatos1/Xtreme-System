@@ -1,0 +1,353 @@
+{
+  "analysis_timestamp": "2026-07-29T17:12:31-03:00",
+  "total_opportunities": 10,
+  "opportunities": [
+    {
+      "id": "imp-20260729-001",
+      "short_title": "Unificar colunas de tabela e CSV em ColumnSpec",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/clientes.py",
+        "line_start": 269,
+        "line_end": 280,
+        "function": "_register_clientes_page",
+        "snippet": "        export=CrudUIExportConfig[cliente.Cliente](\n            csv_filename=csv_filename,\n            csv_headers=[\"ID\", \"Nome\", \"CPF\", \"Telefone\", \"Tipo\", \"Cidade\", \"Estado\"],\n            csv_row=lambda c: [\n                c.id,\n                c.nome,\n                c.documento,\n                c.telefone or \"\",\n                c.tipo.value,\n                c.cidade or \"\",\n                c.estado or \"\",\n            ],"
+      },
+      "impact": "High",
+      "category": "Maintainability",
+      "estimated_effort": "High",
+      "description": "As colunas exportadas são declaradas em CrudUIExportConfig enquanto as colunas visíveis permanecem em partials de tabela, criando duas definições independentes de ordem, rótulo e valor.",
+      "why_it_matters": "Mudanças de coluna podem deixar a tela e o CSV divergentes sem erro detectável, multiplicando manutenção por entidade.",
+      "concrete_fix": "Criar um ColumnSpec com chave, rótulo, acesso ao valor, visibilidade e opções de exportação; derivar dele tanto o contexto da tabela quanto csv_headers e csv_row.",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["crud-ui", "csv", "templates", "deduplication"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/routes/ui_routes/clientes.py",
+          "bases/xtreme_system/api/templates/_linhas_clientes.html",
+          "bases/xtreme_system/api/templates/_row_cliente.html"
+        ],
+        "related_opportunities": ["imp-20260729-002"]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": ["A declaração paralela do CSV foi verificada no código atual", "Os partials de linhas e linha de cliente existem no workspace"],
+        "weaknesses": ["A solução exigirá preservar a permissão granular por campo já aplicada nos templates"],
+        "uncertain": false,
+        "suggested_improvements": ["Prototipar primeiro em clientes e comparar HTML e CSV por teste de integração"]
+      }
+    },
+    {
+      "id": "imp-20260729-002",
+      "short_title": "Declarar formatadores HTML e exportação por coluna",
+      "location": {
+        "file": "bases/xtreme_system/api/templates/_macros.html",
+        "line_start": 87,
+        "line_end": 98,
+        "function": "status_badge",
+        "snippet": "{% macro status_badge(status) -%}\n{%- if status.value == \"disponivel\" -%}\n  <span class=\"badge badge--success badge--plain\">Disponível</span>\n{%- elif status.value == \"vendido\" -%}\n  <span class=\"badge badge--info badge--plain\">Vendido</span>\n{%- elif status.value == \"reservado\" -%}\n  <span class=\"badge badge--warning badge--plain\">Reservado</span>\n{%- else -%}\n  <span class=\"badge badge--plain\">{{ status.value }}</span>\n{%- endif -%}\n{%- endmacro %}\n"
+      },
+      "impact": "High",
+      "category": "Maintainability",
+      "estimated_effort": "Medium",
+      "description": "Formatadores de status, tipo, ação, papel e moeda vivem como macros Jinja chamadas diretamente por templates de entidade, sem um registro por coluna nem uma variante explícita para exportação.",
+      "why_it_matters": "A formatação fica acoplada aos partials de cada entidade e tende a ser repetida ou ficar inconsistente entre HTML e CSV.",
+      "concrete_fix": "Adicionar formatadores HTML e de exportação ao ColumnSpec, mantendo as macros atuais como renderizadores reutilizáveis e permitindo texto puro no CSV.",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["crud-ui", "formatters", "jinja", "csv"],
+        "files_affected": [
+          "bases/xtreme_system/api/templates/_macros.html",
+          "bases/xtreme_system/api/crud_ui/routes.py"
+        ],
+        "related_opportunities": ["imp-20260729-001"]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": ["As macros e usos em templates foram verificados"],
+        "weaknesses": ["A redução exata de partials depende de diferenças específicas entre as entidades"],
+        "uncertain": false,
+        "suggested_improvements": ["Inventariar os formatos usados nos partials antes de fechar a interface do formatter"]
+      }
+    },
+    {
+      "id": "imp-20260729-003",
+      "short_title": "Gerar campos simples de formulários por configuração",
+      "location": {
+        "file": "bases/xtreme_system/api/templates/_form_venda.html",
+        "line_start": 1,
+        "line_end": 12,
+        "function": null,
+        "snippet": "{% import \"_macros.html\" as ui %}\n{% set dados = dados or {} %}\n<div class=\"modal\" onclick=\"if(event.target===this)closeModalOnBackdrop(this)\">\n  <div class=\"modal__panel{% if not venda %} modal__panel--wizard{% endif %}\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"mv-title\">\n    <div class=\"modal__head\">\n      <h3 id=\"mv-title\">{{ 'Editar venda' if venda else 'Nova venda' }}</h3>\n      <button class=\"icon-btn\" type=\"button\" aria-label=\"Fechar\"\n              onclick=\"closeModalOnBackdrop(this.closest('.modal'))\">{{ ui.icon(\"close\") }}</button>\n    </div>\n    <form hx-post=\"/ui/vendas{% if venda %}/{{ venda.id }}{% endif %}\" hx-target=\"#modal\" hx-swap=\"innerHTML\"\n          {% if not venda %}id=\"form-nova-venda\"{% endif %}>\n      <div class=\"modal__body\">"
+      },
+      "impact": "High",
+      "category": "Architecture and design",
+      "estimated_effort": "High",
+      "description": "Os formulários de venda, compra e veículo são templates manuais extensos; o formulário de venda verificado possui 498 linhas e 23.239 bytes.",
+      "why_it_matters": "Campos simples, mensagens, atributos HTMX e estrutura visual precisam ser mantidos repetidamente, elevando o custo e o risco de inconsistência em alterações de formulário.",
+      "concrete_fix": "Introduzir form_columns, form_sections, form_widget_overrides e depends_on no CRUD UI; migrar primeiro somente campos simples e preservar blocos customizados para os fluxos complexos.",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "high",
+        "tags": ["crud-ui", "forms", "jinja", "declarative-ui"],
+        "files_affected": [
+          "bases/xtreme_system/api/templates/_form_venda.html",
+          "bases/xtreme_system/api/templates/_form_compra.html",
+          "bases/xtreme_system/api/templates/_form_veiculo.html",
+          "bases/xtreme_system/api/crud_ui/routes.py"
+        ],
+        "related_opportunities": ["imp-20260729-004"]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": ["Tamanho e existência dos três formulários foram verificados", "A migração incremental reduz o risco da mudança"],
+        "weaknesses": ["Não foi feito inventário completo dos widgets e comportamentos especiais"],
+        "uncertain": false,
+        "suggested_improvements": ["Classificar campos simples e customizados de um formulário piloto antes de definir toda a API"]
+      }
+    },
+    {
+      "id": "imp-20260729-004",
+      "short_title": "Adicionar busca paginada para selects de chaves estrangeiras",
+      "location": {
+        "file": "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+        "line_start": 80,
+        "line_end": 90,
+        "function": "_ctx_form_venda",
+        "snippet": "def _ctx_form_venda(session: Session) -> dict[str, Any]:\n    veiculos = veiculo.list_all(session)\n    veiculos_disponiveis = [\n        v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel\n    ]\n    return {\n        \"clientes\": cliente.list_all(session),\n        \"veiculos\": veiculos_disponiveis,\n        \"veiculos_troca\": veiculos,\n        \"status\": list(venda.StatusVenda),\n        \"tipos\": list(cliente.TipoCliente),"
+      },
+      "impact": "High",
+      "category": "Performance",
+      "estimated_effort": "Medium",
+      "potential_savings": "Evita carregar e renderizar todos os clientes e veículos a cada abertura do formulário de venda; o custo passa de linear no total cadastrado para uma página pequena por busca.",
+      "description": "A abertura do formulário de venda chama list_all para clientes e veículos e filtra os veículos disponíveis em memória.",
+      "why_it_matters": "Tempo de consulta, memória e tamanho do HTML crescem junto com a base, degradando uma interação frequente.",
+      "concrete_fix": "Criar endpoint de busca paginada por modelo/campo e configurar cliente_id e veiculo_id como referências AJAX com page_size limitado e filtro server-side.",
+      "additional_fields": {
+        "priority": "high",
+        "risk_level": "medium",
+        "tags": ["performance", "forms", "foreign-key", "pagination"],
+        "files_affected": [
+          "bases/xtreme_system/api/routes/ui_routes/vendas.py",
+          "bases/xtreme_system/api/templates/_form_venda.html",
+          "bases/xtreme_system/api/crud_ui/routes.py"
+        ],
+        "related_opportunities": ["imp-20260729-003"]
+      },
+      "self_critique": {
+        "confidence_score": 9.5,
+        "strengths": ["As chamadas list_all e o filtro em memória foram verificados diretamente"],
+        "weaknesses": ["Não foram medidos volumes atuais nem latência de produção"],
+        "uncertain": false,
+        "suggested_improvements": ["Adicionar benchmark com base representativa e teste de paginação"]
+      }
+    },
+    {
+      "id": "imp-20260729-005",
+      "short_title": "Centralizar respostas HTMX de toast e modal",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/responses.py",
+        "line_start": 28,
+        "line_end": 39,
+        "function": "form_response",
+        "snippet": "    templates: Jinja2Templates,\n    request: Request,\n    form_template: str,\n    *,\n    ctx_form: dict[str, Any],\n    item_key: str,\n    item: EntityT | None,\n    user: object = None,\n    erro: str | None = None,\n    dados: dict[str, Any] | None = None,\n    status_code: int = 200,\n) -> HTMLResponse:"
+      },
+      "impact": "Medium",
+      "category": "Maintainability",
+      "estimated_effort": "Medium",
+      "description": "responses.py centraliza CSV e respostas de formulário/listagem, mas não oferece helpers específicos para toast e modal ou headers de controle HTMX.",
+      "why_it_matters": "Rotas customizadas precisam montar respostas e contexto de feedback repetidamente, aumentando divergência de comportamento e apresentação.",
+      "concrete_fix": "Adicionar toast_response e modal_response com parâmetros explícitos para mensagem, tipo, refresh/redirect, título, corpo, ações e tamanho, preservando compatibilidade com os swaps OOB atuais.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["htmx", "responses", "toast", "modal"],
+        "files_affected": ["bases/xtreme_system/api/crud_ui/responses.py"],
+        "related_opportunities": ["imp-20260729-006", "imp-20260729-007"]
+      },
+      "self_critique": {
+        "confidence_score": 8.0,
+        "strengths": ["A superfície atual de responses.py foi verificada"],
+        "weaknesses": ["A quantidade exata de rotas beneficiadas não foi contada", "O snippet mostra a resposta existente, não todas as montagens manuais de modal"],
+        "uncertain": false,
+        "suggested_improvements": ["Migrar duas rotas representativas antes de estabilizar a assinatura dos helpers"]
+      }
+    },
+    {
+      "id": "imp-20260729-006",
+      "short_title": "Declarar ações de linha e confirmações",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/routes.py",
+        "line_start": 661,
+        "line_end": 672,
+        "function": "_excluir",
+        "snippet": "    @app.post(f\"{prefix}/{{item_id}}/excluir\")\n    def _excluir(\n        item_id: int,\n        request: Request,\n        session: SessionDep,\n        user: Annotated[usuario.Usuario, Depends(dep)],\n    ) -> HTMLResponse:\n        obj = _found(module.get(session, item_id), label)\n        try:\n            delete_with_hook(module, session, obj, before_delete, user.id)\n        except IntegrityError:\n"
+      },
+      "impact": "Medium",
+      "category": "Architecture and design",
+      "estimated_effort": "Medium",
+      "description": "Ações específicas são representadas por partials fixos, e a exclusão tenta a operação antes de apresentar conflitos, sem um modelo declarativo de ação e confirmação rica.",
+      "why_it_matters": "Cada entidade precisa manter marcação e comportamento de ações manualmente; operações destrutivas têm menor previsibilidade para o usuário.",
+      "concrete_fix": "Criar RowActionSpec com label, ícone, método/URL HTMX, target e configuração de confirmação; renderizar as ações pelo CRUD UI e permitir conteúdo de confirmação derivado da entidade.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["crud-ui", "row-actions", "confirmation", "htmx"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/templates/_action_cliente_documentos.html",
+          "bases/xtreme_system/api/templates/_action_veiculo_imagens.html"
+        ],
+        "related_opportunities": ["imp-20260729-005", "imp-20260729-007"]
+      },
+      "self_critique": {
+        "confidence_score": 8.0,
+        "strengths": ["O fluxo de exclusão e os partials citados existem no código atual"],
+        "weaknesses": ["Nem toda ação de linha necessariamente se adapta ao mesmo contrato declarativo"],
+        "uncertain": false,
+        "suggested_improvements": ["Separar ações simples de ações com corpo customizado no desenho da API"]
+      }
+    },
+    {
+      "id": "imp-20260729-007",
+      "short_title": "Adicionar seleção múltipla e ações em lote",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/routes.py",
+        "line_start": 328,
+        "line_end": 339,
+        "function": "register_export_route",
+        "snippet": "def register_export_route(\n    app: FastAPI,\n    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],\n    prefix: str,\n    *,\n    listing: ListingSpec[EntityT],\n    csv_filename: str,\n    csv_headers: list[str],\n    csv_row: CsvRow[EntityT],\n    csv_fields: list[str | None] | None = None,\n    pagina: str | None = None,\n) -> None:"
+      },
+      "impact": "Medium",
+      "category": "Architecture and design",
+      "estimated_effort": "High",
+      "description": "A infraestrutura de listagem/exportação não recebe IDs selecionados nem uma configuração de ações em lote; as ocorrências atuais de checkbox são campos de formulários, não seleção de linhas.",
+      "why_it_matters": "Usuários precisam operar registros individualmente e não conseguem exportar somente uma seleção, excluir vários itens ou atualizar estados em lote.",
+      "concrete_fix": "Adicionar seleção por linha e selecionar tudo da página, BulkActionSpec com autorização e confirmação, e suporte opcional a IDs selecionados no exportador.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "high",
+        "tags": ["crud-ui", "bulk-actions", "selection", "export"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/templates"
+        ],
+        "related_opportunities": ["imp-20260729-005", "imp-20260729-006"]
+      },
+      "self_critique": {
+        "confidence_score": 8.5,
+        "strengths": ["A assinatura do exportador foi verificada", "A busca limitada confirmou que checkboxes atuais pertencem a formulários"],
+        "weaknesses": ["A semântica de selecionar todas as páginas exige definir snapshot de filtro e limites operacionais"],
+        "uncertain": false,
+        "suggested_improvements": ["Começar com seleção da página atual e exportação selecionada antes de ações mutáveis"]
+      }
+    },
+    {
+      "id": "imp-20260729-008",
+      "short_title": "Preservar erros de validação por campo e de domínio",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/routes.py",
+        "line_start": 492,
+        "line_end": 503,
+        "function": "_criar",
+        "snippet": "        except ValidationError:\n            return error_response(\n                form.templates,\n                request,\n                form.form_template,\n                ctx_form=form.ctx_form(session),\n                item_key=form.item_key,\n                item=None,\n                user=user,\n                erro=\"Dados inválidos\",\n                status_code=400,\n                dados=dados_form,"
+      },
+      "impact": "Medium",
+      "category": "Error handling and logging",
+      "estimated_effort": "Medium",
+      "description": "A criação captura ValidationError sem usar exc.errors() e devolve apenas a mensagem genérica Dados inválidos.",
+      "why_it_matters": "O usuário não sabe qual campo corrigir, e regras de domínio precisam usar caminhos de exceção diferentes para comunicar mensagens úteis.",
+      "concrete_fix": "Capturar a exceção, mapear exc.errors() por campo para o contexto do formulário e adicionar um hook de validação de domínio que possa devolver erros globais e por campo após hidratar a entidade.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["validation", "forms", "pydantic", "error-handling"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/crud_ui/responses.py",
+          "bases/xtreme_system/api/crud_types.py"
+        ],
+        "related_opportunities": ["imp-20260729-009"]
+      },
+      "self_critique": {
+        "confidence_score": 9.5,
+        "strengths": ["O descarte do conteúdo de ValidationError foi verificado diretamente"],
+        "weaknesses": ["A representação visual final dos erros por campo ainda precisa ser definida"],
+        "uncertain": false,
+        "suggested_improvements": ["Adicionar testes para erros simples, aninhados e regras de domínio"]
+      }
+    },
+    {
+      "id": "imp-20260729-009",
+      "short_title": "Completar hooks de ciclo de vida da UI",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_types.py",
+        "line_start": 166,
+        "line_end": 175,
+        "function": null,
+        "snippet": "    ctx_form: CtxForm\n    item_key: str\n\n\nBeforeCreateHook = Callable[[Session, CreateSchemaT], None]\nBeforeUpdateHook = Callable[[Session, UpdateSchemaT], None]\nBeforeUpdateEntityHook = Callable[[Session, EntityT, UpdateSchemaT], None]\nBeforeDeleteHook = Callable[[Session, EntityT, int | None], None]\nAfterWriteHook = Callable[[Session, EntityT, int | None], Any]\n"
+      },
+      "impact": "Medium",
+      "category": "Architecture and design",
+      "estimated_effort": "Medium",
+      "description": "Os tipos incluem BeforeUpdateEntityHook, mas CrudUIBehaviorConfig expõe apenas BeforeUpdateHook sem entidade; também não existe after_delete no comportamento da UI.",
+      "why_it_matters": "Validações que comparam estado antigo e novo não são expressáveis uniformemente na UI, e integrações pós-exclusão não têm um ponto de extensão equivalente.",
+      "concrete_fix": "Expor before_update_entity e after_delete em CrudUIBehaviorConfig, encaminhar a entidade e o usuário nas fábricas de rota e manter os hooks antigos com adaptação compatível.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "medium",
+        "tags": ["crud-ui", "hooks", "lifecycle", "validation"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_types.py",
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "bases/xtreme_system/api/route_factories.py"
+        ],
+        "related_opportunities": ["imp-20260729-008"]
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": ["Os aliases de hook e a configuração de comportamento foram verificados"],
+        "weaknesses": ["A compatibilidade com todos os chamadores precisa ser conferida durante a implementação"],
+        "uncertain": false,
+        "suggested_improvements": ["Adicionar testes de ordem de hooks e propagação de exceções"]
+      }
+    },
+    {
+      "id": "imp-20260729-010",
+      "short_title": "Corrigir CSV para Excel pt-BR e habilitar XLSX",
+      "location": {
+        "file": "bases/xtreme_system/api/crud_ui/responses.py",
+        "line_start": 15,
+        "line_end": 25,
+        "function": "csv_response",
+        "snippet": "def csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:\n    buffer = io.StringIO(newline=\"\")\n    writer = csv.writer(buffer)\n    writer.writerow(headers)\n    writer.writerows(rows)\n    return Response(\n        content=buffer.getvalue(),\n        media_type=\"text/csv; charset=utf-8\",\n        headers={\"Content-Disposition\": f'attachment; filename=\"{filename}\"'},\n    )\n"
+      },
+      "impact": "Medium",
+      "category": "Maintainability",
+      "estimated_effort": "Medium",
+      "description": "O exportador usa csv.writer com delimitador padrão de vírgula e resposta UTF-8 sem BOM; não há suporte a XLSX nem dependência openpyxl localizada.",
+      "why_it_matters": "Excel configurado para pt-BR pode abrir o CSV em uma única coluna, e usuários que dependem de planilhas precisam converter o arquivo manualmente.",
+      "concrete_fix": "Primeiro emitir CSV com delimiter=';' e codificação utf-8-sig; depois abstrair o formato de exportação e adicionar XLSX com uma dependência dedicada e testes de tipos de célula.",
+      "additional_fields": {
+        "priority": "medium",
+        "risk_level": "low",
+        "tags": ["csv", "xlsx", "excel", "localization"],
+        "files_affected": [
+          "bases/xtreme_system/api/crud_ui/responses.py",
+          "bases/xtreme_system/api/crud_ui/routes.py",
+          "pyproject.toml"
+        ],
+        "related_opportunities": []
+      },
+      "self_critique": {
+        "confidence_score": 9.0,
+        "strengths": ["Delimitador e charset atuais foram verificados no código"],
+        "weaknesses": ["A preferência exata dos consumidores por CSV ou XLSX não foi medida", "A busca de dependência foi limitada aos manifests disponíveis"],
+        "uncertain": false,
+        "suggested_improvements": ["Validar o CSV gerado no Excel pt-BR e adicionar teste de workbook para XLSX"]
+      }
+    }
+  ]
+}
