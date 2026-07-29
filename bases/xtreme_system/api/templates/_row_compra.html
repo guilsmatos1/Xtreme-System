@@ -1,6 +1,6 @@
 {% import "_macros.html" as ui %}
 <tr id="compra-{{ c.id }}">
-  {% if pode_ver_campo(user, 'compras', 'data_compra') %}<td data-col="data">{{ c.data_compra.isoformat() }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'compras', 'data_compra') %}<td data-col="data">{{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>{% endif %}
   {% if pode_ver_campo(user, 'compras', 'cliente') %}<td class="cell-strong" data-col="cliente">{{ c.cliente.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<td data-col="documento">{{ c.cliente.documento | formatar_documento }}</td>{% endif %}
   {% if pode_ver_campo(user, 'compras', 'status') %}<td data-col="status"><span class="badge badge--plain {% if c.status.value == 'concluido' %}badge--success{% elif c.status.value == 'cancelado' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}

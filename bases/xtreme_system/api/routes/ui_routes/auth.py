@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from xtreme_system.api.deps import SessionDep, templates
 from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
+from xtreme_system.empresa import core as empresa
 from xtreme_system.usuario import core as usuario
 
 logger = structlog.get_logger(__name__)
@@ -17,8 +18,11 @@ logger = structlog.get_logger(__name__)
 
 
 @app.get("/ui/login")
-def ui_login_form(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "login.html", {})
+def ui_login_form(request: Request, session: SessionDep) -> HTMLResponse:
+    config_empresa = empresa.get_config(session)
+    return templates.TemplateResponse(
+        request, "login.html", {"config_empresa": config_empresa}
+    )
 
 
 @app.post("/ui/login")
@@ -34,10 +38,11 @@ def ui_login(
         or not user.ativo
         or not auth.verify_password(password, user.senha_hash)
     ):
+        config_empresa = empresa.get_config(session)
         return templates.TemplateResponse(
             request,
             "login.html",
-            {"erro": "Usuário ou senha inválidos"},
+            {"erro": "Usuário ou senha inválidos", "config_empresa": config_empresa},
             status_code=401,
         )
     token = auth.create_access_token(user.username)

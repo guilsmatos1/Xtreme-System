@@ -114,7 +114,7 @@ def search_query(
         "veiculo": Veiculo.modelo,
         "placa": Veiculo.placa,
         "categoria": CustoVeiculo.categoria,
-        "data": CustoVeiculo.data_custo,
+        "data": CustoVeiculo.criado_em,
         "valor": CustoVeiculo.valor,
         "descricao": CustoVeiculo.descricao,
     }

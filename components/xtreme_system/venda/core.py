@@ -261,6 +261,18 @@ def veiculo_tem_outra_venda_concluida(
     return sql_query.first() is not None
 
 
+def veiculo_tem_outra_venda_pendente(
+    session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
+) -> bool:
+    sql_query = session.query(Venda).filter(
+        Venda.veiculo_id == veiculo_id,
+        Venda.status == StatusVenda.pendente,
+    )
+    if excluir_venda_id is not None:
+        sql_query = sql_query.filter(Venda.id != excluir_venda_id)
+    return sql_query.first() is not None
+
+
 def veiculo_tem_outra_troca_concluida(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> bool:
@@ -277,7 +289,7 @@ def recomputar_status_veiculo_por_vendas(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> None:
     v = session.get(Veiculo, veiculo_id)
-    if v is None:
+    if v is None or v.status == StatusVeiculo.indisponivel:
         return
     if veiculo_tem_outra_troca_concluida(
         session, veiculo_id, excluir_venda_id=excluir_venda_id
@@ -287,6 +299,10 @@ def recomputar_status_veiculo_por_vendas(
         session, veiculo_id, excluir_venda_id=excluir_venda_id
     ):
         v.status = StatusVeiculo.vendido
+    elif veiculo_tem_outra_venda_pendente(
+        session, veiculo_id, excluir_venda_id=excluir_venda_id
+    ):
+        v.status = StatusVeiculo.reservado
     else:
         v.status = StatusVeiculo.disponivel
 
@@ -297,36 +313,24 @@ def _sincronizar_status_veiculo(
     *,
     veiculo_anterior_id: int | None = None,
     veiculo_troca_anterior_id: int | None = None,
-    status_anterior: StatusVenda | None = None,
 ) -> Venda:
-    if (
-        veiculo_anterior_id is not None
-        and veiculo_anterior_id != obj.veiculo_id
-        and status_anterior == StatusVenda.concluido
-    ):
+    """Recomputa o status dos veículos ligados a `obj` a partir do estado
+    já persistido das vendas (prioridade: vendido > reservado > disponivel),
+    preservando `indisponivel` como override manual não pisado pela sync."""
+    if veiculo_anterior_id is not None and veiculo_anterior_id != obj.veiculo_id:
         recomputar_status_veiculo_por_vendas(
             session, veiculo_anterior_id, excluir_venda_id=obj.id
         )
-    if obj.status == StatusVenda.concluido:
-        obj.veiculo.status = StatusVeiculo.vendido
-    elif status_anterior == StatusVenda.concluido:
-        recomputar_status_veiculo_por_vendas(
-            session, obj.veiculo_id, excluir_venda_id=obj.id
-        )
+    recomputar_status_veiculo_por_vendas(session, obj.veiculo_id)
     if (
         veiculo_troca_anterior_id is not None
         and veiculo_troca_anterior_id != obj.veiculo_troca_id
-        and status_anterior == StatusVenda.concluido
     ):
         recomputar_status_veiculo_por_vendas(
             session, veiculo_troca_anterior_id, excluir_venda_id=obj.id
         )
-    if obj.status == StatusVenda.concluido and obj.veiculo_troca is not None:
-        obj.veiculo_troca.status = StatusVeiculo.disponivel
-    elif status_anterior == StatusVenda.concluido and obj.veiculo_troca_id is not None:
-        recomputar_status_veiculo_por_vendas(
-            session, obj.veiculo_troca_id, excluir_venda_id=obj.id
-        )
+    if obj.veiculo_troca_id is not None:
+        recomputar_status_veiculo_por_vendas(session, obj.veiculo_troca_id)
     crud.flush(session)
     session.refresh(obj)
     return obj
@@ -343,14 +347,12 @@ def update(
     validate_valores_venda_update(obj, data)
     veiculo_anterior_id = obj.veiculo_id
     veiculo_troca_anterior_id = obj.veiculo_troca_id
-    status_anterior = obj.status
     obj = crud.update(session, obj, data, actor_id)
     return _sincronizar_status_veiculo(
         session,
         obj,
         veiculo_anterior_id=veiculo_anterior_id,
         veiculo_troca_anterior_id=veiculo_troca_anterior_id,
-        status_anterior=status_anterior,
     )
 
 
@@ -375,7 +377,7 @@ def search_query(
     columns_map = {
         "cliente": Cliente.nome,
         "veiculo": Veiculo.modelo,
-        "data": Venda.data_venda,
+        "data": Venda.criado_em,
         "valor": Venda.valor_venda,
         "entrada": Venda.valor_entrada,
         "divida": Venda.valor_pendente,

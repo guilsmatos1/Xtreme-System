@@ -90,7 +90,7 @@ register_crud_ui_routes(
                 lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa
             ),
             "categoria": SortField("categoria", custo_veiculo.CustoVeiculo.categoria),
-            "data": SortField("data_custo", custo_veiculo.CustoVeiculo.data_custo),
+            "data": SortField("criado_em", custo_veiculo.CustoVeiculo.criado_em),
             "valor": SortField("valor", custo_veiculo.CustoVeiculo.valor),
             "descricao": SortField(
                 lambda c: _sort_key(c.descricao or ""),
@@ -107,7 +107,7 @@ register_crud_ui_routes(
             "Veiculo",
             "Placa",
             "Categoria",
-            "Data",
+            "Data/Hora",
             "Valor",
             "Descricao",
         ],
@@ -117,7 +117,7 @@ register_crud_ui_routes(
             c.veiculo.modelo,
             c.veiculo.placa,
             c.categoria,
-            c.data_custo.isoformat(),
+            c.criado_em.isoformat(),
             f"{c.valor:.2f}",
             c.descricao or "",
         ],

@@ -14,6 +14,7 @@ from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.venda import core as venda_core
 
 
 @pytest.fixture
@@ -389,7 +390,7 @@ def test_atualizar_venda_sincroniza_status_do_veiculo(client: TestClient) -> Non
     assert veiculo.json()["status"] == "disponivel"
 
 
-def test_atualizar_venda_concluida_para_pendente_libera_veiculo(
+def test_atualizar_venda_concluida_para_pendente_reserva_veiculo(
     client: TestClient,
 ) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
@@ -416,10 +417,10 @@ def test_atualizar_venda_concluida_para_pendente_libera_veiculo(
     )
 
     assert pendente.status_code == 200
-    assert pendente.json()["veiculo"]["status"] == "disponivel"
+    assert pendente.json()["veiculo"]["status"] == "reservado"
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
     assert veiculo.status_code == 200
-    assert veiculo.json()["status"] == "disponivel"
+    assert veiculo.json()["status"] == "reservado"
 
 
 def test_venda_concluida_disponibiliza_veiculo_de_troca(
@@ -749,6 +750,11 @@ def test_deletar_venda_concluida_restaura_status_veiculo(
 def test_deletar_venda_mantem_veiculo_vendido_se_ha_outra_concluida(
     client: TestClient,
 ) -> None:
+    """O gate de criação bloqueia uma 2ª venda para um veículo já reservado/
+    vendido, então a coexistência de 2 vendas concluídas para o mesmo
+    veículo (cenário de dados legados/importação) é montada diretamente via
+    sessão, bypassando a rota HTTP, para validar que o recompute mantém o
+    veículo "vendido" enquanto restar outra venda concluída."""
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     cliente_id, veiculo_id = _seed(client, headers)
 
@@ -761,36 +767,24 @@ def test_deletar_venda_mantem_veiculo_vendido_se_ha_outra_concluida(
             "valor_venda": "40000.00",
             "forma_pagamento": "a_vista",
             "parcelas": 1,
-            "status": "pendente",
+            "status": "concluido",
         },
         headers=headers,
     )
     assert venda1.status_code == 201
 
-    venda2 = client.post(
-        "/vendas",
-        json={
-            "cliente_id": cliente_id,
-            "veiculo_id": veiculo_id,
-            "data_venda": "2026-07-02",
-            "valor_venda": "40000.00",
-            "forma_pagamento": "a_vista",
-            "parcelas": 1,
-            "status": "pendente",
-        },
-        headers=headers,
-    )
-    assert venda2.status_code == 201
-
-    client.patch(
-        f"/vendas/{venda1.json()['id']}",
-        json={"status": "concluido"},
-        headers=headers,
-    )
-    client.patch(
-        f"/vendas/{venda2.json()['id']}",
-        json={"status": "concluido"},
-        headers=headers,
+    session = next(app.dependency_overrides[get_session]())
+    venda2 = venda_core.create(
+        session,
+        venda_core.VendaCreate(
+            cliente_id=cliente_id,
+            veiculo_id=veiculo_id,
+            data_venda="2026-07-02",
+            valor_venda="40000.00",
+            forma_pagamento="a_vista",
+            parcelas=1,
+            status=venda_core.StatusVenda.concluido,
+        ),
     )
 
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
@@ -801,6 +795,7 @@ def test_deletar_venda_mantem_veiculo_vendido_se_ha_outra_concluida(
 
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
     assert veiculo.json()["status"] == "vendido"
+    assert venda2.status == venda_core.StatusVenda.concluido
 
 
 def test_deletar_venda_pendente_mantem_veiculo_disponivel(
@@ -823,7 +818,7 @@ def test_deletar_venda_pendente_mantem_veiculo_disponivel(
         headers=headers,
     )
     assert venda.status_code == 201
-    assert venda.json()["veiculo"]["status"] == "disponivel"
+    assert venda.json()["veiculo"]["status"] == "reservado"
 
     resp = client.delete(f"/vendas/{venda.json()['id']}", headers=headers)
     assert resp.status_code == 204
@@ -832,7 +827,7 @@ def test_deletar_venda_pendente_mantem_veiculo_disponivel(
     assert veiculo.json()["status"] == "disponivel"
 
 
-def test_deletar_venda_pendente_preserva_veiculo_reservado(
+def test_deletar_venda_pendente_preserva_veiculo_indisponivel_manual(
     client: TestClient,
 ) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
@@ -852,23 +847,30 @@ def test_deletar_venda_pendente_preserva_veiculo_reservado(
         headers=headers,
     )
     assert venda.status_code == 201
-    reservado = client.patch(
+    assert venda.json()["veiculo"]["status"] == "reservado"
+
+    indisponivel = client.patch(
         f"/veiculos/{veiculo_id}",
-        json={"status": "reservado"},
+        json={"status": "indisponivel"},
         headers=headers,
     )
-    assert reservado.status_code == 200
+    assert indisponivel.status_code == 200
 
     resp = client.delete(f"/vendas/{venda.json()['id']}", headers=headers)
     assert resp.status_code == 204
 
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
-    assert veiculo.json()["status"] == "reservado"
+    assert veiculo.json()["status"] == "indisponivel"
 
 
 def test_nao_libera_veiculo_se_ha_outra_venda_concluida_ao_alterar_status(
     client: TestClient,
 ) -> None:
+    """Duas vendas concluídas para o mesmo veículo (cenário de dados legados)
+    são montadas via sessão direta, já que o gate de criação bloqueia uma 2ª
+    venda para um veículo não-disponível. Valida que alterar o status de uma
+    delas de volta para pendente recomputa corretamente o veículo com base
+    na venda que ainda restar concluída/pendente."""
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     cliente_id, veiculo_id = _seed(client, headers)
 
@@ -881,39 +883,27 @@ def test_nao_libera_veiculo_se_ha_outra_venda_concluida_ao_alterar_status(
             "valor_venda": "40000.00",
             "forma_pagamento": "a_vista",
             "parcelas": 1,
-            "status": "pendente",
+            "status": "concluido",
         },
         headers=headers,
     )
     assert venda1.status_code == 201
     venda1_id = venda1.json()["id"]
 
-    venda2 = client.post(
-        "/vendas",
-        json={
-            "cliente_id": cliente_id,
-            "veiculo_id": veiculo_id,
-            "data_venda": "2026-07-02",
-            "valor_venda": "40000.00",
-            "forma_pagamento": "a_vista",
-            "parcelas": 1,
-            "status": "pendente",
-        },
-        headers=headers,
+    session = next(app.dependency_overrides[get_session]())
+    venda2 = venda_core.create(
+        session,
+        venda_core.VendaCreate(
+            cliente_id=cliente_id,
+            veiculo_id=veiculo_id,
+            data_venda="2026-07-02",
+            valor_venda="40000.00",
+            forma_pagamento="a_vista",
+            parcelas=1,
+            status=venda_core.StatusVenda.concluido,
+        ),
     )
-    assert venda2.status_code == 201
-    venda2_id = venda2.json()["id"]
-
-    client.patch(
-        f"/vendas/{venda1_id}",
-        json={"status": "concluido"},
-        headers=headers,
-    )
-    client.patch(
-        f"/vendas/{venda2_id}",
-        json={"status": "concluido"},
-        headers=headers,
-    )
+    venda2_id = venda2.id
 
     resp = client.patch(
         f"/vendas/{venda2_id}",
@@ -933,4 +923,4 @@ def test_nao_libera_veiculo_se_ha_outra_venda_concluida_ao_alterar_status(
     assert resp.status_code == 200
 
     veiculo = client.get(f"/veiculos/{veiculo_id}", headers=headers)
-    assert veiculo.json()["status"] == "disponivel"
+    assert veiculo.json()["status"] == "reservado"

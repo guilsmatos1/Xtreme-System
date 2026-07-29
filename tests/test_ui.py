@@ -1028,12 +1028,30 @@ def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(
 def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
-    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
 
+    veiculo_ids = []
     for indice in range(3):
         cliente_id = _criar_cliente(
             client, headers, f"Cliente {indice}", f"1000000000{indice}"
         )
+        vei = client.post(
+            "/veiculos",
+            json={
+                "tipo": "carro",
+                "modelo": "Onix",
+                "cor": "Prata",
+                "ano": 2024,
+                "placa": f"LIM{indice}999",
+                "km": 12000,
+                "preco": "85000.00",
+                "investidor_id": inv_id,
+            },
+            headers=headers,
+        )
+        assert vei.status_code == 201, vei.text
+        veiculo_id = vei.json()["id"]
+        veiculo_ids.append(veiculo_id)
         resp = client.post(
             "/vendas",
             json={
@@ -1053,7 +1071,7 @@ def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
         "/ui/vendas?limit=2",
         data={
             "cliente_id": str(novo_cliente_id),
-            "veiculo_id": str(veiculo_id),
+            "veiculo_id": str(client.get("/veiculos", headers=headers).json()[0]["id"]),
             "data_venda": "2026-07-09",
             "valor_venda": "85000.00",
             "forma_pagamento": "a_vista",
@@ -1260,7 +1278,7 @@ def test_ui_vendas_rejeita_veiculo_indisponivel_na_edicao(
     assert venda_atual.json()["veiculo"]["id"] == veiculo_disponivel
 
 
-def test_ui_atualizar_venda_concluida_para_pendente_libera_veiculo(
+def test_ui_atualizar_venda_concluida_para_pendente_reserva_veiculo(
     client: TestClient,
 ) -> None:
     _login_admin(client)
@@ -1308,7 +1326,7 @@ def test_ui_atualizar_venda_concluida_para_pendente_libera_veiculo(
     assert atualizada.status_code == 200
     assert (
         client.get(f"/veiculos/{veiculo_id}", headers=headers).json()["status"]
-        == "disponivel"
+        == "reservado"
     )
 
 

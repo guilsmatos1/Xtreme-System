@@ -20,7 +20,7 @@
 </div>
 
 {% set search_colunas = [] %}
-{% if pode_ver_campo(user, 'compras', 'data_compra') %}{% set _ = search_colunas.append({"key": "data", "label": "Data"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'data_compra') %}{% set _ = search_colunas.append({"key": "data", "label": "Data/Hora"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'cliente') %}{% set _ = search_colunas.append({"key": "cliente", "label": "Nome do Cliente"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}{% set _ = search_colunas.append({"key": "documento", "label": "Documento do Cliente"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
@@ -64,7 +64,7 @@
     {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead>
       <tr>
-        {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th data-col="data" data-col-label="Data/Hora">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'cliente') %}<th data-col="cliente" data-col-label="Nome do Cliente">{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th data-col="documento" data-col-label="Documento do Cliente">{{ ui.sortable("documento", "Documento do Cliente", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'status') %}<th data-col="status" data-col-label="Estado">{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}

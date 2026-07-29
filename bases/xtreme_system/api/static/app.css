@@ -679,13 +679,66 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .empty p { max-width: 340px; margin: 0 auto var(--s-4); font-size: .84rem; }
 
 /* ---- 16. Auth screen ----------------------------------------------------- */
-.auth { min-height: 100dvh; display: grid; place-items: center; padding: var(--s-6); background: var(--canvas); }
-.auth__card { width: 100%; max-width: 380px; padding: var(--s-8); }
-.auth__brand { display: flex; align-items: center; gap: var(--s-3); justify-content: center; margin-bottom: var(--s-2); }
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background-color: var(--canvas);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(211, 47, 47, 0.12), transparent),
+    radial-gradient(circle at 90% 90%, rgba(22, 24, 29, 0.05), transparent 40%);
+  background-attachment: fixed;
+}
+.auth__card {
+  width: 100%;
+  max-width: 380px;
+  padding: var(--s-8);
+  box-shadow: var(--shadow-md);
+}
+.auth__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  justify-content: center;
+  margin-bottom: var(--s-4);
+}
 .auth__brand b { font-size: 1.05rem; font-weight: 700; }
+.auth__logo {
+  max-height: 60px;
+  max-width: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+.auth__logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+.auth__logo-icon svg { width: 20px; height: 20px; }
 .auth__title { text-align: center; margin-bottom: var(--s-6); }
 .auth__title p { color: var(--text-secondary); font-size: .84rem; margin-top: var(--s-1); }
 .auth form { display: flex; flex-direction: column; gap: var(--s-4); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .auth {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240, 85, 69, 0.22), transparent),
+      radial-gradient(circle at 10% 90%, rgba(240, 85, 69, 0.08), transparent 40%),
+      radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.03), transparent 30%);
+  }
+}
+:root[data-theme="dark"] .auth {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240, 85, 69, 0.22), transparent),
+    radial-gradient(circle at 10% 90%, rgba(240, 85, 69, 0.08), transparent 40%),
+    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.03), transparent 30%);
+}
 
 /* ---- 17. Utilities ------------------------------------------------------- */
 .stack { display: flex; flex-direction: column; gap: var(--s-4); }
@@ -942,40 +995,91 @@ form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
 .mmgr__upload-actions { display: flex; justify-content: flex-end; }
 
 /* ---- 21. Bar chart --------------------------------------------------------- */
-.bar-chart__inner { display: flex; gap: var(--s-3); }
+.bar-chart__inner { display: flex; gap: var(--s-3); position: relative; }
 .bar-chart__yaxis {
   display: flex; flex-direction: column; justify-content: space-between;
-  height: 220px; padding-right: var(--s-2); border-right: 1px solid var(--border);
+  height: 240px; padding-right: var(--s-3); border-right: 1px dashed var(--border);
   text-align: right; flex: none;
 }
-.bar-chart__ytick { font-size: .68rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar-chart__ytick { font-size: .70rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 500; }
 
 .bar-chart__plot {
-  position: relative; flex: 1; height: 220px;
-  background-image: repeating-linear-gradient(to top, var(--border) 0, var(--border) 1px, transparent 1px, transparent 25%);
+  position: relative; flex: 1; height: 240px;
+  background-image: linear-gradient(to top, var(--border) 1px, transparent 1px);
+  background-size: 100% 20%;
+  border-bottom: 1px solid var(--border);
 }
-.bar-chart__bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: var(--s-4); padding: 0 var(--s-2); }
-.bar-chart__col { flex: 1; display: flex; justify-content: center; height: 100%; align-items: flex-end; }
-.bar-chart__bar {
-  width: 100%; max-width: 40px; min-height: 2px;
-  background: var(--accent); border-radius: 4px 4px 0 0;
-  cursor: pointer; transition: filter .12s;
-}
-.bar-chart__bar:hover, .bar-chart__bar:focus-visible { filter: brightness(1.1); }
+.bar-chart__bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: var(--s-3); padding: 0 var(--s-3); }
+.bar-chart__col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; align-items: center; position: relative; }
 
-.bar-chart__axis { display: flex; gap: var(--s-4); padding: var(--s-2) var(--s-2) 0 calc(var(--s-2) + 1px); margin-left: 56px; margin-top: var(--s-2); border-top: 1px solid var(--border); }
-.bar-chart__axis-label { flex: 1; text-align: center; font-size: .74rem; color: var(--text-secondary); }
+.bar-chart__value-tag {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.bar-chart__bar {
+  width: 100%; max-width: 44px; min-height: 4px;
+  background: linear-gradient(180deg, var(--accent) 0%, rgba(var(--accent-rgb, 99, 102, 241), 0.65) 100%);
+  border-radius: 6px 6px 2px 2px;
+  cursor: pointer;
+  position: relative;
+  transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1), filter .2s, box-shadow .2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: barGrow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: bottom;
+}
+
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.bar-chart__bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 6px 6px 0 0;
+}
+
+.bar-chart__col:hover .bar-chart__bar,
+.bar-chart__bar:hover,
+.bar-chart__bar:focus-visible {
+  filter: brightness(1.15);
+  transform: translateY(-4px) scaleX(1.03);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+
+.bar-chart__col:hover .bar-chart__value-tag {
+  opacity: 1;
+  transform: translateY(-2px);
+  color: var(--accent);
+}
+
+.bar-chart__axis { display: flex; gap: var(--s-3); padding: var(--s-2) var(--s-3) 0 calc(var(--s-3) + 1px); margin-left: 64px; margin-top: var(--s-2); }
+.bar-chart__axis-label { flex: 1; text-align: center; font-size: .76rem; font-weight: 500; color: var(--text-secondary); }
 
 .bar-chart__tooltip {
   position: fixed; z-index: 50; pointer-events: none; opacity: 0;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
-  box-shadow: var(--shadow-md); padding: var(--s-2) var(--s-3); font-size: .78rem;
-  transition: opacity .1s; transform: translate(-50%, -100%);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: var(--s-2) var(--s-3); font-size: .78rem;
+  transition: opacity .15s ease, transform .15s ease;
+  transform: translate(-50%, -100%) translateY(-6px);
+  backdrop-filter: blur(8px);
 }
-.bar-chart__tooltip[data-visible="true"] { opacity: 1; }
-.bar-chart__tooltip strong { display: block; font-size: .92rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.bar-chart__tooltip[data-visible="true"] { opacity: 1; transform: translate(-50%, -100%) translateY(-10px); }
+.bar-chart__tooltip strong { display: block; font-size: .95rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .bar-chart__tooltip span { color: var(--text-secondary); }
 
-.chart-table-details summary { cursor: pointer; font-size: .78rem; color: var(--text-secondary); margin-top: var(--s-3); }
-.chart-table-details summary:hover { color: var(--text); }
+.chart-table-details summary { cursor: pointer; font-size: .78rem; font-weight: 500; color: var(--text-secondary); margin-top: var(--s-4); transition: color .15s; }
+.chart-table-details summary:hover { color: var(--accent); }
 .chart-table-details .table-wrap { margin-top: var(--s-3); }

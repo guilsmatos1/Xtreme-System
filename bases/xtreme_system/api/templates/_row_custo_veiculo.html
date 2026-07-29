@@ -1,6 +1,6 @@
 {% import "_macros.html" as ui %}
 <tr id="custo-{{ c.id }}">
-  <td data-col="data">{{ c.data_custo.isoformat() }}</td>
+  <td data-col="data">{{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
   <td class="cell-strong" data-col="veiculo">{{ c.veiculo.modelo }}</td>
   <td data-col="placa">{{ c.veiculo.placa }}</td>
   <td data-col="categoria">{{ c.categoria }}</td>

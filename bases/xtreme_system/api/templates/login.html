@@ -13,6 +13,12 @@
   <main class="auth">
     <article class="card card--pad auth__card">
       <div class="auth__brand">
+        {% if config_empresa and config_empresa.logo_url and arquivo_disponivel(config_empresa.logo_url) %}
+          <img src="{{ config_empresa.logo_url }}" alt="Logo da empresa" class="auth__logo">
+        {% else %}
+          <span class="auth__logo-icon">{{ ui.icon("vehicles") }}</span>
+          <b>Xtreme Motors</b>
+        {% endif %}
       </div>
       <div class="auth__title">
         <h1>Bem-vindo de volta</h1>

@@ -11,8 +11,6 @@
 
 
 geral
-- Quando o status do veiculo for "Cancelado", ele não deve aparece em nenhuma lista de veículos para operações (lançar venda, lançar custo, etc), também não deve aparecer na página /ui/veiculos.
-
 - As tabelas das página /compras, /vendas, /custos-veiculos, devem ser ordenadas pela data e hora de forma decrescente (a mais atual em cima).
 
 

@@ -464,7 +464,7 @@ register_crud_ui_routes(
             "placa": SortField(
                 lambda c: _sort_key(c.veiculo.placa), veiculo.Veiculo.placa
             ),
-            "data": SortField("data_compra", compra.Compra.data_compra),
+            "data": SortField("criado_em", compra.Compra.criado_em),
             "valor": SortField("valor_compra", compra.Compra.valor_compra),
             "status": SortField("status", compra.Compra.status),
             "observacoes": SortField(
@@ -484,7 +484,7 @@ register_crud_ui_routes(
         csv_filename="compras.csv",
         csv_headers=[
             "ID",
-            "Data",
+            "Data/Hora",
             "Nome do Cliente",
             "Documento do Cliente",
             "Estado",
@@ -496,7 +496,7 @@ register_crud_ui_routes(
         ],
         csv_fields=[
             None,
-            "data_compra",
+            "criado_em",
             "cliente",
             "documento_cliente",
             "status",
@@ -508,7 +508,7 @@ register_crud_ui_routes(
         ],
         csv_row=lambda c: [
             c.id,
-            c.data_compra.isoformat(),
+            c.criado_em.isoformat(),
             c.cliente.nome,
             c.cliente.documento or "",
             c.status.value,

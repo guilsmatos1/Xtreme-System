@@ -58,8 +58,6 @@ def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) ->
 def recompute_vehicle_status_on_delete(
     session: Session, venda_obj: Any, _actor_id: int | None = None
 ) -> None:
-    if venda_obj.status != venda.StatusVenda.concluido:
-        return
     venda.recomputar_status_veiculo_por_vendas(
         session, venda_obj.veiculo_id, excluir_venda_id=venda_obj.id
     )

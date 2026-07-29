@@ -194,7 +194,7 @@ def search_query(
         "documento": Cliente.documento,
         "modelo": Veiculo.modelo,
         "placa": Veiculo.placa,
-        "data": Compra.data_compra,
+        "data": Compra.criado_em,
         "valor": Compra.valor_compra,
         "status": Compra.status,
         "observacoes": Compra.observacoes,

@@ -32,7 +32,7 @@
   </article>
 </section>
 
-{% set search_colunas = [{"key": "veiculo", "label": "Veículo"}, {"key": "placa", "label": "Placa"}, {"key": "categoria", "label": "Categoria"}, {"key": "data", "label": "Data"}] %}
+{% set search_colunas = [{"key": "veiculo", "label": "Veículo"}, {"key": "placa", "label": "Placa"}, {"key": "categoria", "label": "Categoria"}, {"key": "data", "label": "Data/Hora"}] %}
 {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}{% set _ = search_colunas.append({"key": "valor", "label": "Valor"}) %}{% endif %}
 {% set _ = search_colunas.append({"key": "descricao", "label": "Descrição"}) %}
 
@@ -71,7 +71,7 @@
     {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead>
       <tr>
-        <th data-col="data" data-col-label="Data">{{ ui.sortable("data", "Data", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
+        <th data-col="data" data-col-label="Data/Hora">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
         <th data-col="veiculo" data-col-label="Veículo">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
         <th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
         <th data-col="categoria" data-col-label="Categoria">{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
