@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tasks to Improvements JSON"
+  short_description: "Convert task text or Markdown into review JSON"
+  default_prompt: "Use $coding--generate--improvements-json to convert these tasks into a validated improvements JSON file."
