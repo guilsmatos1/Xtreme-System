@@ -153,7 +153,7 @@ ignore_decorators = ["app.*"]
 [tool.deptry]
 extend_exclude = [".opencode", ".agents", ".ai-jail", "alembic"]
 known_first_party = ["xtreme_system"]
-per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"] }
+per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"], "DEP003" = ["markupsafe"] }
 
 [tool.xenon]
 max-absolute = "B"
