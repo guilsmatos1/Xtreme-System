@@ -57,6 +57,11 @@ DIFFICULTY_MODELS = {
 }
 
 VARIANT_VALUES = ("low", "medium", "high")
+ESTIMATED_EFFORT_RE = re.compile(
+    r'(?:\*\*)?["\']?estimated[_ ]effort["\']?\s*(?::\*\*|\*\*:|:)\s*'
+    r'(?:\*\*)?["\']?(low|medium|high)\b',
+    re.IGNORECASE,
+)
 # codex prints the active model and reasoning effort on the same startup banner
 # row, e.g. "model:       gpt-5.6-sol low   /model to change". Before the config
 # finishes loading the same row reads "model: loading", which this does not match.
@@ -227,16 +232,15 @@ def result(status, identifier, reason=None, detail=None, warnings=None):
 
 
 def determine_variant(description):
-    """Mirror the skill's fixed rule: strict JSON key lookup, hard default on
-    any parse failure. Never heuristically extract from freeform text."""
-    try:
-        parsed = json.loads(description)
-    except (json.JSONDecodeError, TypeError):
-        return "low"
-    if not isinstance(parsed, dict):
-        return "low"
-    effort = str(parsed.get("estimated_effort", "")).strip().lower()
-    return effort if effort in VARIANT_VALUES else "low"
+    """Read only the documented effort field from Markdown or legacy JSON.
+
+    Linear descriptions are Markdown and are not a lossless JSON transport:
+    quotes and backslashes inside snippets may be normalized. Extracting the one
+    trusted metadata field directly keeps model selection independent of the
+    rest of the issue body.
+    """
+    match = ESTIMATED_EFFORT_RE.search(description or "")
+    return match.group(1).lower() if match else "low"
 
 
 def resolve_difficulty_config(variant):

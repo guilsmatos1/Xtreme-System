@@ -71,7 +71,7 @@ For each opportunity, evaluate the relevant dimensions below:
 5. Recommend the smallest useful extraction with a clear public interface.
 6. Tie every recommendation to a specific file, function, and line range, with a real code snippet when possible.
 7. Avoid cosmetic splitting unless the current shape clearly increases maintenance or correctness risk.
-8. After preparing the final report, save the content to `.loop/running/improvements-llm-adherence.json` as JSON.
+8. After preparing the final report, save the content to `.loop/running/improvements-llm-adherence.md` as Markdown.
 
 ## Suggested Workflow
 
@@ -135,68 +135,15 @@ For each opportunity, include:
 
 ## Output Format
 
-Deliver results as a JSON file with this comprehensive structure:
-
-```json
-{
-  "analysis_timestamp": "ISO-8601 timestamp",
-  "total_opportunities": 9,
-  "opportunities": [
-    {
-      "id": "imp-YYYYMMDD-NNN",
-      "short_title": "<short, actionable title>",
-      "location": {
-        "file": "path/to/file.py",
-        "line_start": 120,
-        "line_end": 135,
-        "function": "function_name",
-        "snippet": "<8-12 lines of the actual relevant code>"
-      },
-      "impact": "High",
-      "category": "Contract strength",
-      "estimated_effort": "Medium",
-      "potential_savings": "<concrete estimated benefit, omit if not justifiable>",
-      "description": "<specific explanation tied to the code>",
-      "why_it_matters": "<LLM edit risk, correctness, maintenance, or testability consequence>",
-      "concrete_fix": "<smallest useful extraction, contract, or boundary improvement>",
-      "example": "<interface or before/after when useful>",
-      "additional_fields": {
-        "priority": "high|medium|low",
-        "risk_level": "high|medium|low",
-        "tags": ["tag1", "tag2"],
-        "files_affected": ["path1", "path2"],
-        "related_opportunities": ["imp-YYYYMMDD-NNN"],
-        "llm_risk": "<why edits become broad, ambiguous, or fragile>",
-        "suggested_interface": "<function/class/protocol signature or public API>",
-        "new_structure": "<optional tree, only if structure matters>",
-        "tests": ["<test files/cases>"],
-        "success_metric": "<observable improvement>"
-      },
-      "self_critique": {
-        "confidence_score": 8.5,
-        "strengths": ["<why this finding is solid, cite what was verified>"],
-        "weaknesses": ["<what wasn't verified, assumptions made>"],
-        "uncertain": false,
-        "suggested_improvements": ["<how to raise confidence further>"]
-      }
-    }
-  ],
-  "discarded_candidates": [
-    {
-      "title": "<candidate considered and rejected>",
-      "reason": "<why it is not a strong modularity opportunity>"
-    }
-  ]
-}
-```
+Follow the shared [Improvements Markdown contract](references/improvements-markdown-format.md). Preserve every analysis-specific field under descriptive Markdown sections.
 
 ## Persistence
 
-- Write the final report to `.loop/running/improvements-llm-adherence.json`.
+- Write the final report to `.loop/running/improvements-llm-adherence.md`.
 - If the directory does not exist, create it.
 - If the file already exists, overwrite it with the latest report.
 - `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
-- Include all analysis data in the JSON structure above, preserving all findings from the review.
+- Include all analysis data in the Markdown contract above, preserving all findings from the review.
 
 ## Review Standard
 
@@ -216,4 +163,4 @@ Deliver results as a JSON file with this comprehensive structure:
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements-llm-adherence.json` ONLY.
+`.loop/running/improvements-llm-adherence.md` ONLY.

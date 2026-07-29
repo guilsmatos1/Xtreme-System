@@ -73,7 +73,7 @@ For each opportunity, evaluate the relevant dimensions below:
 5. Prefer fixes in shared macros and CSS over per-template patches when the issue repeats.
 6. Tie every recommendation to a specific template, selector, macro, route, or JS behavior.
 7. Avoid feature requests or code-quality refactors unless the interface issue cannot be fixed without them.
-8. After preparing the final report, save the content to `.loop/running/improvements-ui-ux.json` as JSON.
+8. After preparing the final report, save the content to `.loop/running/improvements-ui-ux.md` as Markdown.
 
 ## Suggested Workflow
 
@@ -134,72 +134,15 @@ For each opportunity, include:
 
 ## Output Format
 
-Deliver results as a JSON file with this comprehensive structure:
-
-```json
-{
-  "analysis_timestamp": "ISO-8601 timestamp",
-  "total_opportunities": 9,
-  "opportunities": [
-    {
-      "id": "imp-YYYYMMDD-NNN",
-      "short_title": "<short, actionable title>",
-      "location": {
-        "file": "path/to/template.html",
-        "line_start": 120,
-        "line_end": 135,
-        "function": "macro_or_selector_name",
-        "snippet": "<8-12 lines of the actual relevant code>"
-      },
-      "impact": "High",
-      "category": "Feedback and system state",
-      "estimated_effort": "Medium",
-      "potential_savings": "<concrete estimated benefit, omit if not justifiable>",
-      "description": "<specific explanation tied to the interface>",
-      "why_it_matters": "<user friction, error risk, accessibility, trust, or frequency>",
-      "concrete_fix": "<smallest useful template, CSS, JS, macro, or route change>",
-      "example": "<before/after interaction or markup when useful>",
-      "additional_fields": {
-        "priority": "high|medium|low",
-        "risk_level": "high|medium|low",
-        "tags": ["tag1", "tag2"],
-        "files_affected": ["path1", "path2"],
-        "related_opportunities": ["imp-YYYYMMDD-NNN"],
-        "screens": ["lista de veiculos", "form de venda"],
-        "frequency_of_exposure": "Every session|Daily|Occasional",
-        "propagates_to": "<how many screens this fix improves>",
-        "proposed_change": "<specific macro/CSS/attribute/route change>",
-        "acceptance_criteria": ["<verifiable statement 1>", "<verifiable statement 2>"]
-      },
-      "self_critique": {
-        "confidence_score": 8.5,
-        "strengths": ["<why this finding is solid, cite what was verified>"],
-        "weaknesses": ["<what wasn't verified, assumptions made>"],
-        "uncertain": false,
-        "suggested_improvements": ["<how to raise confidence further>"]
-      }
-    }
-  ],
-  "design_system_current_state": {
-    "summary": "<what _macros.html and app.css establish today>",
-    "gaps": ["<concrete design-system gap>"]
-  },
-  "discarded_candidates": [
-    {
-      "title": "<candidate considered and rejected>",
-      "reason": "<why it is not a strong UI/UX opportunity>"
-    }
-  ]
-}
-```
+Follow the shared [Improvements Markdown contract](references/improvements-markdown-format.md). Preserve every analysis-specific field under descriptive Markdown sections.
 
 ## Persistence
 
-- Write the final report to `.loop/running/improvements-ui-ux.json`.
+- Write the final report to `.loop/running/improvements-ui-ux.md`.
 - If the directory does not exist, create it.
 - If the file already exists, overwrite it with the latest report.
 - `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
-- Include all analysis data in the JSON structure above, preserving all findings from the review.
+- Include all analysis data in the Markdown contract above, preserving all findings from the review.
 
 ## Review Standard
 
@@ -220,4 +163,4 @@ Deliver results as a JSON file with this comprehensive structure:
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements-ui-ux.json` ONLY.
+`.loop/running/improvements-ui-ux.md` ONLY.

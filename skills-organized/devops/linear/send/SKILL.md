@@ -1,6 +1,6 @@
 ---
 name: devops--linear--send
-description: Create Linear issues from chat requests, analyzed codebases, or from JSON batch data files.
+description: Create Linear issues from chat requests, analyzed codebases, or Markdown improvement batches. Supports legacy JSON batches by rendering each opportunity as Markdown before sending.
 metadata:
     skill-organizer:
         original-name: devops--linear--send
@@ -27,30 +27,32 @@ Use `orca linear create` to create issues.
 - State: `Backlog`
 - Team: `GUI`
 
-## When Sending from JSON Batch Files
+## When Sending from Markdown Batch Files
 
-A JSON file path (absolute or relative) must be provided via an argument. **There is no default file path** — never assume, guess, or fall back to a fixed location. If no path is provided in the request, ask the user for it instead of proceeding. Process the `opportunities` array (or top-level array). Create one issue per opportunity without checking for duplicates. Body = the entire opportunity object as a raw JSON string (preserves all fields — location, description, concrete_fix, files_affected, tags, etc. — without reformatting token cost).
+A Markdown file path (absolute or relative) must be provided via an argument. **There is no default file path** — never assume, guess, or fall back to a fixed location. Create one issue per `## imp-YYYYMMDD-NNN — Short title` section without checking for duplicates. Send that complete section as the issue body so headings, prose, lists, and code remain readable without JSON escaping.
 
 ### Automatic Script
 
 ```bash
-python3 skills-organized/devops/linear/send/send_improvements.py "<project>" <path-json>
+python3 skills-organized/devops/linear/send/send_improvements.py "<project>" <path-md>
 ```
 
-Reads the JSON, infers `label`/`priority` per opportunity, calls `orca linear create` for each, and logs progress ("Creating issue N of M...") and result per issue. See `infer_label()` in that file for the exact label rules. If `additional_fields.priority` is missing, it defaults to `none`.
+Reads the Markdown, extracts the fixed metadata lines, infers `label`/`priority`, calls `orca linear create` for each, and logs progress. See `infer_label()` in that file for the exact label rules. If `Priority` is missing, it defaults to `none`.
+
+Legacy `.json` batches remain accepted. The helper converts every legacy opportunity to Markdown before sending; it never uses raw JSON as a Linear description.
 
 ### Fallback manual
 
-Use only if the script fails (`orca` CLI unavailable, permission error, malformed JSON). Per opportunity, run `orca linear create --project "<project>"` with:
+Use only if the script fails (`orca` CLI unavailable, permission error, malformed Markdown). Per opportunity, run `orca linear create --project "<project>"` with:
 
 - `title` ← `short_title`
-- `body` ← entire opportunity object as raw JSON string (not a Markdown template — see Body strategy above)
-- `priority` ← `additional_fields.priority`, or `none` if absent (must be one of `none`, `low`, `medium`, `high`, `urgent`)
+- `body` ← complete Markdown section for the opportunity
+- `priority` ← the `Priority` metadata value, or `none` if absent
 - `label` ← `Bug` if tags include "correctness"/"security"/"bug" or category is "Error handling"; `Feature` if tags include "feature" or category is "Features"; `Improvement` otherwise
 
-The file path is received as the skill's `args` parameter. It can point to any JSON file, in any location (absolute or relative). Validate it exists and is valid JSON before processing.
+The file path is received as the skill's `args` parameter. It can point to any Markdown file, in any location. Validate it exists and follows the improvement heading contract before processing.
 
-### Post-Processing: Move JSON to .loop
+### Post-Processing: Move Markdown to .loop
 
 After successfully sending all opportunities to Linear:
 
@@ -58,8 +60,8 @@ After successfully sending all opportunities to Linear:
   - `{x}` = incremental loop number (find the highest existing `loop-*` folder, extract its number, and add 1)
   - `{y}` = today's date in ISO format (YYYY-MM-DD)
   - Example: `loop-5-2026-07-23`
-2. **Move the JSON file** into the newly created folder
-  - Example: Move `.loop/running/improvements.json` → `.loop/loop-5-2026-07-23/improvements.json`
+2. **Move the Markdown file** into the newly created folder
+  - Example: Move `.loop/running/improvements.md` → `.loop/loop-5-2026-07-23/improvements.md`
 
 This creates an archive of completed opportunity batches, one per loop run.
 
@@ -86,9 +88,8 @@ This creates an archive of completed opportunity batches, one per loop run.
 orca linear create --team GUI --title "..." --body "..." --assignee me --state Backlog --priority medium --label Improvement --json
 ```
 
-### From JSON Batch
+### From Markdown Batch
 
 ```bash
-python3 skills-organized/devops/linear/send/send_improvements.py "Xtreme System" /absolute/path/to/other-batch.json
+python3 skills-organized/devops/linear/send/send_improvements.py "Xtreme System" /absolute/path/to/improvements.md
 ```
-
