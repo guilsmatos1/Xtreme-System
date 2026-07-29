@@ -89,7 +89,14 @@
     var prefs = load(tableKey);
     var defaults = defaultCols(table);
     var order = resolvedOrder(prefs, defaults);
-    var hidden = (prefs.hidden || []).filter(function (k) {
+    var defaultHidden = (table.getAttribute("data-default-hidden") || "")
+      .split(",")
+      .filter(Boolean);
+    var hidden = (
+      Object.prototype.hasOwnProperty.call(prefs, "hidden")
+        ? prefs.hidden
+        : defaultHidden
+    ).filter(function (k) {
       return defaults.indexOf(k) !== -1;
     });
     var rows = table.querySelectorAll("thead tr, tbody tr");

@@ -16,26 +16,16 @@
         {% if compra %}
         <div class="form-grid">
           {% if pode_ver_campo(user, 'compras', 'cliente') %}
-          <label class="field">
-            <span class="field__label">Cliente *</span>
-            <select class="select" name="cliente_id" required>
-              <option value="">Selecione</option>
-              {% for c in clientes %}
-              <option value="{{ c.id }}"{% if compra.cliente_id == c.id %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
-              {% endfor %}
-            </select>
-          </label>
+          <div class="field">
+            <span class="field__label">Cliente</span>
+            <div class="input">{{ compra.cliente.nome }}{% if compra.cliente.documento %} · {{ compra.cliente.documento }}{% endif %}</div>
+          </div>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
-          <label class="field">
-            <span class="field__label">Veículo *</span>
-            <select class="select" name="veiculo_id" required>
-              <option value="">Selecione</option>
-              {% for veic in veiculos %}
-              <option value="{{ veic.id }}"{% if compra.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
-              {% endfor %}
-            </select>
-          </label>
+          <div class="field">
+            <span class="field__label">Veículo</span>
+            <div class="input">{{ compra.veiculo.placa }} · {{ compra.veiculo.modelo }}</div>
+          </div>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field">
@@ -49,7 +39,7 @@
             <span class="field__label">Estado</span>
             <select class="select" name="status">
               <option value="pendente"{% if compra and compra.status.value == "pendente" %} selected{% endif %}>Pendente</option>
-              <option value="finalizado"{% if compra and compra.status.value == "finalizado" %} selected{% endif %}>Finalizado</option>
+              <option value="concluido"{% if compra and compra.status.value == "concluido" %} selected{% endif %}>Concluído</option>
               <option value="cancelado"{% if compra and compra.status.value == "cancelado" %} selected{% endif %}>Cancelado</option>
             </select>
           </label>

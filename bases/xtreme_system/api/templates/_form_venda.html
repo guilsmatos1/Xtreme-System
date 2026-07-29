@@ -218,7 +218,7 @@
             <span class="field__label">Status *</span>
             <select class="select" name="status" required>
               {% for s in status %}
-              <option value="{{ s.value }}"{% if dados.get('status', '') == s.value %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
+              <option value="{{ s.value }}"{% if dados.get('status', 'concluido') == s.value %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
               {% endfor %}
             </select>
           </label>

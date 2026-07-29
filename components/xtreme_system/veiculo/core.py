@@ -25,8 +25,10 @@ class TipoVeiculo(StrEnum):
 
 class StatusVeiculo(StrEnum):
     disponivel = "disponivel"
+    indisponivel = "indisponivel"
     vendido = "vendido"
     reservado = "reservado"
+    cancelado = "cancelado"
 
 
 class TipoEntrada(StrEnum):

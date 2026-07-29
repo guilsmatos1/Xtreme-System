@@ -14,10 +14,10 @@ O banco utiliza SQLAlchemy + Alembic (migrations em `alembic/versions/`). Abaixo
 |------|---------|-----|
 | `tipoveiculo` | `moto`, `carro` | `veiculo.tipo` |
 | `tipoentrada` | `compra`, `consignacao` | `veiculo.tipo_entrada` |
-| `statusveiculo` | `disponivel`, `vendido`, `reservado` | `veiculo.status` |
+| `statusveiculo` | `disponivel`, `indisponivel`, `vendido`, `reservado`, `cancelado` | `veiculo.status` |
 | `tipocliente` | `pessoa_fisica`, `pessoa_juridica` | `cliente.tipo` |
 | `statusvenda` | `pendente`, `aprovado`, `cancelado`, `concluido` | `venda.status` |
-| `statuscompra` | `pendente`, `finalizado`, `cancelado` | `compra.status` |
+| `statuscompra` | `pendente`, `concluido`, `cancelado` | `compra.status` |
 | `papel` | `admin`, `funcionario` | `usuario.papel` |
 | `tipolancamento` | `aporte`, `custo`, `receita_venda`, `distribuicao_lucro` | `lancamento_investimento.tipo` |
 | `origemlancamento` | `manual`, `veiculo`, `fechamento_venda` | `lancamento_investimento.origem` |
@@ -54,7 +54,7 @@ Veículos disponíveis para venda.
 | `preco` | `NUMERIC(12,2)` | Não | - | |
 | `procuracao` | `VARCHAR` | Sim | - | |
 | `proprietario_registrado` | `VARCHAR` | Sim | - | Nome do proprietário registrado no documento do veículo |
-| `status` | `statusveiculo` | Não | `disponivel` | `disponivel`, `vendido`, `reservado` |
+| `status` | `statusveiculo` | Não | `disponivel` | Estado operacional do veículo |
 | `tipo_entrada` | `tipoentrada` | Não | `compra` | `compra` ou `consignacao` |
 | `revisao` | `BOOLEAN` | Não | `false` | |
 | `criado_em` | `DATETIME` | Não | `now()` | |
@@ -184,7 +184,7 @@ Registro de compras de veículos.
 | `valor_compra` | `NUMERIC(12,2)` | Não | - | |
 | `debitos` | `NUMERIC(12,2)` | Sim | - | |
 | `observacoes` | `VARCHAR` | Sim | - | |
-| `status` | `statuscompra` | Não | `pendente` | `pendente`, `finalizado`, `cancelado` |
+| `status` | `statuscompra` | Não | `pendente` | `pendente`, `concluido`, `cancelado` |
 
 ### `custo_veiculo`
 

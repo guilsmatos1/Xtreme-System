@@ -21,7 +21,19 @@
           </label>
           <label class="field">
             <span class="field__label">Categoria *</span>
-            <input class="input" name="categoria" value="{{ custo.categoria if custo else '' }}" required>
+            <input class="input" name="categoria" list="categorias-custo" value="{{ custo.categoria if custo else '' }}" required>
+            {% if not custo %}
+            <datalist id="categorias-custo">
+              <option value="Documentação">
+              <option value="Manutenção">
+              <option value="Mecânica">
+              <option value="Peças">
+              <option value="Lavagem">
+              <option value="Combustível">
+              <option value="Transporte">
+              <option value="Outros">
+            </datalist>
+            {% endif %}
           </label>
           <label class="field">
             <span class="field__label">Data *</span>

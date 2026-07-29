@@ -80,6 +80,16 @@
           </label>
           {% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'status') %}
+          <label class="field">
+            <span class="field__label">Estado *</span>
+            <select class="select" name="status" required>
+              <option value="disponivel"{% if veiculo.status.value == "disponivel" %} selected{% endif %}>Disponível</option>
+              <option value="indisponivel"{% if veiculo.status.value != "disponivel" %} selected{% endif %}>Indisponível</option>
+            </select>
+          </label>
+          {% endif %}
+
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
           {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
           <label class="field">

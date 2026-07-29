@@ -270,6 +270,20 @@ def _sincronizar_caixa_compra(
         caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
 
 
+def _sincronizar_status_veiculo_compra(
+    session: Session, obj: compra.Compra, actor_id: int | None = None
+) -> None:
+    veiculo_obj = veiculo.get(session, obj.veiculo_id)
+    if veiculo_obj is None:
+        return
+    if obj.status == compra.StatusCompra.cancelado:
+        veiculo_obj.status = veiculo.StatusVeiculo.cancelado
+    elif veiculo_obj.status == veiculo.StatusVeiculo.cancelado:
+        veiculo_obj.status = veiculo.StatusVeiculo.disponivel
+    session.flush()
+    _sincronizar_caixa_compra(session, obj, actor_id)
+
+
 def _erro_compra(
     request: Request,
     session: Session,
@@ -427,8 +441,8 @@ register_crud_ui_routes(
         parse_form=_parse_compra_form,
         before_create=validate_cliente_veiculo_fks,
         before_update=validate_cliente_veiculo_fks,
+        after_update=_sincronizar_status_veiculo_compra,
         before_delete=_deletar_compra_e_veiculo,
-        after_update=_sincronizar_caixa_compra,
     ),
     listing=ListingSpec(
         searchable=True,

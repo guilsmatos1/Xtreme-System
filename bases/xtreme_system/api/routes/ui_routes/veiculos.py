@@ -66,8 +66,10 @@ def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
 
 _STATUS_LABELS = {
     "disponivel": "Disponível",
+    "indisponivel": "Indisponível",
     "vendido": "Vendido",
     "reservado": "Reservado",
+    "cancelado": "Cancelado",
 }
 
 _DEBITOS_SORT_SQL = func.coalesce(

@@ -83,7 +83,7 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide" data-table="veiculos">
+  <table class="table--wide" data-table="veiculos" data-default-hidden="marca">
     {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
     <thead><tr>
       {% if pode_ver_campo(user, 'veiculos', 'placa') %}<th data-col="placa" data-col-label="Placa">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
