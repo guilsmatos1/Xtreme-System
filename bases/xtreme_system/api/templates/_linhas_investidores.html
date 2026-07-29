@@ -36,4 +36,5 @@
 {% endfor %}
 </tbody>
 {% if oob %}{{ ui.paginacao(request.url.path, qs_base, "#linhas", page_start, page_end, page_count, limit, offset_anterior, offset_proximo, tem_anterior, tem_proximo, oob=True) }}{% endif %}
+{% if oob %}{% include "_stats_investidores.html" %}{% endif %}
 {% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}

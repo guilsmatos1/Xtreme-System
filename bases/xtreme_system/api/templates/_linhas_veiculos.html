@@ -6,4 +6,5 @@
 </td></tr>
 {% endfor %}
 </tbody>
+{% if oob %}{% include "_stats_veiculos.html" %}{% endif %}
 {% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}

@@ -1,0 +1,26 @@
+{% import "_macros.html" as ui %}
+{% set pessoas_fisicas = clientes | selectattr("tipo", "equalto", "pessoa_fisica") | list %}
+{% set pessoas_juridicas = clientes | selectattr("tipo", "equalto", "pessoa_juridica") | list %}
+{% set clientes_com_telefone = clientes | selectattr("telefone") | list %}
+<section id="stats-clientes" class="stats" aria-label="Resumo de clientes"{% if oob %} hx-swap-oob="outerHTML"{% endif %}>
+  <article class="card stat stat--info">
+    <div class="stat__label">{{ ui.icon("users") }} Total de clientes</div>
+    <div class="stat__value cell-num">{{ clientes | length }}</div>
+    <div class="stat__hint">clientes visíveis</div>
+  </article>
+  <article class="card stat stat--success">
+    <div class="stat__label">{{ ui.icon("user") }} Pessoas físicas</div>
+    <div class="stat__value cell-num">{{ pessoas_fisicas | length }}</div>
+    <div class="stat__hint">clientes cadastrados</div>
+  </article>
+  <article class="card stat stat--accent">
+    <div class="stat__label">{{ ui.icon("building") }} Pessoas jurídicas</div>
+    <div class="stat__value cell-num">{{ pessoas_juridicas | length }}</div>
+    <div class="stat__hint">empresas cadastradas</div>
+  </article>
+  <article class="card stat stat--warning">
+    <div class="stat__label">{{ ui.icon("users") }} Com telefone</div>
+    <div class="stat__value cell-num">{{ clientes_com_telefone | length }}</div>
+    <div class="stat__hint">contatos disponíveis</div>
+  </article>
+</section>

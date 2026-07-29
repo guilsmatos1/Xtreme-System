@@ -19,18 +19,7 @@
   </div>
 </div>
 
-<section class="stats" aria-label="Resumo de custos">
-  <article class="card stat stat--accent">
-    <div class="stat__label">{{ ui.icon("cash") }} Total de custos</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_custos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
-    <div class="stat__hint">custos visíveis</div>
-  </article>
-  <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("tag") }} Lançamentos</div>
-    <div class="stat__value cell-num">{{ quantidade_custos }}</div>
-    <div class="stat__hint">registros visíveis</div>
-  </article>
-</section>
+{% include "_stats_custos_veiculos.html" %}
 
 {% set search_colunas = [{"key": "veiculo", "label": "Veículo"}, {"key": "placa", "label": "Placa"}, {"key": "categoria", "label": "Categoria"}, {"key": "data", "label": "Data/Hora"}] %}
 {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}{% set _ = search_colunas.append({"key": "valor", "label": "Valor"}) %}{% endif %}

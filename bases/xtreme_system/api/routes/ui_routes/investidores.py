@@ -287,5 +287,5 @@ def ui_investidor_excluir(
     return templates.TemplateResponse(
         request,
         "_linhas_investidores.html",
-        {"user": user, **_ctx_investidores(session)},
+        {"user": user, **_ctx_investidores(session), "oob": True},
     )

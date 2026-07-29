@@ -14,28 +14,7 @@
   </div>
 </div>
 
-<section class="stats" aria-label="Resumo do estoque">
-  <article class="card stat stat--info">
-    <div class="stat__label">{{ ui.icon("vehicles") }} Total no estoque</div>
-    <div class="stat__value cell-num">{{ total_estoque }}</div>
-    <div class="stat__hint">veículos cadastrados</div>
-  </article>
-  <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("check") }} Disponíveis</div>
-    <div class="stat__value cell-num">{{ contagens_estoque.disponivel }}</div>
-    <div class="stat__hint">prontos para venda</div>
-  </article>
-  <article class="card stat stat--warning">
-    <div class="stat__label">{{ ui.icon("tag") }} Vendidos</div>
-    <div class="stat__value cell-num">{{ contagens_estoque.vendido }}</div>
-    <div class="stat__hint">baixados do estoque</div>
-  </article>
-  <article class="card stat stat--accent">
-    <div class="stat__label">{{ ui.icon("clock") }} Reservados</div>
-    <div class="stat__value cell-num">{{ contagens_estoque.reservado }}</div>
-    <div class="stat__hint">aguardando conclusão</div>
-  </article>
-</section>
+{% include "_stats_veiculos.html" %}
 
 {% set search_colunas = [] %}
 {% if pode_ver_campo(user, 'veiculos', 'modelo') %}{% set _ = search_colunas.append({"key": "modelo", "label": "Modelo"}) %}{% endif %}

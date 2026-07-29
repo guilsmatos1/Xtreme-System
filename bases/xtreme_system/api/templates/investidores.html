@@ -19,32 +19,7 @@
   </div>
 </div>
 
-{% set total_saldo = saldos.values() | sum %}
-{% set total_veiculos = num_veiculos.values() | sum %}
-{% set total_valor_veiculos = valor_veiculos.values() | sum %}
-{% set total_aportes = total_aportado.values() | sum %}
-<section class="stats" aria-label="Resumo de investidores">
-  <article class="card stat stat--info">
-    <div class="stat__label">{{ ui.icon("users") }} Total de investidores</div>
-    <div class="stat__value cell-num">{{ itens | length }}</div>
-    <div class="stat__hint">investidores cadastrados</div>
-  </article>
-  <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("wallet") }} Saldo total</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_saldo) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
-    <div class="stat__hint">disponível para investimento</div>
-  </article>
-  <article class="card stat stat--accent">
-    <div class="stat__label">{{ ui.icon("vehicles") }} Veículos vinculados</div>
-    <div class="stat__value cell-num">{{ total_veiculos }}</div>
-    <div class="stat__hint">em carteira</div>
-  </article>
-  <article class="card stat stat--warning">
-    <div class="stat__label">{{ ui.icon("cash") }} Total aportado</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_aportes) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
-    <div class="stat__hint">R$ {{ "{:,.2f}".format(total_valor_veiculos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }} em veículos</div>
-  </article>
-</section>
+{% include "_stats_investidores.html" %}
 
 <div class="table-wrap">
   <table class="table--wide" data-table="investidores">

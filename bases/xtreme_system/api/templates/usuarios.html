@@ -2,9 +2,6 @@
 {% import "_macros.html" as ui %}
 {% block titulo %}Usuários{% endblock %}
 {% block content %}
-{% set admins = usuarios | selectattr("papel.value", "equalto", "admin") | list %}
-{% set ativos = usuarios | selectattr("ativo") | list %}
-
 <div class="page-head">
   <div class="page-head__title">
     <h1>Usuários</h1>
@@ -20,28 +17,7 @@
   </div>
 </div>
 
-<section class="stats" aria-label="Resumo de usuários">
-  <article class="card stat stat--info">
-    <div class="stat__label">{{ ui.icon("users") }} Total</div>
-    <div class="stat__value cell-num">{{ usuarios | length }}</div>
-    <div class="stat__hint">usuários cadastrados</div>
-  </article>
-  <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("check") }} Ativos</div>
-    <div class="stat__value cell-num">{{ ativos | length }}</div>
-    <div class="stat__hint">com acesso liberado</div>
-  </article>
-  <article class="card stat stat--accent">
-    <div class="stat__label">{{ ui.icon("tag") }} Admins</div>
-    <div class="stat__value cell-num">{{ admins | length }}</div>
-    <div class="stat__hint">com acesso total</div>
-  </article>
-  <article class="card stat stat--warning">
-    <div class="stat__label">{{ ui.icon("user") }} Funcionários</div>
-    <div class="stat__value cell-num">{{ (usuarios | length) - (admins | length) }}</div>
-    <div class="stat__hint">acesso conforme perfil</div>
-  </article>
-</section>
+{% include "_stats_usuarios.html" %}
 
 {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
 

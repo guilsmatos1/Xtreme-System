@@ -37,6 +37,7 @@ def _usuarios_ctx(
         "perfis": perfil.list_all(session),
         "sort": "",
         "order": "asc",
+        "oob": True,
         **extra,
     }
 
