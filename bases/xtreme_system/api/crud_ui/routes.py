@@ -97,10 +97,10 @@ CrudUIListConfig = ListingSpec
 class ColumnSpec[EntityT]:
     key: str
     label: str
-    value: Callable[[EntityT], Any]
     field: str | None = None
     table: bool = True
-    export: bool = True
+    html: Callable[[EntityT], Any] | None = None
+    export: Callable[[EntityT], Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -383,18 +383,23 @@ def register_export_route(
     def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
         lista = query_list(session, module, listing=listing, state=ListState(q=q))
         if columns is not None:
-            export_columns = [
-                column
-                for column in columns
-                if column.export
-                and (
-                    pagina is None
-                    or column.field is None
-                    or perfil.pode_ver_campo(user, pagina, column.field)
-                )
+            export_columns: list[
+                tuple[ColumnSpec[EntityT], Callable[[EntityT], Any]]
+            ] = []
+            for column in columns:
+                export_value = column.export
+                if export_value is None or (
+                    pagina is not None
+                    and column.field is not None
+                    and not perfil.pode_ver_campo(user, pagina, column.field)
+                ):
+                    continue
+                export_columns.append((column, export_value))
+            headers = [column.label for column, _ in export_columns]
+            rows = [
+                [export_value(obj) for _, export_value in export_columns]
+                for obj in lista
             ]
-            headers = [column.label for column in export_columns]
-            rows = [[column.value(obj) for column in export_columns] for obj in lista]
         elif csv_headers is not None and csv_row is not None:
             headers = csv_headers
             rows = [csv_row(obj) for obj in lista]

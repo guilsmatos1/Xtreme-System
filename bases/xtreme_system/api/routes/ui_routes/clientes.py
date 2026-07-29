@@ -5,6 +5,7 @@ from typing import Annotated, Any
 import structlog
 from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
+from markupsafe import Markup
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
@@ -41,6 +42,31 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.venda import core as venda
 
 logger = structlog.get_logger(__name__)
+
+
+def _table_cell(
+    column: str, value: Any, *, class_name: str = "", empty: str = "-"
+) -> Markup:
+    class_attr = Markup(' class="{}"').format(class_name) if class_name else ""
+    return Markup('<td{} data-col="{}">{}</td>').format(
+        class_attr,
+        column,
+        empty if value in (None, "") else value,
+    )
+
+
+def _tipo_cell(c: cliente.Cliente) -> Markup:
+    tipo = c.tipo.value
+    badge_class = {
+        "pessoa_fisica": "badge--info",
+        "pessoa_juridica": "badge--success",
+    }.get(tipo, "")
+    badge = Markup('<span class="badge badge--plain {}">{}</span>').format(
+        badge_class,
+        tipo.replace("_", " ").title(),
+    )
+    return _table_cell("tipo", badge)
+
 
 _EditarClienteDep = Annotated[
     usuario.Usuario, Depends(require_operacao("clientes", "editar"))
@@ -271,22 +297,57 @@ def _register_clientes_page(
             csv_filename=csv_filename,
             pagina="clientes",
             columns=[
-                ColumnSpec("id", "ID", lambda c: c.id, table=False),
-                ColumnSpec("nome", "Nome", lambda c: c.nome, field="nome"),
+                ColumnSpec("id", "ID", table=False, export=lambda c: c.id),
                 ColumnSpec(
-                    "documento", "Documento", lambda c: c.documento, field="documento"
+                    "nome",
+                    "Nome",
+                    field="nome",
+                    html=lambda c: _table_cell(
+                        "nome", c.nome, class_name="cell-strong"
+                    ),
+                    export=lambda c: c.nome,
                 ),
-                ColumnSpec("tipo", "Tipo", lambda c: c.tipo.value, field="tipo"),
+                ColumnSpec(
+                    "documento",
+                    "Documento",
+                    field="documento",
+                    html=lambda c: _table_cell(
+                        "documento",
+                        cliente.formatar_documento(c.documento),
+                        class_name="cell-mono",
+                    ),
+                    export=lambda c: c.documento,
+                ),
+                ColumnSpec(
+                    "tipo",
+                    "Tipo",
+                    field="tipo",
+                    html=_tipo_cell,
+                    export=lambda c: c.tipo.value,
+                ),
                 ColumnSpec(
                     "telefone",
                     "Telefone",
-                    lambda c: c.telefone or "",
                     field="telefone",
+                    html=lambda c: _table_cell(
+                        "telefone", cliente.formatar_telefone(c.telefone)
+                    ),
+                    export=lambda c: c.telefone or "",
                 ),
                 ColumnSpec(
-                    "cidade", "Cidade", lambda c: c.cidade or "", field="cidade"
+                    "cidade",
+                    "Cidade",
+                    field="cidade",
+                    html=lambda c: _table_cell("cidade", c.cidade),
+                    export=lambda c: c.cidade or "",
                 ),
-                ColumnSpec("estado", "UF", lambda c: c.estado or "", field="estado"),
+                ColumnSpec(
+                    "estado",
+                    "UF",
+                    field="estado",
+                    html=lambda c: _table_cell("estado", c.estado),
+                    export=lambda c: c.estado or "",
+                ),
             ],
         ),
         routes=CrudUIRouteConfig(

@@ -569,6 +569,11 @@ def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
     busca = client.get("/ui/clientes/todos?q=Ana")
     assert "Ana Compradora" in busca.text
     assert "Caio Ambos" not in busca.text
+    assert 'class="cell-mono" data-col="documento">123.456.789-01' in busca.text
+    assert (
+        'data-col="tipo"><span class="badge badge--plain badge--info">Pessoa Fisica'
+        in busca.text
+    )
 
     export = client.get("/ui/clientes/todos/exportar?q=Ana")
     assert export.status_code == 200

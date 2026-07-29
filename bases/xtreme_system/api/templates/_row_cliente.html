@@ -1,18 +1,7 @@
 {% import "_macros.html" as ui %}
 <tr id="cliente-{{ c.id }}">
   {% for column in columns %}
-  {% set value = column.value(c) %}
-  {% if column.key == "nome" %}
-  <td class="cell-strong" data-col="{{ column.key }}">{{ value }}</td>
-  {% elif column.key == "documento" %}
-  <td class="cell-mono" data-col="{{ column.key }}">{{ value | formatar_documento }}</td>
-  {% elif column.key == "tipo" %}
-  <td data-col="{{ column.key }}"><span class="badge badge--plain {% if value == 'pessoa_fisica' %}badge--info{% elif value == 'pessoa_juridica' %}badge--success{% endif %}">{{ value | replace("_", " ") | title }}</span></td>
-  {% elif column.key == "telefone" %}
-  <td data-col="{{ column.key }}">{{ value | formatar_telefone }}</td>
-  {% else %}
-  <td data-col="{{ column.key }}">{{ value or "-" }}</td>
-  {% endif %}
+  {{ column.html(c) }}
   {% endfor %}
   {% set pode_editar = pode_operacao(user, 'clientes', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'clientes', 'excluir') %}
