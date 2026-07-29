@@ -21,15 +21,6 @@
 
 {% include "_stats_clientes.html" %}
 
-{% set search_colunas = [
-  {"key": "nome", "label": "Nome"},
-  {"key": "documento", "label": "Documento"},
-  {"key": "tipo", "label": "Tipo"},
-  {"key": "telefone", "label": "Telefone"},
-  {"key": "cidade", "label": "Cidade"},
-  {"key": "estado", "label": "UF"},
-] %}
-
 <div class="toolbar" id="busca-clientes">
   <input type="hidden" name="sort" value="{{ sort }}">
   <input type="hidden" name="order" value="{{ order }}">
@@ -49,7 +40,7 @@
               hx-get="{{ route_prefix or '/ui/clientes' }}" hx-trigger="change" hx-include="#busca-clientes" hx-target="#linhas" hx-swap="outerHTML"
               aria-label="Filtrar por coluna">
         <option value="">Todas</option>
-        {% for col in search_colunas %}
+        {% for col in columns %}
         <option value="{{ col.key }}"{% if search_column == col.key %} selected{% endif %}>{{ col.label }}</option>
         {% endfor %}
       </select>
@@ -65,12 +56,9 @@
   <table class="table--wide" data-table="clientes">
     <thead>
       <tr>
-        <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="documento" data-col-label="Documento">{{ ui.sortable("documento", "Documento", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="tipo" data-col-label="Tipo">{{ ui.sortable("tipo", "Tipo", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="telefone" data-col-label="Telefone">{{ ui.sortable("telefone", "Telefone", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="cidade" data-col-label="Cidade">{{ ui.sortable("cidade", "Cidade", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
-        <th data-col="estado" data-col-label="UF">{{ ui.sortable("estado", "UF", sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        {% for column in columns %}
+        <th data-col="{{ column.key }}" data-col-label="{{ column.label }}">{{ ui.sortable(column.key, column.label, sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+        {% endfor %}
         {% if pode_operacao(user, 'clientes', 'editar') or pode_operacao(user, 'clientes', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
     </thead>

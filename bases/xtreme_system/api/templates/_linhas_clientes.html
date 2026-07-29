@@ -3,7 +3,7 @@
   {% for c in clientes %}
     {% include "_row_cliente.html" %}
   {% else %}
-  <tr class="empty-row"><td colspan="7">
+  <tr class="empty-row"><td colspan="{{ columns | length + 1 }}">
     {% call ui.empty("users", empty_title or "Nenhum cliente encontrado", empty_text or "Cadastre um cliente para começar.") %}{% endcall %}
   </td></tr>
   {% endfor %}
