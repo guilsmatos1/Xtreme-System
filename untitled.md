@@ -1,7 +1,7 @@
 /ui/veiculos
 
 
-/ui/compras, no modal de editar compra
+/ui/compras
 
 
 /ui/custo
@@ -11,5 +11,4 @@
 geral
 
 
-- Ao executar operações nas páginas, é necessário atualizar os dados dos painéis disponíveis.
-Por exemplo:
+- Ao executar operações nas páginas, é necessário atualizar os dados dos painéis informativos.
