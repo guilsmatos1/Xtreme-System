@@ -71,17 +71,16 @@ none is given, write `.loop/running/issues.md`.
 2. Map each task to one opportunity in source order.
 3. Remove exact duplicates. Merge near-duplicates only when they describe the same root cause and
    fix, recording the involved files and details in the merged opportunity.
-4. Keep only `High` or `Medium` impact tasks. Do not promote a weak task merely to retain it; list
-   what you dropped under `Discarded candidates` with the reason.
+4. Keep all impact tasks. Do not promote a weak task merely to retain it; list what you dropped
+   under `Discarded candidates` with the reason.
 5. Preserve explicit impact, effort, priority, risk, tags, affected files, and relationships. Infer
    missing metadata conservatively from the task content. Use a primary category from: `Code
    quality`, `Architecture and design`, `Performance`, `Testing`, `Maintainability`, `Error handling
    and logging`, or `Security`.
 6. Recover missing evidence with a **bounded** search or read when a task names a code location but
    omits the file, line range, or snippet. Do not audit the codebase.
-7. If a task cannot be traced to code after that bounded lookup, retain it only when it still
-   expresses a concrete `High` or `Medium` risk. Write `Not verified` for the location, set
-   `Uncertain: Yes`, lower the confidence, and explain the gap under `Weaknesses`.
+7. If a task cannot be traced to code after that bounded lookup, retain it. Write `Not verified` for
+   the location, set `Uncertain: Yes`, lower the confidence, and explain the gap under `Weaknesses`.
 8. Do not force an 8-12 item count. The count is whatever survives filtering and deduplication.
 
 ### Both modes — write and validate
