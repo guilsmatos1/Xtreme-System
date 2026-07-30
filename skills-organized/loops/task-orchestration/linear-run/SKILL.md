@@ -149,6 +149,7 @@ keeps waiting.
 - If Orchestration is unavailable, stop and tell the user to enable Settings &gt; Experimental &gt; Orchestration.
 - The coordinator terminal must have an orchestration Run bound before `task-create`/`dispatch`/`check` will work (they fail closed with `run_required` otherwise). The helper checks with `run-current` and calls `run-create` itself if none is bound; do not call `run-create`/`run-use` manually around it.
 - Every orchestration `check --wait` batch the helper consumes is acknowledged (`--ack <deliveryId>`) before returning. An unacked batch replays on every subsequent `check --wait` instead of blocking for new messages, which would otherwise starve later issues of their own `worker_done`.
+- The helper posts best-effort worktree checkpoints (`orca worktree set --comment ... --workspace-status ...`) at dispatch (`in-progress`), on escalation (`in-review`, comment prefixed `BLOCKED:`), and on success (`completed`) so a human watching Orca can see per-issue progress without opening the worker terminal or reading JSONL. A checkpoint failure is only ever a warning; it never changes an issue's outcome.
 
 ## Model and reasoning effort selection
 

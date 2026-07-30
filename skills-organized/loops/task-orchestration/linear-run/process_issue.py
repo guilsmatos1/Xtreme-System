@@ -454,6 +454,23 @@ def _escalation_question(msg):
     return _compact_text(question, DETAIL_STRING_LIMIT)
 
 
+def set_worktree_checkpoint(identifier, comment, workspace_status=None, warnings=None):
+    """Best-effort worktree checkpoint so a human watching Orca (not just Linear)
+    can see per-issue progress without opening the worker terminal.
+
+    Never fatal: a checkpoint is a courtesy status update, not part of the merge
+    gate, so a failure here must not affect the issue's outcome.
+    """
+    args = ["worktree", "set", "--worktree", f"name:{identifier}", "--comment", comment]
+    if workspace_status:
+        args += ["--workspace-status", workspace_status]
+    try:
+        orca(args)
+    except OrcaError as exc:
+        if warnings is not None:
+            warnings.append(f"failed to set worktree checkpoint for {identifier}: {exc}")
+
+
 def escalate_task(identifier, task_id, msg, warnings):
     """Turn a raw escalation message into durable Orca state on the task.
 
@@ -778,6 +795,13 @@ def cmd_start(args):
                           reason=f"could not arm the finish hook: {ctx_error}",
                           detail={"handle": handle}, warnings=warnings)
 
+        set_worktree_checkpoint(
+            identifier,
+            f"Dispatched to worker (model {model}, reasoning effort {reasoning_effort}); "
+            f"task {task_id}, dispatch {dispatch_id}. Waiting for worker_done.",
+            workspace_status="in-progress", warnings=warnings,
+        )
+
         report_script = os.path.join(issue_worktree_path(identifier) or "", REPORT_SCRIPT)
         if not os.path.exists(report_script):
             return result("error", identifier,
@@ -817,6 +841,11 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
         return result("pending", identifier, warnings=warnings, detail=context)
     if outcome == "escalation":
         gate_id = escalate_task(identifier, task_id, msg, warnings)
+        question = _escalation_question(msg)
+        set_worktree_checkpoint(
+            identifier, f"BLOCKED: {question}",
+            workspace_status="in-review", warnings=warnings,
+        )
         detail = _compact_message(msg)
         if gate_id:
             detail = {**detail, "gate_id": gate_id}
@@ -851,6 +880,10 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
                       detail={**context, "merge": merge_detail}, warnings=warnings)
 
     finish_success(identifier, workspace, warnings)
+    set_worktree_checkpoint(
+        identifier, f"Implementation merged into {MERGE_TARGET_BRANCH}; issue moved to Done.",
+        workspace_status="completed", warnings=warnings,
+    )
     return result("in_review_done", identifier, detail=_compact_message(msg), warnings=warnings)
 
 
