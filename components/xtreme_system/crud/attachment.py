@@ -3,11 +3,9 @@
 from collections.abc import Callable
 from typing import Protocol
 
-from sqlalchemy import event
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
-from xtreme_system.upload_file.core import schedule_uploaded_file_delete
 
 
 class CreateFn[M, S](Protocol):
@@ -35,15 +33,6 @@ class ListAllFn[M](Protocol):
 class UrlAttachmentMixin:
     id: Mapped[int] = mapped_column(primary_key=True)
     url: Mapped[str]
-
-
-def register_upload_file_delete(model_cls: type[object]) -> None:
-    def delete_upload_file(
-        _mapper: object, _connection: object, target: object
-    ) -> None:
-        schedule_uploaded_file_delete(target)
-
-    event.listen(model_cls, "after_delete", delete_upload_file)
 
 
 def make_list_all[M](model_cls: type[M]) -> ListAllFn[M]:

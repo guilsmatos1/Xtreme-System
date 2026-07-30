@@ -4,6 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import event
 from sqlalchemy.orm import object_session
 
 from xtreme_system.database.core import register_post_commit
@@ -35,3 +36,12 @@ def schedule_uploaded_file_delete(target: Any) -> None:
             path.unlink()
 
     register_post_commit(session, _remove_file)
+
+
+def register_upload_file_delete(model_cls: type[object]) -> None:
+    def delete_upload_file(
+        _mapper: object, _connection: object, target: object
+    ) -> None:
+        schedule_uploaded_file_delete(target)
+
+    event.listen(model_cls, "after_delete", delete_upload_file)
