@@ -10,7 +10,9 @@ from xtreme_system.api.crud_types import CrudModule
 from xtreme_system.api.crud_ui.query import sort_key
 from xtreme_system.api.crud_ui.responses import (
     csv_response,
+    delete_conflict_detail,
     rollback_integrity_error_response,
+    write_conflict_detail,
 )
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found
 from xtreme_system.usuario import core as usuario
@@ -109,7 +111,7 @@ def register_ui_simples(
                 lambda: templates.TemplateResponse(
                     request,
                     "_form_simples.html",
-                    _form_ctx(None, f"{titulo} já existe"),
+                    _form_ctx(None, write_conflict_detail(titulo)),
                     status_code=409,
                 ),
             )
@@ -138,7 +140,7 @@ def register_ui_simples(
                 lambda: templates.TemplateResponse(
                     request,
                     "_form_simples.html",
-                    _form_ctx(obj, f"{titulo} já existe"),
+                    _form_ctx(obj, write_conflict_detail(titulo)),
                     status_code=409,
                 ),
             )
@@ -160,7 +162,7 @@ def register_ui_simples(
                 lambda: templates.TemplateResponse(
                     request,
                     "_linhas_simples.html",
-                    _ctx(user, session, msg=f"{titulo} possui veículos vinculados"),
+                    _ctx(user, session, msg=delete_conflict_detail(titulo)),
                 ),
             )
         return templates.TemplateResponse(

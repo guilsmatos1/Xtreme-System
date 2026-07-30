@@ -198,5 +198,5 @@ def write_conflict_detail(label: str) -> str:
     return f"{label} já existe"
 
 
-def delete_conflict_detail(label: str) -> str:
-    return f"{label} possui registros vinculados"
+def delete_conflict_detail(label: str, detail: str | None = None) -> str:
+    return detail or f"{label} possui registros vinculados"

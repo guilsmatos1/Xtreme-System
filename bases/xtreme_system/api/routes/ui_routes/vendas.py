@@ -18,6 +18,7 @@ from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
+    write_conflict_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
     CrudUIBehaviorConfig,
@@ -392,7 +393,7 @@ async def _criar_venda(
     try:
         safe_write(
             lambda: _criar_venda_com_hooks(session, data, user.id),
-            conflict_msg="Venda já existe",
+            conflict_msg=write_conflict_detail("Venda"),
         )
     except HTTPException as exc:
         if exc.status_code != status.HTTP_409_CONFLICT:
@@ -400,7 +401,7 @@ async def _criar_venda(
         return rollback_integrity_error_response(
             session,
             lambda: _erro_venda(
-                request, session, user, "Venda já existe", dados=dados_form
+                request, session, user, write_conflict_detail("Venda"), dados=dados_form
             ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)
@@ -430,7 +431,7 @@ async def _atualizar_venda(
     try:
         safe_write(
             lambda: venda.update(session, obj, data, user.id),
-            conflict_msg="Venda já existe",
+            conflict_msg=write_conflict_detail("Venda"),
         )
     except HTTPException as exc:
         if exc.status_code != status.HTTP_409_CONFLICT:
@@ -438,7 +439,7 @@ async def _atualizar_venda(
         return rollback_integrity_error_response(
             session,
             lambda: _erro_venda(
-                request, session, user, "Venda já existe", venda_obj=obj
+                request, session, user, write_conflict_detail("Venda"), venda_obj=obj
             ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)

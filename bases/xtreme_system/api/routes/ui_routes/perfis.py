@@ -10,7 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
-from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.responses import (
+    delete_conflict_detail,
+    rollback_integrity_error_response,
+    write_conflict_detail,
+)
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
@@ -123,7 +127,7 @@ async def ui_perfil_criar(
                 {
                     "perfil": None,
                     "paginas_disponiveis": perfil.PAGINAS,
-                    "erro": "Perfil já existe",
+                    "erro": write_conflict_detail("Perfil"),
                 },
                 status_code=409,
             ),
@@ -155,7 +159,7 @@ async def ui_perfil_atualizar(
                 {
                     "perfil": obj,
                     "paginas_disponiveis": perfil.PAGINAS,
-                    "erro": "Perfil já existe",
+                    "erro": write_conflict_detail("Perfil"),
                 },
                 status_code=409,
             ),
@@ -180,7 +184,9 @@ def ui_perfil_excluir(
                 "_linhas_perfis.html",
                 {
                     **_perfis_ctx(session, user),
-                    "msg": "Perfil possui usuários vinculados",
+                    "msg": delete_conflict_detail(
+                        "Perfil", "Perfil possui usuários vinculados"
+                    ),
                 },
                 status_code=409,
             ),
