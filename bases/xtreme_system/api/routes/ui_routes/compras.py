@@ -460,7 +460,7 @@ register_crud_ui_routes(
     ),
     listing=ListingSpec(
         searchable=True,
-        search_func=compra.search,
+        source="query",
         query_func=compra.query,
         search_query_func=compra.search_query,
         sort_fields={

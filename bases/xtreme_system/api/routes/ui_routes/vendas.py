@@ -151,7 +151,7 @@ register_crud_ui_routes(
     ),
     listing=ListingSpec(
         searchable=True,
-        search_func=venda.search,
+        source="query",
         query_func=venda.query,
         search_query_func=venda.search_query,
         sort_fields={

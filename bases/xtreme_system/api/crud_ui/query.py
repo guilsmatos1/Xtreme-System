@@ -11,7 +11,9 @@ from xtreme_system.api.crud_types import (
     ListFunc,
     ListingSpec,
     ListState,
+    QueryFunc,
     SearchableCrudModule,
+    SearchQueryFunc,
     SortField,
     SortSpec,
     UpdateSchemaT,
@@ -134,10 +136,17 @@ def query_list(
     order = state.order if state.sort else listing.default_order
     limit = state.limit if listing.paginated else None
     offset = state.offset if listing.paginated else 0
-    if state.q and listing.search_query_func is not None:
-        query = listing.search_query_func(
-            session, state.q, column=state.search_column or None
-        )
+    if listing.source == "query":
+        if state.q and listing.searchable:
+            search_query_func = cast(
+                SearchQueryFunc[EntityT], listing.search_query_func
+            )
+            query = search_query_func(
+                session, state.q, column=state.search_column or None
+            )
+        else:
+            query_func = cast(QueryFunc[EntityT], listing.query_func)
+            query = query_func(session)
         return _query_sorted_list(
             query,
             sort,
@@ -146,19 +155,9 @@ def query_list(
             limit,
             offset,
         )
-    if not state.q and listing.query_func is not None:
-        return _query_sorted_list(
-            listing.query_func(session),
-            sort,
-            order,
-            listing.sort_fields,
-            limit,
-            offset,
-        )
-    if state.q and listing.search_func is not None:
-        lista = _search_list(
-            listing.search_func, session, state.q, state.search_column or None
-        )
+    if state.q and listing.source == "functions":
+        search_func = cast(ColumnSearchFunc[EntityT], listing.search_func)
+        lista = _search_list(search_func, session, state.q, state.search_column or None)
         result = _page_list(
             sorted_list(lista, sort, order, listing.sort_fields),
             limit,
@@ -179,7 +178,11 @@ def query_list(
             offset,
         )
     else:
-        callable_list = listing.list_func or module.list_all
+        callable_list = (
+            cast(ListFunc[EntityT], listing.list_func)
+            if listing.source == "functions"
+            else module.list_all
+        )
         if not sort or sort not in listing.sort_fields:
             return _paginated_list(callable_list, session, limit, offset)
         result = _page_list(

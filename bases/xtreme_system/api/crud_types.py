@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol, TypeVar
+from typing import Any, Literal, Protocol, TypeVar
 
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -133,13 +133,22 @@ ListFunc = PaginatedListFunc
 SearchFunc = ColumnSearchFunc
 type QueryFunc[EntityT] = Callable[[Session], Query[EntityT]]
 type SearchQueryFunc[EntityT] = Callable[..., Query[EntityT]]
+type ListingSource = Literal["module", "functions", "query"]
 CsvRow = Callable[[EntityT], list[Any]]
+
+
+class ListingSpecError(ValueError):
+    def __init__(self, source: str, reason: str) -> None:
+        super().__init__(f"{source} listing source {reason}")
 
 
 @dataclass(frozen=True)
 class ListingSpec[EntityT]:  # pylint: disable=too-many-instance-attributes
+    """Listing configuration with one explicit data-source contract."""
+
     searchable: bool = False
     paginated: bool = True
+    source: ListingSource = "module"
     list_func: ListFunc[EntityT] | None = None
     search_func: SearchFunc[EntityT] | None = None
     sort_fields: Mapping[str, SortField[EntityT]] = field(default_factory=dict)
@@ -147,6 +156,39 @@ class ListingSpec[EntityT]:  # pylint: disable=too-many-instance-attributes
     default_order: str = "asc"
     query_func: QueryFunc[EntityT] | None = None
     search_query_func: SearchQueryFunc[EntityT] | None = None
+
+    def __post_init__(self) -> None:
+        if self.source == "module":
+            if any(
+                func is not None
+                for func in (
+                    self.list_func,
+                    self.search_func,
+                    self.query_func,
+                    self.search_query_func,
+                )
+            ):
+                raise ListingSpecError(self.source, "does not accept custom callables")
+        elif self.source == "functions":
+            if self.list_func is None:
+                raise ListingSpecError(self.source, "requires list_func")
+            if self.query_func is not None or self.search_query_func is not None:
+                raise ListingSpecError(self.source, "does not accept query callables")
+            if self.searchable and self.search_func is None:
+                raise ListingSpecError(
+                    self.source, "requires search_func when searchable"
+                )
+        elif self.source == "query":
+            if self.query_func is None:
+                raise ListingSpecError(self.source, "requires query_func")
+            if self.list_func is not None or self.search_func is not None:
+                raise ListingSpecError(self.source, "does not accept list callables")
+            if self.searchable and self.search_query_func is None:
+                raise ListingSpecError(
+                    self.source, "requires search_query_func when searchable"
+                )
+        else:
+            raise ListingSpecError(self.source, "is unknown")
 
 
 @dataclass(frozen=True)
