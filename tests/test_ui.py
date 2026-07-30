@@ -123,6 +123,46 @@ def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:
     assert "<html" not in ordenada.text
 
 
+def test_ui_excluir_veiculo_preserva_busca_atual(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    criado = client.post(
+        "/veiculos",
+        json={
+            "tipo": "moto",
+            "modelo": "Fora da busca",
+            "cor": "Preta",
+            "ano": 2025,
+            "placa": "XYZ1234",
+            "km": 0,
+            "preco": "15000.00",
+            "investidor_id": investidor_id,
+            "tipo_entrada": "consignacao",
+        },
+        headers=headers,
+    )
+    assert criado.status_code == 201
+    onix_id = next(
+        item["id"]
+        for item in client.get("/veiculos", headers=headers).json()
+        if item["modelo"] == "Onix"
+    )
+
+    resp = client.post(
+        f"/ui/veiculos/{onix_id}/excluir",
+        headers={
+            "HX-Current-URL": (
+                "http://testserver/ui/veiculos?q=Onix&sort=modelo&order=desc"
+            )
+        },
+    )
+
+    assert resp.status_code == 200
+    assert "Nenhum veículo encontrado" in resp.text
+    assert "Fora da busca" not in resp.text
+
+
 def _seed_veiculos_com_e_sem_compra(session: Session) -> None:
     """Um veículo comprado (tem custo) e um consignado (não tem)."""
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor C"))

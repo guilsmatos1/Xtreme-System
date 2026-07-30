@@ -704,6 +704,41 @@ def register_update_route(
         )
 
 
+def delete_list_response(
+    session: SessionDep,
+    templates: Jinja2Templates,
+    request: Request,
+    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
+    list_partial_template: str,
+    *,
+    user: usuario.Usuario,
+    list_key: str,
+    ctx_list: CtxList[EntityT],
+    listing: ListingSpec[EntityT],
+    erro: str | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    state = _current_list_state(request)
+    lista = query_list(session, module, listing=listing, state=state)
+    return list_response(
+        templates,
+        request,
+        list_partial_template,
+        user=user,
+        list_key=list_key,
+        lista=lista,
+        ctx_list=ctx_list(session, lista),
+        sort=state.sort,
+        order=state.order,
+        q=state.q if listing.searchable else None,
+        search_column=state.search_column,
+        limit=state.limit if state.limit is not None else 50,
+        offset=state.offset,
+        erro=erro,
+        status_code=status_code,
+    )
+
+
 def register_delete_route(
     app: FastAPI,
     templates: Jinja2Templates,
@@ -734,22 +769,16 @@ def register_delete_route(
         except IntegrityError:
 
             def build_conflict_response() -> HTMLResponse:
-                state = _current_list_state(request)
-                lista = query_list(session, module, listing=listing, state=state)
-                return list_response(
+                return delete_list_response(
+                    session,
                     templates,
                     request,
+                    module,
                     list_partial_template,
                     user=user,
                     list_key=list_key,
-                    lista=lista,
-                    ctx_list=ctx_list(session, lista),
-                    sort=state.sort,
-                    order=state.order,
-                    q=state.q if listing.searchable else None,
-                    search_column=state.search_column,
-                    limit=state.limit if state.limit is not None else 50,
-                    offset=state.offset,
+                    ctx_list=ctx_list,
+                    listing=listing,
                     erro=delete_conflict_detail(label),
                     status_code=409,
                 )
@@ -758,20 +787,14 @@ def register_delete_route(
                 session,
                 build_conflict_response,
             )
-        state = _current_list_state(request)
-        lista = query_list(session, module, listing=listing, state=state)
-        return list_response(
+        return delete_list_response(
+            session,
             templates,
             request,
+            module,
             list_partial_template,
             user=user,
             list_key=list_key,
-            lista=lista,
-            ctx_list=ctx_list(session, lista),
-            sort=state.sort,
-            order=state.order,
-            q=state.q if listing.searchable else None,
-            search_column=state.search_column,
-            limit=state.limit if state.limit is not None else 50,
-            offset=state.offset,
+            ctx_list=ctx_list,
+            listing=listing,
         )
