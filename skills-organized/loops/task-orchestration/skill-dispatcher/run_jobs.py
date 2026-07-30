@@ -470,12 +470,30 @@ def _message_payload(msg):
 
 
 def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms):
-    check = orca(
-        ["orchestration", "check", "--terminal", coordinator_handle, "--wait",
-         "--types", "worker_done,escalation", "--timeout-ms", str(timeout_ms)],
-        timeout=(timeout_ms / 1000) + 30,
-    )
-    messages = check.get("result", {}).get("messages", [])
+    # Pass --ack to drain any previously-seen delivery before waiting for a new one.
+    # On the very first call delivery_id is None, so no --ack is issued.
+    return _poll_orchestration_loop(coordinator_handle, task_id, dispatch_id, timeout_ms, None)
+
+
+def _poll_orchestration_loop(coordinator_handle, task_id, dispatch_id, timeout_ms, ack_delivery_id):
+    """Single check call, returning (outcome, msg).
+
+    If the delivery returned does not contain our job's message, we acknowledge
+    it (so the queue advances) and return "timeout" so the caller retries.
+    This prevents an infinite loop when a stale worker_done from a *different*
+    job sits at the head of the queue: without --ack the server replays the
+    same delivery forever.
+    """
+    orca_args = ["orchestration", "check", "--terminal", coordinator_handle, "--wait",
+                 "--types", "worker_done,escalation", "--timeout-ms", str(timeout_ms)]
+    if ack_delivery_id:
+        orca_args += ["--ack", ack_delivery_id]
+
+    check = orca(orca_args, timeout=(timeout_ms / 1000) + 30)
+    result_data = check.get("result", {})
+    messages = result_data.get("messages", [])
+    delivery_id = result_data.get("deliveryId")
+
     for msg in messages:
         payload = _message_payload(msg)
         if payload.get("taskId") != task_id or payload.get("dispatchId") != dispatch_id:
@@ -484,6 +502,17 @@ def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms):
             return "worker_done", msg
         if msg.get("type") == "escalation":
             return "escalation", msg
+
+    # This delivery did not contain our job's message. If we have a delivery_id,
+    # acknowledge it so the server advances past it on the next call.
+    if delivery_id and messages:
+        # There were messages but none matched — ack to drain the stale batch.
+        try:
+            orca(["orchestration", "check", "--terminal", coordinator_handle,
+                  "--ack", delivery_id], timeout=30)
+        except OrcaError:
+            pass  # best-effort; the next poll will retry with the same delivery
+
     return "timeout", None
 
 
