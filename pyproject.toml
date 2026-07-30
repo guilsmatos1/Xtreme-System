@@ -171,6 +171,12 @@ source_modules = ["xtreme_system"]
 forbidden_modules = ["xtreme_system.api"]
 ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]
 
+[[tool.importlinter.contracts]]
+name = "CRUD must not import upload-file"
+type = "forbidden"
+source_modules = ["xtreme_system.crud"]
+forbidden_modules = ["xtreme_system.upload_file"]
+
 [tool.coverage.run]
 branch = true
 source = ["xtreme_system"]

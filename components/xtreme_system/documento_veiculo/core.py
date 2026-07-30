@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
+from xtreme_system.upload_file.core import register_upload_file_delete
 
 
 class DocumentoVeiculo(attachment.UrlAttachmentMixin, Base):
@@ -16,7 +17,7 @@ class DocumentoVeiculo(attachment.UrlAttachmentMixin, Base):
     )
 
 
-attachment.register_upload_file_delete(DocumentoVeiculo)
+register_upload_file_delete(DocumentoVeiculo)
 
 
 class DocumentoVeiculoCreate(BaseModel):

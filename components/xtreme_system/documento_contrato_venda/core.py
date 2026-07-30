@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
+from xtreme_system.upload_file.core import register_upload_file_delete
 
 if TYPE_CHECKING:
     from xtreme_system.cliente.core import Cliente
@@ -28,7 +29,7 @@ class DocumentoContratoVenda(attachment.UrlAttachmentMixin, Base):
     )
 
 
-attachment.register_upload_file_delete(DocumentoContratoVenda)
+register_upload_file_delete(DocumentoContratoVenda)
 
 
 class DocumentoContratoVendaCreate(BaseModel):
