@@ -13,9 +13,11 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.upload_files import (
     _uploaded_file_path,
     arquivo_disponivel,
+)
+from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
@@ -351,7 +353,9 @@ def _compra_com_comprovante(url: str) -> Compra:
 def test_arquivo_disponivel_retorna_false_quando_arquivo_falta(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", tmp_path)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", tmp_path
+    )
     assert not arquivo_disponivel("/static/uploads/veiculos/1/foto.jpg")
 
 
@@ -527,7 +531,9 @@ def test_uploaded_file_path_url_valida(
     expected.parent.mkdir(parents=True)
     expected.write_bytes(b"dados")
 
-    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", fake_ui)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
+    )
 
     result = _uploaded_file_path("/static/uploads/veiculos/1/foto.jpg")
     assert result == expected
@@ -540,7 +546,9 @@ def test_uploaded_file_path_bloqueia_traversal_relativo(
     fake_ui = tmp_path / "ui"
     (fake_ui / "static" / "uploads").mkdir(parents=True)
 
-    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", fake_ui)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
+    )
 
     assert _uploaded_file_path("/static/uploads/../../etc/passwd") is None
 
@@ -551,7 +559,9 @@ def test_uploaded_file_path_bloqueia_traversal_dotdot_meio(
     fake_ui = tmp_path / "ui"
     (fake_ui / "static" / "uploads").mkdir(parents=True)
 
-    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", fake_ui)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
+    )
 
     assert (
         _uploaded_file_path("/static/uploads/veiculos/1/../../../../etc/hosts") is None
@@ -570,7 +580,9 @@ def test_uploaded_file_path_bloqueia_escapar_via_symlink(
     link = uploads_dir / "link_escapando"
     os.symlink(externo, link)
 
-    monkeypatch.setattr("xtreme_system.api.routes.ui_routes.common._ui_dir", fake_ui)
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
+    )
 
     assert _uploaded_file_path("/static/uploads/link_escapando") is None
 

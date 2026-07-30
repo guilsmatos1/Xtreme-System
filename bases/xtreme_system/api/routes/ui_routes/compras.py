@@ -31,15 +31,17 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
+from xtreme_system.api.routes.ui_routes.nested_writes import (
+    criar_aninhado_ou_resposta_conflito,
+    rollback_se_criou_aninhados,
+)
+from xtreme_system.api.routes.ui_routes.upload_files import (
     _remover_upload,
     _uploaded_file_path,
-    _uploads_compra_dir,
-    criar_aninhado_ou_resposta_conflito,
-    resolver_cliente,
-    rollback_se_criou_aninhados,
-    validar_uploads,
 )
+from xtreme_system.api.routes.ui_routes.upload_paths import _uploads_compra_dir
+from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
     pending_upload_paths,

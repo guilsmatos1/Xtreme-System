@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
-from xtreme_system.api.routes.ui_routes.common import IdFiltro, PeriodoFiltro
+from xtreme_system.api.routes.ui_routes.filters import IdFiltro, PeriodoFiltro
 from xtreme_system.api.setup import app
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor

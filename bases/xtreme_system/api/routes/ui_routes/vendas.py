@@ -35,13 +35,13 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.routes.ui_routes.common import (
-    _uploaded_file_path,
-    _uploads_contrato_venda_dir,
+from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
+from xtreme_system.api.routes.ui_routes.nested_writes import (
     criar_aninhado_ou_resposta_conflito,
-    resolver_cliente,
     rollback_se_criou_aninhados,
 )
+from xtreme_system.api.routes.ui_routes.upload_files import _uploaded_file_path
+from xtreme_system.api.routes.ui_routes.upload_paths import _uploads_contrato_venda_dir
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
     validate_venda_create,

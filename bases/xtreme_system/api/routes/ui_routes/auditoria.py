@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.filters import (
     IdFiltro,
     PeriodoFiltro,
     TextoFiltro,

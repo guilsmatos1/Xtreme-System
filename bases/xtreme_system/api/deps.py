@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.routes.ui_routes.common import arquivo_disponivel
+from xtreme_system.api.routes.ui_routes.upload_files import arquivo_disponivel
 from xtreme_system.auth import core as auth
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import get_session
