@@ -73,7 +73,8 @@ For each opportunity, evaluate the relevant dimensions below:
 6. Tie every recommendation to all duplicate sites, with representative snippets when possible.
 7. Avoid broad refactors unless the duplication is clearly causing correctness, reliability, or
    maintenance problems.
-8. After preparing the final report, save the content to `.loop/running/improvements-duplicates.md` as Markdown.
+8. After preparing the findings, hand them to the `coding--generate--issues-md` skill,
+   which formats and writes `.loop/running/improvements-duplicates.md`.
 
 ## Suggested Workflow
 
@@ -136,15 +137,19 @@ For each opportunity, include:
 
 ## Output Format
 
-Follow the shared [Improvements Markdown contract](references/improvements-markdown-format.md). Preserve every analysis-specific field under descriptive Markdown sections.
+Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
+retained opportunities in final ranked order, the discarded candidates with their reasons, every
+analysis-specific field (including the consolidation details), and the output path below. That skill
+owns the shared Improvements Markdown contract and is the single definition of the format; it
+preserves analysis-specific fields under `Domain details` and validates the finished document.
 
 ## Persistence
 
-- Write the final report to `.loop/running/improvements-duplicates.md`.
-- If the directory does not exist, create it.
-- If the file already exists, overwrite it with the latest report.
-- `total_opportunities` must match the actual number of items in `opportunities` — do not hardcode it to 10.
-- Include all analysis data in the Markdown contract above, preserving all findings from the review.
+- The output path is `.loop/running/improvements-duplicates.md`. Pass it to `coding--generate--issues-md`, which creates the
+  directory when missing, overwrites any existing report, sets `Generated` and `Total` from the
+  actual document, and validates it against the contract.
+- Hand over every retained finding and discarded candidate from this review — do not summarize,
+  drop, or re-rank them on the way in.
 
 ## Review Standard
 

@@ -1,12 +1,13 @@
 managed:
     coding--analyze--duplicates: coding/analyze/duplicates
+    coding--analyze--efficiency: coding/analyze/efficiency
     coding--analyze--features: coding/analyze/features
     coding--analyze--general: coding/analyze/general
     coding--analyze--llm-adherence: coding/analyze/llm-adherence
     coding--analyze--session-efficiency: coding/analyze/session-efficiency
     coding--analyze--ui-ux: coding/analyze/ui-ux
     coding--debug--playwright-cli: coding/debug/playwright-cli
-    coding--generate--improvements-json: coding/generate/improvements-json
+    coding--generate--issues-md: coding/generate/issues-md
     coding--refactor--design-overhaul: coding/refactor/design-overhaul
     devops--deploy--commit-merge: devops/deploy/commit-merge
     devops--deploy--git-push: devops/deploy/git-push

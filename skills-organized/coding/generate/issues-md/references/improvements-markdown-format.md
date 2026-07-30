@@ -1,5 +1,8 @@
 # Improvements Markdown contract
 
+Canonical issues-document contract. This file is the single source of truth for
+every analysis skill. Do not copy it into another skill; reference it.
+
 Write one UTF-8 Markdown document with this structure:
 
 ````md
@@ -50,8 +53,9 @@ Optional concrete supported benefit.
 ### Domain details
 
 Optional analysis-specific fields such as acceptance criteria, proposed behavior,
-LLM risk, suggested interface, tests, screens, or success metric. Use descriptive
-Markdown subheadings and lists rather than serialized JSON.
+LLM risk, suggested interface, tests, screens, duplicate sites, line delta, or
+success metric. Use descriptive Markdown subheadings and lists rather than
+serialized JSON.
 
 ### Self-critique
 
@@ -73,18 +77,21 @@ Reason it was not retained.
 
 ## Validation rules
 
+- `Generated` is an ISO-8601 timestamp with timezone, built at write time.
 - Use exactly one level-two heading per retained opportunity in the form
-  `## imp-YYYYMMDD-NNN — Short title`.
+  `## imp-YYYYMMDD-NNN — Short title`, matching `^## imp-[0-9]{8}-[0-9]{3} — .+$`.
 - Keep the metadata labels exactly as shown. `Estimated effort` must be `Low`,
   `Medium`, or `High`; `Impact` must be `High` or `Medium`; `Priority` and
-  `Risk level` must be `high`, `medium`, or `low`.
+  `Risk level` must be `high`, `medium`, or `low`; `Confidence` is `0` through `10`.
 - Make IDs unique and ordered. Set `Total` to the actual number of opportunity
-  headings.
+  headings — never hardcode it.
 - Put narrative and code in Markdown sections, never in JSON, YAML, or an escaped
-  string.
-- Include an actual 8-12 line snippet for verified locations. If no location can
-  be verified, write `Not verified`, mark the finding uncertain, and explain the
-  missing evidence under `Weaknesses`.
+  string. Use Markdown lists for files, tags, relationships, criteria, and
+  critique details.
+- Include an actual 8-12 line snippet for verified locations, copied verbatim from
+  the file — never fabricated or paraphrased. If no location can be verified,
+  write `Not verified`, set `Uncertain` to `Yes`, and explain the missing evidence
+  under `Weaknesses`.
 - Omit optional sections instead of inventing content.
 - Keep related IDs reciprocal when they represent the same direct dependency or
   root cause.
