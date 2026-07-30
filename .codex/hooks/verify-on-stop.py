@@ -143,6 +143,8 @@ def send_worker_done(context: dict, phase: str, body: str) -> str | None:
             context["dispatchId"],
             "--phase",
             phase,
+            "--outcome",
+            "succeeded" if phase == "success" else "failed",
             "--subject",
             f"{identifier} finished",
             "--body",

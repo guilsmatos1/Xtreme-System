@@ -13,7 +13,10 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
-from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+from xtreme_system.api.crud_ui.responses import (
+    rollback_integrity_error_response,
+    write_conflict_detail,
+)
 from xtreme_system.api.deps import (
     SessionDep,
     UIAdmin,
@@ -207,7 +210,7 @@ async def ui_investidor_criar(
             lambda: templates.TemplateResponse(
                 request,
                 "_form_simples.html",
-                _form_ctx_investidor(None, "Investidores já existe"),
+                _form_ctx_investidor(None, write_conflict_detail("Investidor")),
                 status_code=409,
             ),
         )
@@ -258,7 +261,7 @@ async def ui_investidor_atualizar(
             lambda: templates.TemplateResponse(
                 request,
                 "_form_simples.html",
-                _form_ctx_investidor(obj, "Investidores já existe"),
+                _form_ctx_investidor(obj, write_conflict_detail("Investidor")),
                 status_code=409,
             ),
         )

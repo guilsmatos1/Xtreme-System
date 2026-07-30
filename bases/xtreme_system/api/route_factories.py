@@ -18,6 +18,10 @@ from xtreme_system.api.crud_types import (
     ReadSchemaT,
     UpdateSchemaT,
 )
+from xtreme_system.api.crud_ui.responses import (
+    delete_conflict_detail,
+    write_conflict_detail,
+)
 from xtreme_system.api.crud_writes import create_with_hook, update_with_hook
 from xtreme_system.api.crud_writes import safe_write as _safe_write
 from xtreme_system.api.deps import CurrentUser, SessionDep, _found
@@ -158,7 +162,7 @@ def register_crud_routes(
                 actor_id,
                 before_create=before_create,
             ),
-            conflict_msg=f"{label} já existe",
+            conflict_msg=write_conflict_detail(label),
         )
 
     @app.patch(
@@ -182,7 +186,7 @@ def register_crud_routes(
         obj = _found(module.get(session, item_id), label)
         return _safe_write(
             lambda: _update_with_hooks(obj, data, session, actor_id),
-            conflict_msg=f"{label} já existe",
+            conflict_msg=write_conflict_detail(label),
         )
 
     def _update_with_hooks(
@@ -207,7 +211,7 @@ def register_crud_routes(
                 module.delete(session, obj, actor_id)
             except IntegrityError:
                 raise HTTPException(
-                    status_code=409, detail=f"{label} possui veículos vinculados"
+                    status_code=409, detail=delete_conflict_detail(label)
                 ) from None
         else:
             module.delete(session, obj, actor_id)
