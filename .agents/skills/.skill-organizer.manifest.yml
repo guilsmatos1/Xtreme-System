@@ -3,6 +3,7 @@ managed:
     coding--analyze--features: coding/analyze/features
     coding--analyze--general: coding/analyze/general
     coding--analyze--llm-adherence: coding/analyze/llm-adherence
+    coding--analyze--reference-repo: coding/analyze/reference-repo
     coding--analyze--session-efficiency: coding/analyze/session-efficiency
     coding--analyze--ui-ux: coding/analyze/ui-ux
     coding--debug--playwright-cli: coding/debug/playwright-cli
