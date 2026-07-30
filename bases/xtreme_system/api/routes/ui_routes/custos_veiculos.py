@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.routes import (
+    ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
     CrudUIResourceConfig,
@@ -102,24 +103,18 @@ register_crud_ui_routes(
     ),
     export=CrudUIExportConfig(
         csv_filename="custos_veiculos.csv",
-        csv_headers=[
-            "ID",
-            "Veiculo",
-            "Placa",
-            "Categoria",
-            "Data/Hora",
-            "Valor",
-            "Descricao",
-        ],
-        csv_fields=[None, None, None, None, None, "valor", None],
-        csv_row=lambda c: [
-            c.id,
-            c.veiculo.modelo,
-            c.veiculo.placa,
-            c.categoria,
-            c.criado_em.isoformat(),
-            f"{c.valor:.2f}",
-            c.descricao or "",
+        columns=[
+            ColumnSpec("id", "ID", table=False, export=lambda c: c.id),
+            ColumnSpec("veiculo", "Veiculo", export=lambda c: c.veiculo.modelo),
+            ColumnSpec("placa", "Placa", export=lambda c: c.veiculo.placa),
+            ColumnSpec("categoria", "Categoria", export=lambda c: c.categoria),
+            ColumnSpec(
+                "criado_em", "Data/Hora", export=lambda c: c.criado_em.isoformat()
+            ),
+            ColumnSpec(
+                "valor", "Valor", field="valor", export=lambda c: f"{c.valor:.2f}"
+            ),
+            ColumnSpec("descricao", "Descricao", export=lambda c: c.descricao or ""),
         ],
         pagina="custos-veiculos",
     ),

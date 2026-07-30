@@ -18,6 +18,7 @@ from xtreme_system.api.crud_ui.responses import (
     rollback_integrity_error_response,
 )
 from xtreme_system.api.crud_ui.routes import (
+    ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
     CrudUIResourceConfig,
@@ -498,41 +499,55 @@ register_crud_ui_routes(
     ),
     export=CrudUIExportConfig(
         csv_filename="compras.csv",
-        csv_headers=[
-            "ID",
-            "Data/Hora",
-            "Nome do Cliente",
-            "Documento do Cliente",
-            "Estado",
-            "Placa",
-            "Veiculo",
-            "Valor Compra",
-            "Observacoes",
-            "Usuario",
-        ],
-        csv_fields=[
-            None,
-            "criado_em",
-            "cliente",
-            "documento_cliente",
-            "status",
-            "placa",
-            "veiculo",
-            "valor_compra",
-            "observacoes",
-            "usuario",
-        ],
-        csv_row=lambda c: [
-            c.id,
-            c.criado_em.isoformat(),
-            c.cliente.nome,
-            c.cliente.documento or "",
-            c.status.value,
-            c.veiculo.placa,
-            c.veiculo.modelo,
-            f"{c.valor_compra:.2f}",
-            c.observacoes or "",
-            (c.usuario.nome or c.usuario.username) if c.usuario else "",
+        columns=[
+            ColumnSpec("id", "ID", table=False, export=lambda c: c.id),
+            ColumnSpec(
+                "criado_em",
+                "Data/Hora",
+                field="criado_em",
+                export=lambda c: c.criado_em.isoformat(),
+            ),
+            ColumnSpec(
+                "cliente",
+                "Nome do Cliente",
+                field="cliente",
+                export=lambda c: c.cliente.nome,
+            ),
+            ColumnSpec(
+                "documento_cliente",
+                "Documento do Cliente",
+                field="documento_cliente",
+                export=lambda c: c.cliente.documento or "",
+            ),
+            ColumnSpec(
+                "status", "Estado", field="status", export=lambda c: c.status.value
+            ),
+            ColumnSpec(
+                "placa", "Placa", field="placa", export=lambda c: c.veiculo.placa
+            ),
+            ColumnSpec(
+                "veiculo", "Veiculo", field="veiculo", export=lambda c: c.veiculo.modelo
+            ),
+            ColumnSpec(
+                "valor_compra",
+                "Valor Compra",
+                field="valor_compra",
+                export=lambda c: f"{c.valor_compra:.2f}",
+            ),
+            ColumnSpec(
+                "observacoes",
+                "Observacoes",
+                field="observacoes",
+                export=lambda c: c.observacoes or "",
+            ),
+            ColumnSpec(
+                "usuario",
+                "Usuario",
+                field="usuario",
+                export=lambda c: (
+                    (c.usuario.nome or c.usuario.username) if c.usuario else ""
+                ),
+            ),
         ],
         pagina="compras",
     ),

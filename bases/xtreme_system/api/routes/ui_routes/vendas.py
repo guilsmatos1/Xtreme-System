@@ -21,6 +21,7 @@ from xtreme_system.api.crud_ui.responses import (
     write_conflict_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
+    ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
     CrudUIResourceConfig,
@@ -181,69 +182,113 @@ register_crud_ui_routes(
     ),
     export=CrudUIExportConfig(
         csv_filename="vendas.csv",
-        csv_headers=[
-            "ID",
-            "Cliente",
-            "Veiculo",
-            "Data/Hora",
-            "Valor Venda",
-            "Valor Entrada",
-            "Debitos",
-            "KM",
-            "Veiculo Troca",
-            "Valor Diferenca",
-            "Pagamento Pendente",
-            "Valor Pendente",
-            "Datas Pagamento",
-            "Forma Pagamento",
-            "Parcelas",
-            "Status",
-            "Observacoes",
-            "Usuario",
-        ],
-        csv_fields=[
-            None,
-            "cliente",
-            "veiculo",
-            "criado_em",
-            "valor_venda",
-            "valor_entrada",
-            "debitos",
-            "km",
-            "veiculo_troca",
-            "valor_diferenca",
-            "pagamento_pendente",
-            "valor_pendente",
-            "datas_pagamento",
-            "forma_pagamento",
-            "parcelas",
-            "status",
-            "observacoes",
-            "vendedor",
-        ],
-        csv_row=lambda v: [
-            v.id,
-            v.cliente.nome,
-            f"{v.veiculo.modelo} ({v.veiculo.placa})",
-            v.criado_em.isoformat(),
-            f"{v.valor_venda:.2f}",
-            f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else "",
-            f"{v.debitos:.2f}" if v.debitos is not None else "",
-            v.km if v.km is not None else "",
-            (
-                f"{v.veiculo_troca.modelo} ({v.veiculo_troca.placa})"
-                if v.veiculo_troca is not None
-                else ""
+        columns=[
+            ColumnSpec("id", "ID", table=False, export=lambda v: v.id),
+            ColumnSpec(
+                "cliente", "Cliente", field="cliente", export=lambda v: v.cliente.nome
             ),
-            f"{v.valor_diferenca:.2f}" if v.valor_diferenca is not None else "",
-            "Sim" if v.pagamento_pendente else "Não",
-            f"{v.valor_pendente:.2f}" if v.valor_pendente is not None else "",
-            v.datas_pagamento or "",
-            v.forma_pagamento,
-            v.parcelas,
-            v.status.value,
-            v.observacoes or "",
-            (v.vendedor.nome or v.vendedor.username) if v.vendedor else "",
+            ColumnSpec(
+                "veiculo",
+                "Veiculo",
+                field="veiculo",
+                export=lambda v: f"{v.veiculo.modelo} ({v.veiculo.placa})",
+            ),
+            ColumnSpec(
+                "criado_em",
+                "Data/Hora",
+                field="criado_em",
+                export=lambda v: v.criado_em.isoformat(),
+            ),
+            ColumnSpec(
+                "valor_venda",
+                "Valor Venda",
+                field="valor_venda",
+                export=lambda v: f"{v.valor_venda:.2f}",
+            ),
+            ColumnSpec(
+                "valor_entrada",
+                "Valor Entrada",
+                field="valor_entrada",
+                export=lambda v: (
+                    f"{v.valor_entrada:.2f}" if v.valor_entrada is not None else ""
+                ),
+            ),
+            ColumnSpec(
+                "debitos",
+                "Debitos",
+                field="debitos",
+                export=lambda v: f"{v.debitos:.2f}" if v.debitos is not None else "",
+            ),
+            ColumnSpec(
+                "km",
+                "KM",
+                field="km",
+                export=lambda v: v.km if v.km is not None else "",
+            ),
+            ColumnSpec(
+                "veiculo_troca",
+                "Veiculo Troca",
+                field="veiculo_troca",
+                export=lambda v: (
+                    f"{v.veiculo_troca.modelo} ({v.veiculo_troca.placa})"
+                    if v.veiculo_troca is not None
+                    else ""
+                ),
+            ),
+            ColumnSpec(
+                "valor_diferenca",
+                "Valor Diferenca",
+                field="valor_diferenca",
+                export=lambda v: (
+                    f"{v.valor_diferenca:.2f}" if v.valor_diferenca is not None else ""
+                ),
+            ),
+            ColumnSpec(
+                "pagamento_pendente",
+                "Pagamento Pendente",
+                field="pagamento_pendente",
+                export=lambda v: "Sim" if v.pagamento_pendente else "Não",
+            ),
+            ColumnSpec(
+                "valor_pendente",
+                "Valor Pendente",
+                field="valor_pendente",
+                export=lambda v: (
+                    f"{v.valor_pendente:.2f}" if v.valor_pendente is not None else ""
+                ),
+            ),
+            ColumnSpec(
+                "datas_pagamento",
+                "Datas Pagamento",
+                field="datas_pagamento",
+                export=lambda v: v.datas_pagamento or "",
+            ),
+            ColumnSpec(
+                "forma_pagamento",
+                "Forma Pagamento",
+                field="forma_pagamento",
+                export=lambda v: v.forma_pagamento,
+            ),
+            ColumnSpec(
+                "parcelas", "Parcelas", field="parcelas", export=lambda v: v.parcelas
+            ),
+            ColumnSpec(
+                "status", "Status", field="status", export=lambda v: v.status.value
+            ),
+            ColumnSpec(
+                "observacoes",
+                "Observacoes",
+                field="observacoes",
+                export=lambda v: v.observacoes or "",
+            ),
+            ColumnSpec(
+                "vendedor",
+                "Usuario",
+                field="vendedor",
+                export=lambda v: (
+                    (v.vendedor.nome or v.vendedor.username) if v.vendedor else ""
+                ),
+            ),
         ],
         pagina="vendas",
     ),
