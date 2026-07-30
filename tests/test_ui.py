@@ -21,7 +21,8 @@ from xtreme_system.api.deps import NaoAutorizadoError, get_ui_user, templates
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes import dashboard as dashboard_ui
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
-from xtreme_system.api.routes.ui_routes.common import resolver_cliente, validar_uploads
+from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
+from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth

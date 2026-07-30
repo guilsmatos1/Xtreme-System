@@ -26,7 +26,7 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.upload_paths import (
     _uploads_cliente_dir,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (

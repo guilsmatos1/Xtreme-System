@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.upload_paths import (
     _uploads_dir,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (

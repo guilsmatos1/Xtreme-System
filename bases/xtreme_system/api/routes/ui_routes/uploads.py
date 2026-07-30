@@ -10,11 +10,11 @@ from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.upload_files import (
     _remover_upload,
     _uploaded_file_path,
-    validar_uploads,
 )
+from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.database.core import register_post_rollback
 
 _PENDING_UPLOAD_PATHS_KEY = "_pending_upload_paths"

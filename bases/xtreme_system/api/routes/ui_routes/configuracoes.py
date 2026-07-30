@@ -14,10 +14,14 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
-from xtreme_system.api.routes.ui_routes.common import (
+from xtreme_system.api.routes.ui_routes.upload_files import (
     _remover_upload,
     _uploaded_file_path,
+)
+from xtreme_system.api.routes.ui_routes.upload_paths import (
     _uploads_empresa_dir,
+)
+from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
 )
 from xtreme_system.api.setup import app
