@@ -18,6 +18,6 @@ managed:
     loops--loop-runner--token-efficiency: loops/loop-runner/token-efficiency
     loops--state-management--consolidate-harness: loops/state-management/consolidate-harness
     loops--task-orchestration--job-generator: loops/task-orchestration/job-generator
-    loops--task-orchestration--linear-backlog: loops/task-orchestration/linear-backlog
+    loops--task-orchestration--linear-run: loops/task-orchestration/linear-run
     loops--task-orchestration--sequential-workers: loops/task-orchestration/sequential-workers
     loops--task-orchestration--skill-dispatcher: loops/task-orchestration/skill-dispatcher

@@ -57,6 +57,23 @@ LLM risk, suggested interface, tests, screens, duplicate sites, line delta, or
 success metric. Use descriptive Markdown subheadings and lists rather than
 serialized JSON.
 
+When the caller supplies consolidation data (e.g. `coding--analyze--duplicates`),
+render it as a named `#### Consolidation details` subsection with these five
+labeled bullets, not folded into free prose:
+
+```md
+#### Consolidation details
+
+- **Duplicate type:** Literal duplication | Near duplication | Parallel
+  implementation | Reimplemented helper | Redundant layer | Template
+  consolidation
+- **All sites:** every duplicate location, `path:line` — not just the
+  representative one
+- **Differences between copies:** explicit, even when there are none
+- **Behavior preservation:** which behavior wins, or that the union is preserved
+- **Verification plan:** how the consolidation would be checked safe
+```
+
 ### Self-critique
 
 - **Confidence:** 8.5/10
@@ -95,4 +112,7 @@ under `Weaknesses`.
 - Omit optional sections instead of inventing content.
 - Keep related IDs reciprocal when they represent the same direct dependency or
 root cause.
+- When `Consolidation details` is present, all five labels (`Duplicate type`,
+`All sites`, `Differences between copies`, `Behavior preservation`,
+`Verification plan`) must appear — never a partial subset.
 

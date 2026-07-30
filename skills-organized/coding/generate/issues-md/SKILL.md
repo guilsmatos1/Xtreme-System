@@ -36,6 +36,10 @@ gathered and ranked.
   their rejection reasons.
 - **Domain fields** — analysis-specific data (acceptance criteria, duplicate sites, line delta,
   LLM risk, screens, tests, success metric, …). Every one is preserved under `Domain details`.
+  Consolidation data from `coding--analyze--duplicates` (duplicate type, all sites, differences
+  between copies, behavior preservation, verification plan) is preserved as a named
+  `#### Consolidation details` subsection with those five labeled bullets — never diluted into
+  free prose. See the contract for the exact template.
 
 In this mode you make no editorial decisions: keep the caller's ranking, drop nothing it retained,
 add nothing it did not supply.
@@ -107,6 +111,9 @@ none is given, write `.loop/running/issues.md`.
   omit it rather than guessing.
 - Use `Self-critique` to expose assumptions and gaps. Confidence runs `0` through `10`.
 - Omit optional sections instead of padding them with placeholders.
+- When `Consolidation details` is supplied, keep all five labeled bullets (`Duplicate type`,
+  `All sites`, `Differences between copies`, `Behavior preservation`, `Verification plan`) —
+  never drop or merge them into prose.
 
 ## Rules
 

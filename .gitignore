@@ -44,3 +44,4 @@ skills-organized/*/.run-backlog.lock
 
 # Codex hook state
 .codex/.hook-state/report.json
+.codex/.hook-state/orchestration.json

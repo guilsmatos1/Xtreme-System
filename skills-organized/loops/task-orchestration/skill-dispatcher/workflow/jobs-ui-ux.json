@@ -41,15 +41,15 @@
       "retry_delay_seconds": 10
     },
     {
-      "name": "loops-task-orchestration-linear-backlog",
+      "name": "loops-task-orchestration-linear-run",
       "agent": "agy",
       "worktree": {
         "mode": "current",
-        "name": "loops-task-orchestration-linear-backlog",
+        "name": "loops-task-orchestration-linear-run",
         "repo": "name:xtreme-system",
         "base_branch": "master"
       },
-      "skill": "loops--task-orchestration--linear-backlog",
+      "skill": "loops--task-orchestration--linear-run",
       "skill_args": "--priority High",
       "retries": 2,
       "retry_delay_seconds": 10

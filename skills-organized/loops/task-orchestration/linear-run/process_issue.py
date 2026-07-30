@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Helper for the loops--task-orchestration--linear-backlog skill.
+"""Helper for the loops--task-orchestration--linear-run skill.
 
 Runs the purely mechanical parts of processing ONE Linear issue (preflight,
 worktree creation, status transitions, codex TUI startup + reasoning-effort

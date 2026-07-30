@@ -61,8 +61,45 @@ _SKILL_SEARCH_DIRS = (
     ".agents/skills",
     "skills-organized",
 )
+# Directory (relative to repo root or script dir) containing pre-built workflow job files.
+_WORKFLOW_DIR = "workflow"
 # State file suffix appended to the jobs file path for checkpointing (A).
 _STATE_SUFFIX = ".state.json"
+
+
+def resolve_workflow_path(workflow_name):
+    """Resolve a workflow file path from the workflow/ directory.
+
+    Accepts:
+    - Bare name: "general" -> workflow/workflow-jobs-general.json
+    - With .json: "general.json" -> workflow/workflow-jobs-general.json
+    - With prefix: "workflow-general" -> workflow/workflow-jobs-general.json
+    - Full path: returns as-is if exists
+
+    Searches relative to repo root (CWD) and this script's directory.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.realpath(os.getcwd())
+
+    # If it's already a path that exists, return it
+    if os.path.exists(workflow_name):
+        return os.path.abspath(workflow_name)
+
+    # Normalize the name
+    name = workflow_name
+    if not name.startswith("workflow-"):
+        name = f"workflow-{name}"
+    if not name.endswith(".json"):
+        name += ".json"
+
+    # Search in workflow/ directory relative to repo root and script dir
+    for base in (repo_root, script_dir):
+        candidate = os.path.join(base, _WORKFLOW_DIR, name)
+        if os.path.exists(candidate):
+            return os.path.abspath(candidate)
+
+    # Not found — return the normalized path relative to script dir for error messages
+    return os.path.join(script_dir, _WORKFLOW_DIR, name)
 
 
 def _use_rtk():
@@ -249,6 +286,36 @@ def _discover_local_skills():
                 known.add(name.split("--")[-1])
                 known.add(name.split("-")[-1])
     return known
+
+
+def resolve_workflow_path(workflow_name):
+    """Resolve a workflow file path from the workflow directory.
+
+    Accepts a bare name (e.g. "general"), a name with or without .json extension,
+    or a full path. Searches relative to repo root and script directory.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.realpath(os.getcwd())
+
+    # If it's already an absolute path or contains a path separator, use as-is.
+    if os.path.isabs(workflow_name) or os.sep in workflow_name:
+        return os.path.abspath(workflow_name)
+
+    # Ensure .json extension
+    if not workflow_name.endswith(".json"):
+        workflow_name += ".json"
+
+    # If it doesn't start with "workflow-", prefix it (convention for built-in workflows)
+    if not workflow_name.startswith("workflow-"):
+        workflow_name = f"workflow-{workflow_name}"
+
+    for base in (repo_root, script_dir):
+        candidate = os.path.join(base, _WORKFLOW_DIR, workflow_name)
+        if os.path.exists(candidate):
+            return candidate
+
+    # Fallback: return the path relative to repo_root for error messages
+    return os.path.join(repo_root, _WORKFLOW_DIR, workflow_name)
 
 
 def validate_skills_exist(jobs):

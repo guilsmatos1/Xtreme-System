@@ -1,11 +1,11 @@
 ---
-name: loops--task-orchestration--linear-backlog
+name: loops--task-orchestration--linear-run
 description: >-
     Empties the Linear team Backlog by processing issues one at a time in priority order, using the `process_issue.py run-backlog` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
 metadata:
     skill-organizer:
-        original-name: loops--task-orchestration--linear-backlog
-        source-relative-path: loops/task-orchestration/linear-backlog
+        original-name: loops--task-orchestration--linear-run
+        source-relative-path: loops/task-orchestration/linear-run
         disabled: false
         risk-score: 0
         risk-evaluated-at: ""
@@ -14,7 +14,7 @@ metadata:
         risk-source-hash: ""
 ---
 
-# Linear Sequential Worktree
+# Linear Run Sequential Worktree
 
 Empties the Linear GUI Backlog in a single run, processing one issue at a time in `Urgent`, `High`, `Medium`, `Low`, `No priority` order.
 
@@ -29,7 +29,7 @@ not stop the codex worker it already dispatched: that worker keeps running unsup
 with nothing left to poll it for `worker_done`/`escalation`, so it never gets finalized.
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py run-backlog --json > .loop/backlog_run.log 2>&1
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py run-backlog --json > .loop/backlog_run.log 2>&1
 ```
 
 To restrict the run to specific priorities, add `--priority` with one or more names from the
@@ -197,7 +197,7 @@ Use these modes only to inspect, debug, or resume a specific issue. The normal p
 ### Inspect compact queue
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py list-backlog --json
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py list-backlog --json
 ```
 
 Emits only `identifier`, `priority`, `title`, `state.type`, and `updatedAt` per issue.
@@ -207,7 +207,7 @@ Emits only `identifier`, `priority`, `title`, `state.type`, and `updatedAt` per 
 Find the coordinator terminal handle with `orca terminal list --json`, then:
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py start \
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py start \
   --identifier <identifier> \
   --coordinator-handle <coordinator_handle> \
   --json
@@ -218,7 +218,7 @@ Interpret the returned status with the table above. If it returns `pending`, kee
 ### Wait for one pending issue
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-backlog/process_issue.py wait \
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py wait \
   --identifier <identifier> \
   --task-id <task_id> --dispatch-id <dispatch_id> --coordinator-handle <coordinator_handle> \
   --json

@@ -34,6 +34,43 @@ agent it already dispatched, and nothing would be left to poll it for `worker_do
 python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py run-jobs --jobs-file <path> --json
 ```
 
+### Example job files (workflows)
+
+Pre-built job configurations are available in the `workflow/` directory:
+
+```bash
+python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py run-jobs \
+  --jobs-file skills-organized/loops/task-orchestration/skill-dispatcher/workflow/workflow-jobs-general.json \
+  --json
+```
+
+Available workflows:
+- `workflow-jobs-general.json` — general code analysis + Linear issue creation + Linear run
+- `workflow-jobs-features.json` — feature analysis + Linear issue creation + Linear run
+- `workflow-jobs-duplicates.json` — duplicate code analysis + Linear issue creation + Linear run
+- `workflow-jobs-ui-ux.json` — UI/UX analysis + Linear issue creation + Linear run
+- `workflow-jobs-llm-adherence.json` — LLM adherence analysis + Linear issue creation + Linear run
+
+### Helper: resolve_workflow_path
+
+The `run_jobs.py` script provides a helper function `resolve_workflow_path(workflow_name)` that resolves workflow files from the `workflow/` directory. It accepts:
+
+- A bare name (e.g., `"general"`) — automatically prefixes with `workflow-` and adds `.json`
+- A name with `.json` extension (e.g., `"general.json"`)
+- A name with `workflow-` prefix (e.g., `"workflow-general"`)
+- A full path
+
+It searches relative to the repo root and the script's directory.
+
+```bash
+# Using the helper programmatically
+python3 -c "
+from run_jobs import resolve_workflow_path
+print(resolve_workflow_path('general'))
+print(resolve_workflow_path('workflow-jobs-features.json'))
+"
+```
+
 Run it in the background and poll its output/log periodically. The helper refuses to
 start a second instance while one is already active (see Invariants) — if it does,
 confirm the recorded PID is actually gone before treating the lock as stale.
@@ -180,7 +217,7 @@ Jobs using `prompt` instead of `skill` are exempt from this check.
   > Orchestration.
 - A `worker_done`/`escalation` only counts when its payload's `taskId`/`dispatchId` match
   the job currently being waited on; the helper enforces this the same way
-  `loops--task-orchestration--linear-backlog` does.
+  `loops--task-orchestration--linear-run` does.
 
 ## Debug / resume only
 
