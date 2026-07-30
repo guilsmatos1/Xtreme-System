@@ -257,6 +257,7 @@ def register_crud_ui_routes(
             ok_partial_template=templates_config.ok_partial_template,
             ctx_list=ctx_list,
             parse_form=behavior.parse_form,
+            pagina=export.pagina,
             before_create=behavior.before_create,
             after_create=behavior.after_create,
             listing=listing,
@@ -535,6 +536,7 @@ def register_create_route(
     ok_partial_template: str,
     ctx_list: CtxList[EntityT],
     parse_form: ParseForm,
+    pagina: str | None,
     before_create: BeforeCreateHook[CreateSchemaT] | None,
     after_create: AfterWriteHook[EntityT] | None,
     listing: ListingSpec[EntityT],
@@ -550,6 +552,7 @@ def register_create_route(
     ) -> HTMLResponse:
         form_data = await request.form()
         dados_form = parse_form(form_data)
+        perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
         try:
             data = create_schema.model_validate(dados_form)
         except ValidationError:

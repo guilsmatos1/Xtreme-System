@@ -666,6 +666,7 @@ def _stub_crud_client(
     request: pytest.FixtureRequest,
     *,
     before_create: Callable[[Session, Any], None] | None = None,
+    pagina: str | None = None,
 ) -> TestClient:
     for nome, conteudo in {
         "lista.html": "<div id='linhas'>{% include 'linhas.html' %}</div>",
@@ -719,11 +720,42 @@ def _stub_crud_client(
             csv_filename="stubs.csv",
             csv_headers=["ID", "Nome"],
             csv_row=lambda item: [item.id, item.nome],
+            pagina=pagina,
         ),
     )
     app.dependency_overrides[get_session] = lambda: session
     app.dependency_overrides[get_ui_user] = lambda: admin
     return TestClient(app)
+
+
+def test_crud_ui_create_filtra_campos_do_perfil(
+    tmp_path: Path, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    filtrados: list[tuple[str | None, dict[str, Any]]] = []
+
+    def filtrar(_user: Any, pagina: str | None, data: dict[str, Any]) -> dict[str, Any]:
+        filtrados.append((pagina, data.copy()))
+        data.pop("nome", None)
+        return data
+
+    monkeypatch.setattr(
+        "xtreme_system.api.crud_ui.routes.perfil.filtrar_campos_form_ocultos",
+        filtrar,
+    )
+    recebido: list[_StubSchema] = []
+    client = _stub_crud_client(
+        tmp_path,
+        _ConflictModule(fail_on="none"),
+        request,
+        pagina="clientes",
+        before_create=lambda _session, data: recebido.append(data),
+    )
+
+    resp = client.post("/ui/stubs", data={"nome": "Oculto"})
+
+    assert resp.status_code == 200
+    assert filtrados == [("clientes", {"nome": "Oculto"})]
+    assert recebido[0].nome is None
 
 
 def test_crud_ui_create_integrity_error_retorna_409(
