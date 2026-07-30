@@ -5,11 +5,22 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
+from xtreme_system.compra import core as compra
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
+
+
+def sincronizar_caixa_compra(
+    session: Session, obj: compra.Compra, actor_id: int | None = None
+) -> None:
+    """O lançamento de custo do veículo espelha o valor da compra."""
+    veiculo_obj = veiculo.get(session, obj.veiculo_id)
+    if veiculo_obj is not None:
+        caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
 
 
 def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -> None:
