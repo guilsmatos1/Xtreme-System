@@ -23,7 +23,7 @@
         "base_branch": "master"
       },
       "skill": "devops--linear--send",
-      "skill_args": "\"Xtreme System\" .loop/running/issues-general.md",
+      "skill_args": "\"Xtreme System\" {repo_root}/.loop/running/issues-general.md",
       "retries": 2,
       "retry_delay_seconds": 10
     },

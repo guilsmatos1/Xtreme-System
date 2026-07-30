@@ -376,12 +376,39 @@ def save_state(jobs_file, state):
         pass  # non-fatal; worst case the user re-runs without --resume
 
 
+def _resolve_repo_root():
+    """Return the absolute path of the main (first) git worktree.
+
+    This is the worktree on the primary branch (e.g. master), not a GUI-xxx
+    feature worktree. Used to expand {repo_root} in skill_args so agents
+    always receive an absolute path even when their terminal CWD is a
+    different worktree where relative paths like .loop/running/ don't exist.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if proc.returncode == 0:
+            for line in proc.stdout.splitlines():
+                if line.startswith("worktree "):
+                    return line[len("worktree "):].strip()
+    except Exception:  # noqa: BLE001
+        pass
+    return os.path.realpath(os.getcwd())
+
+
 def build_task_spec(job):
     if job.get("prompt"):
         return job["prompt"]
     spec = f"Invoke the skill `/{job['skill']}`"
     if job.get("skill_args"):
-        spec += f" with these arguments: {job['skill_args']}"
+        # Expand {repo_root} to the absolute path of the main git worktree so
+        # agents receive a stable absolute path even when their CWD is a
+        # feature worktree where .loop/running/ or other root-only paths
+        # may not exist.
+        skill_args = job["skill_args"].replace("{repo_root}", _resolve_repo_root())
+        spec += f" with these arguments: {skill_args}"
     spec += (
         ". Follow that skill's own SKILL.md exactly. Before acting, judge whether the "
         "request in the arguments actually makes sense for this repo; if it does not, "
