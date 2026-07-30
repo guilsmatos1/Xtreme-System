@@ -43,9 +43,8 @@ from xtreme_system.api.routes.ui_routes.common import (
 )
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
-    validate_cliente_veiculo_fks,
-    validate_valores_venda_update,
-    validate_veiculo_disponivel_para_venda,
+    validate_venda_create,
+    validate_venda_update,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
@@ -115,15 +114,6 @@ def _parse_venda_form(form: Any) -> dict[str, Any]:
     if not data.get("data_venda"):
         data["data_venda"] = str(datetime.now(UTC).date())
     return data
-
-
-def _validate_venda_update(
-    session: Session, obj: venda.Venda, data: venda.VendaUpdate
-) -> None:
-    validate_cliente_veiculo_fks(session, data)
-    validate_valores_venda_update(obj, data)
-    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
-        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
 
 
 def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
@@ -393,8 +383,7 @@ async def _criar_venda(
                 },
             )
         )
-        validate_cliente_veiculo_fks(session, data)
-        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
+        validate_venda_create(session, data)
     except (ValidationError, HTTPException) as exc:
         rollback_se_criou_aninhados(session, novo_cliente_data)
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
@@ -433,7 +422,7 @@ async def _atualizar_venda(
         data = venda.VendaUpdate.model_validate(
             perfil.filtrar_campos_form_ocultos(user, "vendas", _parse_venda_form(form))
         )
-        _validate_venda_update(session, obj, data)
+        validate_venda_update(session, obj, data)
     except (ValidationError, HTTPException) as exc:
         msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
         return _erro_venda(request, session, user, msg, venda_obj=obj)

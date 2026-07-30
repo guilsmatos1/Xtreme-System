@@ -19,9 +19,9 @@ from xtreme_system.api.route_factories import (
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
     validate_cliente_veiculo_fks,
-    validate_valores_venda_update,
-    validate_veiculo_disponivel_para_venda,
     validate_veiculo_fks,
+    validate_venda_create,
+    validate_venda_update,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
@@ -300,18 +300,6 @@ register_crud_routes(
 # ---- Vendas ----
 
 
-def _validate_venda_create(session: Session, data: Any) -> None:
-    validate_cliente_veiculo_fks(session, data)
-    validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
-
-
-def _validate_venda_update(session: Session, obj: Any, data: Any) -> None:
-    validate_cliente_veiculo_fks(session, data)
-    validate_valores_venda_update(obj, data)
-    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
-        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
-
-
 register_crud_routes(
     app,
     venda,
@@ -320,8 +308,8 @@ register_crud_routes(
     read_schema=venda.VendaRead,
     create_schema=venda.VendaCreate,
     update_schema=venda.VendaUpdate,
-    before_create=_validate_venda_create,
-    before_update=_validate_venda_update,
+    before_create=validate_venda_create,
+    before_update=validate_venda_update,
     before_delete=recompute_vehicle_status_on_delete,
     after_create=whatsapp.notificar_venda,
     pagina="vendas",

@@ -55,6 +55,18 @@ def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) ->
         raise HTTPException(status_code=409, detail="veículo indisponível")
 
 
+def validate_venda_create(session: Session, data: Any) -> None:
+    validate_cliente_veiculo_fks(session, data)
+    validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
+
+
+def validate_venda_update(session: Session, obj: Any, data: Any) -> None:
+    validate_cliente_veiculo_fks(session, data)
+    validate_valores_venda_update(obj, data)
+    if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
+        validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
+
+
 def recompute_vehicle_status_on_delete(
     session: Session, venda_obj: Any, _actor_id: int | None = None
 ) -> None:
