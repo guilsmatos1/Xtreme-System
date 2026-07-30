@@ -199,6 +199,24 @@ def orca(args, timeout=60):
         _raise_orca_error(args, command, proc.returncode, out, "invalid JSON")
 
 
+def ensure_run_bound(coordinator_handle, warnings):
+    """Bind an orchestration Run to the coordinator terminal if none is bound yet.
+
+    `task-create`/`dispatch`/`check` all fail closed with `run_required` on a
+    coordinator terminal that never called `run-create`/`run-use` -- confirmed
+    directly against a fresh terminal here. The queue must not assume a Run
+    happens to already be bound just because it usually is in practice.
+    """
+    current = orca(["orchestration", "run-current", "--from", coordinator_handle])
+    if current.get("result", {}).get("run"):
+        return
+    created = orca(["orchestration", "run-create",
+                     "--objective", "Empty the Linear GUI Backlog via loops--task-orchestration--linear-run.",
+                     "--from", coordinator_handle])
+    if not created.get("result", {}).get("run", {}).get("id"):
+        warnings.append("run-create returned no run id; later orchestration calls may fail with run_required")
+
+
 def git(args, cwd=None, timeout=30, raw=False):
     """`raw=True` bypasses RTK.
 
@@ -376,7 +394,7 @@ def _message_phase(msg):
     return str(_message_payload(msg).get("phase", "")).strip().lower()
 
 
-def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms):
+def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms, warnings=None):
     check = orca(
         [
             "orchestration", "check", "--terminal", coordinator_handle, "--wait",
@@ -384,20 +402,82 @@ def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms):
         ],
         timeout=(timeout_ms / 1000) + 30,
     )
-    messages = check.get("result", {}).get("messages", [])
+    check_result = check.get("result", {})
+    delivery_id = check_result.get("deliveryId")
+    messages = check_result.get("messages", [])
+
+    outcome, matched = "timeout", None
     for msg in messages:
         payload = _message_payload(msg)
-        if payload.get("taskId") != task_id or payload.get("dispatchId") != dispatch_id:
+        if payload.get("taskId") != task_id:
             continue
-        if msg.get("type") == "worker_done":
+        msg_type = msg.get("type")
+        if msg_type == "worker_done":
+            if payload.get("dispatchId") != dispatch_id:
+                continue
             # Only an explicit "success" closes an issue. A missing or unrecognized
             # phase counts as failure, so an unfinished issue is never marked Done;
             # the cost is that a worker which succeeded but omitted --phase has its
             # worktree removed and the issue reset.
-            return ("worker_done" if _message_phase(msg) == "success" else "worker_failed"), msg
-        if msg.get("type") == "escalation":
-            return "escalation", msg
-    return "timeout", None
+            outcome = "worker_done" if _message_phase(msg) == "success" else "worker_failed"
+            matched = msg
+            break
+        if msg_type == "escalation":
+            # Escalations are sent pre-completion (`send --type escalation
+            # --task-id <id>`, no --dispatch-id -- confirmed against the worker
+            # preamble `dispatch --dry-run` prints) so requiring dispatchId here
+            # like worker_done would make every escalation unmatchable.
+            outcome, matched = "escalation", msg
+            break
+
+    if delivery_id:
+        # `check --wait` replays the same unacked batch immediately on every call
+        # instead of blocking for something new ("A bound Run replays the same
+        # Delivery until --ack"). Without acking here, a stale delivery from a
+        # prior issue keeps satisfying --wait for every later issue's poll, and
+        # the real worker_done behind it in the FIFO never gets through.
+        try:
+            orca(["orchestration", "check", "--terminal", coordinator_handle, "--ack", delivery_id])
+        except OrcaError as exc:
+            if warnings is not None:
+                warnings.append(f"failed to ack orchestration delivery {delivery_id}: {exc}")
+
+    return outcome, matched
+
+
+def _escalation_question(msg):
+    subject = str(msg.get("subject") or "").strip()
+    body = str(msg.get("body") or "").strip()
+    question = subject or "Worker escalated and needs human input"
+    if body and body != question:
+        question = f"{question}: {body}"
+    return _compact_text(question, DETAIL_STRING_LIMIT)
+
+
+def escalate_task(identifier, task_id, msg, warnings):
+    """Turn a raw escalation message into durable Orca state on the task.
+
+    Without this, an escalation only exists as a run-backlog log line: the task
+    itself shows nothing blocked, so a human has to reconstruct context from
+    JSONL output instead of seeing a resolvable question on the task in Orca.
+    Best-effort: a failure here does not change the escalation outcome itself.
+    """
+    gate_id = None
+    try:
+        gate = orca(["orchestration", "gate-create", "--task", task_id,
+                     "--question", _escalation_question(msg)])
+        gate_id = gate.get("result", {}).get("gate", {}).get("id")
+        if not gate_id:
+            warnings.append(f"gate-create for {identifier} returned no gate id")
+    except OrcaError as exc:
+        warnings.append(f"failed to create decision gate for {identifier}: {exc}")
+
+    try:
+        orca(["orchestration", "task-update", "--id", task_id, "--status", "blocked"])
+    except OrcaError as exc:
+        warnings.append(f"failed to mark task blocked for {identifier}: {exc}")
+
+    return gate_id
 
 
 def _worktree_entries():
@@ -644,6 +724,8 @@ def cmd_start(args):
         except OrcaError as exc:
             warnings.append(f"failed to set status to In Progress: {exc}")
 
+        ensure_run_bound(args.coordinator_handle, warnings)
+
         task = orca(["orchestration", "task-create",
                      "--task-title", f"{identifier}: {title[:60]}",
                      "--spec", f"Resolver a issue Linear {identifier}."])
@@ -671,6 +753,13 @@ def cmd_start(args):
             return result("error", identifier,
                           reason=f"codex did not report model '{model}' with reasoning effort '{reasoning_effort}'",
                           detail={"handle": handle}, warnings=warnings)
+
+        try:
+            orca(["orchestration", "dispatch", "--task", task_id, "--to", handle,
+                 "--from", args.coordinator_handle, "--dry-run"])
+        except OrcaError as exc:
+            return result("error", identifier, reason=f"dispatch dry-run failed: {exc}",
+                          detail={"handle": handle, "task_id": task_id}, warnings=warnings)
 
         dispatch = orca(["orchestration", "dispatch", "--task", task_id, "--to", handle,
                          "--from", args.coordinator_handle])
@@ -719,7 +808,7 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
     context = {"task_id": task_id, "dispatch_id": dispatch_id,
                "coordinator_handle": coordinator_handle, "worker_handle": worker_handle}
     try:
-        outcome, msg = poll_orchestration(coordinator_handle, task_id, dispatch_id, wait_timeout_ms)
+        outcome, msg = poll_orchestration(coordinator_handle, task_id, dispatch_id, wait_timeout_ms, warnings)
     except OrcaError as exc:
         return result("error", identifier, reason=f"orchestration check failed: {exc}",
                       detail=context, warnings=warnings)
@@ -727,7 +816,11 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
     if outcome == "timeout":
         return result("pending", identifier, warnings=warnings, detail=context)
     if outcome == "escalation":
-        return result("escalation", identifier, detail=_compact_message(msg), warnings=warnings)
+        gate_id = escalate_task(identifier, task_id, msg, warnings)
+        detail = _compact_message(msg)
+        if gate_id:
+            detail = {**detail, "gate_id": gate_id}
+        return result("escalation", identifier, detail=detail, warnings=warnings)
     if outcome == "worker_failed":
         phase = _message_phase(msg)
         if phase == "merge_failed":
@@ -1053,6 +1146,7 @@ def cmd_run_backlog(args):
     try:
         with run_backlog_lock():
             coordinator_handle = resolve_coordinator_handle(args, summary["warnings"])
+            ensure_run_bound(coordinator_handle, summary["warnings"])
             while True:
                 if not queue or processed_since_relist >= args.relist_every:
                     queue = load_backlog_queue(args, attempted)

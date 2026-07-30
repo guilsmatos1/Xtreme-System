@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    {
+      "name": "loops-loop-runner-token-efficiency",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "loops-loop-runner-token-efficiency",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "loops--loop-runner--token-efficiency",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "loops-state-management-consolidate-harne",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "loops-state-management-consolidate-harne",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "loops--state-management--consolidate-harness",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    }
+  ]
+}
