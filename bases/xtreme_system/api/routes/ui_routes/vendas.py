@@ -43,11 +43,6 @@ from xtreme_system.api.routes.ui_routes.nested_writes import (
 )
 from xtreme_system.api.routes.ui_routes.upload_files import _uploaded_file_path
 from xtreme_system.api.routes.ui_routes.upload_paths import _uploads_contrato_venda_dir
-from xtreme_system.api.routes.workflows import (
-    recompute_vehicle_status_on_delete,
-    validate_venda_create,
-    validate_venda_update,
-)
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import register_post_rollback
@@ -59,6 +54,11 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
+from xtreme_system.workflow.core import (
+    recompute_vehicle_status_on_delete,
+    validate_venda_create,
+    validate_venda_update,
+)
 
 logger = structlog.get_logger(__name__)
 

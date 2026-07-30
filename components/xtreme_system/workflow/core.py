@@ -1,6 +1,4 @@
-"""Shared route workflow helpers used by JSON and HTMX routes."""
-
-from typing import Any
+"""Cross-domain workflows shared by the JSON API and HTMX UI."""
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -23,35 +21,52 @@ def sincronizar_caixa_compra(
         caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
 
 
-def validate_veiculo_fks(session: Session, data: Any, *, update: bool = False) -> None:
+def validate_veiculo_fks(
+    session: Session,
+    data: veiculo.VeiculoCreate | veiculo.VeiculoUpdate,
+    *,
+    update: bool = False,
+) -> None:
     investidor_id = data.investidor_id
     investidor_deve_existir = not update or investidor_id is not None
-    if investidor_deve_existir and investidor.get(session, investidor_id) is None:
+    if investidor_deve_existir and (
+        investidor_id is None or investidor.get(session, investidor_id) is None
+    ):
         raise HTTPException(status_code=400, detail="investidor_id inexistente")
     if (
         not update
-        and hasattr(data, "placa")
+        and isinstance(data, veiculo.VeiculoCreate)
         and veiculo.get_by_placa(session, data.placa)
     ):
         raise HTTPException(status_code=400, detail="placa já cadastrada")
 
 
-def validate_cliente_veiculo_fks(session: Session, data: Any) -> None:
-    cli_id = getattr(data, "cliente_id", None)
-    vei_id = getattr(data, "veiculo_id", None)
-    troca_id = getattr(data, "veiculo_troca_id", None)
-    if cli_id is not None and cliente.get(session, cli_id) is None:
+ClienteVeiculoData = (
+    compra.CompraCreate | compra.CompraUpdate | venda.VendaCreate | venda.VendaUpdate
+)
+
+
+def validate_cliente_veiculo_fks(session: Session, data: ClienteVeiculoData) -> None:
+    if data.cliente_id is not None and cliente.get(session, data.cliente_id) is None:
         raise HTTPException(status_code=400, detail="cliente_id inexistente")
-    if vei_id is not None and veiculo.get(session, vei_id) is None:
+    if data.veiculo_id is not None and veiculo.get(session, data.veiculo_id) is None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
-    if troca_id is not None and veiculo.get(session, troca_id) is None:
-        raise HTTPException(status_code=400, detail="veiculo_troca_id inexistente")
-    ven_id = getattr(data, "vendedor_id", None)
-    if ven_id is not None and usuario.get(session, ven_id) is None:
-        raise HTTPException(status_code=400, detail="vendedor_id inexistente")
+    if isinstance(data, (venda.VendaCreate, venda.VendaUpdate)):
+        if (
+            data.veiculo_troca_id is not None
+            and veiculo.get(session, data.veiculo_troca_id) is None
+        ):
+            raise HTTPException(status_code=400, detail="veiculo_troca_id inexistente")
+        if (
+            data.vendedor_id is not None
+            and usuario.get(session, data.vendedor_id) is None
+        ):
+            raise HTTPException(status_code=400, detail="vendedor_id inexistente")
 
 
-def validate_valores_venda_update(venda_obj: venda.Venda, data: Any) -> None:
+def validate_valores_venda_update(
+    venda_obj: venda.Venda, data: venda.VendaUpdate
+) -> None:
     try:
         venda.validate_valores_venda_update(venda_obj, data)
     except ValueError as exc:
@@ -59,19 +74,21 @@ def validate_valores_venda_update(venda_obj: venda.Venda, data: Any) -> None:
 
 
 def validate_veiculo_disponivel_para_venda(session: Session, veiculo_id: int) -> None:
-    v = session.get(veiculo.Veiculo, veiculo_id, with_for_update=True)
-    if v is None:
+    veiculo_obj = session.get(veiculo.Veiculo, veiculo_id, with_for_update=True)
+    if veiculo_obj is None:
         raise HTTPException(status_code=400, detail="veiculo_id inexistente")
-    if v.status != veiculo.StatusVeiculo.disponivel:
+    if veiculo_obj.status != veiculo.StatusVeiculo.disponivel:
         raise HTTPException(status_code=409, detail="veículo indisponível")
 
 
-def validate_venda_create(session: Session, data: Any) -> None:
+def validate_venda_create(session: Session, data: venda.VendaCreate) -> None:
     validate_cliente_veiculo_fks(session, data)
     validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
 
 
-def validate_venda_update(session: Session, obj: Any, data: Any) -> None:
+def validate_venda_update(
+    session: Session, obj: venda.Venda, data: venda.VendaUpdate
+) -> None:
     validate_cliente_veiculo_fks(session, data)
     validate_valores_venda_update(obj, data)
     if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
@@ -79,7 +96,7 @@ def validate_venda_update(session: Session, obj: Any, data: Any) -> None:
 
 
 def recompute_vehicle_status_on_delete(
-    session: Session, venda_obj: Any, _actor_id: int | None = None
+    session: Session, venda_obj: venda.Venda, _actor_id: int | None = None
 ) -> None:
     venda.recomputar_status_veiculo_por_vendas(
         session, venda_obj.veiculo_id, excluir_venda_id=venda_obj.id

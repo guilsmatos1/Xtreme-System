@@ -16,14 +16,6 @@ from xtreme_system.api.route_factories import (
     json_visible,
     register_crud_routes,
 )
-from xtreme_system.api.routes.workflows import (
-    recompute_vehicle_status_on_delete,
-    sincronizar_caixa_compra,
-    validate_cliente_veiculo_fks,
-    validate_veiculo_fks,
-    validate_venda_create,
-    validate_venda_update,
-)
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
@@ -37,6 +29,14 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
+from xtreme_system.workflow.core import (
+    recompute_vehicle_status_on_delete,
+    sincronizar_caixa_compra,
+    validate_cliente_veiculo_fks,
+    validate_veiculo_fks,
+    validate_venda_create,
+    validate_venda_update,
+)
 
 AUDITORIA_LIMIT_MAX = 200
 

@@ -9,12 +9,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.core import app
-from xtreme_system.api.routes.workflows import validate_veiculo_disponivel_para_venda
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda_core
+from xtreme_system.workflow.core import validate_veiculo_disponivel_para_venda
 
 
 @pytest.fixture

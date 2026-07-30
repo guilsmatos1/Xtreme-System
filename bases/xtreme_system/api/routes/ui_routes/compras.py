@@ -49,10 +49,6 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     salvar_anexos_entidade,
     salvar_arquivos,
 )
-from xtreme_system.api.routes.workflows import (
-    sincronizar_caixa_compra,
-    validate_cliente_veiculo_fks,
-)
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -61,6 +57,10 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.workflow.core import (
+    sincronizar_caixa_compra,
+    validate_cliente_veiculo_fks,
+)
 
 logger = structlog.get_logger(__name__)
 
