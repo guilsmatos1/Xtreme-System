@@ -427,17 +427,23 @@ def _extract_handle(response):
     return handle
 
 
-def create_worker_terminal(job, warnings):
+def create_worker_terminal(job, warnings, coordinator_worktree_path=None):
     """Returns (handle, worktree_selector_or_None, error_reason_or_None)."""
     worktree = job["worktree"]
     mode = worktree["mode"]
     agent_or_command = job.get("command") or job.get("agent")
 
     if mode == "current":
-        term = orca(["terminal", "create", "--worktree", "active",
+        # Use the coordinator's explicit worktree path so the agent always opens
+        # in the same worktree as the dispatcher (e.g. master), regardless of
+        # which worktree is currently focused in the IDE.
+        # `--worktree active` resolves to the UI-focused worktree, which may be
+        # any GUI-xxx feature branch and would not have .loop/running/ files.
+        wt_selector = f"path:{coordinator_worktree_path}" if coordinator_worktree_path else "active"
+        term = orca(["terminal", "create", "--worktree", wt_selector,
                      "--title", job["name"], "--command", agent_or_command])
         handle = _extract_handle(term)
-        return handle, "active", None if handle else "terminal create returned no handle"
+        return handle, wt_selector, None if handle else "terminal create returned no handle"
 
     if mode == "existing":
         selector = worktree["selector"]
@@ -555,12 +561,25 @@ def close_worker_terminal(worker_handle, warnings):
 # --- Coordinator handle inference --------------------------------------------
 
 def resolve_coordinator_handle(explicit, warnings):
-    if explicit:
-        return explicit
+    """Return (handle, worktree_path) for the coordinator terminal.
 
+    The worktree_path is used by create_worker_terminal(mode='current') so that
+    worker agents open in the same worktree as the coordinator (e.g. master)
+    rather than whatever worktree happens to be focused in the IDE UI.
+    When --coordinator-handle is given explicitly the worktree path is resolved
+    via terminal list rather than assumed.
+    """
     listing = orca(["terminal", "list"], timeout=30)
     terminals = listing.get("result", {}).get("terminals", [])
     cwd = os.path.realpath(os.getcwd())
+
+    if explicit:
+        # Resolve worktree_path for the explicitly supplied handle.
+        for t in terminals:
+            if t.get("handle") == explicit:
+                return explicit, os.path.realpath(t.get("worktreePath") or cwd)
+        return explicit, cwd  # fallback if handle not found in listing
+
     candidates = [
         t for t in terminals
         if t.get("connected") and t.get("writable") and t.get("worktreePath")
@@ -571,7 +590,8 @@ def resolve_coordinator_handle(explicit, warnings):
     candidates.sort(key=lambda t: int(t.get("lastOutputAt") or 0), reverse=True)
     if len(candidates) > 1:
         warnings.append(f"multiple coordinator terminal candidates; selected most recent {candidates[0].get('handle')}")
-    return candidates[0].get("handle")
+    selected = candidates[0]
+    return selected.get("handle"), os.path.realpath(selected.get("worktreePath") or cwd)
 
 
 # --- start / wait -------------------------------------------------------------
@@ -580,14 +600,17 @@ def cmd_start_job(args):
     jobs = load_jobs(args.jobs_file)
     if not (0 <= args.index < len(jobs)):
         return result("error", "?", reason=f"index {args.index} out of range (0..{len(jobs) - 1})")
-    return _start_job(jobs[args.index], args.coordinator_handle, args.wait_timeout_ms)
+    coordinator_handle, coordinator_worktree_path = resolve_coordinator_handle(
+        args.coordinator_handle, []
+    )
+    return _start_job(jobs[args.index], coordinator_handle, coordinator_worktree_path, args.wait_timeout_ms)
 
 
-def _start_job(job, coordinator_handle, wait_timeout_ms):
+def _start_job(job, coordinator_handle, coordinator_worktree_path, wait_timeout_ms):
     name = job["name"]
     warnings = list(job.get("_warnings", []))
     try:
-        handle, worktree_selector, error = create_worker_terminal(job, warnings)
+        handle, worktree_selector, error = create_worker_terminal(job, warnings, coordinator_worktree_path)
         if error:
             return result("error", name, reason=error, warnings=warnings)
 
@@ -656,14 +679,14 @@ def _call_helper_silently(func, args):
         return func(args)
 
 
-def run_one_job(job, args, coordinator_handle):
+def run_one_job(job, args, coordinator_handle, coordinator_worktree_path):
     """Run a single job, respecting its retry policy (B)."""
     name = job["name"]
     max_retries = job.get("retries", 0)  # B
     retry_delay = job.get("retry_delay_seconds", 5)  # B
 
     for attempt in range(max_retries + 1):  # B: attempt 0..max_retries
-        payload = _run_one_attempt(job, args, coordinator_handle)
+        payload = _run_one_attempt(job, args, coordinator_handle, coordinator_worktree_path)
         status = payload.get("status")
 
         # B: only retry transient errors, not escalations / stuck / done.
@@ -688,11 +711,11 @@ def run_one_job(job, args, coordinator_handle):
     return payload  # unreachable but satisfies type checkers
 
 
-def _run_one_attempt(job, args, coordinator_handle):
+def _run_one_attempt(job, args, coordinator_handle, coordinator_worktree_path):
     """Single dispatch+poll cycle for one job (no retry logic here)."""
     name = job["name"]
     started_at = time.monotonic()
-    payload = _start_job(job, coordinator_handle, args.wait_timeout_ms)
+    payload = _start_job(job, coordinator_handle, coordinator_worktree_path, args.wait_timeout_ms)
 
     while payload.get("status") == "pending":
         detail = payload.get("detail") or {}
@@ -806,7 +829,9 @@ def cmd_run_jobs(args):
                 if skipped:
                     emit_event({"event": "resume", "skipping": skipped})
 
-            coordinator_handle = resolve_coordinator_handle(args.coordinator_handle, summary["warnings"])
+            coordinator_handle, coordinator_worktree_path = resolve_coordinator_handle(
+                args.coordinator_handle, summary["warnings"]
+            )
             emit_event({"event": "jobs_loaded", "count": len(jobs)})
 
             for job in jobs:
@@ -817,7 +842,7 @@ def cmd_run_jobs(args):
                     summary["done"] += 1
                     continue
 
-                payload = run_one_job(job, args, coordinator_handle)
+                payload = run_one_job(job, args, coordinator_handle, coordinator_worktree_path)
                 status = record_job(summary, job, payload)
 
                 # A: persist state after each job so --resume can skip it next time.
