@@ -90,6 +90,15 @@ Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's sco
 surface, or to confirm exact line ranges before citing them in a finding. Use Playwright screenshots
 only when the app can run and visual observations are needed; never invent visual observations.
 
+## Reading Budget
+
+Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
+discipline for every `coding--analyze--*` skill (repo path:
+`skills-organized/coding/analyze/references/reading-budget.md`).
+
+It applies with full force here: templates and CSS are long and highly repetitive, so full reads
+buy little. Sweep for the macro or selector, then read the fragment around it.
+
 ## What Strong Findings Look Like
 
 Strong finding:

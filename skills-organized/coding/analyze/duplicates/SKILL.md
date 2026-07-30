@@ -67,7 +67,10 @@ For each opportunity, evaluate the relevant dimensions below:
   - route handlers with repeated parsing, filtering, pagination, permission, and error handling
   - Jinja fragments that should be macros
   - transaction, formatting, coercion, and query patterns repeated per caller
-3. For each candidate, open every occurrence and compare the exact differences before judging it.
+3. For each candidate, compare every occurrence — but read them scoped, never whole. Establish the
+   shape first with a signature sweep (`rg -n "^(def |@router|{% macro )" <files>`), then read only
+   the line ranges that sweep points at, using `Read` with `offset`/`limit`. Pull a full file only
+   when a finding genuinely depends on file-wide structure, and say why. See Reading Budget.
 4. Prefer an existing module, function, workflow, or macro as the consolidation target.
 5. Create a new shared helper only when no suitable home exists and there are at least 2 real callers.
 6. Tie every recommendation to all duplicate sites, with representative snippets when possible.
@@ -90,6 +93,16 @@ Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's sco
 surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
 file tree or definition list by hand when graphify can answer the same question with a fraction of
 the tokens.
+
+## Reading Budget
+
+Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
+discipline for every `coding--analyze--*` skill (repo path:
+`skills-organized/coding/analyze/references/reading-budget.md`).
+
+It applies with full force here: a duplication survey needs shapes and call patterns across many
+files, so it is the review most likely to load full route modules it never quotes. Sweep signatures
+first, read only the ranges you will cite, and never re-read a file already in context.
 
 ## What Strong Findings Look Like
 

@@ -86,6 +86,15 @@ surface, or to confirm exact line ranges before citing them in a finding. Never 
 file tree or definition list by hand when graphify can answer the same question with a fraction of
 the tokens.
 
+## Reading Budget
+
+Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
+discipline for every `coding--analyze--*` skill (repo path:
+`skills-organized/coding/analyze/references/reading-budget.md`).
+
+It applies with full force here: this is the broadest sweep of all the analyze skills, so it
+accumulates context fastest. Let graphify rank the hotspots, then read only those, scoped.
+
 ## What Strong Findings Look Like
 
 Strong finding:

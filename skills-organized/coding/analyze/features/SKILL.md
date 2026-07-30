@@ -91,6 +91,16 @@ surface, or to confirm exact line ranges before citing them in a finding. Never 
 file tree or definition list by hand when graphify can answer the same question with a fraction of
 the tokens.
 
+## Reading Budget
+
+Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
+discipline for every `coding--analyze--*` skill (repo path:
+`skills-organized/coding/analyze/references/reading-budget.md`).
+
+It applies with full force here: tracing a workflow end to end tempts a full read of every
+route, template, and model on the path. Sweep signatures first and read only what you will cite as
+evidence of the gap.
+
 ## What Strong Findings Look Like
 
 Strong finding:

@@ -90,6 +90,16 @@ surface, or to confirm exact line ranges before citing them in a finding. Useful
 `rg '\\._[A-Za-z]'`, `rg 'dict\\[|: dict|Any|Mapping\\[str, Any\\]'`, `rg 'os\\.getenv|global '`,
 and `rg 'FastAPI|render|sqlalchemy|jinja'`.
 
+## Reading Budget
+
+Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
+discipline for every `coding--analyze--*` skill (repo path:
+`skills-organized/coding/analyze/references/reading-budget.md`).
+
+It applies with full force here: this review targets large, central modules — exactly the files
+whose full text is most expensive to hold. Judge shape from signatures and imports, and read bodies
+only where you will quote them.
+
 ## What Strong Findings Look Like
 
 Strong finding:
