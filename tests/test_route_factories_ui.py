@@ -264,7 +264,12 @@ def test_query_list_nao_mascara_typeerror_do_search_func() -> None:
         query_list(
             session=cast(Session, object()),
             module=investidor,
-            listing=ListingSpec(search_func=adapt_search_func(search_func)),
+            listing=ListingSpec(
+                searchable=True,
+                source="functions",
+                list_func=lambda _session, **_kwargs: [],
+                search_func=adapt_search_func(search_func),
+            ),
             state=ListState(q="ana"),
         )
 
@@ -287,7 +292,7 @@ def test_query_list_passa_limit_e_offset_para_list_func_paginal() -> None:
     resultados = query_list(
         session=cast(Session, object()),
         module=investidor,
-        listing=ListingSpec(list_func=list_func),
+        listing=ListingSpec(source="functions", list_func=list_func),
         state=ListState(limit=2, offset=1),
     )
 
@@ -307,6 +312,9 @@ def test_query_list_usa_sort_field_python_quando_sql_disponivel() -> None:
         session=cast(Session, object()),
         module=investidor,
         listing=ListingSpec(
+            searchable=True,
+            source="functions",
+            list_func=lambda _session, **_kwargs: [],
             search_func=adapt_search_func(search_func),
             sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
         ),
@@ -336,6 +344,7 @@ def test_query_list_ordena_no_sql_quando_query_func_disponivel(
         session,
         investidor,
         listing=ListingSpec(
+            source="query",
             sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
             query_func=lambda sess: sess.query(investidor.Investidor),
         ),
@@ -365,6 +374,7 @@ def test_query_list_aplica_ordenacao_padrao_no_sql(
         session,
         investidor,
         listing=ListingSpec(
+            source="query",
             sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
             default_sort="nome",
             default_order="desc",
@@ -396,6 +406,7 @@ def test_query_list_ordenacao_explicita_substitui_padrao(
         session,
         investidor,
         listing=ListingSpec(
+            source="query",
             sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
             default_sort="nome",
             default_order="desc",
@@ -441,6 +452,7 @@ def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
         session,
         investidor,
         listing=ListingSpec(
+            source="query",
             sort_fields={"nome": SortField("nome", investidor.Investidor.nome)},
             query_func=lambda sess: sess.query(investidor.Investidor),
         ),
@@ -448,6 +460,14 @@ def test_query_list_usa_order_by_id_quando_sort_sql_invalido(
     )
 
     assert any("ORDER BY investidor.id ASC" in statement for statement in statements)
+
+
+def test_listing_spec_rejeita_fontes_de_listagem_conflitantes() -> None:
+    with pytest.raises(ValueError, match="does not accept custom callables"):
+        ListingSpec(source="module", list_func=lambda _session, **_kwargs: [])
+
+    with pytest.raises(ValueError, match="requires query_func"):
+        ListingSpec(source="query")
 
 
 def test_ordenar_investidores_por_nome() -> None:

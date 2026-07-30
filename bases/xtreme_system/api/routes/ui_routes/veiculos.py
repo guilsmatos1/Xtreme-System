@@ -119,6 +119,7 @@ def _buscar_veiculos(
 
 _VEICULOS_LISTING = ListingSpec(
     searchable=True,
+    source="functions",
     list_func=_listar_veiculos,
     search_func=_buscar_veiculos,
 )
@@ -156,8 +157,7 @@ register_crud_ui_routes(
     listing=ListingSpec(
         searchable=True,
         paginated=False,
-        list_func=_listar_veiculos,
-        search_func=_buscar_veiculos,
+        source="query",
         query_func=veiculo.query,
         search_query_func=veiculo.search_query,
         sort_fields={

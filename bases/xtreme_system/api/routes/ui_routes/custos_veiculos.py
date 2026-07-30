@@ -78,7 +78,7 @@ register_crud_ui_routes(
     ),
     listing=ListingSpec(
         searchable=True,
-        search_func=custo_veiculo.search,
+        source="query",
         query_func=custo_veiculo.query,
         search_query_func=custo_veiculo.search_query,
         sort_fields={
