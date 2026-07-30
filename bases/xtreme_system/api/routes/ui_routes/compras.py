@@ -139,7 +139,6 @@ def _comprovantes_modal(
     session: Session,
     user: usuario.Usuario,
     compra_id: int,
-    erro: str | None = None,
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
@@ -152,11 +151,33 @@ def _comprovantes_modal(
             "compra": item,
             "comprovantes": comprovantes,
             "user": user,
-            "erro": erro,
             "action_oob": action_oob,
             "pending_upload_paths": pending_upload_paths(session),
         },
-        status_code=400 if erro else 200,
+    )
+
+
+def _comprovantes_erro_modal(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    compra_id: int,
+    erro: str,
+) -> HTMLResponse:
+    item = _found(compra.get(session, compra_id), "Compra")
+    comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
+    return templates.TemplateResponse(
+        request,
+        "_modal_comprovantes_compra.html",
+        {
+            "compra": item,
+            "comprovantes": comprovantes,
+            "user": user,
+            "erro": erro,
+            "action_oob": False,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
+        status_code=400,
     )
 
 
@@ -191,7 +212,7 @@ def ui_compra_comprovantes_upload(
         actor_id=user.id,
     )
     if erro:
-        return _comprovantes_modal(request, session, user, compra_id, erro)
+        return _comprovantes_erro_modal(request, session, user, compra_id, erro)
 
     return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
 

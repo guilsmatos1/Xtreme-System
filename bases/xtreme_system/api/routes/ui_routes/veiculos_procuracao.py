@@ -36,7 +36,6 @@ def _procuracao_modal(
     session: Session,
     user: usuario.Usuario,
     veiculo_id: int,
-    erro: str | None = None,
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
@@ -48,11 +47,32 @@ def _procuracao_modal(
         {
             "veiculo": item,
             "user": user,
-            "erro": erro,
             "action_oob": action_oob,
             "pending_upload_paths": pending_upload_paths(session),
         },
-        status_code=400 if erro else 200,
+    )
+
+
+def _procuracao_erro_modal(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    veiculo_id: int,
+    erro: str,
+) -> HTMLResponse:
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request,
+        "_modal_procuracao_veiculo.html",
+        {
+            "veiculo": item,
+            "user": user,
+            "erro": erro,
+            "action_oob": False,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
+        status_code=400,
     )
 
 
@@ -87,7 +107,7 @@ def ui_veiculo_procuracao_upload(
         actor_id=user.id,
     )
     if erro:
-        return _procuracao_modal(request, session, user, veiculo_id, erro)
+        return _procuracao_erro_modal(request, session, user, veiculo_id, erro)
     return _procuracao_modal(request, session, user, veiculo_id, action_oob=True)
 
 
