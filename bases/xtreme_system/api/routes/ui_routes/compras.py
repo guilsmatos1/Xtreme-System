@@ -46,9 +46,11 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     salvar_anexos_entidade,
     salvar_arquivos,
 )
-from xtreme_system.api.routes.workflows import validate_cliente_veiculo_fks
+from xtreme_system.api.routes.workflows import (
+    sincronizar_caixa_compra,
+    validate_cliente_veiculo_fks,
+)
 from xtreme_system.api.setup import app
-from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
@@ -261,15 +263,6 @@ def _resolver_veiculo(
     return None, novo_veiculo_data, None
 
 
-def _sincronizar_caixa_compra(
-    session: Session, obj: compra.Compra, actor_id: int | None = None
-) -> None:
-    """O lançamento de custo do veículo espelha o valor da compra."""
-    veiculo_obj = veiculo.get(session, obj.veiculo_id)
-    if veiculo_obj is not None:
-        caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
-
-
 def _sincronizar_status_veiculo_compra(
     session: Session, obj: compra.Compra, actor_id: int | None = None
 ) -> None:
@@ -281,7 +274,7 @@ def _sincronizar_status_veiculo_compra(
     elif veiculo_obj.status == veiculo.StatusVeiculo.cancelado:
         veiculo_obj.status = veiculo.StatusVeiculo.disponivel
     session.flush()
-    _sincronizar_caixa_compra(session, obj, actor_id)
+    sincronizar_caixa_compra(session, obj, actor_id)
 
 
 def _erro_compra(
@@ -395,7 +388,7 @@ async def _criar_compra(  # noqa: PLR0911
 
     try:
         obj = compra.create(session, data, user.id)
-        _sincronizar_caixa_compra(session, obj, user.id)
+        sincronizar_caixa_compra(session, obj, user.id)
         salvar_arquivos(
             session,
             upload_dir=_uploads_compra_dir(obj.id),

@@ -18,6 +18,7 @@ from xtreme_system.api.route_factories import (
 )
 from xtreme_system.api.routes.workflows import (
     recompute_vehicle_status_on_delete,
+    sincronizar_caixa_compra,
     validate_cliente_veiculo_fks,
     validate_veiculo_fks,
     validate_venda_create,
@@ -328,15 +329,6 @@ def _validate_compra_update(session: Session, _obj: Any, data: Any) -> None:
     validate_cliente_veiculo_fks(session, data)
 
 
-def _sincronizar_caixa_compra(
-    session: Session, obj: compra.Compra, actor_id: int | None = None
-) -> None:
-    """O lançamento de custo do veículo espelha o valor da compra."""
-    veiculo_obj = veiculo.get(session, obj.veiculo_id)
-    if veiculo_obj is not None:
-        caixa.sincronizar_lancamento_veiculo(session, veiculo_obj, actor_id)
-
-
 register_crud_routes(
     app,
     compra,
@@ -347,8 +339,8 @@ register_crud_routes(
     update_schema=compra.CompraUpdate,
     before_create=_validate_compra_create,
     before_update=_validate_compra_update,
-    after_create=_sincronizar_caixa_compra,
-    after_update=_sincronizar_caixa_compra,
+    after_create=sincronizar_caixa_compra,
+    after_update=sincronizar_caixa_compra,
     pagina="compras",
     actor_field="usuario_id",
 )
