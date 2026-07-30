@@ -159,6 +159,29 @@ def _documentos_modal(
     )
 
 
+def _documentos_erro_modal(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    cliente_id: int,
+    erro: str,
+) -> HTMLResponse:
+    item = _found(cliente.get(session, cliente_id), "Cliente")
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request,
+        "_modal_documentos_cliente.html",
+        {
+            "cliente": item,
+            "user": user,
+            "erro": erro,
+            "action_oob": False,
+            "pending_upload_paths": pending_upload_paths(session),
+        },
+        status_code=400,
+    )
+
+
 @app.get("/ui/clientes/{cliente_id}/documentos")
 def ui_cliente_documentos(
     request: Request,
@@ -177,7 +200,7 @@ def ui_cliente_documentos_upload(
     cliente_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
+    _found(cliente.get(session, cliente_id), "Cliente")
     erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_cliente_dir(cliente_id),
@@ -190,12 +213,7 @@ def ui_cliente_documentos_upload(
         actor_id=user.id,
     )
     if erro:
-        return templates.TemplateResponse(
-            request,
-            "_modal_documentos_cliente.html",
-            {"cliente": item, "user": user, "erro": erro},
-            status_code=400,
-        )
+        return _documentos_erro_modal(request, session, user, cliente_id, erro)
     return _documentos_modal(request, session, user, cliente_id, action_oob=True)
 
 

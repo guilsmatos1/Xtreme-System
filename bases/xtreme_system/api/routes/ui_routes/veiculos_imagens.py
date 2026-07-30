@@ -59,6 +59,34 @@ def _imagem_modal(
     )
 
 
+def _imagem_erro_modal(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    veiculo_id: int,
+    erro: str,
+) -> HTMLResponse:
+    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    session.refresh(item)
+    return templates.TemplateResponse(
+        request,
+        "_modal_imagens_veiculo.html",
+        {
+            "veiculo": item,
+            "erro": erro,
+            "action_oob": False,
+            "pending_upload_paths": pending_upload_paths(session),
+            "pode_enviar_imagens": perfil.pode_operacao(
+                user, "veiculos", "enviar_imagens"
+            ),
+            "pode_excluir_imagens": perfil.pode_operacao(
+                user, "veiculos", "excluir_imagens"
+            ),
+        },
+        status_code=400,
+    )
+
+
 @app.get("/ui/veiculos/{veiculo_id}/imagens")
 def ui_veiculo_imagens(
     request: Request,
@@ -77,7 +105,7 @@ def ui_veiculo_imagens_upload(
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    _found(veiculo.get(session, veiculo_id), "Veículo")
     erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_dir(veiculo_id),
@@ -90,22 +118,7 @@ def ui_veiculo_imagens_upload(
         actor_id=user.id,
     )
     if erro:
-        return templates.TemplateResponse(
-            request,
-            "_modal_imagens_veiculo.html",
-            {
-                "veiculo": item,
-                "erro": erro,
-                "action_oob": False,
-                "pode_enviar_imagens": perfil.pode_operacao(
-                    user, "veiculos", "enviar_imagens"
-                ),
-                "pode_excluir_imagens": perfil.pode_operacao(
-                    user, "veiculos", "excluir_imagens"
-                ),
-            },
-            status_code=400,
-        )
+        return _imagem_erro_modal(request, session, user, veiculo_id, erro)
     return _imagem_modal(request, session, user, veiculo_id, action_oob=True)
 
 
