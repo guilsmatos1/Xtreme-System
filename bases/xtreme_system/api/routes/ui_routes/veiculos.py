@@ -38,7 +38,6 @@ from xtreme_system.api.deps import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
 )
-from xtreme_system.api.routes.workflows import validate_veiculo_fks
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
@@ -49,6 +48,7 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.workflow.core import validate_veiculo_fks
 
 
 def _ctx_form_veiculo(session: Session) -> dict[str, Any]:

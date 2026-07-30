@@ -227,3 +227,4 @@ ignore_errors = false
 "components/xtreme_system/documento_procuracao" = "xtreme_system/documento_procuracao"
 "components/xtreme_system/exportacao" = "xtreme_system/exportacao"
 "components/xtreme_system/logging" = "xtreme_system/logging"
+"components/xtreme_system/workflow" = "xtreme_system/workflow"
