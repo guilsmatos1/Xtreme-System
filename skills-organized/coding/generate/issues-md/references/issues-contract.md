@@ -1,11 +1,11 @@
-# Improvements Markdown contract
+# Issues Markdown Contract
 
 Canonical issues-document contract. This file is the single source of truth for
 every analysis skill. Do not copy it into another skill; reference it.
 
 Write one UTF-8 Markdown document with this structure:
 
-````md
+```md
 # Improvement opportunities
 
 - **Generated:** 2026-07-29T12:00:00-03:00
@@ -73,25 +73,26 @@ serialized JSON.
 ### Candidate title
 
 Reason it was not retained.
-````
+```
 
 ## Validation rules
 
 - `Generated` is an ISO-8601 timestamp with timezone, built at write time.
 - Use exactly one level-two heading per retained opportunity in the form
-  `## imp-YYYYMMDD-NNN — Short title`, matching `^## imp-[0-9]{8}-[0-9]{3} — .+$`.
+`## imp-YYYYMMDD-NNN — Short title`, matching `^## imp-[0-9]{8}-[0-9]{3} — .+$`.
 - Keep the metadata labels exactly as shown. `Estimated effort` must be `Low`,
-  `Medium`, or `High`; `Impact` must be `High` or `Medium`; `Priority` and
-  `Risk level` must be `high`, `medium`, or `low`; `Confidence` is `0` through `10`.
+`Medium`, or `High`; `Impact` must be `High` or `Medium`; `Priority` and
+`Risk level` must be `high`, `medium`, or `low`; `Confidence` is `0` through `10`.
 - Make IDs unique and ordered. Set `Total` to the actual number of opportunity
-  headings — never hardcode it.
+headings — never hardcode it.
 - Put narrative and code in Markdown sections, never in JSON, YAML, or an escaped
-  string. Use Markdown lists for files, tags, relationships, criteria, and
-  critique details.
+string. Use Markdown lists for files, tags, relationships, criteria, and
+critique details.
 - Include an actual 8-12 line snippet for verified locations, copied verbatim from
-  the file — never fabricated or paraphrased. If no location can be verified,
-  write `Not verified`, set `Uncertain` to `Yes`, and explain the missing evidence
-  under `Weaknesses`.
+the file — never fabricated or paraphrased. If no location can be verified,
+write `Not verified`, set `Uncertain` to `Yes`, and explain the missing evidence
+under `Weaknesses`.
 - Omit optional sections instead of inventing content.
 - Keep related IDs reciprocal when they represent the same direct dependency or
-  root cause.
+root cause.
+

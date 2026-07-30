@@ -26,7 +26,7 @@ bases/xtreme_system/api/static/uploads/
 /playwright/.cache/
 
 # Local notes
-docs/new-improvements.md
+docs/new-issues.md
 
 # Session logs
 logs/

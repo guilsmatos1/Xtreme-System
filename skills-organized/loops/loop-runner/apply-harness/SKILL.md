@@ -1,6 +1,6 @@
 ---
 name: loops--loop-runner--apply-harness
-description: Applies the accumulated harness-improvement ranking maintained by skill loops--state-management--consolidate-harness. Selects improvements with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness improvements, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0004.
+description: Applies the accumulated harness-improvement ranking maintained by skill loops--state-management--consolidate-harness. Selects issues with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness issues, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0004.
 metadata:
     skill-organizer:
         original-name: loops--loop-runner--apply-harness
@@ -13,9 +13,9 @@ metadata:
         risk-source-hash: ""
 ---
 
-# Apply Harness Improvements
+# Apply Harness Issues
 
-Close the loop from skill **0004**: take the ranking in `improvements-harness.md`, turn generic proposals into concrete actions, and apply improvements to the harness that guides **Codex** workers. Stay conservative: lowest risk first, one improvement at a time, review before continuing.
+Close the loop from skill **0004**: take the ranking in `issues-harness.md`, turn generic proposals into concrete actions, and apply issues to the harness that guides **Codex** workers. Stay conservative: lowest risk first, one improvement at a time, review before continuing.
 
 ## Scope
 
@@ -37,16 +37,16 @@ Ineligible:
 
 ## Files
 
-- Ranking: `skills-organized/loops/state-management/consolidate-harness/improvements-harness.md` (locate with `find skills-organized -name improvements-harness.md` if needed).
+- Ranking: `skills-organized/loops/state-management/consolidate-harness/issues-harness.md` (locate with `find skills-organized -name issues-harness.md` if needed).
 - Log: `skills-organized/loops/loop-runner/apply-harness/implementations.md`.
 - Skills: always write to `skills-organized/...`. If `.claude/skills` exists as a symlink, do not duplicate anything.
 
 ## Done
 
-1. Improvements with **mentions > 3** had their `Solution` refined in the ranking.
-2. Eligible improvements were sorted by increasing risk and applied one at a time.
+1. Issues with **mentions > 3** had their `Solution` refined in the ranking.
+2. Eligible issues were sorted by increasing risk and applied one at a time.
 3. Each approved application was recorded in `implementations.md`.
-4. Applied improvements were removed from the ranking, with table/numbering/total updated.
+4. Applied issues were removed from the ranking, with table/numbering/total updated.
 
 ## Flow
 
@@ -90,7 +90,7 @@ For each eligible improvement:
 3. If review fails, fix narrowly or send the subagent specific feedback.
 4. If review passes, record it in `implementations.md` and remove it from the ranking before moving to the next item.
 
-Never apply two improvements in parallel.
+Never apply two issues in parallel.
 
 #### Lean Subagent Prompt
 
@@ -125,10 +125,10 @@ After each approved improvement, append this to `implementations.md`:
 - **What changed:** <summary>
 - **How to verify:** <check/command>
 - **How to revert:** <file + section, or git revert of commit>
-- **Source:** improvements-harness.md #<position> (<mentions> mentions)
+- **Source:** issues-harness.md #<position> (<mentions> mentions)
 ```
 
-Then remove that improvement from `improvements-harness.md`:
+Then remove that improvement from `issues-harness.md`:
 
 - delete the item section;
 - delete the table row;
@@ -144,7 +144,7 @@ Report:
 - selected items and how many were refined;
 - risk plan: applied, delayed as high risk, or ineligible;
 - for each applied item: title, files, and review verdict;
-- how many improvements remain in the ranking and where the log is.
+- how many issues remain in the ranking and where the log is.
 
 ## Guardrails
 

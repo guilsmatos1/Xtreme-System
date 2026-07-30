@@ -1,6 +1,6 @@
 ---
 name: coding--generate--issues-md
-description: Write the canonical issues Markdown document defined by the shared improvements contract, either from findings already collected by an analysis skill or from free-form task text. Use as the formatting step of any coding--analyze--* skill, or when asked to turn a task list, audit notes, recommendations, or an .md backlog into an improvements/issues report without rerunning a full codebase analysis.
+description: Write the canonical issues Markdown document defined by the shared issues contract, either from findings already collected by an analysis skill or from free-form task text. Use as the formatting step of any coding--analyze--* skill, or when asked to turn a task list, audit notes, recommendations, or an .md backlog into an issues/issues report without rerunning a full codebase analysis.
 metadata:
     skill-organizer:
         original-name: coding--generate--issues-md
@@ -16,7 +16,7 @@ metadata:
 # Generate Issues Markdown
 
 Produce one issues document that satisfies
-[references/improvements-markdown-format.md](references/improvements-markdown-format.md).
+[references/issues-contract.md](references/issues-contract.md).
 
 This skill owns the contract. It is the only place the format is defined — other skills call it
 instead of restating or copying the format.
@@ -53,8 +53,8 @@ than inventing content.
 
 ### Output path (both modes)
 
-Use the path the caller gives. Analysis skills pass `.loop/running/improvements-<analysis>.md`. If
-none is given, write `.loop/running/improvements.md`.
+Use the path the caller gives. Analysis skills pass `.loop/running/issues-<analysis>.md`. If
+none is given, write `.loop/running/issues.md`.
 
 ## Workflow
 

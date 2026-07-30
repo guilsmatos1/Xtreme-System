@@ -2,8 +2,8 @@ import importlib.util
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).parents[1] / "send_improvements.py"
-SPEC = importlib.util.spec_from_file_location("send_improvements", MODULE_PATH)
+MODULE_PATH = Path(__file__).parents[1] / "send_issues.py"
+SPEC = importlib.util.spec_from_file_location("send_issues", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
@@ -48,6 +48,39 @@ Readable prose with `code`.
     }
     assert "Readable prose with `code`." in opportunities[0]["_markdown_body"]
     assert "Second issue" not in opportunities[0]["_markdown_body"]
+
+
+def test_trailing_discarded_section_is_not_appended_to_last_opportunity():
+    text = """# Improvement opportunities
+
+- **Generated:** 2026-07-29T12:00:00-03:00
+- **Total:** 1
+
+## imp-20260729-001 — Only issue
+
+- **Impact:** High
+- **Category:** Security
+- **Priority:** high
+- **Tags:** security
+
+### Description
+
+Kept finding.
+
+## Discarded candidates
+
+### Rejected candidate
+
+Reason it was not retained.
+"""
+
+    opportunities = MODULE.parse_markdown_opportunities(text)
+
+    assert len(opportunities) == 1
+    body = opportunities[0]["_markdown_body"]
+    assert "Kept finding." in body
+    assert "Discarded candidates" not in body
+    assert "Rejected candidate" not in body
 
 
 def test_legacy_json_opportunity_is_rendered_as_markdown():

@@ -13,6 +13,12 @@ OPPORTUNITY_HEADING_RE = re.compile(
     r"^##\s+(imp-\d{8}-\d{3})\s+(?:—|-)\s+(.+?)\s*$",
     re.MULTILINE,
 )
+# Any level-two heading that is not an opportunity, such as the trailing
+# "## Discarded candidates" section required by the issues contract.
+TRAILING_SECTION_RE = re.compile(
+    r"^##\s+(?!imp-\d{8}-\d{3}\b)",
+    re.MULTILINE,
+)
 
 
 def infer_label(tags: list[str], category: str) -> str:
@@ -44,6 +50,9 @@ def parse_markdown_opportunities(text: str) -> list[dict]:
     opportunities = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        trailing = TRAILING_SECTION_RE.search(text, match.end())
+        if trailing and trailing.start() < end:
+            end = trailing.start()
         body = text[match.start():end].strip()
         tags = [
             tag.strip().strip("`")
@@ -238,7 +247,7 @@ def create_issue(project: str, opp: dict, retry: bool = False) -> tuple[bool, bo
 
 def main():
     if len(sys.argv) < 3:
-        print(f"Usage: {sys.argv[0]} <project> <improvements.md|legacy.json>")
+        print(f"Usage: {sys.argv[0]} <project> <issues.md|legacy.json>")
         sys.exit(1)
 
     project = sys.argv[1]
@@ -250,7 +259,7 @@ def main():
     try:
         opportunities = load_opportunities(path)
     except (json.JSONDecodeError, ValueError) as exc:
-        print(f"Invalid improvements file: {exc}", file=sys.stderr)
+        print(f"Invalid issues file: {exc}", file=sys.stderr)
         sys.exit(1)
     total = len(opportunities)
 

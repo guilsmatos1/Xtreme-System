@@ -3,7 +3,7 @@
 ## Anti-defaults (counter common Claude tendencies)
 
 - No premature abstractions. Three similar lines beats a helper used once.
-- Don't add features or improvements beyond what was asked.
+- Don't add features or issues beyond what was asked.
 - Don't refactor adjacent code while fixing a bug.
 - No dead code or commented-out blocks. Git has history.
 - WHY comments, never WHAT. If code needs a "what" comment, rename instead.

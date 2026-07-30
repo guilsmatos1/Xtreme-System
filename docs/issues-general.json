@@ -35,7 +35,7 @@
         "strengths": ["A declaração paralela do CSV foi verificada no código atual", "Os partials de linhas e linha de cliente existem no workspace"],
         "weaknesses": ["A solução exigirá preservar a permissão granular por campo já aplicada nos templates"],
         "uncertain": false,
-        "suggested_improvements": ["Prototipar primeiro em clientes e comparar HTML e CSV por teste de integração"]
+        "suggested_issues": ["Prototipar primeiro em clientes e comparar HTML e CSV por teste de integração"]
       }
     },
     {
@@ -69,7 +69,7 @@
         "strengths": ["As macros e usos em templates foram verificados"],
         "weaknesses": ["A redução exata de partials depende de diferenças específicas entre as entidades"],
         "uncertain": false,
-        "suggested_improvements": ["Inventariar os formatos usados nos partials antes de fechar a interface do formatter"]
+        "suggested_issues": ["Inventariar os formatos usados nos partials antes de fechar a interface do formatter"]
       }
     },
     {
@@ -105,7 +105,7 @@
         "strengths": ["Tamanho e existência dos três formulários foram verificados", "A migração incremental reduz o risco da mudança"],
         "weaknesses": ["Não foi feito inventário completo dos widgets e comportamentos especiais"],
         "uncertain": false,
-        "suggested_improvements": ["Classificar campos simples e customizados de um formulário piloto antes de definir toda a API"]
+        "suggested_issues": ["Classificar campos simples e customizados de um formulário piloto antes de definir toda a API"]
       }
     },
     {
@@ -141,7 +141,7 @@
         "strengths": ["As chamadas list_all e o filtro em memória foram verificados diretamente"],
         "weaknesses": ["Não foram medidos volumes atuais nem latência de produção"],
         "uncertain": false,
-        "suggested_improvements": ["Adicionar benchmark com base representativa e teste de paginação"]
+        "suggested_issues": ["Adicionar benchmark com base representativa e teste de paginação"]
       }
     },
     {
@@ -172,7 +172,7 @@
         "strengths": ["A superfície atual de responses.py foi verificada"],
         "weaknesses": ["A quantidade exata de rotas beneficiadas não foi contada", "O snippet mostra a resposta existente, não todas as montagens manuais de modal"],
         "uncertain": false,
-        "suggested_improvements": ["Migrar duas rotas representativas antes de estabilizar a assinatura dos helpers"]
+        "suggested_issues": ["Migrar duas rotas representativas antes de estabilizar a assinatura dos helpers"]
       }
     },
     {
@@ -207,7 +207,7 @@
         "strengths": ["O fluxo de exclusão e os partials citados existem no código atual"],
         "weaknesses": ["Nem toda ação de linha necessariamente se adapta ao mesmo contrato declarativo"],
         "uncertain": false,
-        "suggested_improvements": ["Separar ações simples de ações com corpo customizado no desenho da API"]
+        "suggested_issues": ["Separar ações simples de ações com corpo customizado no desenho da API"]
       }
     },
     {
@@ -241,7 +241,7 @@
         "strengths": ["A assinatura do exportador foi verificada", "A busca limitada confirmou que checkboxes atuais pertencem a formulários"],
         "weaknesses": ["A semântica de selecionar todas as páginas exige definir snapshot de filtro e limites operacionais"],
         "uncertain": false,
-        "suggested_improvements": ["Começar com seleção da página atual e exportação selecionada antes de ações mutáveis"]
+        "suggested_issues": ["Começar com seleção da página atual e exportação selecionada antes de ações mutáveis"]
       }
     },
     {
@@ -276,7 +276,7 @@
         "strengths": ["O descarte do conteúdo de ValidationError foi verificado diretamente"],
         "weaknesses": ["A representação visual final dos erros por campo ainda precisa ser definida"],
         "uncertain": false,
-        "suggested_improvements": ["Adicionar testes para erros simples, aninhados e regras de domínio"]
+        "suggested_issues": ["Adicionar testes para erros simples, aninhados e regras de domínio"]
       }
     },
     {
@@ -311,7 +311,7 @@
         "strengths": ["Os aliases de hook e a configuração de comportamento foram verificados"],
         "weaknesses": ["A compatibilidade com todos os chamadores precisa ser conferida durante a implementação"],
         "uncertain": false,
-        "suggested_improvements": ["Adicionar testes de ordem de hooks e propagação de exceções"]
+        "suggested_issues": ["Adicionar testes de ordem de hooks e propagação de exceções"]
       }
     },
     {
@@ -346,7 +346,7 @@
         "strengths": ["Delimitador e charset atuais foram verificados no código"],
         "weaknesses": ["A preferência exata dos consumidores por CSV ou XLSX não foi medida", "A busca de dependência foi limitada aos manifests disponíveis"],
         "uncertain": false,
-        "suggested_improvements": ["Validar o CSV gerado no Excel pt-BR e adicionar teste de workbook para XLSX"]
+        "suggested_issues": ["Validar o CSV gerado no Excel pt-BR e adicionar teste de workbook para XLSX"]
       }
     }
   ]

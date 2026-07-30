@@ -1,10 +1,10 @@
-# Harness Improvements — Accumulated Ranking
+# Harness Issues — Accumulated Ranking
 
 _Last updated: 2026-07-26. Processed sources: loop-2-2026-07-24, docs/loops--loop-runner--token-efficiency/GUI-108.md, docs/loops--loop-runner--token-efficiency/GUI-109.md, docs/loops--loop-runner--token-efficiency/GUI-120.md, docs/loops--loop-runner--token-efficiency/GUI-159.md, docs/loops--loop-runner--token-efficiency/GUI-168.md, docs/loops--loop-runner--token-efficiency/GUI-349.md, docs/loops--loop-runner--token-efficiency/GUI-360.md, docs/loops--loop-runner--token-efficiency/GUI-361.md, docs/loops--loop-runner--token-efficiency/GUI-362.md, docs/loops--loop-runner--token-efficiency/GUI-363.md, docs/loops--loop-runner--token-efficiency/GUI-365.md, docs/loops--loop-runner--token-efficiency/GUI-366.md, docs/loops--loop-runner--token-efficiency/GUI-367.md, docs/loops--loop-runner--token-efficiency/GUI-368.md, docs/loops--loop-runner--token-efficiency/GUI-369.md._
 
-_5 improvements (24 mentions) have already been applied to the harness by skill `loops--loop-runner--apply-harness` and removed from this ranking. See `../loops--loop-runner--apply-harness/implementations.md`._
+_5 issues (24 mentions) have already been applied to the harness by skill `loops--loop-runner--apply-harness` and removed from this ranking. See `../loops--loop-runner--apply-harness/implementations.md`._
 
-## Improvements
+## Issues
 
 ### 6. Stair-step verification / avoid duplicate suite runs
 - **Problem:** Focused tests + full suite + rerun after lint, while commit hooks run pytest again: duplicated and slow validation.
@@ -116,4 +116,4 @@ _5 improvements (24 mentions) have already been applied to the harness by skill 
 | 18 | test-impact skill (diff -> affected tests) | 1 | loop-2 |
 | 19 | Use RTK only for voluminous outputs | 1 | loop-2 |
 
-_Total: 22 mentions -> 15 improvements in the ranking. 10 improvements (84 mentions) already applied. See `../loops--loop-runner--apply-harness/implementations.md`._
+_Total: 22 mentions -> 15 issues in the ranking. 10 issues (84 mentions) already applied. See `../loops--loop-runner--apply-harness/implementations.md`._

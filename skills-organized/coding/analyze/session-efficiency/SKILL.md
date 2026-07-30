@@ -28,8 +28,8 @@ Required keys are `session_id`, `issue`, `rollout`, and `report_path`.
    python3 skills-organized/loops/loop-runner/token-efficiency/profile_session.py \
      --session-id "<session_id>" --rollout "<rollout>" > "$PROFILE"
   ```
-3. Read the profile once. Choose up to five improvements, sorted by estimated
- savings descending. Include only improvements supported by profile evidence
+3. Read the profile once. Choose up to five issues, sorted by estimated
+ savings descending. Include only issues supported by profile evidence
  that change a Codex-consumed channel and preserve the exact deliverable,
  investigation, and validation quality.
 4. Create the parent directory of `report_path`, then write only that report in
@@ -52,7 +52,7 @@ Required keys are `session_id`, `issue`, `rollout`, and `report_path`.
 
 - Analyze only the supplied rollout; never discover or enqueue other sessions.
 - Do not read the full rollout directly unless profile extraction fails.
-- Do not invent improvements when the profile has fewer than five valid candidates.
+- Do not invent issues when the profile has fewer than five valid candidates.
 - Do not edit product code, hook state, orchestration state, or other reports.
 - Real token totals come from the profile; only isolated savings are estimates.
 

@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--features
-description: Analyze the system from the product/functionality angle and identify the 10 highest-impact functional improvements, prioritized by value to the end user. Use when asked what features are missing, what workflows are incomplete or awkward, what business rules are unenforced, or for a prioritized roadmap of functional improvements tied to specific routes, components, and screens.
+description: Analyze the system from the product/functionality angle and identify the 10 highest-impact functional issues, prioritized by value to the end user. Use when asked what features are missing, what workflows are incomplete or awkward, what business rules are unenforced, or for a prioritized roadmap of functional issues tied to specific routes, components, and screens.
 metadata:
     skill-organizer:
         original-name: coding--analyze--features
@@ -18,7 +18,7 @@ metadata:
 Analyze this system thoroughly as a product and identify the best functional improvement
 opportunities, prioritized by value delivered to the people who use it. Prioritize incomplete
 workflows, missing business-rule enforcement, and missing reads/actions that affect daily operation
-over cosmetic or purely technical improvements.
+over cosmetic or purely technical issues.
 
 Quality over quantity. Target 8-12 opportunities, but only include findings with impact `High` or
 `Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
@@ -74,7 +74,7 @@ For each opportunity, evaluate the relevant dimensions below:
 6. Tie every recommendation to concrete evidence: route, template, model field, function, or API contract.
 7. Avoid code-quality refactors unless the functional gap cannot be fixed without them.
 8. After preparing the findings, hand them to the `coding--generate--issues-md` skill,
-   which formats and writes `.loop/running/improvements-features.md`.
+   which formats and writes `.loop/running/issues-features.md`.
 
 ## Suggested Workflow
 
@@ -139,12 +139,12 @@ For each opportunity, include:
 Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
 retained opportunities in final ranked order, the discarded candidates with their reasons, every
 analysis-specific field (including the feature details), and the output path below. That skill owns
-the shared Improvements Markdown contract and is the single definition of the format; it preserves
+the shared Issues Markdown contract and is the single definition of the format; it preserves
 analysis-specific fields under `Domain details` and validates the finished document.
 
 ## Persistence
 
-- The output path is `.loop/running/improvements-features.md`. Pass it to `coding--generate--issues-md`, which creates the
+- The output path is `.loop/running/issues-features.md`. Pass it to `coding--generate--issues-md`, which creates the
   directory when missing, overwrites any existing report, sets `Generated` and `Total` from the
   actual document, and validates it against the contract.
 - Hand over every retained finding and discarded candidate from this review — do not summarize,
@@ -169,4 +169,4 @@ analysis-specific fields under `Domain details` and validates the finished docum
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements-features.md` ONLY.
+`.loop/running/issues-features.md` ONLY.

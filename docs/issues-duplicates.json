@@ -58,7 +58,7 @@
           "The 409-vs-400 status change on conflict is a genuine behavior change, so this is not a purely mechanical merge"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Trace how `debitos` reaches the handler to decide whether `parse_form` can carry it into `VeiculoUpdate`-adjacent state",
           "Grep tests for an assertion on the delete response status/order to size the blast radius"
         ]
@@ -121,7 +121,7 @@
           "I did not check whether any other planned entity was meant to use `register_ui_simples`"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Check git history for what `register_ui_simples` used to serve before deciding which side to delete"
         ]
       }
@@ -179,7 +179,7 @@
           "The HTMX create path additionally calls `perfil.filtrar_campos_form_ocultos` before validation (vendas.py:383-392) — that stays in the route, but it means the two paths are not fully identical end to end"
         ],
         "uncertain": false,
-        "suggested_improvements": []
+        "suggested_issues": []
       }
     },
     {
@@ -241,7 +241,7 @@
           "Jinja macros cannot easily emit the `<script>` blocks with per-form ids without care; the JS half of this consolidation is less clean than the markup half"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Do a literal three-way diff of the fieldsets before writing the macro signature"
         ]
       }
@@ -305,7 +305,7 @@
           "Purely structural: no correctness bug, so the payoff is maintenance only"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Read custos_veiculos.html:63 before fixing the macro signature"
         ]
       }
@@ -366,7 +366,7 @@
           "Low correctness risk means the payoff is readability rather than a bug fix"
         ],
         "uncertain": false,
-        "suggested_improvements": []
+        "suggested_issues": []
       }
     },
     {
@@ -422,7 +422,7 @@
           "This is the weakest-value finding in the list: real structural duplication, but the abstraction cost is close to the savings"
         ],
         "uncertain": true,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Prototype the spec dataclass first; if it exceeds ~25 lines per entity, prefer leaving the duplication and instead moving `_resolver_veiculo` into common.py next to `resolver_cliente` so the pattern is at least visible in one place"
         ]
       }
@@ -479,7 +479,7 @@
           "The dashboard consumers of these six functions were not traced, so I cannot quantify the reporting impact"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Grep dashboard.py / relatorios.py for which of the six are surfaced together, to confirm the cross-figure inconsistency risk is real"
         ]
       }
@@ -534,7 +534,7 @@
           "I did not verify whether `crud.create` performs additional work (e.g. `session.info['usuario_id']` handling) that the hand-rolled copies skip; if it does, the divergence is more serious than reported"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Read components/xtreme_system/crud/core.py to confirm whether the hand-rolled path skips anything crud.create does"
         ]
       }
@@ -594,7 +594,7 @@
           "Whether the current `_persistir_contrato_venda` orphan-file window is reachable in practice depends on `get_session`'s rollback behavior, which I did not trace end to end"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Read configuracoes.py:180-215 to confirm whether the logo upload is a third copy",
           "Trace components/xtreme_system/database/core.py::get_session to confirm the post-rollback hook always fires on the failure path"
         ]
@@ -659,7 +659,7 @@
           "Low structural value on its own — this is a small, high-confidence cleanup rather than an architectural win"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "rg 'possui veículos vinculados' across tests/ before changing the wording"
         ]
       }
@@ -726,7 +726,7 @@
           "The eight repeated error renders and the two-rule duplication are really two separate findings bundled together; splitting them would make each easier to action"
         ],
         "uncertain": false,
-        "suggested_improvements": [
+        "suggested_issues": [
           "Decide whether the usuario validator belongs in workflows.py or in components/xtreme_system/usuario/core.py next to `SenhaFracaError`, which would let the JSON and UI layers share it without a routes-layer dependency"
         ]
       }

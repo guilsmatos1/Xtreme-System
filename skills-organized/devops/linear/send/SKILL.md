@@ -34,7 +34,7 @@ A Markdown file path (absolute or relative) must be provided via an argument. **
 ### Automatic Script
 
 ```bash
-python3 skills-organized/devops/linear/send/send_improvements.py "<project>" <path-md>
+python3 skills-organized/devops/linear/send/send_issues.py "<project>" <path-md>
 ```
 
 Reads the Markdown, extracts the fixed metadata lines, infers `label`/`priority`, calls `orca linear create` for each, and logs progress. See `infer_label()` in that file for the exact label rules. If `Priority` is missing, it defaults to `none`.
@@ -61,7 +61,7 @@ After successfully sending all opportunities to Linear:
   - `{y}` = today's date in ISO format (YYYY-MM-DD)
   - Example: `loop-5-2026-07-23`
 2. **Move the Markdown file** into the newly created folder
-  - Example: Move `.loop/running/improvements.md` → `.loop/loop-5-2026-07-23/improvements.md`
+  - Example: Move `.loop/running/issues.md` → `.loop/loop-5-2026-07-23/issues.md`
 
 This creates an archive of completed opportunity batches, one per loop run.
 
@@ -91,5 +91,5 @@ orca linear create --team GUI --title "..." --body "..." --assignee me --state B
 ### From Markdown Batch
 
 ```bash
-python3 skills-organized/devops/linear/send/send_improvements.py "Xtreme System" /absolute/path/to/improvements.md
+python3 skills-organized/devops/linear/send/send_issues.py "Xtreme System" /absolute/path/to/issues.md
 ```

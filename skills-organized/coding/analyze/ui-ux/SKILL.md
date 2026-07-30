@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--ui-ux
-description: Analyze the system's UI/UX and visual design and identify the 10 highest-impact interface improvements, prioritized by how much friction they remove for the daily user. Use when asked for a UX review, design audit, interface critique, accessibility check, visual consistency review, form/table usability analysis, or a prioritized list of concrete UI improvements tied to specific templates, CSS rules, and screens.
+description: Analyze the system's UI/UX and visual design and identify the 10 highest-impact interface issues, prioritized by how much friction they remove for the daily user. Use when asked for a UX review, design audit, interface critique, accessibility check, visual consistency review, form/table usability analysis, or a prioritized list of concrete UI issues tied to specific templates, CSS rules, and screens.
 metadata:
     skill-organizer:
         original-name: coding--analyze--ui-ux
@@ -74,7 +74,7 @@ For each opportunity, evaluate the relevant dimensions below:
 6. Tie every recommendation to a specific template, selector, macro, route, or JS behavior.
 7. Avoid feature requests or code-quality refactors unless the interface issue cannot be fixed without them.
 8. After preparing the findings, hand them to the `coding--generate--issues-md` skill,
-   which formats and writes `.loop/running/improvements-ui-ux.md`.
+   which formats and writes `.loop/running/issues-ui-ux.md`.
 
 ## Suggested Workflow
 
@@ -138,12 +138,12 @@ For each opportunity, include:
 Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
 retained opportunities in final ranked order, the discarded candidates with their reasons, every
 analysis-specific field (including the UI/UX details), and the output path below. That skill owns
-the shared Improvements Markdown contract and is the single definition of the format; it preserves
+the shared Issues Markdown contract and is the single definition of the format; it preserves
 analysis-specific fields under `Domain details` and validates the finished document.
 
 ## Persistence
 
-- The output path is `.loop/running/improvements-ui-ux.md`. Pass it to `coding--generate--issues-md`, which creates the
+- The output path is `.loop/running/issues-ui-ux.md`. Pass it to `coding--generate--issues-md`, which creates the
   directory when missing, overwrites any existing report, sets `Generated` and `Total` from the
   actual document, and validates it against the contract.
 - Hand over every retained finding and discarded candidate from this review — do not summarize,
@@ -168,4 +168,4 @@ analysis-specific fields under `Domain details` and validates the finished docum
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements-ui-ux.md` ONLY.
+`.loop/running/issues-ui-ux.md` ONLY.

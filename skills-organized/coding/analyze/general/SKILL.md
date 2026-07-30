@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--general
-description: Analyze a codebase thoroughly and identify the highest-impact improvement opportunities, prioritized by impact. Use when asked for a code review, technical debt audit, architecture critique, performance review, testing gap analysis, or a prioritized list of concrete improvements tied to specific files and snippets.
+description: Analyze a codebase thoroughly and identify the highest-impact improvement opportunities, prioritized by impact. Use when asked for a code review, technical debt audit, architecture critique, performance review, testing gap analysis, or a prioritized list of concrete issues tied to specific files and snippets.
 metadata:
     skill-organizer:
         original-name: analyze-codebase
@@ -69,7 +69,7 @@ For each opportunity, evaluate the relevant dimensions below:
 5. Tie every recommendation to a specific file, function, and line range, with a real code snippet when possible.
 6. Avoid broad refactors unless the current design is clearly causing correctness, reliability, or maintenance problems.
 7. After preparing the findings, hand them to the `coding--generate--issues-md` skill,
-   which formats and writes `.loop/running/improvements-general.md`.
+   which formats and writes `.loop/running/issues-general.md`.
 
 ## Suggested Workflow
 
@@ -129,13 +129,13 @@ For each opportunity, include:
 
 Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
 retained opportunities in final ranked order, the discarded candidates with their reasons, every
-analysis-specific field, and the output path below. That skill owns the shared Improvements Markdown
+analysis-specific field, and the output path below. That skill owns the shared Issues Markdown
 contract and is the single definition of the format; it preserves analysis-specific fields under
 `Domain details` and validates the finished document.
 
 ## Persistence
 
-- The output path is `.loop/running/improvements-general.md`. Pass it to `coding--generate--issues-md`, which creates the
+- The output path is `.loop/running/issues-general.md`. Pass it to `coding--generate--issues-md`, which creates the
   directory when missing, overwrites any existing report, sets `Generated` and `Total` from the
   actual document, and validates it against the contract.
 - Hand over every retained finding and discarded candidate from this review — do not summarize,
@@ -157,4 +157,4 @@ contract and is the single definition of the format; it preserves analysis-speci
 **IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
 
 The full report is the deliverable, and it goes to
-`.loop/running/improvements-general.md` ONLY.
+`.loop/running/issues-general.md` ONLY.
