@@ -10,12 +10,10 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import ListingSpec, ListState, SortField
-from xtreme_system.api.crud_ui.query import query_list
+from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
     error_response,
-    list_response,
     ok_response,
     rollback_integrity_error_response,
 )
@@ -25,6 +23,7 @@ from xtreme_system.api.crud_ui.routes import (
     CrudUIResourceConfig,
     CrudUIRouteConfig,
     CrudUITemplateConfig,
+    delete_list_response,
     register_crud_ui_routes,
 )
 from xtreme_system.api.crud_writes import delete_with_hook
@@ -298,31 +297,31 @@ def _excluir_veiculo(
     except IntegrityError:
 
         def build_conflict_response() -> HTMLResponse:
-            lista = query_list(
-                session, veiculo, listing=_VEICULOS_LISTING, state=ListState()
-            )
-            return list_response(
+            return delete_list_response(
+                session,
                 templates,
                 request,
+                veiculo,
                 "_linhas_veiculos.html",
                 user=user,
                 list_key="veiculos",
-                lista=lista,
-                ctx_list=_ctx_lista_veiculos(session, lista),
+                ctx_list=_ctx_lista_veiculos,
+                listing=_VEICULOS_LISTING,
                 erro=delete_conflict_detail("Veículo"),
                 status_code=409,
             )
 
         return rollback_integrity_error_response(session, build_conflict_response)
-    lista = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=ListState())
-    return list_response(
+    return delete_list_response(
+        session,
         templates,
         request,
+        veiculo,
         "_linhas_veiculos.html",
         user=user,
         list_key="veiculos",
-        lista=lista,
-        ctx_list=_ctx_lista_veiculos(session, lista),
+        ctx_list=_ctx_lista_veiculos,
+        listing=_VEICULOS_LISTING,
     )
 
 
