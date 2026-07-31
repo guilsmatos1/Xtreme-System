@@ -11,10 +11,12 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Numeric,
     extract,
     false,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
@@ -108,6 +110,15 @@ class Venda(Base):
     contratos: Mapped[list["DocumentoContratoVenda"]] = relationship(
         cascade="all, delete-orphan"
     )
+
+
+Index(
+    "uq_venda_veiculo_concluida",
+    Venda.veiculo_id,
+    unique=True,
+    postgresql_where=text("status = 'concluido'"),
+    sqlite_where=text("status = 'concluido'"),
+)
 
 
 VENDA_NAO_CANCELADA = Venda.status != StatusVenda.cancelado
