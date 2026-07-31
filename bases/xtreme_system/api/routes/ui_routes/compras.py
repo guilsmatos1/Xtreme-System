@@ -52,6 +52,7 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     salvar_arquivos,
 )
 from xtreme_system.api.setup import app
+from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_compra
@@ -142,12 +143,18 @@ def _remover_arquivos_comprovantes(
             remover_upload(path)
 
 
-def _deletar_compra_e_veiculo(
+def _preparar_exclusao_compra(
     session: Session, obj: compra.Compra, actor_id: int | None = None
 ) -> None:
     _remover_arquivos_comprovantes(session, obj, actor_id)
+
+
+def _deletar_veiculo_apos_compra(
+    session: Session, obj: compra.Compra, actor_id: int | None = None
+) -> None:
     veiculo_obj = veiculo.get(session, obj.veiculo_id)
     if veiculo_obj:
+        caixa.deletar_lancamento_veiculo(session, veiculo_obj, actor_id)
         veiculo.delete(session, veiculo_obj, actor_id)
 
 
@@ -486,7 +493,8 @@ register_crud_ui_routes(
         before_create=validate_cliente_veiculo_fks,
         before_update=validate_cliente_veiculo_fks,
         after_update=_sincronizar_status_veiculo_compra,
-        before_delete=_deletar_compra_e_veiculo,
+        before_delete=_preparar_exclusao_compra,
+        after_delete=_deletar_veiculo_apos_compra,
     ),
     listing=ListingSpec(
         searchable=True,

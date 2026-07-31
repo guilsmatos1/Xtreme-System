@@ -108,6 +108,58 @@ def test_veiculo_ciclo_completo(session: Session, unique_plate: str) -> None:
     assert rows[2].tipo_acao == "DELETE"
 
 
+def test_cliente_com_compra_nao_pode_ser_excluido_nem_audita_compra(
+    session: Session, unique_plate: str
+) -> None:
+    actor = _seed_usuario(session)
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"), actor.id)
+    cli = cliente.create(
+        session,
+        cliente.ClienteCreate(
+            nome="Cliente com histórico",
+            documento="12345678901",
+            tipo=cliente.TipoCliente.pessoa_fisica,
+        ),
+        actor.id,
+    )
+    vehicle = veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Gol",
+            cor="Branco",
+            ano=2020,
+            placa=unique_plate,
+            preco=Decimal("40000.00"),
+            investidor_id=inv.id,
+        ),
+        actor.id,
+    )
+    purchase = compra.create(
+        session,
+        compra.CompraCreate(
+            cliente_id=cli.id,
+            veiculo_id=vehicle.id,
+            data_compra=date(2026, 7, 31),
+            valor_compra=Decimal("30000.00"),
+        ),
+        actor.id,
+    )
+    session.commit()
+
+    with pytest.raises(IntegrityError):
+        cliente.delete(session, cli, actor.id)
+    session.rollback()
+
+    assert session.get(cliente.Cliente, cli.id) is not None
+    assert session.get(compra.Compra, purchase.id) is not None
+    assert [
+        row
+        for row in auditoria.query(session, tabela="compra", tipo_acao="DELETE")
+        if row.registro_id == purchase.id
+    ] == []
+
+
 def test_placa_duplicada_rejeitada(session: Session, unique_plate: str) -> None:
     _seed_usuario(session)
     inv = investidor.create(session, investidor.InvestidorCreate(nome="Ana"))
@@ -436,6 +488,9 @@ def test_excluir_veiculo_apaga_lancamento_em_cascata(
 ) -> None:
     inv, v = _investidor_e_veiculo(session, unique_plate)
     lanc_id = caixa.criar_lancamento_veiculo(session, v).id
+    purchase = compra.get_latest_by_veiculo(session, v.id)
+    assert purchase is not None
+    compra.delete(session, purchase, session.info["usuario_id"])
 
     veiculo.delete(session, v, session.info["usuario_id"])
     session.expire_all()

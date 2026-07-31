@@ -28,10 +28,10 @@ class Compra(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     cliente_id: Mapped[int] = mapped_column(
-        ForeignKey("cliente.id", ondelete="CASCADE"), index=True
+        ForeignKey("cliente.id", ondelete="RESTRICT"), index=True
     )
     veiculo_id: Mapped[int] = mapped_column(
-        ForeignKey("veiculo.id", ondelete="CASCADE"), index=True
+        ForeignKey("veiculo.id", ondelete="RESTRICT"), index=True
     )
     usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuario.id", ondelete="SET NULL"), index=True

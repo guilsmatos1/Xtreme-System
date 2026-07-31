@@ -178,8 +178,8 @@ Registro de compras de veículos.
 | Coluna | Tipo | Nullable | Default | Observações |
 |--------|------|----------|---------|-------------|
 | `id` | `INTEGER` | Não | - | PK |
-| `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (CASCADE), indexado |
-| `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
+| `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (RESTRICT), indexado |
+| `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (RESTRICT), indexado |
 | `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
 | `idempotency_key` | `VARCHAR(64)` | Sim | - | Chave única da submissão da UI para evitar compras duplicadas |
 | `data_compra` | `DATE` | Não | - | |
