@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import (
     AfterWriteHook,
@@ -651,7 +652,6 @@ def register_update_route(
         perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
         try:
             data = update_schema.model_validate(dados_form)
-            run_hook(before_update, session, data)
         except ValidationError as exc:
             return error_response(
                 form.templates,
@@ -678,8 +678,14 @@ def register_update_route(
             )
         try:
             safe_write(
-                lambda: update_with_hook(
-                    module, session, obj, data, after_update, user.id
+                lambda: _update_with_before_hook(
+                    module,
+                    session,
+                    obj,
+                    data,
+                    before_update,
+                    after_update,
+                    user.id,
                 ),
                 conflict_msg=write_conflict_detail(label),
             )
@@ -706,6 +712,19 @@ def register_update_route(
             ctx_list=ctx_list,
             listing=listing,
         )
+
+
+def _update_with_before_hook(
+    module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
+    session: Session,
+    obj: EntityT,
+    data: UpdateSchemaT,
+    before_update: BeforeUpdateHook[UpdateSchemaT] | None,
+    after_update: AfterWriteHook[EntityT] | None,
+    actor_id: int | None,
+) -> EntityT:
+    run_hook(before_update, session, data)
+    return update_with_hook(module, session, obj, data, after_update, actor_id)
 
 
 def delete_list_response(

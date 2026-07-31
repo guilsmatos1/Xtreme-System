@@ -666,6 +666,7 @@ def _stub_crud_client(
     request: pytest.FixtureRequest,
     *,
     before_create: Callable[[Session, Any], None] | None = None,
+    before_update: Callable[[Session, Any], None] | None = None,
     pagina: str | None = None,
 ) -> TestClient:
     for nome, conteudo in {
@@ -714,7 +715,10 @@ def _stub_crud_client(
             ok_partial_template="ok.html",
             form_template="form.html",
         ),
-        behavior=CrudUIBehaviorConfig(before_create=before_create),
+        behavior=CrudUIBehaviorConfig(
+            before_create=before_create,
+            before_update=before_update,
+        ),
         listing=CrudUIListConfig(sort_fields={}),
         export=CrudUIExportConfig[_StubItem](
             csv_filename="stubs.csv",
@@ -817,6 +821,25 @@ def test_crud_ui_update_integrity_error_retorna_409(
     tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
     client = _stub_crud_client(tmp_path, _ConflictModule(fail_on="update"), request)
+
+    resp = client.post("/ui/stubs/1", data={"nome": "Duplicado"})
+
+    assert resp.status_code == 409
+    assert "Stub já existe" in resp.text
+
+
+def test_crud_ui_update_integrity_error_before_update_retorna_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    def fail_before_update(_session: Session, _data: _StubSchema) -> None:
+        raise IntegrityError("", {}, Exception())
+
+    client = _stub_crud_client(
+        tmp_path,
+        _ConflictModule(fail_on="none"),
+        request,
+        before_update=fail_before_update,
+    )
 
     resp = client.post("/ui/stubs/1", data={"nome": "Duplicado"})
 
