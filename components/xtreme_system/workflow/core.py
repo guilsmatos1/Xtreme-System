@@ -12,6 +12,10 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 
 
+def is_lancamento_automatico(obj: caixa.LancamentoInvestimento) -> bool:
+    return obj.origem != caixa.OrigemLancamento.manual
+
+
 def sincronizar_caixa_compra(
     session: Session, obj: compra.Compra, actor_id: int | None = None
 ) -> None:

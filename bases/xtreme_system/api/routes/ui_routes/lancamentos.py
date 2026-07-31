@@ -18,6 +18,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
+from xtreme_system.workflow.core import is_lancamento_automatico
 
 _LANCAMENTO_SORT_FIELDS: dict[str, str] = {
     "data": "criado_em",
@@ -152,7 +153,7 @@ def ui_lancamento_editar(
     _: UIAdmin,
 ) -> HTMLResponse:
     obj = _found(caixa.get(session, lancamento_id), "Lançamento")
-    if obj.origem == caixa.OrigemLancamento.veiculo:
+    if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Editável apenas na tela de Veículos"
         )
@@ -192,7 +193,7 @@ async def ui_lancamento_atualizar(
     user: UIAdmin,
 ) -> HTMLResponse:
     obj = _found(caixa.get(session, lancamento_id), "Lançamento")
-    if obj.origem == caixa.OrigemLancamento.veiculo:
+    if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Editável apenas na tela de Veículos"
         )
@@ -214,7 +215,7 @@ def ui_lancamento_excluir(
     user: UIAdmin,
 ) -> HTMLResponse:
     obj = _found(caixa.get(session, lancamento_id), "Lançamento")
-    if obj.origem == caixa.OrigemLancamento.veiculo:
+    if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Exclusão apenas na tela de Veículos"
         )

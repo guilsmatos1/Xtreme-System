@@ -29,6 +29,7 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
 from xtreme_system.workflow.core import (
+    is_lancamento_automatico,
     recompute_vehicle_status_on_delete,
     sincronizar_caixa_compra,
     validate_cliente_veiculo_fks,
@@ -160,7 +161,7 @@ def _validate_investidor_lancamento(session: Session, data: Any) -> None:
 
 
 def _guard_lancamento_veiculo(_session: Session, obj: Any, _data: Any = None) -> None:
-    if obj.origem != caixa.OrigemLancamento.manual:
+    if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=400,
             detail="Lançamento automático não pode ser alterado manualmente",
