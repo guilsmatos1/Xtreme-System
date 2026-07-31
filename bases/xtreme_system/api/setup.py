@@ -32,7 +32,9 @@ from xtreme_system.api.deps import (
 )
 from xtreme_system.auth import core as auth
 from xtreme_system.database.core import (
+    DatabaseRestoreInProgressError,
     bind_request_session,
+    database_traffic_lock,
     finish_request_session,
     get_session,
 )
@@ -48,6 +50,7 @@ _MAX_RESTORE_REQUEST_BYTES = 512 * 1024 * 1024  # 512 MB
 _REQUEST_SIZE_LIMITS = {
     "/ui/configuracoes/importar": _MAX_RESTORE_REQUEST_BYTES,
 }
+_RESTORE_PATH = "/ui/configuracoes/importar"
 
 _LOGIN_LIMIT = 5
 _LOGIN_WINDOW_SECONDS = 60.0
@@ -184,6 +187,24 @@ async def _database_session(
         raise
     finish_request_session(request)
     return response
+
+
+@app.middleware("http")
+async def _database_restore_guard(
+    request: Request,
+    call_next: Callable[[Request], Any],
+) -> Any:
+    if request.url.path == _RESTORE_PATH:
+        return await call_next(request)
+    try:
+        with database_traffic_lock():
+            return await call_next(request)
+    except DatabaseRestoreInProgressError:
+        return HTMLResponse(
+            "<p>O banco está sendo restaurado. Tente novamente em instantes.</p>",
+            status_code=503,
+            headers={"Retry-After": "5"},
+        )
 
 
 @app.middleware("http")
