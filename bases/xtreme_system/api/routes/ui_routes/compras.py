@@ -302,7 +302,7 @@ def _resolver_veiculo(
 def _sincronizar_status_veiculo_compra(
     session: Session, obj: compra.Compra, actor_id: int | None = None
 ) -> None:
-    veiculo_obj = veiculo.get(session, obj.veiculo_id)
+    veiculo_obj = session.get(veiculo.Veiculo, obj.veiculo_id, with_for_update=True)
     if veiculo_obj is None:
         return
     if obj.status == compra.StatusCompra.cancelado:
