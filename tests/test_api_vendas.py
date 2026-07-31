@@ -33,6 +33,15 @@ def _token(client: TestClient, username: str) -> str:
     return str(resp.json()["access_token"])
 
 
+def test_recomputar_status_de_veiculo_bloqueia_linha() -> None:
+    session = Mock(spec=Session)
+    session.get.return_value = SimpleNamespace(status=veiculo.StatusVeiculo.disponivel)
+
+    venda_core.recomputar_status_veiculo_por_vendas(session, 123)
+
+    session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
+
+
 def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
     """Cria investidor, cliente e veiculo."""
     inv_id = client.post("/investidores", json={"nome": "Ana"}, headers=headers).json()[
