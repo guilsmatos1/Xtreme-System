@@ -1,11 +1,18 @@
 managed:
+    coding--analyze--api-consistency: coding/analyze/api-consistency
+    coding--analyze--concurrency: coding/analyze/concurrency
+    coding--analyze--data-integrity: coding/analyze/data-integrity
     coding--analyze--duplicates: coding/analyze/duplicates
     coding--analyze--error-handling: coding/analyze/error-handling
     coding--analyze--features: coding/analyze/features
     coding--analyze--general: coding/analyze/general
     coding--analyze--llm-adherence: coding/analyze/llm-adherence
+    coding--analyze--observability: coding/analyze/observability
+    coding--analyze--performance: coding/analyze/performance
     coding--analyze--reference-repo: coding/analyze/reference-repo
+    coding--analyze--security: coding/analyze/security
     coding--analyze--session-efficiency: coding/analyze/session-efficiency
+    coding--analyze--testing-gaps: coding/analyze/testing-gaps
     coding--analyze--ui-ux: coding/analyze/ui-ux
     coding--debug--playwright-cli: coding/debug/playwright-cli
     coding--generate--issues-md: coding/generate/issues-md

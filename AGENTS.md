@@ -62,6 +62,5 @@ This project has a knowledge graph at `graphify-out/`.
 - If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
 - Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain are insufficient.
 - Dirty `graphify-out/` files after hooks are expected — not a reason to skip graphify.
-- After modifying code, run `graphify update .` to keep the graph current.
 - When the user types `/graphify`, use the installed graphify skill before doing anything else.
 

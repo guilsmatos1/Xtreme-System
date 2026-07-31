@@ -1,0 +1,58 @@
+{
+  "jobs": [
+    {
+      "name": "coding-analyze-data-integrity",
+      "agent": "claude",
+      "worktree": {
+        "mode": "current",
+        "name": "coding-analyze-data-integrity",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "coding--analyze--data-integrity",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "devops-linear-send",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-send",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "devops--linear--send",
+      "skill_args": "\"Xtreme System\" {repo_root}/.loop/running/issues-data-integrity.md",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "devops-linear-duplicate-triage",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-duplicate-triage",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "devops--linear--duplicate-triage",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "loops-task-orchestration-linear-run",
+      "agent": "agy",
+      "worktree": {
+        "mode": "current",
+        "name": "loops-task-orchestration-linear-run",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "loops--task-orchestration--linear-run",
+      "skill_args": "--priority High",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    }
+  ]
+}
