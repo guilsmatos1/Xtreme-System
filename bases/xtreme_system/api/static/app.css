@@ -66,6 +66,7 @@
 
   --sidebar-w: 220px;
   --content-max: 1600px;
+  --topbar-h: calc(var(--s-3) * 2 + 34px + 1px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -750,6 +751,7 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; }
   .topbar { display: flex; }
+  thead th { top: var(--topbar-h); }
   .sidebar {
     position: fixed; inset: 0 auto 0 0; z-index: 50; width: 250px;
     transform: translateX(-100%); transition: transform .22s cubic-bezier(.16,1,.3,1);
