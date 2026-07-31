@@ -1,7 +1,12 @@
 """Database settings, declarative base, and request session lifecycle."""
 
+import hashlib
+import tempfile
 from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
+from fcntl import LOCK_EX, LOCK_NB, LOCK_SH, LOCK_UN, flock
 from functools import lru_cache
+from pathlib import Path
 
 import structlog
 from fastapi import Request
@@ -13,6 +18,48 @@ logger = structlog.get_logger(__name__)
 
 _POST_COMMIT_KEY = "_post_commit_callbacks"
 _POST_ROLLBACK_KEY = "_post_rollback_callbacks"
+
+
+class DatabaseRestoreInProgressError(RuntimeError):
+    """The database is currently being restored or another guard is active."""
+
+
+def _restore_lock_path() -> Path:
+    database_url = get_settings().database_url
+    key = hashlib.sha256(database_url.encode()).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / f"xtreme-system-restore-{key}.lock"
+
+
+@contextmanager
+def _database_lock(*, exclusive: bool) -> Iterator[None]:
+    lock_path = _restore_lock_path()
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+") as lock_file:
+        lock_type = LOCK_EX if exclusive else LOCK_SH
+        try:
+            flock(lock_file.fileno(), lock_type | LOCK_NB)
+        except BlockingIOError as exc:
+            raise DatabaseRestoreInProgressError from exc
+        try:
+            yield
+        finally:
+            flock(lock_file.fileno(), LOCK_UN)
+
+
+@contextmanager
+def database_traffic_lock() -> Iterator[None]:
+    """Allow a request only while no database restore owns the lock."""
+
+    with _database_lock(exclusive=False):
+        yield
+
+
+@contextmanager
+def database_restore_lock() -> Iterator[None]:
+    """Own the database exclusively for one restore operation."""
+
+    with _database_lock(exclusive=True):
+        yield
 
 
 class Settings(BaseSettings):

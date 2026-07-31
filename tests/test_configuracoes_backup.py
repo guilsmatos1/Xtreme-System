@@ -9,8 +9,16 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from xtreme_system.database import core as database
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.usuario import core as usuario
+
+
+@pytest.fixture(autouse=True)
+def isolated_restore_lock(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        database, "_restore_lock_path", lambda: tmp_path / "restore.lock"
+    )
 
 
 @pytest.fixture
@@ -171,6 +179,24 @@ def test_restore_database_rejeita_dump_sem_tabelas_essenciais(
         exportacao.restore_database(b"dump")
 
     assert list(tmp_path.glob("pre_restore_*.dump")) == []
+
+
+def test_restore_database_rejeita_execucao_sobreposta() -> None:
+    with (
+        database.database_restore_lock(),
+        pytest.raises(exportacao.RestoreEmAndamentoError, match="andamento"),
+    ):
+        exportacao.restore_database(b"dump")
+
+
+def test_ui_rejeita_trafego_durante_restore(client: TestClient) -> None:
+    _login(client)
+
+    with database.database_restore_lock():
+        resp = client.get("/ui/configuracoes")
+
+    assert resp.status_code == 503
+    assert "restaurado" in resp.text
 
 
 def test_dump_database_rejeita_database_url_nao_postgres(

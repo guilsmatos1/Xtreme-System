@@ -8,7 +8,11 @@ from pathlib import Path
 
 from sqlalchemy.engine import make_url
 
-from xtreme_system.database.core import get_settings
+from xtreme_system.database.core import (
+    DatabaseRestoreInProgressError,
+    database_restore_lock,
+    get_settings,
+)
 
 _POSTGRES_REQUIRED = "Exportação/importação exige DATABASE_URL PostgreSQL"
 _TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "compra"})
@@ -16,6 +20,13 @@ _TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "comp
 
 class ExportacaoError(Exception):
     """Falha ao executar pg_dump ou pg_restore."""
+
+
+class RestoreEmAndamentoError(ExportacaoError):
+    """Outra restauração já está usando o banco."""
+
+    def __init__(self) -> None:
+        super().__init__("Já existe uma restauração do banco em andamento.")
 
 
 def _pg_conn_params() -> dict[str, str]:
@@ -94,23 +105,31 @@ def _salvar_backup_pre_restore() -> None:
 
 
 def restore_database_from_file(dump_path: str | Path) -> None:
-    dump_path = Path(dump_path)
-    _validar_dump(str(dump_path))
-    _salvar_backup_pre_restore()
-    cmd = [
-        "pg_restore",
-        *_pg_args(),
-        "--clean",
-        "--if-exists",
-        "--no-owner",
-        "--no-acl",
-        "--single-transaction",
-        str(dump_path),
-    ]
-    result = subprocess.run(cmd, env=_pg_env(), capture_output=True, check=False)  # noqa: S603
-    if result.returncode != 0:
-        stderr = result.stderr.decode() if result.stderr else "pg_restore falhou"
-        raise ExportacaoError(stderr)
+    try:
+        with database_restore_lock():
+            dump_path = Path(dump_path)
+            _validar_dump(str(dump_path))
+            _salvar_backup_pre_restore()
+            cmd = [
+                "pg_restore",
+                *_pg_args(),
+                "--clean",
+                "--if-exists",
+                "--no-owner",
+                "--no-acl",
+                "--single-transaction",
+                str(dump_path),
+            ]
+            result = subprocess.run(  # noqa: S603
+                cmd, env=_pg_env(), capture_output=True, check=False
+            )
+            if result.returncode != 0:
+                stderr = (
+                    result.stderr.decode() if result.stderr else "pg_restore falhou"
+                )
+                raise ExportacaoError(stderr)
+    except DatabaseRestoreInProgressError as exc:
+        raise RestoreEmAndamentoError from exc
 
 
 def restore_database(dump: bytes) -> None:

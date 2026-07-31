@@ -25,7 +25,12 @@ from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
 )
 from xtreme_system.api.setup import app
-from xtreme_system.database.core import detach_request_session, register_post_commit
+from xtreme_system.database.core import (
+    DatabaseRestoreInProgressError,
+    database_traffic_lock,
+    detach_request_session,
+    register_post_commit,
+)
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.upload_file.core import escrever_upload_atomico
@@ -271,27 +276,43 @@ async def ui_configuracoes_importar(
     detach_request_session(request, keep=(user,))
     try:
         await run_in_threadpool(exportacao.restore_database_from_file, tmp_path)
+    except exportacao.RestoreEmAndamentoError as exc:
+        return HTMLResponse(f"<p>{exc}</p>", status_code=409)
     except exportacao.ExportacaoError as exc:
-        config = whatsapp.get_config(session)
-        return _pagina_empresa(
-            request,
-            session,
-            user,
-            empresa.get_config(session),
-            config=config,
-            erro=str(exc),
-            aba="banco",
-        )
+        try:
+            with database_traffic_lock():
+                config = whatsapp.get_config(session)
+                return _pagina_empresa(
+                    request,
+                    session,
+                    user,
+                    empresa.get_config(session),
+                    config=config,
+                    erro=str(exc),
+                    aba="banco",
+                )
+        except DatabaseRestoreInProgressError:
+            return HTMLResponse(
+                "<p>O banco está sendo restaurado. Tente novamente em instantes.</p>",
+                status_code=503,
+            )
     finally:
         os.unlink(tmp_path)
-    session.expire_all()
-    config = whatsapp.get_config(session)
-    return _pagina_empresa(
-        request,
-        session,
-        user,
-        empresa.get_config(session),
-        config=config,
-        sucesso="Dados importados com sucesso.",
-        aba="banco",
-    )
+    try:
+        with database_traffic_lock():
+            session.expire_all()
+            config = whatsapp.get_config(session)
+            return _pagina_empresa(
+                request,
+                session,
+                user,
+                empresa.get_config(session),
+                config=config,
+                sucesso="Dados importados com sucesso.",
+                aba="banco",
+            )
+    except DatabaseRestoreInProgressError:
+        return HTMLResponse(
+            "<p>O banco está sendo restaurado. Tente novamente em instantes.</p>",
+            status_code=503,
+        )
