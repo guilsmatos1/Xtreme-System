@@ -28,6 +28,20 @@ class SenhaFracaError(ValueError):
         super().__init__("senha deve ter pelo menos 3 caracteres")
 
 
+class UsuarioValidationError(ValueError):
+    """Raised when user data violates an application-level constraint."""
+
+
+class UsernameJaExisteError(UsuarioValidationError):
+    def __init__(self) -> None:
+        super().__init__("username já existe")
+
+
+class PerfilNaoEncontradoError(UsuarioValidationError):
+    def __init__(self) -> None:
+        super().__init__("perfil não encontrado")
+
+
 class Usuario(Base):
     __tablename__ = "usuario"
 
@@ -89,14 +103,37 @@ def validate_senha(senha: str) -> str:
     return senha
 
 
+def _validate_perfil(session: Session, perfil_id: int | None) -> None:
+    if perfil_id is None:
+        return
+    from xtreme_system.perfil import core as perfil  # noqa: PLC0415
+
+    if perfil.get(session, perfil_id) is None:
+        raise PerfilNaoEncontradoError()
+
+
+def validate_create(session: Session, data: UsuarioCreate) -> None:
+    if get_by_username(session, data.username) is not None:
+        raise UsernameJaExisteError()
+    _validate_perfil(session, data.perfil_id)
+    validate_senha(data.senha)
+
+
+def validate_update(session: Session, obj: Usuario, data: UsuarioUpdate) -> None:
+    existing = get_by_username(session, data.username)
+    if existing is not None and existing.id != obj.id:
+        raise UsernameJaExisteError()
+    _validate_perfil(session, data.perfil_id)
+
+
 def create(
     session: Session, data: UsuarioCreate, actor_id: int | None = None
 ) -> Usuario:
-    senha = validate_senha(data.senha)
+    validate_create(session, data)
     obj = Usuario(
         username=data.username,
         nome=data.nome,
-        senha_hash=hash_password(senha),
+        senha_hash=hash_password(data.senha.strip()),
         papel=data.papel,
         perfil_id=data.perfil_id,
     )
@@ -118,6 +155,7 @@ def create(
 def update(
     session: Session, obj: Usuario, data: UsuarioUpdate, actor_id: int | None = None
 ) -> None:
+    validate_update(session, obj, data)
     antes = snapshot(obj)
     obj.username = data.username
     obj.nome = data.nome

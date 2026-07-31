@@ -24,7 +24,6 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
-from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -78,13 +77,9 @@ def login(
 def criar_usuario(
     data: usuario.UsuarioCreate, session: SessionDep, admin: AdminUser
 ) -> usuario.Usuario:
-    if usuario.get_by_username(session, data.username) is not None:
-        raise HTTPException(status_code=400, detail="username já existe")
-    if data.perfil_id is not None and perfil.get(session, data.perfil_id) is None:
-        raise HTTPException(status_code=400, detail="perfil não encontrado")
     try:
         return usuario.create(session, data, admin.id)
-    except usuario.SenhaFracaError as exc:
+    except (usuario.SenhaFracaError, usuario.UsuarioValidationError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
