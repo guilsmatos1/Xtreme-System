@@ -1774,6 +1774,13 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     excluido = client.post(f"/ui/compras/{compra_id}/excluir")
     assert excluido.status_code == 200
     assert "Carlos Compra" not in excluido.text
+    auditoria_resp = client.get(
+        "/auditoria",
+        params={"tabela": "veiculo", "tipo_acao": "DELETE"},
+        headers=_admin_headers(client),
+    )
+    assert auditoria_resp.status_code == 200
+    assert [row["registro_id"] for row in auditoria_resp.json()] == [veiculo_id]
 
     csv_resp = client.get("/ui/compras/exportar")
     assert csv_resp.status_code == 200

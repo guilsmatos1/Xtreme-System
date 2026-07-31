@@ -28,6 +28,7 @@ from xtreme_system.api.crud_ui.routes import (
     CrudUITemplateConfig,
     register_crud_ui_routes,
 )
+from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
     SessionDep,
     found,
@@ -154,8 +155,13 @@ def _deletar_veiculo_apos_compra(
 ) -> None:
     veiculo_obj = veiculo.get(session, obj.veiculo_id)
     if veiculo_obj:
-        caixa.deletar_lancamento_veiculo(session, veiculo_obj, actor_id)
-        veiculo.delete(session, veiculo_obj, actor_id)
+        delete_with_hook(
+            veiculo,
+            session,
+            veiculo_obj,
+            caixa.deletar_lancamento_veiculo,
+            actor_id,
+        )
 
 
 def _comprovantes_modal(
