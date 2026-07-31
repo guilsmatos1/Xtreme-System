@@ -25,13 +25,10 @@ from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
 )
 from xtreme_system.api.setup import app
-from xtreme_system.database.core import (
-    detach_request_session,
-    register_post_commit,
-    register_post_rollback,
-)
+from xtreme_system.database.core import detach_request_session, register_post_commit
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
+from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
 
@@ -181,23 +178,12 @@ def ui_configuracoes_empresa_logo_enviar(
     url_anterior = empresa.get_config(session).logo_url
     filename = f"{uuid4().hex}{sufixo}"
     upload_dir = uploads_empresa_dir()
-    path = upload_dir / filename
-    tmp_path = upload_dir / f".{filename}.tmp"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        tmp_path.write_bytes(logo.file.read())
-        with tmp_path.open("rb") as tmp_file:
-            os.fsync(tmp_file.fileno())
-        os.replace(tmp_path, path)
-    except Exception:
-        tmp_path.unlink(missing_ok=True)
-        raise
+    path = escrever_upload_atomico(session, upload_dir, filename, logo.file.read())
 
-    def _remover_novo_logo(*, path: Path = path, tmp_path: Path = tmp_path) -> None:
+    def _remover_novo_logo() -> None:
         path.unlink(missing_ok=True)
-        tmp_path.unlink(missing_ok=True)
+        (upload_dir / f".{filename}.tmp").unlink(missing_ok=True)
 
-    register_post_rollback(session, _remover_novo_logo)
     try:
         config_empresa = empresa.definir_logo(
             session, f"/static/uploads/empresa/{filename}"

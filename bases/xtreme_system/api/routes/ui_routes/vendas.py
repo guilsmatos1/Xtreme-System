@@ -1,8 +1,6 @@
 """HTMX routes for vendas."""
 
-import os
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -46,11 +44,11 @@ from xtreme_system.api.routes.ui_routes.upload_files import uploaded_file_path
 from xtreme_system.api.routes.ui_routes.upload_paths import uploads_contrato_venda_dir
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
-from xtreme_system.database.core import register_post_rollback
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.empresa import core as empresa
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.perfil import core as perfil
+from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -350,8 +348,6 @@ def _persistir_contrato_venda(
 ) -> None:
     upload_dir = uploads_contrato_venda_dir(obj.id)
     filename = f"{uuid4().hex}.pdf"
-    path = upload_dir / filename
-    tmp_path = upload_dir / f".{filename}.tmp"
     config_empresa = empresa.get_config(session)
     logo_path = (
         uploaded_file_path(config_empresa.logo_url) if config_empresa.logo_url else None
@@ -359,23 +355,7 @@ def _persistir_contrato_venda(
     if logo_path is not None and not logo_path.exists():
         logo_path = None
     pdf = documento_contrato_venda.gerar_pdf(obj, config_empresa, logo_path)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        tmp_path.write_bytes(pdf)
-        with tmp_path.open("rb") as arquivo:
-            os.fsync(arquivo.fileno())
-        os.replace(tmp_path, path)
-    except Exception:
-        tmp_path.unlink(missing_ok=True)
-        raise
-
-    def _cleanup_contract_on_rollback(
-        *, path: Path = path, tmp_path: Path = tmp_path
-    ) -> None:
-        path.unlink(missing_ok=True)
-        tmp_path.unlink(missing_ok=True)
-
-    register_post_rollback(session, _cleanup_contract_on_rollback)
+    escrever_upload_atomico(session, upload_dir, filename, pdf)
     documento_contrato_venda.create(
         session,
         documento_contrato_venda.DocumentoContratoVendaCreate(

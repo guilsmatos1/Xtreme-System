@@ -1,6 +1,5 @@
 """Helpers de upload: gravar arquivos e persistir metadados no DB."""
 
-import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -15,7 +14,7 @@ from xtreme_system.api.routes.ui_routes.upload_files import (
     uploaded_file_path,
 )
 from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
-from xtreme_system.database.core import register_post_rollback
+from xtreme_system.upload_file.core import escrever_upload_atomico
 
 _PENDING_UPLOAD_PATHS_KEY = "_pending_upload_paths"
 
@@ -52,26 +51,12 @@ def salvar_arquivos(
                 continue
             suffix = Path(arquivo.filename).suffix.lower()
             filename = f"{uuid4().hex}{suffix}"
-            path = upload_dir / filename
-            tmp_path = upload_dir / f".{filename}.tmp"
             content = arquivo.file.read()
             data = schema.model_validate(
                 {fk_field: fk_id, "url": f"{url_prefix}/{filename}"}
             )
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            cleanup_paths.append((path, tmp_path))
-            tmp_path.write_bytes(content)
-            with tmp_path.open("rb") as tmp_file:
-                os.fsync(tmp_file.fileno())
-            os.replace(tmp_path, path)
-
-            def _remove_file_on_rollback(
-                *, path: Path = path, tmp_path: Path = tmp_path
-            ) -> None:
-                path.unlink(missing_ok=True)
-                tmp_path.unlink(missing_ok=True)
-
-            register_post_rollback(session, _remove_file_on_rollback)
+            path = escrever_upload_atomico(session, upload_dir, filename, content)
+            cleanup_paths.append((path, upload_dir / f".{filename}.tmp"))
             if actor_id is None:
                 create_fn(session, data)
             else:
