@@ -10,11 +10,11 @@ from fastapi.templating import Jinja2Templates
 from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.routes.ui_routes.upload_files import arquivo_disponivel
 from xtreme_system.auth import core as auth
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
+from xtreme_system.upload_file.core import arquivo_disponivel
 from xtreme_system.usuario import core as usuario
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")

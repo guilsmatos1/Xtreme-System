@@ -1,5 +1,6 @@
 """Helpers for upload files stored under /static/uploads."""
 
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,20 @@ def uploaded_file_path(url: str, *, ui_dir: Path | None = None) -> Path | None:
     if not candidate.is_relative_to(uploads_root):
         return None
     return candidate
+
+
+def arquivo_disponivel(
+    url: str,
+    pending_paths: Iterable[str] | None = None,
+    *,
+    ui_dir: Path | None = None,
+) -> bool:
+    path = uploaded_file_path(url, ui_dir=ui_dir)
+    if path is None:
+        return False
+    if pending_paths is not None and str(path) in set(pending_paths):
+        return True
+    return path.exists()
 
 
 def schedule_uploaded_file_delete(target: Any) -> None:

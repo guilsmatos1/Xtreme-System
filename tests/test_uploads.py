@@ -359,6 +359,16 @@ def test_arquivo_disponivel_retorna_false_quando_arquivo_falta(
     assert not arquivo_disponivel("/static/uploads/veiculos/1/foto.jpg")
 
 
+def test_arquivo_disponivel_pendente(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", tmp_path
+    )
+    path = tmp_path / "static" / "uploads" / "veiculos" / "1" / "foto.jpg"
+    assert arquivo_disponivel("/static/uploads/veiculos/1/foto.jpg", {str(path)})
+
+
 class _MagicFakeFile:
     def __init__(self, data: bytes) -> None:
         self._buf = io.BytesIO(data)
