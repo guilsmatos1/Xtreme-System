@@ -1,7 +1,7 @@
 ---
 name: loops--task-orchestration--linear-run
 description: >-
-    Empties the Linear team Todo by processing issues one at a time in priority order, using the `process_issue.py run-backlog` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
+    Empties the Linear team's Todo and Backlog queue (issues are routed to either depending on priority) by processing issues one at a time in priority order, using the `process_issue.py run-queue` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--linear-run
@@ -16,20 +16,20 @@ metadata:
 
 # Linear Run Sequential Worktree
 
-Empties the Linear GUI Todo in a single run, processing one issue at a time in `Urgent`, `High`, `Medium`, `Low`, `No priority` order.
+Empties the Linear GUI queue in a single run, processing one issue at a time in `Urgent`, `High`, `Medium`, `Low`, `No priority` order. The queue is every issue in an "unstarted"-type state — this now includes both `Todo` and `Backlog`, since new issues are routed to either one depending on priority rather than landing exclusively in `Backlog`.
 
 ## Normal use
 
 Use the helper. Do not reimplement the loop in the agent.
 
 Invoke it as a background/detached process from the start — never as a single blocking
-foreground call. A full backlog run routinely exceeds a foreground command's timeout (a
+foreground call. A full queue run routinely exceeds a foreground command's timeout (a
 single issue alone commonly takes 10-15+ minutes), and killing the foreground wrapper does
 not stop the codex worker it already dispatched: that worker keeps running unsupervised,
 with nothing left to poll it for `worker_done`/`escalation`, so it never gets finalized.
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py run-backlog --json > .loop/backlog_run.log 2>&1
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py run-queue --json > .loop/queue_run.log 2>&1
 ```
 
 To restrict the run to specific priorities, add `--priority` with one or more names from the
@@ -38,7 +38,7 @@ one), e.g. `--priority High` or `--priority Urgent,High`. Raw numeric values (`0
 accepted. `--priority` is a floor, not an exact match: it pulls in everything more urgent too, so
 `--priority Medium` processes Urgent, High, and Medium (never Low or No priority), and
 `--priority High` processes Urgent and High. With more than one value, the least urgent one sets
-the floor. Default (no `--priority`) processes the whole Backlog, ordered `1, 2, 3, 4, 0` as before.
+the floor. Default (no `--priority`) processes the whole queue — issues in `Todo` and, depending on priority, `Backlog` — ordered `1, 2, 3, 4, 0` as before.
 
 Run the command above in the background (a backgrounded Bash call, or your harness's
 detached-process tool) and poll its output/log periodically instead of blocking on one call.
@@ -46,7 +46,7 @@ The helper refuses to start a second instance while one is already active (see I
 if it does, do not assume the first run died just because a liveness check came back empty;
 confirm the recorded PID is actually gone before treating the lock as stale.
 
-`run-backlog` handles internally: preflight, compact Backlog listing, ordered local queue, periodic re-listing, safe worktree creation/reuse, Linear status changes, Orca Orchestration task creation, interactive TUI `codex` worker, reasoning-effort selection, dispatch, waiting for `worker_done`/`escalation`, and final summary.
+`run-queue` handles internally: preflight, compact queue listing (`Todo` and `Backlog`), ordered local queue, periodic re-listing, safe worktree creation/reuse, Linear status changes, Orca Orchestration task creation, interactive TUI `codex` worker, reasoning-effort selection, dispatch, waiting for `worker_done`/`escalation`, and final summary.
 
 Output is JSONL: compact progress events and a final object with `event:"summary"`.
 
@@ -78,7 +78,7 @@ If the user specifies another team or repo, use that. Discover repos with `orca 
 
 ## Status contract
 
-`start`, `wait`, and the issue events emitted by `run-backlog` use the same statuses:
+`start`, `wait`, and the issue events emitted by `run-queue` use the same statuses:
 
 
 | status           | action                                                                                                                                                                                                                                                                   |
@@ -133,9 +133,9 @@ keeps waiting.
 
 ## Invariants
 
-- Use only `process_issue.py` to operate the queue; do not write another script for the whole Backlog.
-- **Never create worktrees, terminals, or codex workers manually.** All issue lifecycle — worktree creation, Linear status changes, terminal startup, prompt delivery, and orchestration — is handled exclusively by `process_issue.py`. Do not run `orca worktree create`, `orca terminal create`, or any equivalent command outside the script. Do not "prepare" or "pre-fetch" issues while the script is running. The only action the calling agent should take is to invoke `process_issue.py run-backlog` and wait for it to finish. Violating this invariant causes parallel processing, merge conflicts, and data races.
-- Only one `run-backlog` process may run at a time per repo; the helper enforces this with a PID lock file (`.run-backlog.lock` next to `process_issue.py`). If a second invocation is refused, verify the recorded PID is truly dead before retrying — never restart blindly on a failed liveness check.
+- Use only `process_issue.py` to operate the queue; do not write another script for the whole queue.
+- **Never create worktrees, terminals, or codex workers manually.** All issue lifecycle — worktree creation, Linear status changes, terminal startup, prompt delivery, and orchestration — is handled exclusively by `process_issue.py`. Do not run `orca worktree create`, `orca terminal create`, or any equivalent command outside the script. Do not "prepare" or "pre-fetch" issues while the script is running. The only action the calling agent should take is to invoke `process_issue.py run-queue` and wait for it to finish. Violating this invariant causes parallel processing, merge conflicts, and data races.
+- Only one `run-queue` process may run at a time per repo; the helper enforces this with a PID lock file (`.run-queue.lock` next to `process_issue.py`). If a second invocation is refused, verify the recorded PID is truly dead before retrying — never restart blindly on a failed liveness check.
 - Completion detection MUST use Orca Orchestration. Never fall back to `orca terminal wait --for exit`.
 - Never delete or recreate existing worktrees/branches without explicit user approval. The one standing exception is the `failed` path: when a worker reports `--phase failed`, the helper removes that issue's worktree (`orca worktree rm --force`) and then deletes its branch (`git branch -D`) so the issue is retryable. This is deliberate and destroys the failed attempt's commits. `orca worktree rm` alone is not enough — it keeps any branch holding unmerged commits, and the Stop hook commits before a worker finishes, so the branch would survive and preflight would skip the issue forever.
 - No issue starts while the previous one is unmerged. The success path is gated on the branch being an ancestor of `master`; an unmerged success or a `merge_failed` phase stops the whole run instead of advancing the queue.
@@ -159,9 +159,9 @@ Handled by `process_issue.py`. `estimated_effort` picks **both** the model and t
 | `Estimated effort` in Markdown | `--model`       | `model_reasoning_effort` |
 | -------------------------------- | --------------- | ------------------------ |
 | `Low`                            | `gpt-5.6-luna`  | `medium`                 |
-| `Medium`                         | `gpt-5.6-terra` | `medium`                 |
-| `High`                           | `gpt-5.6-sol`   | `low`                    |
-| missing / invalid value          | `gpt-5.6-luna`  | `medium` (falls back to `Low`) |
+| `Medium`                         | `gpt-5.6-luna`  | `high`                   |
+| `High`                           | `gpt-5.6-luna`  | `xhigh`                  |
+| missing / invalid value          | `gpt-5.6-luna`  | `high` (falls back to `Medium`) |
 
 
 The helper fetches the full issue and extracts only the Markdown metadata line
@@ -171,7 +171,7 @@ resulting pair into the `codex` startup flags `--model <model> --config
 model_reasoning_effort="<variant>"`. Because both are fixed before the TUI exists, nothing is
 cycled with keypresses.
 
-Passing `--model` to `start`/`run-backlog` overrides the model column for every issue; the effort column still follows `estimated_effort`. The flag defaults to unset, so passing a model that happens to equal a table entry is still honoured as an explicit override.
+Passing `--model` to `start`/`run-queue` overrides the model column for every issue; the effort column still follows `estimated_effort`. The flag defaults to unset, so passing a model that happens to equal a table entry is still honoured as an explicit override.
 
 After `tui-idle`, the helper still confirms both values read-only: `codex` prints the active model and effort in its startup banner (`model:       -6sol low`), and the helper polls that row for up to 20s. The model name is compared tolerantly because narrow terminals truncate it. If the banner never reports the requested model *and* effort, it returns `status:"error"` instead of dispatching to a worker running the wrong configuration.
 
@@ -191,16 +191,16 @@ Linear `priority` values:
 
 By default this skill processes every Todo issue, ordered as `1, 2, 3, 4, 0`. Pass `--priority`
 to set a floor (by name or numeric value): everything at that priority or more urgent is included,
-in the same `1, 2, 3, 4, 0` order. `list-backlog` accepts the same flag.
+in the same `1, 2, 3, 4, 0` order. `list-queue` accepts the same flag.
 
 ## Debug / resume only
 
-Use these modes only to inspect, debug, or resume a specific issue. The normal path is `run-backlog`.
+Use these modes only to inspect, debug, or resume a specific issue. The normal path is `run-queue`.
 
 ### Inspect compact queue
 
 ```bash
-python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py list-backlog --json
+python3 skills-organized/loops/task-orchestration/linear-run/process_issue.py list-queue --json
 ```
 
 Emits only `identifier`, `priority`, `title`, `state.type`, and `updatedAt` per issue.
@@ -231,8 +231,8 @@ Repeat while status is `pending`, with a total safety cap around 2h per issue. I
 
 ## Implementation notes
 
-`run-backlog` keeps a compact local queue and re-lists every 10 processed issues to catch human reprioritization or newly created work. It prints compact progress events plus a final summary object, avoiding one model-visible Linear payload per issue.
+`run-queue` keeps a compact local queue and re-lists every 10 processed issues to catch human reprioritization or newly created work. It prints compact progress events plus a final summary object, avoiding one model-visible Linear payload per issue.
 
-> **Note:** This skill processes issues in the **Todo** state (not Backlog).
+> **Note:** This skill processes issues in an "unstarted"-type state, which now covers both **Todo** and **Backlog** — issues are routed to one or the other depending on priority, so neither state alone is the full source anymore.
 
 The helper owns preflight details, including Orca availability, Linear state names (`In Progress`, `In Review`, `Done`), Git/worktree safety checks, TUI readiness, variant confirmation, and Orchestration matching.

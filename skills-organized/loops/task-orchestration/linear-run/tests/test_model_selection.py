@@ -22,7 +22,15 @@ def test_determine_variant_reads_legacy_field_from_corrupted_json():
     assert MODULE.determine_variant(description) == "medium"
 
 
+def test_determine_variant_falls_back_to_medium_when_missing_or_invalid():
+    assert MODULE.determine_variant("") == "medium"
+    assert MODULE.determine_variant("- **Estimated effort:** Unknown") == "medium"
+
+
 def test_model_map_uses_extracted_effort():
     assert MODULE.resolve_difficulty_config("low")["model"] == "gpt-5.6-luna"
-    assert MODULE.resolve_difficulty_config("medium")["model"] == "gpt-5.6-terra"
-    assert MODULE.resolve_difficulty_config("high")["model"] == "gpt-5.6-sol"
+    assert MODULE.resolve_difficulty_config("medium")["model"] == "gpt-5.6-luna"
+    assert MODULE.resolve_difficulty_config("high")["model"] == "gpt-5.6-luna"
+    assert MODULE.resolve_difficulty_config("low")["reasoning_effort"] == "medium"
+    assert MODULE.resolve_difficulty_config("medium")["reasoning_effort"] == "high"
+    assert MODULE.resolve_difficulty_config("high")["reasoning_effort"] == "xhigh"

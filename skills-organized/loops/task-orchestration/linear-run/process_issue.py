@@ -16,15 +16,17 @@ Usage:
   process_issue.py start --identifier GUI-123 --coordinator-handle term_xxx [--json]
   process_issue.py wait  --identifier GUI-123 --task-id task_x --dispatch-id ctx_x \\
                           --coordinator-handle term_xxx [--json]
-  process_issue.py list-backlog [--json]
-  process_issue.py run-backlog [--coordinator-handle term_xxx] [--json]
+  process_issue.py list-queue [--json]
+  process_issue.py run-queue [--coordinator-handle term_xxx] [--json]
 
 The start/wait subcommands print one JSON object to stdout:
   {"status": "skipped"|"error"|"escalation"|"pending"|"in_review_done"|"failed",
    "identifier": "...", "reason": "...", "detail": {...}, "warnings": [...]}
-list-backlog prints compact backlog issue objects. run-backlog prints compact
-JSONL progress events plus a final summary object.
+list-queue prints compact queue issue objects (any "unstarted"-type state,
+i.e. Todo and Backlog -- issues are routed to either depending on priority).
+run-queue prints compact JSONL progress events plus a final summary object.
 """
+
 import argparse
 import contextlib
 import io
@@ -38,7 +40,7 @@ import time
 
 DEFAULT_WORKSPACE = "e7ff0c6a-7f22-4abd-85fe-153bb2c72687"
 DEFAULT_REPO = "xtreme-system"
-DEFAULT_MODEL = "gpt-5.6-sol"
+DEFAULT_MODEL = "gpt-5.6-luna"
 
 # Map task difficulty (variant/estimated_effort) to specific Codex configurations.
 DIFFICULTY_MODELS = {
@@ -47,12 +49,12 @@ DIFFICULTY_MODELS = {
         "reasoning_effort": "medium",
     },
     "medium": {
-        "model": "gpt-5.6-terra",
-        "reasoning_effort": "medium",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "high",
     },
     "high": {
-        "model": "gpt-5.6-sol",
-        "reasoning_effort": "low",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "xhigh",
     },
 }
 
@@ -158,7 +160,9 @@ def _compact_warnings(warnings):
 
 def _run_tool(tool, args, cwd=None, timeout=30):
     command = _tool_command(tool, args)
-    proc = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    proc = subprocess.run(
+        command, cwd=cwd, capture_output=True, text=True, timeout=timeout
+    )
     return command, proc
 
 
@@ -210,11 +214,20 @@ def ensure_run_bound(coordinator_handle, warnings):
     current = orca(["orchestration", "run-current", "--from", coordinator_handle])
     if current.get("result", {}).get("run"):
         return
-    created = orca(["orchestration", "run-create",
-                     "--objective", "Empty the Linear GUI Backlog via loops--task-orchestration--linear-run.",
-                     "--from", coordinator_handle])
+    created = orca(
+        [
+            "orchestration",
+            "run-create",
+            "--objective",
+            "Empty the Linear GUI Todo/Backlog queue via loops--task-orchestration--linear-run.",
+            "--from",
+            coordinator_handle,
+        ]
+    )
     if not created.get("result", {}).get("run", {}).get("id"):
-        warnings.append("run-create returned no run id; later orchestration calls may fail with run_required")
+        warnings.append(
+            "run-create returned no run id; later orchestration calls may fail with run_required"
+        )
 
 
 def git(args, cwd=None, timeout=30, raw=False):
@@ -227,13 +240,16 @@ def git(args, cwd=None, timeout=30, raw=False):
     to git directly.
     """
     if raw:
-        proc = subprocess.run(["git"] + list(args), cwd=cwd, capture_output=True,
-                              text=True, timeout=timeout)
+        proc = subprocess.run(
+            ["git"] + list(args),
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
         return proc.returncode, _output_from(proc)
     command, proc = _run_tool("git", args, cwd=cwd, timeout=timeout)
     return proc.returncode, _output_from(proc)
-
-
 
 
 def result(status, identifier, reason=None, detail=None, warnings=None):
@@ -258,7 +274,7 @@ def determine_variant(description):
     rest of the issue body.
     """
     match = ESTIMATED_EFFORT_RE.search(description or "")
-    return match.group(1).lower() if match else "low"
+    return match.group(1).lower() if match else "medium"
 
 
 def resolve_difficulty_config(variant):
@@ -266,7 +282,9 @@ def resolve_difficulty_config(variant):
     Supports both dict configs ({"model": ..., "reasoning_effort": ...})
     and string configs ("model-name").
     """
-    config = DIFFICULTY_MODELS.get(variant, {"model": DEFAULT_MODEL, "reasoning_effort": variant})
+    config = DIFFICULTY_MODELS.get(
+        variant, {"model": DEFAULT_MODEL, "reasoning_effort": variant}
+    )
     if isinstance(config, str):
         return {"model": config, "reasoning_effort": variant}
     if isinstance(config, dict):
@@ -297,7 +315,9 @@ def _mentions_identifier(text, identifier):
 def preflight(identifier):
     """Returns a skip reason string, or None if nothing is managing this issue yet."""
     code, out = git(["for-each-ref", "refs/heads", "--format=%(refname:short)"])
-    branch_match = code == 0 and any(_mentions_identifier(line, identifier) for line in out.splitlines())
+    branch_match = code == 0 and any(
+        _mentions_identifier(line, identifier) for line in out.splitlines()
+    )
 
     code, out = git(["worktree", "list", "--porcelain"])
     git_worktree_match = code == 0 and _mentions_identifier(out, identifier)
@@ -394,11 +414,20 @@ def _message_phase(msg):
     return str(_message_payload(msg).get("phase", "")).strip().lower()
 
 
-def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms, warnings=None):
+def poll_orchestration(
+    coordinator_handle, task_id, dispatch_id, timeout_ms, warnings=None
+):
     check = orca(
         [
-            "orchestration", "check", "--terminal", coordinator_handle, "--wait",
-            "--types", "worker_done,escalation", "--timeout-ms", str(timeout_ms),
+            "orchestration",
+            "check",
+            "--terminal",
+            coordinator_handle,
+            "--wait",
+            "--types",
+            "worker_done,escalation",
+            "--timeout-ms",
+            str(timeout_ms),
         ],
         timeout=(timeout_ms / 1000) + 30,
     )
@@ -419,7 +448,9 @@ def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms, war
             # phase counts as failure, so an unfinished issue is never marked Done;
             # the cost is that a worker which succeeded but omitted --phase has its
             # worktree removed and the issue reset.
-            outcome = "worker_done" if _message_phase(msg) == "success" else "worker_failed"
+            outcome = (
+                "worker_done" if _message_phase(msg) == "success" else "worker_failed"
+            )
             matched = msg
             break
         if msg_type == "escalation":
@@ -437,10 +468,21 @@ def poll_orchestration(coordinator_handle, task_id, dispatch_id, timeout_ms, war
         # prior issue keeps satisfying --wait for every later issue's poll, and
         # the real worker_done behind it in the FIFO never gets through.
         try:
-            orca(["orchestration", "check", "--terminal", coordinator_handle, "--ack", delivery_id])
+            orca(
+                [
+                    "orchestration",
+                    "check",
+                    "--terminal",
+                    coordinator_handle,
+                    "--ack",
+                    delivery_id,
+                ]
+            )
         except OrcaError as exc:
             if warnings is not None:
-                warnings.append(f"failed to ack orchestration delivery {delivery_id}: {exc}")
+                warnings.append(
+                    f"failed to ack orchestration delivery {delivery_id}: {exc}"
+                )
 
     return outcome, matched
 
@@ -468,21 +510,31 @@ def set_worktree_checkpoint(identifier, comment, workspace_status=None, warnings
         orca(args)
     except OrcaError as exc:
         if warnings is not None:
-            warnings.append(f"failed to set worktree checkpoint for {identifier}: {exc}")
+            warnings.append(
+                f"failed to set worktree checkpoint for {identifier}: {exc}"
+            )
 
 
 def escalate_task(identifier, task_id, msg, warnings):
     """Turn a raw escalation message into durable Orca state on the task.
 
-    Without this, an escalation only exists as a run-backlog log line: the task
+    Without this, an escalation only exists as a run-queue log line: the task
     itself shows nothing blocked, so a human has to reconstruct context from
     JSONL output instead of seeing a resolvable question on the task in Orca.
     Best-effort: a failure here does not change the escalation outcome itself.
     """
     gate_id = None
     try:
-        gate = orca(["orchestration", "gate-create", "--task", task_id,
-                     "--question", _escalation_question(msg)])
+        gate = orca(
+            [
+                "orchestration",
+                "gate-create",
+                "--task",
+                task_id,
+                "--question",
+                _escalation_question(msg),
+            ]
+        )
         gate_id = gate.get("result", {}).get("gate", {}).get("id")
         if not gate_id:
             warnings.append(f"gate-create for {identifier} returned no gate id")
@@ -505,9 +557,11 @@ def _worktree_entries():
     entries, path = [], None
     for line in out.splitlines():
         if line.startswith("worktree "):
-            path = line[len("worktree "):].strip()
+            path = line[len("worktree ") :].strip()
         elif line.startswith("branch ") and path:
-            entries.append((path, line[len("branch "):].strip().removeprefix("refs/heads/")))
+            entries.append(
+                (path, line[len("branch ") :].strip().removeprefix("refs/heads/"))
+            )
             path = None
     return entries
 
@@ -519,10 +573,16 @@ def issue_branch(identifier):
     like the identifier: real slugs often add a prefix/suffix, e.g.
     'guilsmatos/gui-238-auditoria-...'.
     """
-    code, out = git(["for-each-ref", "refs/heads", "--format=%(refname:short)"], raw=True)
+    code, out = git(
+        ["for-each-ref", "refs/heads", "--format=%(refname:short)"], raw=True
+    )
     if code != 0:
         return None
-    matches = [line.strip() for line in out.splitlines() if _mentions_identifier(line, identifier)]
+    matches = [
+        line.strip()
+        for line in out.splitlines()
+        if _mentions_identifier(line, identifier)
+    ]
     if identifier in matches:
         return identifier
     return matches[0] if matches else None
@@ -530,7 +590,9 @@ def issue_branch(identifier):
 
 def issue_worktree_path(identifier):
     for path, branch in _worktree_entries():
-        if _mentions_identifier(branch, identifier) or _mentions_identifier(path, identifier):
+        if _mentions_identifier(branch, identifier) or _mentions_identifier(
+            path, identifier
+        ):
             return path
     return None
 
@@ -554,12 +616,15 @@ def write_orchestration_context(identifier, task_id, dispatch_id, coordinator_ha
     try:
         os.makedirs(state_dir, exist_ok=True)
         with open(target, "w", encoding="utf-8") as handle:
-            json.dump({
-                "identifier": identifier,
-                "taskId": task_id,
-                "dispatchId": dispatch_id,
-                "coordinatorHandle": coordinator_handle,
-            }, handle)
+            json.dump(
+                {
+                    "identifier": identifier,
+                    "taskId": task_id,
+                    "dispatchId": dispatch_id,
+                    "coordinatorHandle": coordinator_handle,
+                },
+                handle,
+            )
     except OSError as exc:
         return None, f"failed to write {target}: {exc}"
     return target, None
@@ -581,20 +646,30 @@ def merge_state(identifier):
     entries = _worktree_entries()
     target_path = next((p for p, b in entries if b == MERGE_TARGET_BRANCH), None)
     if not target_path:
-        return False, {"branch": branch,
-                       "reason": f"'{MERGE_TARGET_BRANCH}' is not checked out in any worktree"}
+        return False, {
+            "branch": branch,
+            "reason": f"'{MERGE_TARGET_BRANCH}' is not checked out in any worktree",
+        }
 
     issue_path = next((p for p, b in entries if b == branch), None)
     if issue_path:
         code, out = git(["status", "--porcelain"], cwd=issue_path, raw=True)
         if code == 0 and out.strip():
-            return False, {"branch": branch, "reason": "issue worktree still has uncommitted changes"}
+            return False, {
+                "branch": branch,
+                "reason": "issue worktree still has uncommitted changes",
+            }
 
-    code, _ = git(["merge-base", "--is-ancestor", branch, MERGE_TARGET_BRANCH],
-                  cwd=target_path, raw=True)
+    code, _ = git(
+        ["merge-base", "--is-ancestor", branch, MERGE_TARGET_BRANCH],
+        cwd=target_path,
+        raw=True,
+    )
     if code != 0:
-        return False, {"branch": branch,
-                       "reason": f"branch is not an ancestor of {MERGE_TARGET_BRANCH}"}
+        return False, {
+            "branch": branch,
+            "reason": f"branch is not an ancestor of {MERGE_TARGET_BRANCH}",
+        }
     return True, {"branch": branch, "target": MERGE_TARGET_BRANCH}
 
 
@@ -618,14 +693,36 @@ def wait_for_merge(identifier, timeout_s=MERGE_WAIT_TIMEOUT_S):
 
 def finish_success(identifier, workspace, warnings):
     try:
-        r = orca(["linear", "status", "set", identifier, "--to", "In Review", "--workspace", workspace])
+        r = orca(
+            [
+                "linear",
+                "status",
+                "set",
+                identifier,
+                "--to",
+                "In Review",
+                "--workspace",
+                workspace,
+            ]
+        )
         if not r.get("result", {}).get("ok", r.get("ok")):
             warnings.append("failed to set status to In Review")
     except OrcaError as exc:
         warnings.append(f"failed to set status to In Review: {exc}")
 
     try:
-        r = orca(["linear", "status", "set", identifier, "--to", "Done", "--workspace", workspace])
+        r = orca(
+            [
+                "linear",
+                "status",
+                "set",
+                identifier,
+                "--to",
+                "Done",
+                "--workspace",
+                workspace,
+            ]
+        )
         if not r.get("result", {}).get("ok", r.get("ok")):
             warnings.append("failed to set status to Done")
     except OrcaError as exc:
@@ -641,14 +738,14 @@ def close_worker_terminal(worker_handle, warnings):
         warnings.append(f"failed to close worker terminal {worker_handle}: {exc}")
 
 
-def reset_to_backlog(identifier, workspace, worker_handle, warnings):
+def reset_to_todo(identifier, workspace, worker_handle, warnings):
     """Undo everything the failed attempt set up, so the issue is retryable.
 
     Order matters. The Linear reset happens BEFORE the worktree removal: if the
     removal fails, the issue is back in Todo and the next run refuses it
     via preflight ("existing Git worktree"), which is visible as a `skipped`.
     The reverse order would leave a failed issue stuck In Progress, where
-    run-backlog never looks at it again and the failure disappears silently.
+    run-queue never looks at it again and the failure disappears silently.
 
     `orca worktree rm --force` only deletes the branch when it has no unmerged
     commits. A failed worker usually has some -- the Stop hook commits before the
@@ -660,7 +757,18 @@ def reset_to_backlog(identifier, workspace, worker_handle, warnings):
     close_worker_terminal(worker_handle, warnings)
 
     try:
-        r = orca(["linear", "status", "set", identifier, "--to", "Todo", "--workspace", workspace])
+        r = orca(
+            [
+                "linear",
+                "status",
+                "set",
+                identifier,
+                "--to",
+                "Todo",
+                "--workspace",
+                workspace,
+            ]
+        )
         if not r.get("result", {}).get("ok", r.get("ok")):
             warnings.append("failed to move status back to Todo")
     except OrcaError as exc:
@@ -689,7 +797,9 @@ def delete_issue_branch(identifier, warnings):
 
     code, out = git(["for-each-ref", "refs/heads", "--format=%(refname:short)"])
     if code == 0:
-        leftover = [line for line in out.splitlines() if _mentions_identifier(line, identifier)]
+        leftover = [
+            line for line in out.splitlines() if _mentions_identifier(line, identifier)
+        ]
         if leftover:
             warnings.append(
                 f"branches still referencing {identifier} after reset: {', '.join(leftover[:3])}; "
@@ -718,7 +828,9 @@ def cleanup_after_success(identifier, warnings):
 
     code, out = git(["branch", "-D", identifier])
     if code != 0:
-        warnings.append(f"cleanup: failed to delete branch {identifier}: {_compact_text(out)}")
+        warnings.append(
+            f"cleanup: failed to delete branch {identifier}: {_compact_text(out)}"
+        )
 
 
 def cmd_start(args):
@@ -732,11 +844,24 @@ def cmd_start(args):
     if skip_reason:
         if skip_reason == "skipped: existing local branch":
             try:
-                r = orca(["linear", "status", "set", identifier, "--to", "Done", "--workspace", args.workspace])
+                r = orca(
+                    [
+                        "linear",
+                        "status",
+                        "set",
+                        identifier,
+                        "--to",
+                        "Done",
+                        "--workspace",
+                        args.workspace,
+                    ]
+                )
                 if not r.get("result", {}).get("ok", r.get("ok")):
                     warnings.append("failed to set status to Done for existing branch")
             except OrcaError as exc:
-                warnings.append(f"failed to set status to Done for existing branch: {exc}")
+                warnings.append(
+                    f"failed to set status to Done for existing branch: {exc}"
+                )
         return result("skipped", identifier, reason=skip_reason, warnings=warnings)
 
     try:
@@ -749,17 +874,48 @@ def cmd_start(args):
         # An explicit --model always wins; the difficulty map only fills the gap when
         # the caller passed nothing. Never use the model *value* as the sentinel --
         # "--model gpt-5.6-sol" is a real override even though it equals DEFAULT_MODEL.
-        model = args.model if getattr(args, "model", None) else diff_config.get("model", DEFAULT_MODEL)
+        model = (
+            args.model
+            if getattr(args, "model", None)
+            else diff_config.get("model", DEFAULT_MODEL)
+        )
         reasoning_effort = diff_config.get("reasoning_effort", variant)
 
-        wt = orca(["worktree", "create", "--repo", f"name:{args.repo}", "--name", identifier,
-                   "--linear-issue", identifier, "--base-branch", "master"])
+        wt = orca(
+            [
+                "worktree",
+                "create",
+                "--repo",
+                f"name:{args.repo}",
+                "--name",
+                identifier,
+                "--linear-issue",
+                identifier,
+                "--base-branch",
+                "master",
+            ]
+        )
         if not wt.get("result", {}).get("ok", wt.get("ok", True)):
-            return result("error", identifier, reason="worktree create returned ok=false",
-                          detail=_compact_orca_response(wt))
+            return result(
+                "error",
+                identifier,
+                reason="worktree create returned ok=false",
+                detail=_compact_orca_response(wt),
+            )
 
         try:
-            r = orca(["linear", "status", "set", identifier, "--to", "In Progress", "--workspace", args.workspace])
+            r = orca(
+                [
+                    "linear",
+                    "status",
+                    "set",
+                    identifier,
+                    "--to",
+                    "In Progress",
+                    "--workspace",
+                    args.workspace,
+                ]
+            )
             if not r.get("result", {}).get("ok", r.get("ok")):
                 warnings.append("failed to set status to In Progress")
         except OrcaError as exc:
@@ -767,99 +923,220 @@ def cmd_start(args):
 
         ensure_run_bound(args.coordinator_handle, warnings)
 
-        task = orca(["orchestration", "task-create",
-                     "--task-title", f"{identifier}: {title[:60]}",
-                     "--spec", f"Resolver a issue Linear {identifier}."])
+        task = orca(
+            [
+                "orchestration",
+                "task-create",
+                "--task-title",
+                f"{identifier}: {title[:60]}",
+                "--spec",
+                f"Resolver a issue Linear {identifier}.",
+            ]
+        )
         task_id = task.get("result", {}).get("task", {}).get("id")
         if not task_id:
-            return result("error", identifier, reason="task-create returned no task id",
-                          detail=_compact_orca_response(task))
+            return result(
+                "error",
+                identifier,
+                reason="task-create returned no task id",
+                detail=_compact_orca_response(task),
+            )
 
-        term = orca(["terminal", "create", "--worktree", f"name:{identifier}",
-                     "--title", f"{WORKER_TITLE_PREFIX}{identifier}",
-                     "--command", worker_command(model, reasoning_effort)])
+        term = orca(
+            [
+                "terminal",
+                "create",
+                "--worktree",
+                f"name:{identifier}",
+                "--title",
+                f"{WORKER_TITLE_PREFIX}{identifier}",
+                "--command",
+                worker_command(model, reasoning_effort),
+            ]
+        )
         handle = term.get("result", {}).get("terminal", {}).get("handle")
         if not handle:
-            return result("error", identifier, reason="terminal create returned no handle",
-                          detail=_compact_orca_response(term))
+            return result(
+                "error",
+                identifier,
+                reason="terminal create returned no handle",
+                detail=_compact_orca_response(term),
+            )
 
         try:
-            orca(["terminal", "wait", "--terminal", handle, "--for", "tui-idle", "--timeout-ms", "60000"],
-                 timeout=90)
+            orca(
+                [
+                    "terminal",
+                    "wait",
+                    "--terminal",
+                    handle,
+                    "--for",
+                    "tui-idle",
+                    "--timeout-ms",
+                    "60000",
+                ],
+                timeout=90,
+            )
         except OrcaError as exc:
-            return result("error", identifier, reason=f"codex TUI failed to reach tui-idle on startup: {exc}",
-                          detail={"handle": handle})
+            return result(
+                "error",
+                identifier,
+                reason=f"codex TUI failed to reach tui-idle on startup: {exc}",
+                detail={"handle": handle},
+            )
 
         if not confirm_variant(handle, model, reasoning_effort, warnings):
-            return result("error", identifier,
-                          reason=f"codex did not report model '{model}' with reasoning effort '{reasoning_effort}'",
-                          detail={"handle": handle}, warnings=warnings)
+            return result(
+                "error",
+                identifier,
+                reason=f"codex did not report model '{model}' with reasoning effort '{reasoning_effort}'",
+                detail={"handle": handle},
+                warnings=warnings,
+            )
 
         try:
-            orca(["orchestration", "dispatch", "--task", task_id, "--to", handle,
-                 "--from", args.coordinator_handle, "--dry-run"])
+            orca(
+                [
+                    "orchestration",
+                    "dispatch",
+                    "--task",
+                    task_id,
+                    "--to",
+                    handle,
+                    "--from",
+                    args.coordinator_handle,
+                    "--dry-run",
+                ]
+            )
         except OrcaError as exc:
-            return result("error", identifier, reason=f"dispatch dry-run failed: {exc}",
-                          detail={"handle": handle, "task_id": task_id}, warnings=warnings)
+            return result(
+                "error",
+                identifier,
+                reason=f"dispatch dry-run failed: {exc}",
+                detail={"handle": handle, "task_id": task_id},
+                warnings=warnings,
+            )
 
-        dispatch = orca(["orchestration", "dispatch", "--task", task_id, "--to", handle,
-                         "--from", args.coordinator_handle])
+        dispatch = orca(
+            [
+                "orchestration",
+                "dispatch",
+                "--task",
+                task_id,
+                "--to",
+                handle,
+                "--from",
+                args.coordinator_handle,
+            ]
+        )
         dispatch_id = dispatch.get("result", {}).get("dispatch", {}).get("id")
         if not dispatch_id:
-            return result("error", identifier, reason="dispatch returned no dispatch id",
-                          detail=_compact_orca_response(dispatch))
+            return result(
+                "error",
+                identifier,
+                reason="dispatch returned no dispatch id",
+                detail=_compact_orca_response(dispatch),
+            )
 
         # Must happen before the prompt: the worker never reports completion
         # itself, so a worker that starts without this file can only end on the
         # 2h cap. Fail fast instead.
-        _, ctx_error = write_orchestration_context(identifier, task_id, dispatch_id,
-                                                   args.coordinator_handle)
+        _, ctx_error = write_orchestration_context(
+            identifier, task_id, dispatch_id, args.coordinator_handle
+        )
         if ctx_error:
-            return result("error", identifier,
-                          reason=f"could not arm the finish hook: {ctx_error}",
-                          detail={"handle": handle}, warnings=warnings)
+            return result(
+                "error",
+                identifier,
+                reason=f"could not arm the finish hook: {ctx_error}",
+                detail={"handle": handle},
+                warnings=warnings,
+            )
 
         set_worktree_checkpoint(
             identifier,
             f"Dispatched to worker (model {model}, reasoning effort {reasoning_effort}); "
             f"task {task_id}, dispatch {dispatch_id}. Waiting for worker_done.",
-            workspace_status="in-progress", warnings=warnings,
+            workspace_status="in-progress",
+            warnings=warnings,
         )
 
-        report_script = os.path.join(issue_worktree_path(identifier) or "", REPORT_SCRIPT)
+        report_script = os.path.join(
+            issue_worktree_path(identifier) or "", REPORT_SCRIPT
+        )
         if not os.path.exists(report_script):
-            return result("error", identifier,
-                          reason=f"{REPORT_SCRIPT} is missing from the worktree; "
-                                 f"the worker would have no way to report completion",
-                          detail={"expected": report_script}, warnings=warnings)
+            return result(
+                "error",
+                identifier,
+                reason=f"{REPORT_SCRIPT} is missing from the worktree; "
+                f"the worker would have no way to report completion",
+                detail={"expected": report_script},
+                warnings=warnings,
+            )
 
         prompt = PROMPT_TEMPLATE.format(
-            identifier=identifier, title=title, target_branch=MERGE_TARGET_BRANCH,
+            identifier=identifier,
+            title=title,
+            target_branch=MERGE_TARGET_BRANCH,
         )
         orca(["terminal", "send", "--terminal", handle, "--enter", "--text", prompt])
 
     except OrcaError as exc:
         return result("error", identifier, reason=str(exc), warnings=warnings)
 
-    return _poll_and_finish(identifier, task_id, dispatch_id, args.coordinator_handle,
-                            args.workspace, args.wait_timeout_ms, warnings, worker_handle=handle)
+    return _poll_and_finish(
+        identifier,
+        task_id,
+        dispatch_id,
+        args.coordinator_handle,
+        args.workspace,
+        args.wait_timeout_ms,
+        warnings,
+        worker_handle=handle,
+    )
 
 
 def cmd_wait(args):
-    return _poll_and_finish(args.identifier, args.task_id, args.dispatch_id, args.coordinator_handle,
-                            args.workspace, args.wait_timeout_ms, [],
-                            worker_handle=getattr(args, "worker_handle", None))
+    return _poll_and_finish(
+        args.identifier,
+        args.task_id,
+        args.dispatch_id,
+        args.coordinator_handle,
+        args.workspace,
+        args.wait_timeout_ms,
+        [],
+        worker_handle=getattr(args, "worker_handle", None),
+    )
 
 
-def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, workspace, wait_timeout_ms,
-                     warnings, worker_handle=None):
-    context = {"task_id": task_id, "dispatch_id": dispatch_id,
-               "coordinator_handle": coordinator_handle, "worker_handle": worker_handle}
+def _poll_and_finish(
+    identifier,
+    task_id,
+    dispatch_id,
+    coordinator_handle,
+    workspace,
+    wait_timeout_ms,
+    warnings,
+    worker_handle=None,
+):
+    context = {
+        "task_id": task_id,
+        "dispatch_id": dispatch_id,
+        "coordinator_handle": coordinator_handle,
+        "worker_handle": worker_handle,
+    }
     try:
-        outcome, msg = poll_orchestration(coordinator_handle, task_id, dispatch_id, wait_timeout_ms, warnings)
+        outcome, msg = poll_orchestration(
+            coordinator_handle, task_id, dispatch_id, wait_timeout_ms, warnings
+        )
     except OrcaError as exc:
-        return result("error", identifier, reason=f"orchestration check failed: {exc}",
-                      detail=context, warnings=warnings)
+        return result(
+            "error",
+            identifier,
+            reason=f"orchestration check failed: {exc}",
+            detail=context,
+            warnings=warnings,
+        )
 
     if outcome == "timeout":
         return result("pending", identifier, warnings=warnings, detail=context)
@@ -867,8 +1144,10 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
         gate_id = escalate_task(identifier, task_id, msg, warnings)
         question = _escalation_question(msg)
         set_worktree_checkpoint(
-            identifier, f"BLOCKED: {question}",
-            workspace_status="in-review", warnings=warnings,
+            identifier,
+            f"BLOCKED: {question}",
+            workspace_status="in-review",
+            warnings=warnings,
         )
         detail = _compact_message(msg)
         if gate_id:
@@ -881,36 +1160,53 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
             # failed. Keep the worktree, the branch and the In Progress status
             # (a reset would throw the work away) and stop the whole run: every
             # later issue would branch off a master missing this one.
-            return result("error", identifier,
-                          reason=f"worker could not merge into {MERGE_TARGET_BRANCH}; "
-                                 f"run stopped with the worktree intact for manual resolution",
-                          detail=_compact_message(msg), warnings=warnings)
+            return result(
+                "error",
+                identifier,
+                reason=f"worker could not merge into {MERGE_TARGET_BRANCH}; "
+                f"run stopped with the worktree intact for manual resolution",
+                detail=_compact_message(msg),
+                warnings=warnings,
+            )
         if phase != "failed":
             warnings.append(
                 f"worker_done carried no valid --phase (got {phase!r}); treated as failure"
             )
-        reset_to_backlog(identifier, workspace, worker_handle, warnings)
-        return result("failed", identifier, reason="worker reported failure; issue reset to Todo",
-                      detail=_compact_message(msg), warnings=warnings)
+        reset_to_todo(identifier, workspace, worker_handle, warnings)
+        return result(
+            "failed",
+            identifier,
+            reason="worker reported failure; issue reset to Todo",
+            detail=_compact_message(msg),
+            warnings=warnings,
+        )
 
     merged, merge_detail = wait_for_merge(identifier)
     if not merged:
         # Fails closed: the issue is NOT marked Done and the run stops, because
         # continuing would start the next worktree from a master that is missing
         # this issue's work. Worktree and branch are left untouched.
-        return result("error", identifier,
-                      reason=f"worker reported success but the work never reached "
-                             f"{MERGE_TARGET_BRANCH} within {int(MERGE_WAIT_TIMEOUT_S)}s",
-                      detail={**context, "merge": merge_detail}, warnings=warnings)
+        return result(
+            "error",
+            identifier,
+            reason=f"worker reported success but the work never reached "
+            f"{MERGE_TARGET_BRANCH} within {int(MERGE_WAIT_TIMEOUT_S)}s",
+            detail={**context, "merge": merge_detail},
+            warnings=warnings,
+        )
 
     finish_success(identifier, workspace, warnings)
     close_worker_terminal(worker_handle, warnings)
     set_worktree_checkpoint(
-        identifier, f"Implementation merged into {MERGE_TARGET_BRANCH}; issue moved to Done.",
-        workspace_status="completed", warnings=warnings,
+        identifier,
+        f"Implementation merged into {MERGE_TARGET_BRANCH}; issue moved to Done.",
+        workspace_status="completed",
+        warnings=warnings,
     )
     cleanup_after_success(identifier, warnings)
-    return result("in_review_done", identifier, detail=_compact_message(msg), warnings=warnings)
+    return result(
+        "in_review_done", identifier, detail=_compact_message(msg), warnings=warnings
+    )
 
 
 def emit_event(payload):
@@ -940,11 +1236,13 @@ def _state_type(issue):
     return str(state).lower()
 
 
-def _is_backlog(issue):
+def _is_queued(issue):
+    # "unstarted" covers both Todo and Backlog states -- issues land in either
+    # depending on priority, so neither name alone is the real source category.
     return _state_type(issue) == "unstarted"
 
 
-def _compact_backlog_issue(issue):
+def _compact_queue_issue(issue):
     identifier = issue.get("identifier")
     if not identifier:
         return None
@@ -963,7 +1261,8 @@ def parse_priority_filter(raw):
     `--priority` is a floor, not an exact match: picking a level pulls in
     everything more urgent than it too (Urgent > High > Medium > Low > No
     priority), because a run limited to "Medium" that silently skipped a
-    Highs/Urgents would leave more important work sitting in the Backlog.
+    Highs/Urgents would leave more important work sitting in the queue
+    (Todo or Backlog, whichever it was routed to).
     Multiple values pick the least urgent one as the floor and include
     everything at or above it.
 
@@ -985,10 +1284,16 @@ def parse_priority_filter(raw):
         try:
             value = int(token)
         except ValueError:
-            valid = ", ".join(sorted(set(PRIORITY_NAME_TO_VALUE) | {"0", "1", "2", "3", "4"}))
-            raise ValueError(f"unrecognized --priority value {token!r}; expected one of: {valid}")
+            valid = ", ".join(
+                sorted(set(PRIORITY_NAME_TO_VALUE) | {"0", "1", "2", "3", "4"})
+            )
+            raise ValueError(
+                f"unrecognized --priority value {token!r}; expected one of: {valid}"
+            )
         if value not in PRIORITY_RANK:
-            raise ValueError(f"unrecognized --priority value {value!r}; expected one of 0-4")
+            raise ValueError(
+                f"unrecognized --priority value {value!r}; expected one of 0-4"
+            )
         values.add(value)
     if not values:
         return None
@@ -996,24 +1301,40 @@ def parse_priority_filter(raw):
     return {value for value, rank in PRIORITY_RANK.items() if rank <= floor_rank}
 
 
-def load_backlog_queue(args, attempted):
+def load_queue(args, attempted):
     priority_filter = parse_priority_filter(getattr(args, "priority", None))
-    listing = orca([
-        "linear", "list", "--filter", "open", "--team", args.team,
-        "--limit", str(args.limit), "--workspace", args.workspace,
-    ], timeout=120)
+    listing = orca(
+        [
+            "linear",
+            "list",
+            "--filter",
+            "open",
+            "--team",
+            args.team,
+            "--limit",
+            str(args.limit),
+            "--workspace",
+            args.workspace,
+        ],
+        timeout=120,
+    )
     issues = listing.get("result", {}).get("issues", [])
     queue = []
     for issue in issues:
-        if not _is_backlog(issue):
+        if not _is_queued(issue):
             continue
-        compact = _compact_backlog_issue(issue)
+        compact = _compact_queue_issue(issue)
         if not compact or compact["identifier"] in attempted:
             continue
         if priority_filter is not None and compact["priority"] not in priority_filter:
             continue
         queue.append(compact)
-    queue.sort(key=lambda item: (PRIORITY_RANK.get(item["priority"], len(PRIORITY_RANK)), item["identifier"]))
+    queue.sort(
+        key=lambda item: (
+            PRIORITY_RANK.get(item["priority"], len(PRIORITY_RANK)),
+            item["identifier"],
+        )
+    )
     return queue
 
 
@@ -1025,14 +1346,17 @@ def resolve_coordinator_handle(args, warnings):
     terminals = listing.get("result", {}).get("terminals", [])
     cwd = os.path.realpath(os.getcwd())
     candidates = [
-        terminal for terminal in terminals
+        terminal
+        for terminal in terminals
         if terminal.get("connected")
         and terminal.get("writable")
         and terminal.get("worktreePath")
         and os.path.realpath(terminal.get("worktreePath")) == cwd
     ]
     if not candidates:
-        raise RuntimeError("could not infer coordinator terminal handle; pass --coordinator-handle")
+        raise RuntimeError(
+            "could not infer coordinator terminal handle; pass --coordinator-handle"
+        )
 
     def is_worker_terminal(terminal):
         # codex terminals inherit the worktree name as their title, so workers are
@@ -1040,8 +1364,12 @@ def resolve_coordinator_handle(args, warnings):
         title = str(terminal.get("title") or "")
         return title.startswith(WORKER_TITLE_PREFIX)
 
-    preferred = [terminal for terminal in candidates if not is_worker_terminal(terminal)] or candidates
-    preferred.sort(key=lambda terminal: int(terminal.get("lastOutputAt") or 0), reverse=True)
+    preferred = [
+        terminal for terminal in candidates if not is_worker_terminal(terminal)
+    ] or candidates
+    preferred.sort(
+        key=lambda terminal: int(terminal.get("lastOutputAt") or 0), reverse=True
+    )
     if len(preferred) > 1:
         warnings.append(
             f"multiple coordinator terminal candidates; selected most recent {preferred[0].get('handle')}"
@@ -1049,7 +1377,7 @@ def resolve_coordinator_handle(args, warnings):
     return preferred[0].get("handle")
 
 
-def run_one_backlog_issue(issue, args, coordinator_handle):
+def run_one_queue_issue(issue, args, coordinator_handle):
     identifier = issue["identifier"]
     started_at = time.monotonic()
     start_args = argparse.Namespace(
@@ -1064,7 +1392,11 @@ def run_one_backlog_issue(issue, args, coordinator_handle):
 
     while payload.get("status") == "pending":
         detail = payload.get("detail") or {}
-        missing = [key for key in ("task_id", "dispatch_id", "coordinator_handle") if not detail.get(key)]
+        missing = [
+            key
+            for key in ("task_id", "dispatch_id", "coordinator_handle")
+            if not detail.get(key)
+        ]
         if missing:
             return {
                 "status": "error",
@@ -1107,30 +1439,37 @@ def record_issue(summary, issue, payload):
     for key in ("reason", "warnings"):
         if payload.get(key):
             event[key] = payload[key]
-    if status in ("error", "escalation", "stuck", "failed") and payload.get("detail") is not None:
+    if (
+        status in ("error", "escalation", "stuck", "failed")
+        and payload.get("detail") is not None
+    ):
         event["detail"] = payload["detail"]
 
     summary["processed"] += 1
     if status in ("in_review_done", "skipped", "escalation", "stuck", "failed"):
         summary[status] += 1
     elif status == "error":
-        summary["errors"].append({
-            "identifier": issue["identifier"],
-            "reason": payload.get("reason"),
-            "detail": payload.get("detail"),
-        })
+        summary["errors"].append(
+            {
+                "identifier": issue["identifier"],
+                "reason": payload.get("reason"),
+                "detail": payload.get("detail"),
+            }
+        )
     if payload.get("warnings"):
-        summary["warnings"].append({"identifier": issue["identifier"], "warnings": payload["warnings"]})
+        summary["warnings"].append(
+            {"identifier": issue["identifier"], "warnings": payload["warnings"]}
+        )
 
     emit_event(event)
     return status
 
 
-def cmd_list_backlog(args):
-    return emit_event({"issues": load_backlog_queue(args, set())})
+def cmd_list_queue(args):
+    return emit_event({"issues": load_queue(args, set())})
 
 
-LOCK_FILENAME = ".run-backlog.lock"
+LOCK_FILENAME = ".run-queue.lock"
 
 
 def _lock_path():
@@ -1146,12 +1485,12 @@ def _pid_alive(pid):
 
 
 @contextlib.contextmanager
-def run_backlog_lock():
-    """Refuse to start a second run-backlog while one is already active.
+def run_queue_lock():
+    """Refuse to start a second run-queue while one is already active.
 
     A foreground invocation killed by a harness command timeout does not stop the
     codex worker it already dispatched -- that worker keeps running unsupervised.
-    A second run-backlog starting up in that window would independently pick its own
+    A second run-queue starting up in that window would independently pick its own
     issues from a fresh queue and race the (possibly still-alive) first one, producing
     multiple concurrent codex workers. The lock makes that race an explicit error
     instead of silent concurrent execution.
@@ -1168,7 +1507,7 @@ def run_backlog_lock():
             pass
         if stale_pid is not None and _pid_alive(stale_pid):
             raise RuntimeError(
-                f"another run-backlog is already active (pid={stale_pid}); refusing to "
+                f"another run-queue is already active (pid={stale_pid}); refusing to "
                 f"start a second instance. Confirm that pid is actually dead before "
                 f"removing {path}."
             )
@@ -1185,7 +1524,7 @@ def run_backlog_lock():
             pass
 
 
-def cmd_run_backlog(args):
+def cmd_run_queue(args):
     summary = {
         "event": "summary",
         "status": "completed",
@@ -1203,20 +1542,20 @@ def cmd_run_backlog(args):
     processed_since_relist = args.relist_every
 
     try:
-        with run_backlog_lock():
+        with run_queue_lock():
             coordinator_handle = resolve_coordinator_handle(args, summary["warnings"])
             ensure_run_bound(coordinator_handle, summary["warnings"])
             while True:
                 if not queue or processed_since_relist >= args.relist_every:
-                    queue = load_backlog_queue(args, attempted)
+                    queue = load_queue(args, attempted)
                     processed_since_relist = 0
-                    emit_event({"event": "backlog_listed", "count": len(queue)})
+                    emit_event({"event": "queue_listed", "count": len(queue)})
                     if not queue:
                         return emit_event(summary)
 
                 issue = queue.pop(0)
                 attempted.add(issue["identifier"])
-                payload = run_one_backlog_issue(issue, args, coordinator_handle)
+                payload = run_one_queue_issue(issue, args, coordinator_handle)
                 status = record_issue(summary, issue, payload)
                 processed_since_relist += 1
                 if status == "error":
@@ -1234,9 +1573,15 @@ def build_parser():
 
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--workspace", default=DEFAULT_WORKSPACE)
-    common.add_argument("--wait-timeout-ms", type=int, default=480000,
-                        help="Bounded poll chunk (default 8min, stays under tool call limits)")
-    common.add_argument("--json", action="store_true", help="No-op; output is always JSON")
+    common.add_argument(
+        "--wait-timeout-ms",
+        type=int,
+        default=480000,
+        help="Bounded poll chunk (default 8min, stays under tool call limits)",
+    )
+    common.add_argument(
+        "--json", action="store_true", help="No-op; output is always JSON"
+    )
 
     start = sub.add_parser("start", parents=[common])
     start.add_argument("--identifier", required=True)
@@ -1250,29 +1595,37 @@ def build_parser():
     wait.add_argument("--task-id", required=True)
     wait.add_argument("--dispatch-id", required=True)
     wait.add_argument("--coordinator-handle", required=True)
-    wait.add_argument("--worker-handle", help="Worker terminal to close if the worker reports failure")
+    wait.add_argument(
+        "--worker-handle", help="Worker terminal to close if the worker reports failure"
+    )
     wait.set_defaults(func=cmd_wait)
 
-    list_backlog = sub.add_parser("list-backlog", parents=[common])
-    list_backlog.add_argument("--team", default="GUI")
-    list_backlog.add_argument("--limit", type=int, default=216)
-    list_backlog.add_argument("--priority", default=None,
-                              help="Only list issues at these priorities (name or 0-4, "
-                                   "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.")
-    list_backlog.set_defaults(func=cmd_list_backlog)
+    list_queue = sub.add_parser("list-queue", parents=[common])
+    list_queue.add_argument("--team", default="GUI")
+    list_queue.add_argument("--limit", type=int, default=216)
+    list_queue.add_argument(
+        "--priority",
+        default=None,
+        help="Only list issues at these priorities (name or 0-4, "
+        "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.",
+    )
+    list_queue.set_defaults(func=cmd_list_queue)
 
-    run_backlog = sub.add_parser("run-backlog", parents=[common])
-    run_backlog.add_argument("--team", default="GUI")
-    run_backlog.add_argument("--repo", default=DEFAULT_REPO)
-    run_backlog.add_argument("--model", default=None)
-    run_backlog.add_argument("--coordinator-handle")
-    run_backlog.add_argument("--limit", type=int, default=216)
-    run_backlog.add_argument("--relist-every", type=int, default=10)
-    run_backlog.add_argument("--issue-timeout-seconds", type=int, default=7200)
-    run_backlog.add_argument("--priority", default=None,
-                             help="Only process issues at these priorities (name or 0-4, "
-                                  "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.")
-    run_backlog.set_defaults(func=cmd_run_backlog)
+    run_queue = sub.add_parser("run-queue", parents=[common])
+    run_queue.add_argument("--team", default="GUI")
+    run_queue.add_argument("--repo", default=DEFAULT_REPO)
+    run_queue.add_argument("--model", default=None)
+    run_queue.add_argument("--coordinator-handle")
+    run_queue.add_argument("--limit", type=int, default=216)
+    run_queue.add_argument("--relist-every", type=int, default=10)
+    run_queue.add_argument("--issue-timeout-seconds", type=int, default=7200)
+    run_queue.add_argument(
+        "--priority",
+        default=None,
+        help="Only process issues at these priorities (name or 0-4, "
+        "comma-separated, e.g. 'High' or 'Urgent,High'). Default: all.",
+    )
+    run_queue.set_defaults(func=cmd_run_queue)
 
     return p
 
@@ -1282,7 +1635,11 @@ def main():
     try:
         args.func(args)
     except Exception as exc:  # noqa: BLE001 - must always emit exactly one JSON line, never a bare traceback
-        result("error", getattr(args, "identifier", "?"), reason=f"{type(exc).__name__}: {exc}")
+        result(
+            "error",
+            getattr(args, "identifier", "?"),
+            reason=f"{type(exc).__name__}: {exc}",
+        )
         sys.exit(1)
 
 
