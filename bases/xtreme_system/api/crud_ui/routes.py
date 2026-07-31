@@ -108,7 +108,7 @@ class ColumnSpec[EntityT]:
 @dataclass(frozen=True)
 class CrudUIExportConfig[EntityT]:
     csv_filename: str
-    columns: Sequence[ColumnSpec[EntityT]] | None = None
+    columns: Sequence["ColumnSpec[EntityT]"] | None = None
     csv_headers: list[str] | None = None
     csv_row: CsvRow[EntityT] | None = None
     csv_fields: list[str | None] | None = None
@@ -126,6 +126,81 @@ class CrudUIRouteConfig:
     editar_dep: DepFactory | None = None
     excluir_dep: DepFactory | None = None
     cadastrar_dep: DepFactory | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIListRouteConfig[EntityT]:
+    list_key: str
+    list_template: str
+    list_partial_template: str
+    listing: ListingSpec[EntityT]
+    ctx_list: CtxList[EntityT]
+    columns: Sequence["ColumnSpec[EntityT]"] | None = None
+    pagina: str | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIExportRouteConfig[EntityT]:
+    listing: ListingSpec[EntityT]
+    csv_filename: str
+    columns: Sequence[ColumnSpec[EntityT]] | None = None
+    csv_headers: list[str] | None = None
+    csv_row: CsvRow[EntityT] | None = None
+    csv_fields: list[str | None] | None = None
+    pagina: str | None = None
+
+
+@dataclass(frozen=True)
+class CrudUINewRouteConfig:
+    cadastrar_dep: DepFactory | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIEditRouteConfig:
+    label: str
+    editar_dep: DepFactory | None = None
+
+
+@dataclass(frozen=True)
+class CrudUICreateRouteConfig[EntityT, CreateSchemaT: BaseModel]:
+    label: str
+    create_schema: type[CreateSchemaT]
+    list_key: str
+    ok_partial_template: str
+    ctx_list: CtxList[EntityT]
+    parse_form: ParseForm
+    pagina: str | None
+    before_create: BeforeCreateHook[CreateSchemaT] | None
+    after_create: AfterWriteHook[EntityT] | None
+    listing: ListingSpec[EntityT]
+    cadastrar_dep: DepFactory | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIUpdateRouteConfig[EntityT, UpdateSchemaT: BaseModel]:
+    label: str
+    update_schema: type[UpdateSchemaT]
+    list_key: str
+    ok_partial_template: str
+    ctx_list: CtxList[EntityT]
+    parse_form: ParseForm
+    before_update: BeforeUpdateHook[UpdateSchemaT] | None
+    after_update: AfterWriteHook[EntityT] | None
+    listing: ListingSpec[EntityT]
+    editar_dep: DepFactory | None = None
+    pagina: str | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIDeleteRouteConfig[EntityT]:
+    label: str
+    list_key: str
+    list_partial_template: str
+    ctx_list: CtxList[EntityT]
+    before_delete: BeforeDeleteHook[EntityT] | None
+    delete_requires_admin: bool
+    listing: ListingSpec[EntityT]
+    excluir_dep: DepFactory | None = None
 
 
 _DEFAULT_CRUD_UI_ROUTES = CrudUIRouteConfig()
@@ -212,31 +287,35 @@ def register_crud_ui_routes(
         templates,
         module,
         prefix,
-        list_key=resource.list_key,
-        list_template=templates_config.list_template,
-        list_partial_template=templates_config.list_partial_template,
-        listing=listing,
-        ctx_list=ctx_list,
-        columns=export.columns,
-        pagina=export.pagina,
+        config=CrudUIListRouteConfig(
+            list_key=resource.list_key,
+            list_template=templates_config.list_template,
+            list_partial_template=templates_config.list_partial_template,
+            listing=listing,
+            ctx_list=ctx_list,
+            columns=export.columns,
+            pagina=export.pagina,
+        ),
     )
     register_export_route(
         app,
         module,
         prefix,
-        listing=listing,
-        csv_filename=export.csv_filename,
-        columns=export.columns,
-        csv_headers=export.csv_headers,
-        csv_row=export.csv_row,
-        csv_fields=export.csv_fields,
-        pagina=export.pagina,
+        config=CrudUIExportRouteConfig(
+            listing=listing,
+            csv_filename=export.csv_filename,
+            columns=export.columns,
+            csv_headers=export.csv_headers,
+            csv_row=export.csv_row,
+            csv_fields=export.csv_fields,
+            pagina=export.pagina,
+        ),
     )
     register_new_route(
         app,
         form,
         prefix,
-        cadastrar_dep=routes.cadastrar_dep,
+        config=CrudUINewRouteConfig(cadastrar_dep=routes.cadastrar_dep),
     )
     if routes.register_edit:
         register_edit_route(
@@ -244,8 +323,9 @@ def register_crud_ui_routes(
             form,
             module,
             prefix,
-            resource.label,
-            editar_dep=routes.editar_dep,
+            config=CrudUIEditRouteConfig(
+                label=resource.label, editar_dep=routes.editar_dep
+            ),
         )
     if routes.register_create:
         register_create_route(
@@ -253,17 +333,19 @@ def register_crud_ui_routes(
             form,
             module,
             prefix,
-            resource.label,
-            create_schema=resource.create_schema,
-            list_key=resource.list_key,
-            ok_partial_template=templates_config.ok_partial_template,
-            ctx_list=ctx_list,
-            parse_form=behavior.parse_form,
-            pagina=export.pagina,
-            before_create=behavior.before_create,
-            after_create=behavior.after_create,
-            listing=listing,
-            cadastrar_dep=routes.cadastrar_dep,
+            config=CrudUICreateRouteConfig(
+                label=resource.label,
+                create_schema=resource.create_schema,
+                list_key=resource.list_key,
+                ok_partial_template=templates_config.ok_partial_template,
+                ctx_list=ctx_list,
+                parse_form=behavior.parse_form,
+                pagina=export.pagina,
+                before_create=behavior.before_create,
+                after_create=behavior.after_create,
+                listing=listing,
+                cadastrar_dep=routes.cadastrar_dep,
+            ),
         )
     if routes.register_update:
         register_update_route(
@@ -271,17 +353,19 @@ def register_crud_ui_routes(
             form,
             module,
             prefix,
-            resource.label,
-            update_schema=resource.update_schema,
-            list_key=resource.list_key,
-            ok_partial_template=templates_config.ok_partial_template,
-            ctx_list=ctx_list,
-            parse_form=behavior.parse_form,
-            before_update=behavior.before_update,
-            after_update=behavior.after_update,
-            listing=listing,
-            editar_dep=routes.editar_dep,
-            pagina=export.pagina,
+            config=CrudUIUpdateRouteConfig(
+                label=resource.label,
+                update_schema=resource.update_schema,
+                list_key=resource.list_key,
+                ok_partial_template=templates_config.ok_partial_template,
+                ctx_list=ctx_list,
+                parse_form=behavior.parse_form,
+                before_update=behavior.before_update,
+                after_update=behavior.after_update,
+                listing=listing,
+                editar_dep=routes.editar_dep,
+                pagina=export.pagina,
+            ),
         )
     if routes.register_delete:
         register_delete_route(
@@ -289,14 +373,16 @@ def register_crud_ui_routes(
             templates,
             module,
             prefix,
-            resource.label,
-            list_key=resource.list_key,
-            list_partial_template=templates_config.list_partial_template,
-            ctx_list=ctx_list,
-            before_delete=behavior.before_delete,
-            delete_requires_admin=routes.delete_requires_admin,
-            listing=listing,
-            excluir_dep=routes.excluir_dep,
+            config=CrudUIDeleteRouteConfig(
+                label=resource.label,
+                list_key=resource.list_key,
+                list_partial_template=templates_config.list_partial_template,
+                ctx_list=ctx_list,
+                before_delete=behavior.before_delete,
+                delete_requires_admin=routes.delete_requires_admin,
+                listing=listing,
+                excluir_dep=routes.excluir_dep,
+            ),
         )
 
 
@@ -306,13 +392,7 @@ def register_list_route(
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     *,
-    list_key: str,
-    list_template: str,
-    list_partial_template: str,
-    listing: ListingSpec[EntityT],
-    ctx_list: CtxList[EntityT],
-    columns: Sequence[ColumnSpec[EntityT]] | None = None,
-    pagina: str | None = None,
+    config: CrudUIListRouteConfig[EntityT],
 ) -> None:
     @app.get(prefix)
     def _list(
@@ -334,22 +414,22 @@ def register_list_route(
             limit=limit,
             offset=offset,
         )
-        lista = query_list(session, module, listing=listing, state=state)
+        lista = query_list(session, module, listing=config.listing, state=state)
         template = (
-            list_partial_template
+            config.list_partial_template
             if request.headers.get("HX-Request")
-            else list_template
+            else config.list_template
         )
-        context = ctx_list(session, lista)
-        if columns is not None:
+        context = config.ctx_list(session, lista)
+        if config.columns is not None:
             context["columns"] = [
                 column
-                for column in columns
+                for column in config.columns
                 if column.table
                 and (
-                    pagina is None
+                    config.pagina is None
                     or column.field is None
-                    or perfil.pode_ver_campo(user, pagina, column.field)
+                    or perfil.pode_ver_campo(user, config.pagina, column.field)
                 )
             ]
         return list_response(
@@ -357,12 +437,12 @@ def register_list_route(
             request,
             template,
             user=user,
-            list_key=list_key,
+            list_key=config.list_key,
             lista=lista,
             ctx_list=context,
-            sort=sort or listing.default_sort,
-            order=order if sort else listing.default_order,
-            q=q if listing.searchable else None,
+            sort=sort or config.listing.default_sort,
+            order=order if sort else config.listing.default_order,
+            q=q if config.listing.searchable else None,
             search_column=search_column,
             limit=limit,
             offset=offset,
@@ -374,27 +454,23 @@ def register_export_route(
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     *,
-    listing: ListingSpec[EntityT],
-    csv_filename: str,
-    columns: Sequence[ColumnSpec[EntityT]] | None = None,
-    csv_headers: list[str] | None = None,
-    csv_row: CsvRow[EntityT] | None = None,
-    csv_fields: list[str | None] | None = None,
-    pagina: str | None = None,
+    config: CrudUIExportRouteConfig[EntityT],
 ) -> None:
     @app.get(f"{prefix}/exportar")
     def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
-        lista = query_list(session, module, listing=listing, state=ListState(q=q))
-        if columns is not None:
+        lista = query_list(
+            session, module, listing=config.listing, state=ListState(q=q)
+        )
+        if config.columns is not None:
             export_columns: list[
                 tuple[ColumnSpec[EntityT], Callable[[EntityT], Any]]
             ] = []
-            for column in columns:
+            for column in config.columns:
                 export_value = column.export
                 if export_value is None or (
-                    pagina is not None
+                    config.pagina is not None
                     and column.field is not None
-                    and not perfil.pode_ver_campo(user, pagina, column.field)
+                    and not perfil.pode_ver_campo(user, config.pagina, column.field)
                 ):
                     continue
                 export_columns.append((column, export_value))
@@ -403,20 +479,20 @@ def register_export_route(
                 [export_value(obj) for _, export_value in export_columns]
                 for obj in lista
             ]
-        elif csv_headers is not None and csv_row is not None:
-            headers = csv_headers
-            rows = [csv_row(obj) for obj in lista]
+        elif config.csv_headers is not None and config.csv_row is not None:
+            headers = config.csv_headers
+            rows = [config.csv_row(obj) for obj in lista]
         else:
             raise RuntimeError(_MISSING_EXPORT_CONFIG)
-        if columns is None and pagina and csv_fields:
+        if config.columns is None and config.pagina and config.csv_fields:
             indices = [
                 idx
-                for idx, campo in enumerate(csv_fields)
-                if campo is None or perfil.pode_ver_campo(user, pagina, campo)
+                for idx, campo in enumerate(config.csv_fields)
+                if campo is None or perfil.pode_ver_campo(user, config.pagina, campo)
             ]
             headers = [headers[idx] for idx in indices]
             rows = [[row[idx] for idx in indices] for row in rows]
-        return csv_response(csv_filename, headers, rows)
+        return csv_response(config.csv_filename, headers, rows)
 
 
 def register_new_route(
@@ -424,9 +500,9 @@ def register_new_route(
     form: FormSpec,
     prefix: str,
     *,
-    cadastrar_dep: DepFactory | None = None,
+    config: CrudUINewRouteConfig,
 ) -> None:
-    dep = cadastrar_dep or require_ui_admin
+    dep = config.cadastrar_dep or require_ui_admin
 
     @app.get(f"{prefix}/novo")
     def _novo(
@@ -450,11 +526,10 @@ def register_edit_route(
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    label: str,
     *,
-    editar_dep: DepFactory | None = None,
+    config: CrudUIEditRouteConfig,
 ) -> None:
-    dep = editar_dep or require_ui_admin
+    dep = config.editar_dep or require_ui_admin
 
     @app.get(f"{prefix}/{{item_id}}/editar")
     def _editar(
@@ -463,7 +538,7 @@ def register_edit_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), config.label)
         return form_response(
             form.templates,
             request,
@@ -531,20 +606,10 @@ def register_create_route(
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    label: str,
     *,
-    create_schema: type[CreateSchemaT],
-    list_key: str,
-    ok_partial_template: str,
-    ctx_list: CtxList[EntityT],
-    parse_form: ParseForm,
-    pagina: str | None,
-    before_create: BeforeCreateHook[CreateSchemaT] | None,
-    after_create: AfterWriteHook[EntityT] | None,
-    listing: ListingSpec[EntityT],
-    cadastrar_dep: DepFactory | None = None,
+    config: CrudUICreateRouteConfig[EntityT, CreateSchemaT],
 ) -> None:
-    dep = cadastrar_dep or require_ui_admin
+    dep = config.cadastrar_dep or require_ui_admin
 
     @app.post(prefix)
     async def _criar(
@@ -553,10 +618,10 @@ def register_create_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         form_data = await request.form()
-        dados_form = parse_form(form_data)
-        perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
+        dados_form = config.parse_form(form_data)
+        perfil.filtrar_campos_form_ocultos(user, config.pagina, dados_form)
         try:
-            data = create_schema.model_validate(dados_form)
+            data = config.create_schema.model_validate(dados_form)
         except ValidationError as exc:
             return error_response(
                 form.templates,
@@ -576,11 +641,11 @@ def register_create_route(
                     module,
                     session,
                     data,
-                    after_create,
+                    config.after_create,
                     user.id,
-                    before_create=before_create,
+                    before_create=config.before_create,
                 ),
-                conflict_msg=write_conflict_detail(label),
+                conflict_msg=write_conflict_detail(config.label),
             )
         except HTTPException as exc:
             erro = str(exc.detail)
@@ -611,11 +676,11 @@ def register_create_route(
             form.templates,
             request,
             module,
-            ok_partial_template,
+            config.ok_partial_template,
             user=user,
-            list_key=list_key,
-            ctx_list=ctx_list,
-            listing=listing,
+            list_key=config.list_key,
+            ctx_list=config.ctx_list,
+            listing=config.listing,
         )
 
 
@@ -624,20 +689,10 @@ def register_update_route(
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    label: str,
     *,
-    update_schema: type[UpdateSchemaT],
-    list_key: str,
-    ok_partial_template: str,
-    ctx_list: CtxList[EntityT],
-    parse_form: ParseForm,
-    before_update: BeforeUpdateHook[UpdateSchemaT] | None,
-    after_update: AfterWriteHook[EntityT] | None,
-    listing: ListingSpec[EntityT],
-    editar_dep: DepFactory | None = None,
-    pagina: str | None = None,
+    config: CrudUIUpdateRouteConfig[EntityT, UpdateSchemaT],
 ) -> None:
-    dep = editar_dep or require_ui_admin
+    dep = config.editar_dep or require_ui_admin
 
     @app.post(f"{prefix}/{{item_id}}")
     async def _atualizar(
@@ -646,12 +701,12 @@ def register_update_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), config.label)
         form_data = await request.form()
-        dados_form = parse_form(form_data)
-        perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
+        dados_form = config.parse_form(form_data)
+        perfil.filtrar_campos_form_ocultos(user, config.pagina, dados_form)
         try:
-            data = update_schema.model_validate(dados_form)
+            data = config.update_schema.model_validate(dados_form)
         except ValidationError as exc:
             return error_response(
                 form.templates,
@@ -683,11 +738,11 @@ def register_update_route(
                     session,
                     obj,
                     data,
-                    before_update,
-                    after_update,
+                    config.before_update,
+                    config.after_update,
                     user.id,
                 ),
-                conflict_msg=write_conflict_detail(label),
+                conflict_msg=write_conflict_detail(config.label),
             )
         except HTTPException as exc:
             if exc.status_code != status.HTTP_409_CONFLICT:
@@ -706,11 +761,11 @@ def register_update_route(
             form.templates,
             request,
             module,
-            ok_partial_template,
+            config.ok_partial_template,
             user=user,
-            list_key=list_key,
-            ctx_list=ctx_list,
-            listing=listing,
+            list_key=config.list_key,
+            ctx_list=config.ctx_list,
+            listing=config.listing,
         )
 
 
@@ -767,17 +822,12 @@ def register_delete_route(
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
-    label: str,
     *,
-    list_key: str,
-    list_partial_template: str,
-    ctx_list: CtxList[EntityT],
-    before_delete: BeforeDeleteHook[EntityT] | None,
-    delete_requires_admin: bool,
-    listing: ListingSpec[EntityT],
-    excluir_dep: DepFactory | None = None,
+    config: CrudUIDeleteRouteConfig[EntityT],
 ) -> None:
-    dep = excluir_dep or (require_ui_admin if delete_requires_admin else get_ui_user)
+    dep = config.excluir_dep or (
+        require_ui_admin if config.delete_requires_admin else get_ui_user
+    )
 
     @app.post(f"{prefix}/{{item_id}}/excluir")
     def _excluir(
@@ -786,9 +836,9 @@ def register_delete_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), config.label)
         try:
-            delete_with_hook(module, session, obj, before_delete, user.id)
+            delete_with_hook(module, session, obj, config.before_delete, user.id)
         except IntegrityError:
 
             def build_conflict_response() -> HTMLResponse:
@@ -797,12 +847,12 @@ def register_delete_route(
                     templates,
                     request,
                     module,
-                    list_partial_template,
+                    config.list_partial_template,
                     user=user,
-                    list_key=list_key,
-                    ctx_list=ctx_list,
-                    listing=listing,
-                    erro=delete_conflict_detail(label),
+                    list_key=config.list_key,
+                    ctx_list=config.ctx_list,
+                    listing=config.listing,
+                    erro=delete_conflict_detail(config.label),
                     status_code=409,
                 )
 
@@ -815,9 +865,9 @@ def register_delete_route(
             templates,
             request,
             module,
-            list_partial_template,
+            config.list_partial_template,
             user=user,
-            list_key=list_key,
-            ctx_list=ctx_list,
-            listing=listing,
+            list_key=config.list_key,
+            ctx_list=config.ctx_list,
+            listing=config.listing,
         )
