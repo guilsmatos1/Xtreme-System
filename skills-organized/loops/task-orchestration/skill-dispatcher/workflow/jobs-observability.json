@@ -10,7 +10,7 @@
         "base_branch": "master"
       },
       "skill": "coding--analyze--observability",
-      "retries": 2,
+      "retries": 0,
       "retry_delay_seconds": 10
     },
     {
@@ -24,7 +24,7 @@
       },
       "skill": "devops--linear--send",
       "skill_args": "\"Xtreme System\" {repo_root}/.loop/running/issues-observability.md",
-      "retries": 2,
+      "retries": 0,
       "retry_delay_seconds": 10
     },
     {
@@ -37,7 +37,7 @@
         "base_branch": "master"
       },
       "skill": "devops--linear--duplicate-triage",
-      "retries": 2,
+      "retries": 0,
       "retry_delay_seconds": 10
     },
     {
@@ -51,7 +51,7 @@
       },
       "skill": "loops--task-orchestration--linear-run",
       "skill_args": "--priority High",
-      "retries": 2,
+      "retries": 0,
       "retry_delay_seconds": 10
     }
   ]

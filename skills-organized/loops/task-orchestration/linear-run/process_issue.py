@@ -931,6 +931,8 @@ def cmd_start(args):
                 f"{identifier}: {title[:60]}",
                 "--spec",
                 f"Resolver a issue Linear {identifier}.",
+                "--from",
+                args.coordinator_handle,
             ]
         )
         task_id = task.get("result", {}).get("task", {}).get("id")
