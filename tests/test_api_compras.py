@@ -1,14 +1,19 @@
 """API compras: CRUD via TestClient."""
 
 from collections.abc import Callable
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from xtreme_system.api.core import app
+from xtreme_system.api.routes.ui_routes import compras as compras_ui
+from xtreme_system.compra import core as compra
 from xtreme_system.database.core import get_session
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
+from xtreme_system.veiculo import core as veiculo
 
 
 @pytest.fixture
@@ -25,6 +30,22 @@ def _token(client: TestClient, username: str) -> str:
     resp = client.post("/login", data={"username": username, "password": "senha"})
     assert resp.status_code == 200
     return str(resp.json()["access_token"])
+
+
+def test_atualizacao_de_status_da_compra_bloqueia_linha_do_veiculo(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    session.get.return_value = veiculo.Veiculo(status=veiculo.StatusVeiculo.cancelado)
+    compra_obj = compra.Compra(
+        veiculo_id=123,
+        status=compra.StatusCompra.pendente,
+    )
+    monkeypatch.setattr(compras_ui, "sincronizar_caixa_compra", Mock())
+
+    compras_ui._sincronizar_status_veiculo_compra(session, compra_obj)  # noqa: SLF001
+
+    session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
 
 
 def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
