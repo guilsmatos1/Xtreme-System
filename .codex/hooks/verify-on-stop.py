@@ -48,6 +48,7 @@ CHECKS = [
         ["env", "XTREME_ALLOW_SQLITE_TEST_DB=1", "uv", "run", RTK, "pytest", "-n", "4"],
         {},
     ),
+    ("pre-commit", ["uv", "run", "pre-commit", "run", "--all-files"], {}),
 ]
 
 
@@ -188,7 +189,8 @@ def finalize(
         block(
             "Could not report completion to the coordinator "
             f"(orca orchestration send, phase={phase}):\n\n{error}\n\n"
-            "The work is already committed and merged. Stop again to retry the report."
+            "The work was not confirmed to be integrated. "
+            "Stop again to retry the report."
         )
         return False
 
@@ -206,7 +208,7 @@ def checks_stage(
 ) -> bool | None:
     """Return None to continue, True when finalized, or False when unresolved."""
     session_state = state_path(root, payload.get("session_id", ""))
-    if not session_state.exists():
+    if not session_state.exists() and report is None and not working_tree_dirty(root):
         return None
 
     session_state.unlink(missing_ok=True)
@@ -288,6 +290,13 @@ def integrate_reported(
 
     ok, output = run_agent_finish(root)
     if not ok:
+        if can_block:
+            block(
+                "Agent finish hook failed "
+                "(scripts/agent-finish.sh):\n\n"
+                f"{output}\n\nFix failures, then stop again."
+            )
+            return False
         # Implementation is fine, integration is not. `merge_failed` stops the
         # whole run with the worktree and branch intact, instead of discarding
         # work that only needs a human to resolve a conflict.
