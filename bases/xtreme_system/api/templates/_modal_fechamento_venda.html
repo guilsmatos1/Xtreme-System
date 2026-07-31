@@ -1,6 +1,6 @@
 {% import "_macros.html" as ui %}
 {% macro money(valor) -%}
-R$ {{ "{:,.2f}".format(valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}
+{{ ui.moeda(valor) }}
 {%- endmacro %}
 <div id="modal-content" class="modal" role="dialog" aria-modal="true">
   <div class="modal__panel">

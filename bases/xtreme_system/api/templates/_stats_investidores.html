@@ -11,7 +11,7 @@
   </article>
   <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("wallet") }} Saldo total</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_saldo) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda(total_saldo) }}</div>
     <div class="stat__hint">disponível para investimento</div>
   </article>
   <article class="card stat stat--accent">
@@ -21,7 +21,7 @@
   </article>
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("cash") }} Total aportado</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_aportes) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
-    <div class="stat__hint">R$ {{ "{:,.2f}".format(total_valor_veiculos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }} em veículos</div>
+    <div class="stat__value cell-num">{{ ui.moeda(total_aportes) }}</div>
+    <div class="stat__hint">{{ ui.moeda(total_valor_veiculos) }} em veículos</div>
   </article>
 </section>

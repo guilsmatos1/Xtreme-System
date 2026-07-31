@@ -8,7 +8,7 @@
   {% if pode_ver_campo(user, 'veiculos', 'ano') %}<td class="cell-num" data-col="ano">{{ v.ano }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'km') %}<td class="cell-num" data-col="km">{% if v.km is not none %}{{ "{:,}".format(v.km) | replace(",", ".") }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'status') %}<td data-col="status">{{ ui.status_badge(v.status) }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'veiculos', 'preco') %}<td class="cell-num cell-strong" data-col="preco">R$ {{ "{:,.2f}".format(v.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'preco') %}<td class="cell-num cell-strong" data-col="preco">{{ ui.moeda(v.preco) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}
   <td data-col="tipo_entrada">
     {% if v.tipo_entrada.value == "compra" %}
@@ -20,7 +20,7 @@
   {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<td class="muted" data-col="investidor">{{ v.investidor.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<td class="muted" data-col="procuracao">{{ v.procuracao or "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<td class="cell-center" data-col="revisao">{% if v.revisao %}✓{% else %}-{% endif %}</td>{% endif %}
-  {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if debitos_v is not none %}R$ {{ "{:,.2f}".format(debitos_v) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<td class="cell-num" data-col="debitos">{% if debitos_v is not none %}{{ ui.moeda(debitos_v) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}<td class="cell-num" data-col="tempo_estoque">{{ v.tempo_estoque }} dia{% if v.tempo_estoque != 1 %}s{% endif %}</td>{% endif %}
   {% set pode_editar = pode_operacao(user, 'veiculos', 'editar') %}
   {% set pode_cliente_vendedor = pode_operacao(user, 'veiculos', 'abrir_cliente_vendedor') %}

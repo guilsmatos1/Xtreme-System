@@ -8,7 +8,7 @@
     <h1>{{ investidor.nome }}</h1>
     <p class="page-head__subtitle">
       Saldo: <strong style="{{ 'color:var(--danger)' if saldo < 0 }}">
-        R$ {{ "{:,.2f}".format(saldo) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}
+        {{ ui.moeda(saldo) }}
       </strong>
     </p>
   </div>
