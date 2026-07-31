@@ -880,6 +880,7 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
                       detail={**context, "merge": merge_detail}, warnings=warnings)
 
     finish_success(identifier, workspace, warnings)
+    close_worker_terminal(worker_handle, warnings)
     set_worktree_checkpoint(
         identifier, f"Implementation merged into {MERGE_TARGET_BRANCH}; issue moved to Done.",
         workspace_status="completed", warnings=warnings,

@@ -31,7 +31,11 @@ a foreground command's timeout. Killing the foreground wrapper would not stop th
 agent it already dispatched, and nothing would be left to poll it for `worker_done`.
 
 ```bash
+# Run a single jobs file
 python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py run-jobs --jobs-file <path> --json
+
+# Run multiple workflows sequentially (E) — concatenates their jobs in order
+python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py run-jobs --workflows ui-ux features duplicates --json
 ```
 
 ### Example job files (workflows)
@@ -50,6 +54,31 @@ Available workflows:
 - `workflow-jobs-duplicates.json` — duplicate code analysis + Linear issue creation + Linear run
 - `workflow-jobs-ui-ux.json` — UI/UX analysis + Linear issue creation + Linear run
 - `workflow-jobs-llm-adherence.json` — LLM adherence analysis + Linear issue creation + Linear run
+
+## E: Multi-Workflow Sequential Execution
+
+Run multiple pre-built workflows back-to-back without manually merging JSON files.
+Use `--workflows` followed by one or more bare workflow names (space-separated).
+Jobs from each workflow are concatenated in the given order and run sequentially
+as a single merged list. Duplicate job names across workflows are automatically
+suffixed with the source workflow slug.
+
+```bash
+# Natural language equivalent: "Execute ui-ux, features, duplicates"
+python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py \
+  run-jobs --workflows ui-ux features duplicates --json
+
+# Single workflow (equivalent to --jobs-file workflow/jobs-ui-ux.json)
+python3 skills-organized/loops/task-orchestration/skill-dispatcher/run_jobs.py \
+  run-jobs --workflows ui-ux --json
+```
+
+`--workflows` is mutually exclusive with `--jobs-file`. Accepted name formats:
+- Bare slug: `ui-ux`, `features`, `duplicates`, `general`, `llm-adherence`
+- With prefix: `jobs-ui-ux`, `workflow-jobs-ui-ux`
+- Full path: `/absolute/path/to/jobs.json`
+
+**When the user says something like** "Execute ui-ux, features, duplicates" **or** "Run the ui-ux and features workflows", translate it directly to `--workflows ui-ux features` (or whichever names were mentioned) and invoke `run-jobs` with that flag.
 
 ### Helper: resolve_workflow_path
 

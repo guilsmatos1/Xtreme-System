@@ -1,5 +1,6 @@
 managed:
     coding--analyze--duplicates: coding/analyze/duplicates
+    coding--analyze--error-handling: coding/analyze/error-handling
     coding--analyze--features: coding/analyze/features
     coding--analyze--general: coding/analyze/general
     coding--analyze--llm-adherence: coding/analyze/llm-adherence

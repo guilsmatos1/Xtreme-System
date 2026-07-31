@@ -81,7 +81,7 @@ none is given, write `.loop/running/issues.md`.
    omits the file, line range, or snippet. Do not audit the codebase.
 7. If a task cannot be traced to code after that bounded lookup, retain it. Write `Not verified` for
    the location, set `Uncertain: Yes`, lower the confidence, and explain the gap under `Weaknesses`.
-8. Do not force an 8-12 item count. The count is whatever survives filtering and deduplication.
+8. Do not force an 8-15 item count. The count is whatever survives filtering and deduplication.
 
 ### Both modes — write and validate
 

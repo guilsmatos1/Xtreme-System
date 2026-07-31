@@ -46,6 +46,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 OUTPUT_SNIPPET_LIMIT = 400
@@ -204,6 +205,54 @@ def load_jobs(path):
     return [validate_job(job, idx) for idx, job in enumerate(jobs)]
 
 
+def load_jobs_from_workflows(workflow_names):
+    """Load and concatenate jobs from multiple workflow names.
+
+    Each name is resolved via resolve_workflow_path (accepts bare names like
+    'ui-ux', 'features', 'duplicates', full paths, etc.). The resulting jobs
+    from all workflows are concatenated in the order given. Duplicate job names
+    across workflows are suffixed with the workflow index to avoid collisions.
+
+    Returns (jobs_list, tmp_file_path) where tmp_file_path is a temporary
+    file containing the merged jobs JSON (caller is responsible for cleanup).
+    """
+    all_jobs = []
+    seen_names = {}
+    for wf_name in workflow_names:
+        wf_path = resolve_workflow_path(wf_name)
+        if not os.path.exists(wf_path):
+            raise ValueError(
+                f"workflow '{wf_name}' not found: {wf_path}. "
+                f"Available workflows are in the workflow/ directory."
+            )
+        with open(wf_path, encoding="utf-8") as f:
+            data = json.load(f)
+        wf_jobs = data if isinstance(data, list) else data.get("jobs", [])
+        if not isinstance(wf_jobs, list):
+            raise ValueError(f"workflow '{wf_name}': must contain a list or an object with a 'jobs' list")
+        for job in wf_jobs:
+            # Deduplicate job names across workflows by suffixing with workflow slug
+            raw_name = str(job.get("name") or "job")
+            if raw_name in seen_names:
+                wf_slug = wf_name.split("/")[-1].replace(".json", "").replace("workflow-jobs-", "").replace("jobs-", "")
+                job = dict(job)  # shallow copy so we don't mutate original
+                job["name"] = f"{raw_name}--{wf_slug}"
+            seen_names[job.get("name", raw_name)] = True
+            all_jobs.append(job)
+
+    # Write merged jobs to a temp file so the rest of the pipeline uses the
+    # normal --jobs-file code path (checkpointing, skill validation, etc.).
+    merged = {"jobs": all_jobs}
+    fd, tmp_path = tempfile.mkstemp(suffix=".json", prefix="run-jobs-merged-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(merged, f, indent=2)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+    return tmp_path
+
+
 def validate_job(job, index):
     if not isinstance(job, dict):
         raise ValueError(f"job[{index}] is not an object")
@@ -291,8 +340,15 @@ def _discover_local_skills():
 def resolve_workflow_path(workflow_name):
     """Resolve a workflow file path from the workflow directory.
 
-    Accepts a bare name (e.g. "general"), a name with or without .json extension,
-    or a full path. Searches relative to repo root and script directory.
+    Accepts a bare name (e.g. "ui-ux", "features", "duplicates"), a name with
+    or without .json extension, or a full path. Searches relative to repo root
+    and script directory.
+
+    Tries the following name variants in order:
+      1. Exact name (if it already contains a path separator or is absolute)
+      2. jobs-<name>.json        (current convention, e.g. jobs-ui-ux.json)
+      3. workflow-jobs-<name>.json  (legacy convention)
+      4. workflow-<name>.json    (older legacy convention)
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.realpath(os.getcwd())
@@ -301,21 +357,31 @@ def resolve_workflow_path(workflow_name):
     if os.path.isabs(workflow_name) or os.sep in workflow_name:
         return os.path.abspath(workflow_name)
 
-    # Ensure .json extension
-    if not workflow_name.endswith(".json"):
-        workflow_name += ".json"
+    # Strip any extensions so we work with the bare name
+    bare = workflow_name
+    if bare.endswith(".json"):
+        bare = bare[:-5]
+    # Strip known prefixes to get the core slug
+    for prefix in ("workflow-jobs-", "workflow-", "jobs-"):
+        if bare.startswith(prefix):
+            bare = bare[len(prefix):]
+            break
 
-    # If it doesn't start with "workflow-", prefix it (convention for built-in workflows)
-    if not workflow_name.startswith("workflow-"):
-        workflow_name = f"workflow-{workflow_name}"
+    # Candidate filenames in priority order (current convention first)
+    candidates_names = [
+        f"jobs-{bare}.json",
+        f"workflow-jobs-{bare}.json",
+        f"workflow-{bare}.json",
+    ]
 
     for base in (repo_root, script_dir):
-        candidate = os.path.join(base, _WORKFLOW_DIR, workflow_name)
-        if os.path.exists(candidate):
-            return candidate
+        for fname in candidates_names:
+            candidate = os.path.join(base, _WORKFLOW_DIR, fname)
+            if os.path.exists(candidate):
+                return candidate
 
-    # Fallback: return the path relative to repo_root for error messages
-    return os.path.join(repo_root, _WORKFLOW_DIR, workflow_name)
+    # Fallback: return the current-convention path relative to repo_root for error messages
+    return os.path.join(repo_root, _WORKFLOW_DIR, f"jobs-{bare}.json")
 
 
 def validate_skills_exist(jobs):
@@ -810,9 +876,32 @@ def cmd_run_jobs(args):
         "event": "summary", "status": "completed", "processed": 0,
         "done": 0, "escalation": 0, "stuck": 0, "errors": [], "warnings": [],
     }
+    # E: Multi-workflow support -- merge jobs from multiple workflow files into
+    # a single temporary jobs file, then run it as normal.
+    tmp_jobs_file = None
+    jobs_file = args.jobs_file
+    workflows = getattr(args, "workflows", None)
+    if workflows:
+        if jobs_file:
+            summary["status"] = "error"
+            summary["errors"].append({"reason": "--workflows and --jobs-file are mutually exclusive"})
+            return emit_event(summary)
+        try:
+            tmp_jobs_file = load_jobs_from_workflows(workflows)
+            jobs_file = tmp_jobs_file
+            emit_event({"event": "workflows_merged", "workflows": workflows, "merged_file": tmp_jobs_file})
+        except (ValueError, OSError) as exc:
+            summary["status"] = "error"
+            summary["errors"].append({"reason": f"workflow merge failed: {exc}"})
+            return emit_event(summary)
+    elif not jobs_file:
+        summary["status"] = "error"
+        summary["errors"].append({"reason": "one of --jobs-file or --workflows is required"})
+        return emit_event(summary)
+
     try:
         with run_jobs_lock():
-            jobs = load_jobs(args.jobs_file)
+            jobs = load_jobs(jobs_file)
 
             # D: validate all skill names before starting any work.
             try:
@@ -823,7 +912,7 @@ def cmd_run_jobs(args):
                 return emit_event(summary)
 
             # A: load persisted state when --resume is set.
-            state = load_state(args.jobs_file) if getattr(args, "resume", False) else {}
+            state = load_state(jobs_file) if getattr(args, "resume", False) else {}
             if state:
                 skipped = [j["name"] for j in jobs if state.get(j["name"]) == "done"]
                 if skipped:
@@ -848,7 +937,7 @@ def cmd_run_jobs(args):
                 # A: persist state after each job so --resume can skip it next time.
                 if status == "done":
                     state[job["name"]] = "done"
-                    save_state(args.jobs_file, state)
+                    save_state(jobs_file, state)
 
                 if status == "error":
                     summary["status"] = "error"
@@ -857,6 +946,12 @@ def cmd_run_jobs(args):
         summary["status"] = "error"
         summary["errors"].append({"reason": str(exc)})
         return emit_event(summary)
+    finally:
+        if tmp_jobs_file and os.path.exists(tmp_jobs_file):
+            try:
+                os.unlink(tmp_jobs_file)
+            except OSError:
+                pass
 
     return emit_event(summary)
 
@@ -890,7 +985,19 @@ def build_parser():
     wait_job.set_defaults(func=cmd_wait_job)
 
     run_jobs = sub.add_parser("run-jobs", parents=[common])
-    run_jobs.add_argument("--jobs-file", required=True)
+    run_jobs_group = run_jobs.add_mutually_exclusive_group()
+    run_jobs_group.add_argument("--jobs-file", default=None,
+                                help="Path to a single jobs JSON file.")
+    run_jobs_group.add_argument(
+        "--workflows", nargs="+", metavar="WORKFLOW",
+        help=(
+            "One or more workflow names (e.g. ui-ux features duplicates). "
+            "Jobs from all named workflows are concatenated in order and run "
+            "sequentially as a single merged list. Mutually exclusive with --jobs-file. "
+            "Accepts bare names (ui-ux), names with prefix (workflow-jobs-ui-ux), "
+            "or full paths."
+        ),
+    )
     run_jobs.add_argument("--coordinator-handle")
     run_jobs.add_argument("--job-timeout-seconds", type=int, default=7200)
     run_jobs.add_argument(

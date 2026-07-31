@@ -1,0 +1,44 @@
+{
+  "jobs": [
+    {
+      "name": "send-issues-to-linear",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "send-issues-to-linear",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "devops--linear--send",
+      "skill_args": "--file .loop/running/issues-reference-repo.md --project 'Xtreme System'",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "triage-duplicates",
+      "agent": "opencode",
+      "worktree": {
+        "mode": "current",
+        "name": "triage-duplicates",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "skill": "devops--linear--duplicate-triage",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    },
+    {
+      "name": "process-priority-medium-plus",
+      "agent": "agy",
+      "worktree": {
+        "mode": "current",
+        "name": "process-priority-medium-plus",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "prompt": "Process the issues with priority level 'high' or 'medium' from the Linear project XTREME. Create a summary of next steps and recommended order of work.",
+      "retries": 2,
+      "retry_delay_seconds": 10
+    }
+  ]
+}
