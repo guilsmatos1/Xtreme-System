@@ -30,13 +30,13 @@
       <form method="post" action="/ui/login">
         <label class="field">
           <span class="field__label">Usuário</span>
-          <input class="input" name="username" placeholder="seu.usuario" required autofocus autocomplete="username">
+          <input class="input" name="username" data-testid="login-username" placeholder="seu.usuario" required autofocus autocomplete="username">
         </label>
         <label class="field">
           <span class="field__label">Senha</span>
-          <input class="input" name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
+          <input class="input" name="password" data-testid="login-password" type="password" placeholder="••••••••" required autocomplete="current-password">
         </label>
-        <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+        <button class="btn btn--primary btn--block" data-testid="login-submit" type="submit">Entrar</button>
       </form>
     </article>
   </main>
