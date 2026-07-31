@@ -617,6 +617,17 @@ def close_worker_terminal(worker_handle, warnings):
         warnings.append(f"failed to close worker terminal {worker_handle}: {exc}")
 
 
+def close_worktree(worktree_selector, warnings):
+    """Remove a worktree this job created (mode "new" only). Best-effort: a
+    dirty/unmerged worktree is left in place with a warning rather than forced."""
+    if not worktree_selector:
+        return
+    try:
+        orca(["worktree", "rm", "--worktree", worktree_selector])
+    except OrcaError as exc:
+        warnings.append(f"failed to remove worktree {worktree_selector}: {exc}")
+
+
 # --- Coordinator handle inference --------------------------------------------
 
 def resolve_coordinator_handle(explicit, warnings):
@@ -775,6 +786,9 @@ def _run_one_attempt(job, args, coordinator_handle, coordinator_worktree_path):
     name = job["name"]
     started_at = time.monotonic()
     payload = _start_job(job, coordinator_handle, coordinator_worktree_path, args.wait_timeout_ms)
+    # Captured once, from _start_job's detail -- _wait_job's own detail (the
+    # worker_done message body) does not carry the worktree selector.
+    worktree_selector = (payload.get("detail") or {}).get("worktree")
 
     while payload.get("status") == "pending":
         detail = payload.get("detail") or {}
@@ -790,6 +804,14 @@ def _run_one_attempt(job, args, coordinator_handle, coordinator_worktree_path):
         chunk_ms = min(args.wait_timeout_ms, max(1000, int(remaining * 1000)))
         payload = _wait_job(name, detail["task_id"], detail["dispatch_id"], detail["coordinator_handle"],
                             detail.get("worker_handle"), chunk_ms, job.get("keep_open", False), [])
+
+    # Only remove a worktree this job itself created ("new"); "current"/"existing"
+    # target worktrees the job does not own. Never remove on escalation/stuck/error
+    # or when keep_open asked for the window (and by extension the worktree) to stay.
+    if (payload.get("status") == "done" and job["worktree"]["mode"] == "new"
+            and not job.get("keep_open", False) and job.get("remove_worktree", True)):
+        warnings = payload.setdefault("warnings", [])
+        close_worktree(worktree_selector, warnings)
 
     return payload
 

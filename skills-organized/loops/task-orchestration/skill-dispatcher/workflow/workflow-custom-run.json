@@ -1,0 +1,172 @@
+{
+  "jobs": [
+    {
+      "name": "loops-task-orchestration-linear-run-api-consistency",
+      "skill": "loops--task-orchestration--linear-run",
+      "skill_args": "--priority High",
+      "prompt": null,
+      "agent": "agy",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "loops-task-orchestration-linear-run",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": [
+        "agent 'agy' is not in the known list ('claude', 'codex', 'omp', 'pi', 'grok', 'opencode', 'gemini', 'droid', 'cursor'); passing through as-is"
+      ]
+    },
+    {
+      "name": "coding-analyze-concurrency-concurrency",
+      "skill": "coding--analyze--concurrency",
+      "skill_args": "",
+      "prompt": null,
+      "agent": "claude",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "coding-analyze-concurrency",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "devops-linear-send-concurrency",
+      "skill": "devops--linear--send",
+      "skill_args": "\"Xtreme System\" {repo_root}/.loop/running/issues-concurrency.md",
+      "prompt": null,
+      "agent": "opencode",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-send",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "devops-linear-duplicate-triage-concurrency",
+      "skill": "devops--linear--duplicate-triage",
+      "skill_args": "",
+      "prompt": null,
+      "agent": "opencode",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-duplicate-triage",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "loops-task-orchestration-linear-run-concurrency",
+      "skill": "loops--task-orchestration--linear-run",
+      "skill_args": "--priority High",
+      "prompt": null,
+      "agent": "agy",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "loops-task-orchestration-linear-run",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": [
+        "agent 'agy' is not in the known list ('claude', 'codex', 'omp', 'pi', 'grok', 'opencode', 'gemini', 'droid', 'cursor'); passing through as-is"
+      ]
+    },
+    {
+      "name": "coding-analyze-data-integrity-data-integrity",
+      "skill": "coding--analyze--data-integrity",
+      "skill_args": "",
+      "prompt": null,
+      "agent": "claude",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "coding-analyze-data-integrity",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "devops-linear-send-data-integrity",
+      "skill": "devops--linear--send",
+      "skill_args": "\"Xtreme System\" {repo_root}/.loop/running/issues-data-integrity.md",
+      "prompt": null,
+      "agent": "opencode",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-send",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "devops-linear-duplicate-triage-data-integrity",
+      "skill": "devops--linear--duplicate-triage",
+      "skill_args": "",
+      "prompt": null,
+      "agent": "opencode",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "devops-linear-duplicate-triage",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": []
+    },
+    {
+      "name": "loops-task-orchestration-linear-run-data-integrity",
+      "skill": "loops--task-orchestration--linear-run",
+      "skill_args": "--priority High",
+      "prompt": null,
+      "agent": "agy",
+      "command": null,
+      "worktree": {
+        "mode": "current",
+        "name": "loops-task-orchestration-linear-run",
+        "repo": "name:xtreme-system",
+        "base_branch": "master"
+      },
+      "keep_open": false,
+      "retries": 0,
+      "retry_delay_seconds": 10,
+      "_warnings": [
+        "agent 'agy' is not in the known list ('claude', 'codex', 'omp', 'pi', 'grok', 'opencode', 'gemini', 'droid', 'cursor'); passing through as-is"
+      ]
+    }
+  ]
+}

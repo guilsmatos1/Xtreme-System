@@ -158,6 +158,13 @@ Fields:
   - `"current"` targets the calling agent's own worktree (`--worktree active`).
 - `keep_open` (optional, default `false`): if `true`, never close the terminal window
   even after `worker_done`. Use for a job whose output you want to inspect manually.
+  Also suppresses worktree removal (see `remove_worktree`).
+- `remove_worktree` (optional, default `true`): if the job's outcome is `done`, `worktree.mode`
+  is `"new"` (i.e. this job created the worktree), and `keep_open` is not set, remove the
+  worktree via `orca worktree rm --worktree <selector>` right after the terminal closes.
+  Never applies to `"existing"` or `"current"` mode, since the job does not own those
+  worktrees. Removal is best-effort: a dirty/unmergeable worktree is left in place with a
+  warning rather than forced (`--force` is not passed).
 - `retries` (optional, default `0`): how many times to retry the job on a transient
   `error` before propagating the failure. Does **not** retry `escalation` or `stuck`.
 - `retry_delay_seconds` (optional, default `5`): seconds to wait between attempts.
@@ -167,7 +174,7 @@ Fields:
 
 | status       | meaning                                                                                   | window                    |
 | ------------ | ------------------------------------------------------------------------------------------ | ------------------------- |
-| `done`       | Agent sent `worker_done` for this job's `taskId`/`dispatchId`.                              | Closed (`terminal close --tab`), unless `keep_open`. |
+| `done`       | Agent sent `worker_done` for this job's `taskId`/`dispatchId`.                              | Closed (`terminal close --tab`), unless `keep_open`. If `worktree.mode` is `"new"`, the worktree is also removed unless `keep_open` or `remove_worktree: false`. |
 | `escalation` | Agent asked for human intervention.                                                          | Left open on purpose.     |
 | `stuck`      | Per-job wait cap (`--job-timeout-seconds`, default 2h) expired with no `worker_done`.        | Left open.                |
 | `error`      | Unexpected failure (missing handle, TUI never reached idle, task/dispatch creation failed). | Whatever exists is left as-is; the whole run stops. |
@@ -240,8 +247,11 @@ Jobs using `prompt` instead of `skill` are exempt from this check.
   never exit on their own.
 - Jobs run strictly sequentially: the next job is not started until the current one
   reaches `done`, `escalation`, or `stuck`. An `error` stops the whole run.
-- This skill never deletes worktrees or branches, and never force-closes a window before
-  `worker_done`/`escalation`/`stuck` — only `terminal close` on an already-finished job.
+- This skill never force-closes a window before `worker_done`/`escalation`/`stuck` — only
+  `terminal close` on an already-finished job. It removes a worktree only when it created
+  that worktree itself (`worktree.mode: "new"`), the job reached `done`, and neither
+  `keep_open` nor `remove_worktree: false` opted out; `"existing"`/`"current"` worktrees and
+  branches are never touched. Removal never forces past a dirty worktree.
 - If Orchestration is unavailable, stop and tell the user to enable Settings > Experimental
   > Orchestration.
 - A `worker_done`/`escalation` only counts when its payload's `taskId`/`dispatchId` match
