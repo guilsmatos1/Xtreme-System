@@ -4,7 +4,7 @@
   <div class="modal__panel{% if not compra %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mc-title">
     <div class="modal__head">
       <h3 id="mc-title">{{ 'Editar compra' if compra else 'Nova compra' }}</h3>
-      <button class="icon-btn" type="button" aria-label="Fechar"
+      <button class="icon-btn" data-testid="compra-wizard-close" type="button" aria-label="Fechar"
               onclick="closeModalOnBackdrop(this.closest('.modal'))">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
@@ -98,7 +98,7 @@
           {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <select class="select" id="cliente-select" name="cliente_id" autofocus>
+            <select class="select" id="cliente-select" data-testid="compra-wizard-client-select" name="cliente_id" autofocus>
               <option value="">➕ Cadastrar novo cliente</option>
               {% for c in clientes %}
               <option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
@@ -107,11 +107,11 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
+            <input class="input" name="cli_nome" data-testid="compra-wizard-client-name" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Tipo</span>
@@ -121,11 +121,11 @@
           </label>
           <label class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
+            <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
           </label>
           <label class="field field--full">
             <span class="field__label">Endereço</span>
@@ -162,11 +162,11 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
+            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
           </label>
           <label class="field field--full">
             <span class="field__label">Modelo *</span>
-            <input class="input" name="vei_modelo" data-novo-veiculo value="{{ dados.get('vei_modelo', '') }}" required>
+            <input class="input" name="vei_modelo" data-testid="compra-wizard-vehicle-model" data-novo-veiculo value="{{ dados.get('vei_modelo', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Marca</span>
@@ -174,15 +174,15 @@
           </label>
           <label class="field">
             <span class="field__label">Cor *</span>
-            <input class="input" name="vei_cor" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
+            <input class="input" name="vei_cor" data-testid="compra-wizard-vehicle-color" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Ano *</span>
-            <input class="input" name="vei_ano" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
+            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Quilometragem</span>
-            <input class="input" name="vei_km" type="number" data-novo-veiculo value="{{ dados.get('vei_km', '') }}">
+            <input class="input" name="vei_km" data-testid="compra-wizard-vehicle-mileage" type="number" data-novo-veiculo value="{{ dados.get('vei_km', '') }}">
           </label>
           <label class="field">
             <span class="field__label">Chassi</span>
@@ -198,7 +198,7 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Investidor *</span>
-            <select class="select" name="vei_investidor_id" data-novo-veiculo required>
+            <select class="select" name="vei_investidor_id" data-testid="compra-wizard-vehicle-investor" data-novo-veiculo required>
               <option value="">Selecione</option>
               {% for i in investidores %}<option value="{{ i.id }}"{% if dados.get('vei_investidor_id')|string == i.id|string %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
             </select>
@@ -216,13 +216,13 @@
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
             <span class="field__label">Valor da compra *</span>
-            <input class="input" name="valor_compra" type="text" inputmode="decimal" value="{{ dados.get('valor_compra', '') }}" required>
+            <input class="input" name="valor_compra" data-testid="compra-wizard-purchase-value" type="text" inputmode="decimal" value="{{ dados.get('valor_compra', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos de veículos</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}">
+            <input class="input" name="debitos" data-testid="compra-wizard-vehicle-debts" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}">
           </label>
           {% endif %}
         </fieldset>
@@ -240,7 +240,7 @@
           {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
           <div class="mmgr__upload">
             <label class="mmgr__drop">
-              <input type="file" name="comprovantes_pagamento" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple
+              <input type="file" data-testid="compra-wizard-payment-receipts" name="comprovantes_pagamento" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple
                      onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste o comprovante aqui ou clique para selecionar'">
               <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
               <span class="mmgr__drop-text">Arraste o comprovante aqui ou clique para selecionar</span>
@@ -257,8 +257,8 @@
         <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
         {% else %}
         <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">{{ ui.icon("arrow-left") }} Voltar</button>
-        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo {{ ui.icon("arrow-right") }}</button>
-        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="button" class="btn btn--primary" id="wizard-proximo" data-testid="compra-wizard-next">Próximo {{ ui.icon("arrow-right") }}</button>
+        <button type="submit" class="btn btn--primary" id="wizard-salvar" data-testid="compra-wizard-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>
