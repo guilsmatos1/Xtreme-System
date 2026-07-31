@@ -102,20 +102,6 @@ def ui_usuario_criar(
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
-    if usuario.get_by_username(session, username) is not None:
-        return templates.TemplateResponse(
-            request,
-            "_form_usuario.html",
-            {"perfis": perfil.list_all(session), "erro": "username já existe"},
-            status_code=400,
-        )
-    if perfil_id is not None and perfil.get(session, perfil_id) is None:
-        return templates.TemplateResponse(
-            request,
-            "_form_usuario.html",
-            {"perfis": perfil.list_all(session), "erro": "perfil não encontrado"},
-            status_code=400,
-        )
     try:
         usuario.create(
             session,
@@ -128,7 +114,7 @@ def ui_usuario_criar(
             ),
             user.id,
         )
-    except usuario.SenhaFracaError as exc:
+    except (usuario.SenhaFracaError, usuario.UsuarioValidationError) as exc:
         return templates.TemplateResponse(
             request,
             "_form_usuario.html",
@@ -253,49 +239,30 @@ def ui_usuario_editar(
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     obj = _found(usuario.get(session, user_id), "Usuário")
-    if (
-        username != obj.username
-        and usuario.get_by_username(session, username) is not None
-    ):
-        return templates.TemplateResponse(
-            request,
-            "_form_usuario_editar.html",
-            {
-                "usuario": obj,
-                "perfis": perfil.list_all(session),
-                "erro": "username já existe",
-            },
-            status_code=400,
+    try:
+        if senha:
+            usuario.validate_senha(senha)
+        usuario.update(
+            session,
+            obj,
+            usuario.UsuarioUpdate(
+                username=username,
+                nome=nome,
+                papel=papel,
+                ativo=ativo,
+                perfil_id=perfil_id,
+            ),
+            user.id,
         )
-    if perfil_id is not None and perfil.get(session, perfil_id) is None:
-        return templates.TemplateResponse(
-            request,
-            "_form_usuario_editar.html",
-            {
-                "usuario": obj,
-                "perfis": perfil.list_all(session),
-                "erro": "perfil não encontrado",
-            },
-            status_code=400,
-        )
-    usuario.update(
-        session,
-        obj,
-        usuario.UsuarioUpdate(
-            username=username, nome=nome, papel=papel, ativo=ativo, perfil_id=perfil_id
-        ),
-        user.id,
-    )
-    if senha:
-        try:
+        if senha:
             usuario.change_password(session, obj, senha, user.id)
-        except usuario.SenhaFracaError as exc:
-            return templates.TemplateResponse(
-                request,
-                "_form_usuario_editar.html",
-                {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
-                status_code=400,
-            )
+    except (usuario.SenhaFracaError, usuario.UsuarioValidationError) as exc:
+        return templates.TemplateResponse(
+            request,
+            "_form_usuario_editar.html",
+            {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
+            status_code=400,
+        )
     return success_response(
         templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
