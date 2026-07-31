@@ -181,6 +181,7 @@ Registro de compras de veículos.
 | `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (CASCADE), indexado |
 | `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (CASCADE), indexado |
 | `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado; preenchido automaticamente com o usuário logado na criação |
+| `idempotency_key` | `VARCHAR(64)` | Sim | - | Chave única da submissão da UI para evitar compras duplicadas |
 | `data_compra` | `DATE` | Não | - | |
 | `criado_em` | `DATETIME` | Não | `now()` | Momento de criação do registro |
 | `valor_compra` | `NUMERIC(12,2)` | Não | - | |
@@ -368,6 +369,7 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 | `compra` | `ix_compra_cliente_id` | `cliente_id` | Não |
 | `compra` | `ix_compra_veiculo_id` | `veiculo_id` | Não |
 | `compra` | `ix_compra_usuario_id` | `usuario_id` | Não |
+| `compra` | `ix_compra_idempotency_key` | `idempotency_key` | Sim |
 | `custo_veiculo` | `ix_custo_veiculo_veiculo_id` | `veiculo_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_investidor_id` | `investidor_id` | Não |
 | `lancamento_investimento` | `ix_lancamento_investimento_veiculo_id` | `veiculo_id` | Sim |

@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func, select
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func, select
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -36,6 +36,9 @@ class Compra(Base):
     usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuario.id", ondelete="SET NULL"), index=True
     )
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(64), unique=True, index=True
+    )
     data_compra: Mapped[date] = mapped_column(Date)
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 2))
@@ -55,6 +58,7 @@ class CompraCreate(BaseModel):
     cliente_id: int
     veiculo_id: int
     usuario_id: int | None = None
+    idempotency_key: str | None = None
     data_compra: date | None = None
     valor_compra: Decimal = Field(gt=0)
     debitos: Decimal | None = Field(default=None, ge=0)
@@ -155,6 +159,10 @@ def latest_debitos_by_veiculo_ids(
 
 def get(session: Session, compra_id: int) -> Compra | None:
     return crud.get(session, Compra, compra_id)
+
+
+def get_by_idempotency_key(session: Session, key: str) -> Compra | None:
+    return session.query(Compra).filter_by(idempotency_key=key).one_or_none()
 
 
 def list_by_cliente(session: Session, cliente_id: int) -> list[Compra]:
