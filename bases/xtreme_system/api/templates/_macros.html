@@ -114,6 +114,10 @@
    class="sort-link{% if is_active %} sort-link--active{% endif %}">{{ label }}{{ arrow }}</a>
 {%- endmacro %}
 
+{% macro sortable_aria(col, current_sort, current_order) -%}
+{{- "ascending" if col == current_sort and current_order == "asc" else "descending" if col == current_sort else "none" -}}
+{%- endmacro %}
+
 {% macro acao_badge(tipo_acao) -%}
 {%- if tipo_acao == "CREATE" -%}
   <span class="badge badge--success">Criação</span>

@@ -57,7 +57,7 @@
     <thead>
       <tr>
         {% for column in columns %}
-        <th data-col="{{ column.key }}" data-col-label="{{ column.label }}">{{ ui.sortable(column.key, column.label, sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
+      <th data-col="{{ column.key }}" data-col-label="{{ column.label }}" aria-sort="{{ ui.sortable_aria(column.key, sort, order) }}">{{ ui.sortable(column.key, column.label, sort, order, route_prefix or "/ui/clientes", extra_qs=sort_qs) }}</th>
         {% endfor %}
         {% if pode_operacao(user, 'clientes', 'editar') or pode_operacao(user, 'clientes', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
       </tr>
