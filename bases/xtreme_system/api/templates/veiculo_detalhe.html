@@ -36,19 +36,19 @@
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("cash") }} Preço Anunciado</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(veiculo.preco) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda(veiculo.preco) }}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'custo') %}
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
-    <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}R$ {{ "{:,.2f}".format(compra_atual.valor_compra) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}{{ ui.moeda(compra_atual.valor_compra) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("cash") }} Débitos</div>
-    <div class="stat__value cell-num">{% if compra_atual and compra_atual.debitos is not none %}R$ {{ "{:,.2f}".format(compra_atual.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.debitos is not none %}{{ ui.moeda(compra_atual.debitos) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}
@@ -105,7 +105,7 @@
       <div><dt>Endereço</dt><dd>{{ compra_atual.cliente.endereco or "-" }}</dd></div>
       <div><dt>Cidade/UF</dt><dd>{{ compra_atual.cliente.cidade or "-" }}{% if compra_atual.cliente.estado %}/{{ compra_atual.cliente.estado }}{% endif %}</dd></div>
       <div><dt>CEP</dt><dd>{{ compra_atual.cliente.cep or "-" }}</dd></div>
-      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<div><dt>Débitos</dt><dd>{% if compra_atual.debitos is not none %}R$ {{ "{:,.2f}".format(compra_atual.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<div><dt>Débitos</dt><dd>{% if compra_atual.debitos is not none %}{{ ui.moeda(compra_atual.debitos) }}{% else %}-{% endif %}</dd></div>{% endif %}
     </dl>
     {% if documentos_vendedor %}
     <div style="margin-top:var(--s-4)">
@@ -148,7 +148,7 @@
         <tr>
           <td data-col="categoria">{{ c.categoria }}</td>
           <td data-col="data">{{ c.data_custo.isoformat() }}</td>
-          <td class="cell-num" data-col="valor">R$ {{ "{:,.2f}".format(c.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+          <td class="cell-num" data-col="valor">{{ ui.moeda(c.valor) }}</td>
           <td data-col="descricao">{{ c.descricao or "-" }}</td>
         </tr>
         {% endfor %}

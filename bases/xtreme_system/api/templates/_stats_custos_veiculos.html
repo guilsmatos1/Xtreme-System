@@ -2,7 +2,7 @@
 <section id="stats-custos-veiculos" class="stats" aria-label="Resumo de custos"{% if oob %} hx-swap-oob="outerHTML"{% endif %}>
   <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("cash") }} Total de custos</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.2f}".format(total_custos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda(total_custos) }}</div>
     <div class="stat__hint">custos visíveis</div>
   </article>
   <article class="card stat stat--success">

@@ -8,7 +8,7 @@
     {% else %}<span class="badge badge--danger">Saque</span>{% endif %}
   </td>
   <td data-col="descricao">{{ l.descricao }}</td>
-  <td class="cell-num cell-strong" data-col="valor">{{ '+' if l.tipo.value == 'aporte' else '-' }} R$ {{ "{:,.2f}".format(l.valor) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}</td>
+  <td class="cell-num cell-strong" data-col="valor">{{ '+' if l.tipo.value == 'aporte' else '-' }} {{ ui.moeda(l.valor) }}</td>
   {% if is_admin(user) %}
   <td class="col-actions" data-col="acoes" data-col-fixed>
     {% if l.origem.value == 'veiculo' %}

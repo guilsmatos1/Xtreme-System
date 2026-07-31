@@ -18,7 +18,7 @@
         <div><dt>Endereço</dt><dd>{{ compra.cliente.endereco or "-" }}</dd></div>
         <div><dt>Cidade/UF</dt><dd>{{ compra.cliente.cidade or "-" }}{% if compra.cliente.estado %}/{{ compra.cliente.estado }}{% endif %}</dd></div>
         <div><dt>CEP</dt><dd>{{ compra.cliente.cep or "-" }}</dd></div>
-        <div><dt>Débitos</dt><dd>{% if compra.debitos is not none %}R$ {{ "{:,.2f}".format(compra.debitos) | replace(",", "@") | replace(".", ",") | replace("@", ".") }}{% else %}-{% endif %}</dd></div>
+        <div><dt>Débitos</dt><dd>{% if compra.debitos is not none %}{{ ui.moeda(compra.debitos) }}{% else %}-{% endif %}</dd></div>
       </dl>
 
       {% else %}

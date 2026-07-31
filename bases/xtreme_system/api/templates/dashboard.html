@@ -24,11 +24,11 @@
   <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("cash") }} Vendas</div>
     <div class="stat__value cell-num">{{ vendas_mes_count }}</div>
-    <div class="stat__hint">R$ {{ "{:,.0f}".format(vendas_mes_total or 0) | replace(",", ".") }}</div>
+    <div class="stat__hint">{{ ui.moeda(vendas_mes_total) }}</div>
   </article>
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("tag") }} Ticket médio</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(ticket_medio or 0) | replace(",", ".") }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda(ticket_medio) }}</div>
     <div class="stat__hint">valor médio de venda</div>
   </article>
   <article class="card stat stat--accent">
@@ -38,7 +38,7 @@
   </article>
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("wallet") }} Valor em estoque</div>
-    <div class="stat__value cell-num">R$ {{ "{:,.0f}".format(valor_estoque or 0) | replace(",", ".") }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda(valor_estoque) }}</div>
     <div class="stat__hint">{{ disponiveis }} disponíveis</div>
   </article>
 </section>
@@ -49,7 +49,7 @@
     <div class="bar-chart__inner">
       <div class="bar-chart__yaxis">
         {% for tick in desempenho_eixo_y %}
-        <span class="bar-chart__ytick">R$ {{ "{:,.0f}".format(tick) | replace(",", ".") }}</span>
+        <span class="bar-chart__ytick">{{ ui.moeda(tick) }}</span>
         {% endfor %}
       </div>
       <div class="bar-chart__plot">
@@ -57,24 +57,16 @@
           {% for item in desempenho_chart %}
           <div class="bar-chart__col">
             <span class="bar-chart__value-tag">
-              {% if item.total and item.total >= 1000000 %}
-                R$ {{ "%.1f"|format(item.total / 1000000) }}M
-              {% elif item.total and item.total >= 1000 %}
-                R$ {{ "%.0f"|format(item.total / 1000) }}k
-              {% elif item.total %}
-                R$ {{ "{:,.0f}".format(item.total) }}
-              {% else %}
-                R$ 0
-              {% endif %}
+              {{ ui.moeda(item.total) }}
             </span>
             <div
               class="bar-chart__bar"
               style="height:{{ item.pct }}%"
               tabindex="0"
               data-label="{{ item.label }}"
-              data-total="R$ {{ '{:,.0f}'.format(item.total or 0) | replace(',', '.') }}"
+              data-total="{{ ui.moeda(item.total) }}"
               data-count="{{ item.count }} venda{{ '' if item.count == 1 else 's' }}"
-              aria-label="{{ item.label }}: R$ {{ '{:,.0f}'.format(item.total or 0) | replace(',', '.') }}, {{ item.count }} venda{{ '' if item.count == 1 else 's' }}"
+              aria-label="{{ item.label }}: {{ ui.moeda(item.total) }}, {{ item.count }} venda{{ '' if item.count == 1 else 's' }}"
             ></div>
           </div>
           {% endfor %}
@@ -105,7 +97,7 @@
           <tr>
             <td>{{ item.label }}</td>
             <td class="cell-num">{{ item.count }}</td>
-            <td class="cell-num">R$ {{ "{:,.0f}".format(item.total or 0) | replace(",", ".") }}</td>
+            <td class="cell-num">{{ ui.moeda(item.total) }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -190,7 +182,7 @@
         <tr>
           <td>{{ usuario.username }}</td>
           <td class="cell-num">{{ count }}</td>
-          <td class="cell-num">R$ {{ "{:,.0f}".format(total or 0) | replace(",", ".") }}</td>
+          <td class="cell-num">{{ ui.moeda(total) }}</td>
         </tr>
         {% endfor %}
       </tbody>
