@@ -82,7 +82,65 @@
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
               {% endfor %}
             </datalist>
+            <span id="veiculo-troca-nao-encontrado" style="display:none">Veículo não encontrado — <button type="button" id="cadastrar-veiculo-troca" class="btn btn--ghost btn--sm">cadastrar novo?</button></span>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
+          <div class="form-grid" id="novo-veiculo-troca-campos" data-troca data-novo-veiculo-troca style="display:none">
+            <label class="field">
+              <span class="field__label">Tipo *</span>
+              <select class="select" name="veic_troca_tipo" disabled>
+                {% for t in tipos_veiculo %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Placa *</span>
+              <input class="input" id="veic-troca-placa" name="veic_troca_placa" style="text-transform:uppercase" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Modelo *</span>
+              <input class="input" name="veic_troca_modelo" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Marca</span>
+              <input class="input" name="veic_troca_marca" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Cor *</span>
+              <input class="input" name="veic_troca_cor" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Ano *</span>
+              <input class="input" name="veic_troca_ano" type="number" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Quilometragem</span>
+              <input class="input" name="veic_troca_km" type="number" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Chassi</span>
+              <input class="input" name="veic_troca_chassi" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">RENAVAM</span>
+              <input class="input" name="veic_troca_renavam" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Proprietário Registrado</span>
+              <input class="input" name="veic_troca_proprietario_registrado" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Valor de avaliação *</span>
+              <input class="input" name="veic_troca_preco" type="text" inputmode="decimal" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Investidor *</span>
+              <select class="select" name="veic_troca_investidor_id" disabled>
+                <option value="">Selecione</option>
+                {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
@@ -301,7 +359,65 @@
               <option value="{{ veic.placa }}" data-id="{{ veic.id }}">{{ veic.modelo }}</option>
               {% endfor %}
             </datalist>
+            <span id="veiculo-troca-nao-encontrado" style="display:none">Veículo não encontrado — <button type="button" id="cadastrar-veiculo-troca" class="btn btn--ghost btn--sm">cadastrar novo?</button></span>
           </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
+          <div class="form-grid" id="novo-veiculo-troca-campos" data-troca data-novo-veiculo-troca style="display:none">
+            <label class="field">
+              <span class="field__label">Tipo *</span>
+              <select class="select" name="veic_troca_tipo" disabled>
+                {% for t in tipos_veiculo %}<option value="{{ t.value }}">{{ t.value | capitalize }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Placa *</span>
+              <input class="input" id="veic-troca-placa" name="veic_troca_placa" style="text-transform:uppercase" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Modelo *</span>
+              <input class="input" name="veic_troca_modelo" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Marca</span>
+              <input class="input" name="veic_troca_marca" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Cor *</span>
+              <input class="input" name="veic_troca_cor" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Ano *</span>
+              <input class="input" name="veic_troca_ano" type="number" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Quilometragem</span>
+              <input class="input" name="veic_troca_km" type="number" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Chassi</span>
+              <input class="input" name="veic_troca_chassi" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">RENAVAM</span>
+              <input class="input" name="veic_troca_renavam" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Proprietário Registrado</span>
+              <input class="input" name="veic_troca_proprietario_registrado" disabled>
+            </label>
+            <label class="field">
+              <span class="field__label">Valor de avaliação *</span>
+              <input class="input" name="veic_troca_preco" type="text" inputmode="decimal" disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Investidor *</span>
+              <select class="select" name="veic_troca_investidor_id" disabled>
+                <option value="">Selecione</option>
+                {% for i in investidores %}<option value="{{ i.id }}">{{ i.nome }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
@@ -463,12 +579,34 @@
 <script>
 (function () {
   var checkbox = document.getElementById('houve-troca');
-  var campos = document.querySelectorAll('[data-troca]');
+  var campos = document.querySelectorAll('[data-troca]:not(#novo-veiculo-troca-campos)');
   var hidden = document.getElementById('veiculo-troca-search');
   var input = document.getElementById('veiculo-troca-input');
   var options = document.querySelectorAll('#veiculos-troca-list option');
+  var aviso = document.getElementById('veiculo-troca-nao-encontrado');
+  var btnCadastrar = document.getElementById('cadastrar-veiculo-troca');
+  var novosCampos = document.getElementById('novo-veiculo-troca-campos');
+  var novosCamposInputs = novosCampos
+    ? novosCampos.querySelectorAll('input, select')
+    : [];
+  var placaNova = document.getElementById('veic-troca-placa');
 
   if (!checkbox || !hidden || !input) return;
+
+  function ocultarNovoVeiculo() {
+    if (novosCampos) novosCampos.style.display = 'none';
+    novosCamposInputs.forEach(function (campo) {
+      campo.disabled = true;
+      if (campo !== placaNova) campo.value = '';
+    });
+  }
+
+  function mostrarNovoVeiculo() {
+    if (aviso) aviso.style.display = 'none';
+    if (novosCampos) novosCampos.style.display = '';
+    novosCamposInputs.forEach(function (campo) { campo.disabled = false; });
+    if (placaNova) placaNova.value = input.value.toUpperCase();
+  }
 
   function sincronizarVeiculoTroca() {
     var id = '';
@@ -478,6 +616,12 @@
       }
     });
     hidden.value = id;
+    if (id) {
+      if (aviso) aviso.style.display = 'none';
+      ocultarNovoVeiculo();
+    } else if (input.value.trim()) {
+      if (aviso) aviso.style.display = '';
+    }
   }
 
   function sincronizarTroca() {
@@ -488,10 +632,16 @@
     if (!ativo) {
       hidden.value = '';
       input.value = '';
+      if (aviso) aviso.style.display = 'none';
+      ocultarNovoVeiculo();
     }
   }
 
+  input.addEventListener('input', function () {
+    if (aviso) aviso.style.display = 'none';
+  });
   input.addEventListener('change', sincronizarVeiculoTroca);
+  if (btnCadastrar) btnCadastrar.addEventListener('click', mostrarNovoVeiculo);
   checkbox.addEventListener('change', sincronizarTroca);
   sincronizarTroca();
 })();

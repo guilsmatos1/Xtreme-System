@@ -82,14 +82,23 @@ _EnviarComprovanteDep = Annotated[
 ]
 
 
+def _investidor_padrao_id(investidores: list[investidor.Investidor]) -> int | None:
+    for inv in investidores:
+        if inv.nome.strip().lower() == "xtreme":
+            return inv.id
+    return None
+
+
 def _ctx_form_compra(session: Session) -> dict[str, Any]:
+    investidores = investidor.list_all(session)
     return {
         "clientes": cliente.list_all(session),
         "data_atual": datetime.now(UTC).date().isoformat(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos": list(veiculo.TipoVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
-        "investidores": investidor.list_all(session),
+        "investidores": investidores,
+        "investidor_padrao_id": _investidor_padrao_id(investidores),
     }
 
 
@@ -97,6 +106,8 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
     data = dict(form)
     if data.get("debitos") == "":
         data["debitos"] = None
+    elif isinstance(data.get("debitos"), str):
+        data["debitos"] = data["debitos"].replace(",", ".")
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if not data.get("data_compra"):

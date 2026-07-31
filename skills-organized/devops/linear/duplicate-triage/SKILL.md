@@ -50,11 +50,11 @@ Defaults to team `GUI` and the `GUI` workspace id. Pass `--team`/`--workspace`/`
 
 The payload gives you `clusters` (each with `suggested_canonical` and its member issues, carrying truncated `desc` + `createdAt`), a compact `singletons` list, `counts`, and `warnings`. Steps 2–4 below are already applied by the helper — your job is the judgment on top of them.
 
-2. The helper already keeps only `Backlog`, `Todo`, `In Progress`, `In Review` and discards `Done`/`Canceled`/`Duplicate`. (Field reference: `orca linear list` returns `state.name`, `title`, `priority`, `updatedAt` but **no** description or `createdAt`; those come only from `orca linear issue <id>`, which the helper calls for you.)
+2. The helper already keeps only `Backlog` and `Todo` and discards everything else (`In Progress`, `In Review`, `Done`, `Canceled`, `Duplicate`). (Field reference: `orca linear list` returns `state.name`, `title`, `priority`, `updatedAt` but **no** description or `createdAt`; those come only from `orca linear issue <id>`, which the helper calls for you.)
 
 3. Each `cluster` is a *recall-safe candidate block*, not a verdict — the helper over-groups on purpose. Confirm each block semantically (same feature, bug, or request) and **split or drop** any issues that only share wording. Also scan `singletons`: if two of them are truly the same request but the helper's text similarity missed them, form that cluster yourself (raise recall with `--deep` or a lower `--threshold` if this happens often).
 
-4. `suggested_canonical` already applies the fixed rule — furthest along the workflow (`In Review` > `In Progress` > `Todo` > `Backlog`), tie-broken by newest `createdAt`. Confirm it per cluster; override only when your semantic read says a different issue is the real canonical. Every other issue in a confirmed cluster is a duplicate.
+4. `suggested_canonical` already applies the fixed rule — furthest along the workflow (`Todo` > `Backlog`), tie-broken by newest `createdAt`. Confirm it per cluster; override only when your semantic read says a different issue is the real canonical. Every other issue in a confirmed cluster is a duplicate.
 
 5. Close each redundant issue. Note the Linear constraint: moving an issue into a `duplicate`-type state is rejected with `Missing duplicate relation` unless a duplicate issue relation already exists, and the `orca linear` CLI cannot create that relation (it only reads relations via `--relations`). So use `Canceled`, which needs no relation:
 
@@ -75,6 +75,6 @@ Run one `orca` write per shell invocation — do not batch multiple `orca` calls
 ## Guardrails
 
 - Act only on high-confidence duplicates. When a cluster is ambiguous, leave every issue unchanged and report it for the user to decide.
-- Never mark the canonical issue itself, and never touch issues outside the four candidate states.
+- Never mark the canonical issue itself, and never touch issues outside the two candidate states (`Backlog`, `Todo`).
 - If `status set` or `comment add` returns `linear_write_unconfirmed`, follow the pinned `--write-id` retry rules from the `orca-linear` skill; do not blindly re-run writes.
 - Report a summary at the end: each cluster, the canonical issue kept, and the issues marked as `Duplicate`.

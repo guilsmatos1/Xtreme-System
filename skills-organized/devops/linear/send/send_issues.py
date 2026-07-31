@@ -21,6 +21,13 @@ TRAILING_SECTION_RE = re.compile(
 )
 
 
+def infer_state(priority: str) -> str:
+    """Urgent/high priority issues go straight to Todo; everything else to Backlog."""
+    if priority.lower() in {"urgent", "high"}:
+        return "Todo"
+    return "Backlog"
+
+
 def infer_label(tags: list[str], category: str) -> str:
     tagset = {t.lower() for t in tags}
     cat_lower = category.lower()
@@ -194,6 +201,7 @@ def create_issue(project: str, opp: dict, retry: bool = False) -> tuple[bool, bo
     category = opp.get("category", "")
     priority = opp.get("additional_fields", {}).get("priority", "none")
     label = infer_label(tags, category)
+    state = infer_state(priority)
     body = opp["_markdown_body"]
 
     result = subprocess.run(
@@ -204,7 +212,7 @@ def create_issue(project: str, opp: dict, retry: bool = False) -> tuple[bool, bo
             "--title", short_title,
             "--body", body,
             "--assignee", "me",
-            "--state", "Backlog",
+            "--state", state,
             "--priority", priority,
             "--label", label,
             "--json",
@@ -271,8 +279,9 @@ def main():
         category = opp.get("category", "")
         priority = opp.get("additional_fields", {}).get("priority", "none")
         label = infer_label(tags, category)
+        state = infer_state(priority)
 
-        print(f"Creating issue {i} of {total}: {short_title} (priority={priority}, label={label})")
+        print(f"Creating issue {i} of {total}: {short_title} (priority={priority}, label={label}, state={state})")
 
         success, limit_exceeded = create_issue(project, opp)
 

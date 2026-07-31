@@ -24,8 +24,17 @@ Use `orca linear create` to create issues.
 ## Defaults
 
 - Assignee: `6b75d88f-389e-4bbb-bf7e-53528a774f93`
-- State: `Backlog`
+- State: routed by priority — see **State Routing by Priority** below
 - Team: `GUI`
+
+## State Routing by Priority
+
+Every issue's `state` is derived from its `priority`, not fixed:
+
+- `urgent` or `high` → **Todo**
+- `medium`, `low`, or `none`/missing → **Backlog**
+
+This applies whether the issue comes from the automatic script, the manual fallback, or a chat request.
 
 ## When Sending from Markdown Batch Files
 
@@ -48,6 +57,7 @@ Use only if the script fails (`orca` CLI unavailable, permission error, malforme
 - `title` ← `short_title`
 - `body` ← complete Markdown section for the opportunity
 - `priority` ← the `Priority` metadata value, or `none` if absent
+- `state` ← `Todo` if `priority` is `urgent`/`high`, otherwise `Backlog`
 - `label` ← `Bug` if tags include "correctness"/"security"/"bug" or category is "Error handling"; `Feature` if tags include "feature" or category is "Features"; `Improvement` otherwise
 
 The file path is received as the skill's `args` parameter. It can point to any Markdown file, in any location. Validate it exists and follows the improvement heading contract before processing.
@@ -73,6 +83,7 @@ This creates an archive of completed opportunity batches, one per loop run.
 - Always set `priority` and `label` on every issue.
 - Set `priority` from the request if it is already explicit; otherwise infer it only from the task text and context. Use the lowest priority that still matches the request.
 - Pass `priority` only as one of `none`, `low`, `medium`, `high`, or `urgent`.
+- Set `state` from `priority`: `Todo` for `urgent`/`high`, `Backlog` for `medium`/`low`/`none`.
 - Set one label from the request type: `Bug`, `Feature`, or `Improvement`.
 - Use `Bug` for defects, regressions, crashes, data loss, incorrect behavior, or broken invariants.
 - Use `Feature` for new capabilities or user-facing additions.
@@ -86,6 +97,7 @@ This creates an archive of completed opportunity batches, one per loop run.
 
 ```bash
 orca linear create --team GUI --title "..." --body "..." --assignee me --state Backlog --priority medium --label Improvement --json
+# state follows priority: urgent/high -> Todo, medium/low/none -> Backlog
 ```
 
 ### From Markdown Batch

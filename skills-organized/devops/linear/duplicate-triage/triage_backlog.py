@@ -7,7 +7,7 @@ raw description) into its context:
 
   1. Pull the open backlog once.
   2. Drop everything that isn't in a candidate state
-     (Backlog / Todo / In Progress / In Review).
+     (Backlog / Todo).
   3. Recall-safe *blocking*: cheaply group issues whose title/description text
      is similar enough that they *might* be duplicates. Blocking deliberately
      over-groups -- it errs toward keeping a pair together so nothing gets
@@ -58,9 +58,9 @@ DEFAULT_DESC_CHARS = 300
 FETCH_WORKERS = 6
 
 # Only these states are ever duplicate candidates (skill step 2).
-CANDIDATE_STATES = {"Backlog", "Todo", "In Progress", "In Review"}
+CANDIDATE_STATES = {"Backlog", "Todo"}
 # Furthest-along-first ranking for picking the canonical (skill step 4).
-STATE_RANK = {"In Review": 0, "In Progress": 1, "Todo": 2, "Backlog": 3}
+STATE_RANK = {"Todo": 0, "Backlog": 1}
 
 # Short/common Portuguese + English words that carry no disambiguating signal.
 STOPWORDS = {

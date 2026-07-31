@@ -645,7 +645,7 @@ def reset_to_backlog(identifier, workspace, worker_handle, warnings):
     """Undo everything the failed attempt set up, so the issue is retryable.
 
     Order matters. The Linear reset happens BEFORE the worktree removal: if the
-    removal fails, the issue is back in the Backlog and the next run refuses it
+    removal fails, the issue is back in Todo and the next run refuses it
     via preflight ("existing Git worktree"), which is visible as a `skipped`.
     The reverse order would leave a failed issue stuck In Progress, where
     run-backlog never looks at it again and the failure disappears silently.
@@ -653,18 +653,18 @@ def reset_to_backlog(identifier, workspace, worker_handle, warnings):
     `orca worktree rm --force` only deletes the branch when it has no unmerged
     commits. A failed worker usually has some -- the Stop hook commits before the
     agent finishes -- so the branch survives the removal and preflight would skip
-    the issue forever on its "existing local branch" rule, making the Backlog reset
+    the issue forever on its "existing local branch" rule, making the Todo reset
     pointless. The explicit `git branch -D` below is what actually makes a failed
     issue retryable, and it is what discards the failed attempt's commits.
     """
     close_worker_terminal(worker_handle, warnings)
 
     try:
-        r = orca(["linear", "status", "set", identifier, "--to", "Backlog", "--workspace", workspace])
+        r = orca(["linear", "status", "set", identifier, "--to", "Todo", "--workspace", workspace])
         if not r.get("result", {}).get("ok", r.get("ok")):
-            warnings.append("failed to move status back to Backlog")
+            warnings.append("failed to move status back to Todo")
     except OrcaError as exc:
-        warnings.append(f"failed to move status back to Backlog: {exc}")
+        warnings.append(f"failed to move status back to Todo: {exc}")
 
     try:
         r = orca(["worktree", "rm", "--worktree", f"name:{identifier}", "--force"])
@@ -695,6 +695,30 @@ def delete_issue_branch(identifier, warnings):
                 f"branches still referencing {identifier} after reset: {', '.join(leftover[:3])}; "
                 f"preflight will skip this issue until they are removed"
             )
+
+
+def cleanup_after_success(identifier, warnings):
+    """Remove the worktree and branch after a successful merge into master.
+
+    The branch is fully merged at this point, so `git branch -D` is safe and
+    equivalent to `-d`. The worktree removal happens first so git does not
+    complain about deleting a checked-out branch.
+
+    Failures here are non-fatal warnings: the issue is already Done in Linear
+    and the work is in master. A leftover worktree or branch is cosmetic, not
+    a correctness problem, and preflight would mark the issue Done again on the
+    next run (harmless). This is intentionally best-effort.
+    """
+    try:
+        r = orca(["worktree", "rm", "--worktree", f"name:{identifier}", "--force"])
+        if not r.get("result", {}).get("ok", r.get("ok")):
+            warnings.append(f"cleanup: failed to remove worktree for {identifier}")
+    except OrcaError as exc:
+        warnings.append(f"cleanup: failed to remove worktree for {identifier}: {exc}")
+
+    code, out = git(["branch", "-D", identifier])
+    if code != 0:
+        warnings.append(f"cleanup: failed to delete branch {identifier}: {_compact_text(out)}")
 
 
 def cmd_start(args):
@@ -866,7 +890,7 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
                 f"worker_done carried no valid --phase (got {phase!r}); treated as failure"
             )
         reset_to_backlog(identifier, workspace, worker_handle, warnings)
-        return result("failed", identifier, reason="worker reported failure; issue reset to Backlog",
+        return result("failed", identifier, reason="worker reported failure; issue reset to Todo",
                       detail=_compact_message(msg), warnings=warnings)
 
     merged, merge_detail = wait_for_merge(identifier)
@@ -885,6 +909,7 @@ def _poll_and_finish(identifier, task_id, dispatch_id, coordinator_handle, works
         identifier, f"Implementation merged into {MERGE_TARGET_BRANCH}; issue moved to Done.",
         workspace_status="completed", warnings=warnings,
     )
+    cleanup_after_success(identifier, warnings)
     return result("in_review_done", identifier, detail=_compact_message(msg), warnings=warnings)
 
 
@@ -916,7 +941,7 @@ def _state_type(issue):
 
 
 def _is_backlog(issue):
-    return _state_type(issue) == "backlog"
+    return _state_type(issue) == "unstarted"
 
 
 def _compact_backlog_issue(issue):

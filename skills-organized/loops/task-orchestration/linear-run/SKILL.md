@@ -1,7 +1,7 @@
 ---
 name: loops--task-orchestration--linear-run
 description: >-
-    Empties the Linear team Backlog by processing issues one at a time in priority order, using the `process_issue.py run-backlog` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
+    Empties the Linear team Todo by processing issues one at a time in priority order, using the `process_issue.py run-backlog` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--linear-run
@@ -16,7 +16,7 @@ metadata:
 
 # Linear Run Sequential Worktree
 
-Empties the Linear GUI Backlog in a single run, processing one issue at a time in `Urgent`, `High`, `Medium`, `Low`, `No priority` order.
+Empties the Linear GUI Todo in a single run, processing one issue at a time in `Urgent`, `High`, `Medium`, `Low`, `No priority` order.
 
 ## Normal use
 
@@ -84,7 +84,7 @@ If the user specifies another team or repo, use that. Discover repos with `orca 
 | status           | action                                                                                                                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `in_review_done` | Worker reported `--phase success` AND its branch is already merged into `master`; the helper marked it In Review and Done. Continue.                                                                                                                                     |
-| `failed`         | Worker did not report `--phase success` — either an explicit `failed` or a missing/unrecognized phase. The helper closed the worker terminal, moved the issue back to Backlog, and removed the worktree and its branch. The issue is retryable on a later run. Continue. |
+| `failed`         | Worker did not report `--phase success` — either an explicit `failed` or a missing/unrecognized phase. The helper closed the worker terminal, moved the issue back to Todo, and removed the worktree and its branch. The issue is retryable on a later run. Continue. |
 | `skipped`        | The helper intentionally did not touch the issue because of preflight/safe reuse. Continue.                                                                                                                                                                              |
 | `pending`        | Worker is still running. Only appears in `start`/`wait`; call `wait` when debugging.                                                                                                                                                                                     |
 | `escalation`     | Worker requested human intervention. The helper records this durably in Orca — a decision gate (`gate-create`) on the issue's task, plus `task-update --status blocked` — and returns `detail.gate_id` when the gate was created. Do not mark In Review/Done; leave the worktree intact, report `detail` and continue to the next issue.                                                                                                                              |
@@ -120,7 +120,7 @@ Phases the hook can send:
 | phase          | when                                                                             | effect                                              |
 | -------------- | -------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `success`      | agent reported success AND the merge returned 0                                  | issue closed, queue continues                       |
-| `failed`       | agent reported failure, or checks are still red on a second stop                 | issue reset to Backlog, worktree and branch removed |
+| `failed`       | agent reported failure, or checks are still red on a second stop                 | issue reset to Todo, worktree and branch removed |
 | `merge_failed` | agent succeeded but `agent-finish.sh` failed (conflict, dirty `master` worktree) | run stops, worktree/branch/In Progress left intact  |
 
 
@@ -189,7 +189,7 @@ Linear `priority` values:
 | `0`   | No priority |
 
 
-By default this skill processes every Backlog issue, ordered as `1, 2, 3, 4, 0`. Pass `--priority`
+By default this skill processes every Todo issue, ordered as `1, 2, 3, 4, 0`. Pass `--priority`
 to set a floor (by name or numeric value): everything at that priority or more urgent is included,
 in the same `1, 2, 3, 4, 0` order. `list-backlog` accepts the same flag.
 
@@ -232,5 +232,7 @@ Repeat while status is `pending`, with a total safety cap around 2h per issue. I
 ## Implementation notes
 
 `run-backlog` keeps a compact local queue and re-lists every 10 processed issues to catch human reprioritization or newly created work. It prints compact progress events plus a final summary object, avoiding one model-visible Linear payload per issue.
+
+> **Note:** This skill processes issues in the **Todo** state (not Backlog).
 
 The helper owns preflight details, including Orca availability, Linear state names (`In Progress`, `In Review`, `Done`), Git/worktree safety checks, TUI readiness, variant confirmation, and Orchestration matching.

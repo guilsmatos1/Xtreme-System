@@ -1097,6 +1097,81 @@ def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(
     assert "input, select, textarea" in resp.text
 
 
+def test_ui_criar_venda_cadastra_veiculo_novo_na_troca(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    cliente_id = _criar_cliente(client, headers, "Cliente Troca", "11122233344")
+
+    criado = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": "1",
+            "status": "pendente",
+            "veic_troca_tipo": "carro",
+            "veic_troca_placa": "TRC1234",
+            "veic_troca_modelo": "Gol",
+            "veic_troca_cor": "Branco",
+            "veic_troca_ano": "2018",
+            "veic_troca_km": "60000",
+            "veic_troca_preco": "30000.00",
+            "veic_troca_investidor_id": str(inv_id),
+            "valor_diferenca": "55000.00",
+        },
+    )
+
+    assert criado.status_code == 200, criado.text
+    veiculos = client.get("/veiculos", headers=headers).json()
+    veiculo_troca = next(v for v in veiculos if v["placa"] == "TRC1234")
+    assert veiculo_troca["modelo"] == "Gol"
+    assert veiculo_troca["tipo_entrada"] == "compra"
+    assert veiculo_troca["status"] == "disponivel"
+
+    vendas = client.get("/vendas", headers=headers).json()
+    venda_criada = next(v for v in vendas if v["veiculo"]["id"] == veiculo_id)
+    assert venda_criada["veiculo_troca"]["placa"] == "TRC1234"
+
+
+def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    inv_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    cliente_id = _criar_cliente(client, headers, "Cliente Troca Dup", "55566677788")
+
+    resp = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "a_vista",
+            "parcelas": "1",
+            "status": "pendente",
+            "veic_troca_tipo": "carro",
+            "veic_troca_placa": "ABC1234",
+            "veic_troca_modelo": "Onix",
+            "veic_troca_cor": "Prata",
+            "veic_troca_ano": "2024",
+            "veic_troca_preco": "30000.00",
+            "veic_troca_investidor_id": str(inv_id),
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "Placa já cadastrada" in resp.text
+    assert client.get("/vendas", headers=headers).json() == []
+
+
 def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
