@@ -8,7 +8,11 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
-from xtreme_system.api.crud_ui.responses import error_response, ok_response
+from xtreme_system.api.crud_ui.responses import (
+    error_response,
+    ok_response,
+    validation_error_detail,
+)
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
@@ -63,7 +67,11 @@ def _erro_lancamento(
     exc: ValidationError | HTTPException,
     obj: caixa.LancamentoInvestimento | None,
 ) -> HTMLResponse:
-    erro = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+    erro = (
+        str(exc.detail)
+        if isinstance(exc, HTTPException)
+        else validation_error_detail(exc)
+    )
     return error_response(
         templates,
         request,

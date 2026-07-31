@@ -16,6 +16,7 @@ from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
+    validation_error_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
@@ -407,7 +408,11 @@ async def _criar_compra(  # noqa: PLR0911
         validate_cliente_veiculo_fks(session, data)
     except (ValidationError, HTTPException) as exc:
         rollback_se_criou_aninhados(session, novo_cliente_data, novo_veiculo_data)
-        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        msg = (
+            str(exc.detail)
+            if isinstance(exc, HTTPException)
+            else validation_error_detail(exc)
+        )
         return _erro_compra(request, session, user, msg, dados_form)
 
     try:

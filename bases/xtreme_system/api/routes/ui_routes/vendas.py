@@ -18,6 +18,7 @@ from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
+    validation_error_detail,
     write_conflict_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
@@ -432,7 +433,11 @@ async def _criar_venda(
         validate_venda_create(session, data)
     except (ValidationError, HTTPException) as exc:
         rollback_se_criou_aninhados(session, novo_cliente_data)
-        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        msg = (
+            str(exc.detail)
+            if isinstance(exc, HTTPException)
+            else validation_error_detail(exc)
+        )
         return _erro_venda(request, session, user, msg, dados=dados_form)
 
     try:
@@ -470,7 +475,11 @@ async def _atualizar_venda(
         )
         validate_venda_update(session, obj, data)
     except (ValidationError, HTTPException) as exc:
-        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        msg = (
+            str(exc.detail)
+            if isinstance(exc, HTTPException)
+            else validation_error_detail(exc)
+        )
         return _erro_venda(request, session, user, msg, venda_obj=obj)
 
     try:
@@ -574,9 +583,11 @@ async def _confirmar_fechamento_venda(
         )
         fechamento_venda.confirmar(session, obj, data, usuario_id=user.id)
     except (ValidationError, fechamento_venda.FechamentoVendaError) as exc:
-        msg = str(exc)
-        if isinstance(exc, ValidationError):
-            msg = "Dados inválidos"
+        msg = (
+            validation_error_detail(exc)
+            if isinstance(exc, ValidationError)
+            else str(exc)
+        )
         response = templates.TemplateResponse(
             request,
             "_modal_fechamento_venda.html",

@@ -14,6 +14,7 @@ from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
     rollback_integrity_error_response,
     success_response,
+    validation_error_detail,
     write_conflict_detail,
 )
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
@@ -106,14 +107,14 @@ async def ui_perfil_criar(
             paginas=form.getlist("paginas"),
             restricoes=_parse_restricoes(form),
         )
-    except ValidationError:
+    except ValidationError as exc:
         return templates.TemplateResponse(
             request,
             "_form_perfil.html",
             {
                 "perfil": None,
                 "paginas_disponiveis": perfil.PAGINAS,
-                "erro": "Dados inválidos",
+                "erro": validation_error_detail(exc),
             },
             status_code=400,
         )

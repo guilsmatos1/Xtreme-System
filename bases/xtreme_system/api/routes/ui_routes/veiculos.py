@@ -16,6 +16,7 @@ from xtreme_system.api.crud_ui.responses import (
     error_response,
     ok_response,
     rollback_integrity_error_response,
+    validation_error_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
@@ -372,7 +373,11 @@ async def _atualizar_veiculo(
         data = veiculo.VeiculoUpdate.model_validate(dados_form)
         validate_veiculo_fks(session, data, update=True)
     except (ValidationError, HTTPException) as exc:
-        msg = exc.detail if isinstance(exc, HTTPException) else "Dados inválidos"
+        msg = (
+            str(exc.detail)
+            if isinstance(exc, HTTPException)
+            else validation_error_detail(exc)
+        )
         return templates.TemplateResponse(
             request,
             "_form_veiculo.html",
