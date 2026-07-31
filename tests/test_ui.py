@@ -1687,6 +1687,12 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
 
+    formulario = client.get("/ui/compras/novo")
+    assert formulario.status_code == 200
+    assert 'name="idempotency_key"' in formulario.text
+    assert 'hx-sync="this:drop"' in formulario.text
+    assert "hx-disabled-elt=\"find button[type='submit']\"" in formulario.text
+
     investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
     veiculo_resp = client.post(
         "/veiculos",
@@ -1723,6 +1729,7 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
         data={
             "cliente_id": str(cliente_id),
             "veiculo_id": str(veiculo_id),
+            "idempotency_key": "compra-submit-1",
             "data_compra": "2026-07-09",
             "valor_compra": "84000.00",
             "debitos": "500.00",
@@ -1730,7 +1737,22 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert criado.status_code == 200
 
-    compra = client.get("/compras", headers=headers).json()[0]
+    duplicado = client.post(
+        "/ui/compras",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "idempotency_key": "compra-submit-1",
+            "data_compra": "2026-07-09",
+            "valor_compra": "84000.00",
+            "debitos": "500.00",
+        },
+    )
+    assert duplicado.status_code == 200
+
+    compras = client.get("/compras", headers=headers).json()
+    assert len(compras) == 1
+    compra = compras[0]
     compra_id = compra["id"]
 
     editado = client.post(
