@@ -231,13 +231,6 @@ def load_jobs_from_workflows(workflow_names):
         if not isinstance(wf_jobs, list):
             raise ValueError(f"workflow '{wf_name}': must contain a list or an object with a 'jobs' list")
         for job in wf_jobs:
-            # Deduplicate job names across workflows by suffixing with workflow slug
-            raw_name = str(job.get("name") or "job")
-            if raw_name in seen_names:
-                wf_slug = wf_name.split("/")[-1].replace(".json", "").replace("workflow-jobs-", "").replace("jobs-", "")
-                job = dict(job)  # shallow copy so we don't mutate original
-                job["name"] = f"{raw_name}--{wf_slug}"
-            seen_names[job.get("name", raw_name)] = True
             all_jobs.append(job)
 
     # Write merged jobs to a temp file so the rest of the pipeline uses the
@@ -831,7 +824,17 @@ def _pid_alive(pid):
         os.kill(pid, 0)
     except OSError:
         return False
-    return True
+    # Check if the process is actually running run_jobs.py
+    try:
+        proc = subprocess.run(
+            ["ps", "-p", str(pid), "-o", "command="],
+            capture_output=True, text=True, timeout=5
+        )
+        if proc.returncode == 0 and "run_jobs.py" in proc.stdout:
+            return True
+    except Exception:
+        pass
+    return False
 
 
 @contextlib.contextmanager
