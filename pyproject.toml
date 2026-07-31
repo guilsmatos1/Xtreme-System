@@ -177,6 +177,15 @@ type = "forbidden"
 source_modules = ["xtreme_system.crud"]
 forbidden_modules = ["xtreme_system.upload_file"]
 
+[[tool.importlinter.contracts]]
+name = "API layers"
+type = "layers"
+layers = [
+    "xtreme_system.api.routes",
+    "xtreme_system.api.crud_ui",
+    "xtreme_system.api.deps",
+]
+
 [tool.coverage.run]
 branch = true
 source = ["xtreme_system"]
