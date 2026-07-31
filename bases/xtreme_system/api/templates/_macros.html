@@ -203,7 +203,7 @@
         {% for anexo in anexos %}
         {% set is_imagem = images_only or anexo.url.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) %}
         <div class="mmgr__card">
-          {% if anexo.url and is_imagem %}
+          {% if arquivo_disponivel(anexo.url, pending_upload_paths) and is_imagem %}
           <button class="mmgr__thumb" type="button" onclick="this.parentElement.querySelector('dialog').showModal()" aria-label="{{ preview_label }}">
             <img src="{{ anexo.url }}" alt="{{ image_alt }}" loading="lazy">
           </button>
@@ -211,7 +211,7 @@
             <button class="btn btn--ghost btn--sm image-preview__close" type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">{{ icon("close") }}</button>
             <img src="{{ anexo.url }}" alt="{{ image_alt }}">
           </dialog>
-          {% elif anexo.url %}
+          {% elif arquivo_disponivel(anexo.url, pending_upload_paths) %}
           <a class="mmgr__doc" href="{{ anexo.url }}" target="_blank" rel="noopener" aria-label="Abrir {{ doc_label }} PDF">
             <span class="mmgr__doc-icon">{{ icon(doc_icon) }}</span>
             <span class="mmgr__doc-badge">PDF</span>
