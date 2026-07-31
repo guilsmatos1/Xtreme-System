@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import EntityT
@@ -16,6 +17,13 @@ _HTMX_SUCCESS_EVENTS = {
     "htmx:toast": {"message": "Alterações salvas com sucesso."},
     "htmx:close-modal": {},
 }
+
+
+def validation_error_detail(exc: ValidationError) -> str:
+    """Format Pydantic errors without discarding the field that failed."""
+    return "; ".join(
+        f"{'.'.join(map(str, error['loc']))}: {error['msg']}" for error in exc.errors()
+    )
 
 
 def success_response(

@@ -36,6 +36,7 @@ from xtreme_system.api.crud_ui.responses import (
     list_response,
     ok_response,
     rollback_integrity_error_response,
+    validation_error_detail,
     write_conflict_detail,
 )
 from xtreme_system.api.crud_writes import (
@@ -555,7 +556,7 @@ def register_create_route(
         perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
         try:
             data = create_schema.model_validate(dados_form)
-        except ValidationError:
+        except ValidationError as exc:
             return error_response(
                 form.templates,
                 request,
@@ -564,7 +565,7 @@ def register_create_route(
                 item_key=form.item_key,
                 item=None,
                 user=user,
-                erro="Dados inválidos",
+                erro=validation_error_detail(exc),
                 status_code=400,
                 dados=dados_form,
             )
@@ -651,7 +652,7 @@ def register_update_route(
         try:
             data = update_schema.model_validate(dados_form)
             run_hook(before_update, session, data)
-        except ValidationError:
+        except ValidationError as exc:
             return error_response(
                 form.templates,
                 request,
@@ -660,7 +661,7 @@ def register_update_route(
                 item_key=form.item_key,
                 item=obj,
                 user=user,
-                erro="Dados inválidos",
+                erro=validation_error_detail(exc),
                 status_code=400,
             )
         except HTTPException as exc:

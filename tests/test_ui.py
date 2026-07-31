@@ -101,6 +101,15 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_veiculo_preserva_erro_de_validacao_por_campo(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post("/ui/veiculos/1", data={"km": "-1"})
+
+    assert resp.status_code == 400
+    assert "km: Input should be greater than or equal to 0" in resp.text
+
+
 def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:
     _login_admin(client)
 
