@@ -288,6 +288,15 @@
       }).observe(msg, { childList: true });
     })();
 
+    // Shared server-driven feedback for successful HTMX form submissions.
+    document.body.addEventListener("htmx:toast", function (e) {
+      var msg = document.getElementById("msg");
+      msg.textContent = e.detail.message;
+    });
+    document.body.addEventListener("htmx:close-modal", function () {
+      document.getElementById("modal").innerHTML = "";
+    });
+
     // Replace the native confirm() behind hx-confirm with a styled modal.
     document.body.addEventListener("htmx:confirm", function (e) {
       if (!e.detail.question) return;

@@ -15,6 +15,7 @@ from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import (
     rollback_integrity_error_response,
+    success_response,
     write_conflict_detail,
 )
 from xtreme_system.api.deps import (
@@ -235,8 +236,11 @@ async def ui_investidor_criar(
         else:
             if aporte is not None:
                 caixa.create(session, aporte, user.id)
-    return templates.TemplateResponse(
-        request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
+    return success_response(
+        templates,
+        request,
+        "_investidores_ok.html",
+        {"user": user, **_ctx_investidores(session)},
     )
 
 
@@ -265,8 +269,11 @@ async def ui_investidor_atualizar(
                 status_code=409,
             ),
         )
-    return templates.TemplateResponse(
-        request, "_investidores_ok.html", {"user": user, **_ctx_investidores(session)}
+    return success_response(
+        templates,
+        request,
+        "_investidores_ok.html",
+        {"user": user, **_ctx_investidores(session)},
     )
 
 
@@ -287,7 +294,8 @@ def ui_investidor_excluir(
             status_code=409,
         )
     investidor.delete(session, obj, user.id)
-    return templates.TemplateResponse(
+    return success_response(
+        templates,
         request,
         "_linhas_investidores.html",
         {"user": user, **_ctx_investidores(session), "oob": True},

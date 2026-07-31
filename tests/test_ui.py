@@ -427,6 +427,22 @@ def test_ui_perfis_salva_cadastro_de_compras_e_vendas(client: TestClient) -> Non
     assert re.search(r'name="op__vendas__cadastrar"\s+checked', form.text)
 
 
+def test_ui_perfis_htmx_sucesso_dispara_toast_e_fecha_modal(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/perfis",
+        headers={"HX-Request": "true"},
+        data={"nome": "Operador", "paginas": ["compras"]},
+    )
+
+    assert resp.status_code == 200
+    assert resp.headers["HX-Trigger"] == (
+        '{"htmx:toast": {"message": "Altera\\u00e7\\u00f5es salvas com sucesso."}, '
+        '"htmx:close-modal": {}}'
+    )
+
+
 def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
     client: TestClient,
 ) -> None:

@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 from collections.abc import Callable
 from typing import Any
 from urllib.parse import urlencode
@@ -10,6 +11,24 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import EntityT
+
+_HTMX_SUCCESS_EVENTS = {
+    "htmx:toast": {"message": "Alterações salvas com sucesso."},
+    "htmx:close-modal": {},
+}
+
+
+def success_response(
+    templates: Jinja2Templates,
+    request: Request,
+    template: str,
+    context: dict[str, Any],
+) -> HTMLResponse:
+    """Render a successful HTMX response with shared toast and modal behavior."""
+    response = templates.TemplateResponse(request, template, context)
+    if request.headers.get("HX-Request"):
+        response.headers["HX-Trigger"] = json.dumps(_HTMX_SUCCESS_EVENTS)
+    return response
 
 
 def csv_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:
@@ -187,7 +206,8 @@ def ok_response(
     lista: list[EntityT],
     ctx_list: dict[str, Any],
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    return success_response(
+        templates,
         request,
         template,
         {"user": user, list_key: lista, **ctx_list},

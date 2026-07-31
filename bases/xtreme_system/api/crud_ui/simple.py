@@ -12,6 +12,7 @@ from xtreme_system.api.crud_ui.responses import (
     csv_response,
     delete_conflict_detail,
     rollback_integrity_error_response,
+    success_response,
     write_conflict_detail,
 )
 from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found
@@ -115,8 +116,8 @@ def register_ui_simples(
                     status_code=409,
                 ),
             )
-        return templates.TemplateResponse(
-            request, "_simples_ok.html", _ctx(user, session)
+        return success_response(
+            templates, request, "_simples_ok.html", _ctx(user, session)
         )
 
     @app.post(f"{ui_prefix}/{{item_id}}")
@@ -144,8 +145,8 @@ def register_ui_simples(
                     status_code=409,
                 ),
             )
-        return templates.TemplateResponse(
-            request, "_simples_ok.html", _ctx(user, session)
+        return success_response(
+            templates, request, "_simples_ok.html", _ctx(user, session)
         )
 
     @app.post(f"{ui_prefix}/{{item_id}}/excluir")
@@ -165,6 +166,6 @@ def register_ui_simples(
                     _ctx(user, session, msg=delete_conflict_detail(titulo)),
                 ),
             )
-        return templates.TemplateResponse(
-            request, "_linhas_simples.html", _ctx(user, session, msg=msg)
+        return success_response(
+            templates, request, "_linhas_simples.html", _ctx(user, session, msg=msg)
         )
