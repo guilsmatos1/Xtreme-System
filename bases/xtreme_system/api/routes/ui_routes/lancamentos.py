@@ -13,7 +13,14 @@ from xtreme_system.api.crud_ui.responses import (
     ok_response,
     validation_error_detail,
 )
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, found, templates
+from xtreme_system.api.deps import (
+    NaoAutorizadoError,
+    SessionDep,
+    UIAdmin,
+    UIUser,
+    found,
+    templates,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
@@ -154,9 +161,7 @@ def ui_lancamento_editar(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise HTTPException(
-            status_code=403, detail="Editável apenas na tela de Veículos"
-        )
+        raise NaoAutorizadoError
     return templates.TemplateResponse(
         request,
         "_form_lancamento.html",
@@ -194,9 +199,7 @@ async def ui_lancamento_atualizar(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise HTTPException(
-            status_code=403, detail="Editável apenas na tela de Veículos"
-        )
+        raise NaoAutorizadoError
     form = await request.form()
     try:
         data = caixa.LancamentoInvestimentoUpdate.model_validate(dict(form))
@@ -216,9 +219,7 @@ def ui_lancamento_excluir(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise HTTPException(
-            status_code=403, detail="Exclusão apenas na tela de Veículos"
-        )
+        raise NaoAutorizadoError
     caixa.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request,

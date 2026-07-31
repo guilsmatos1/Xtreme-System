@@ -319,7 +319,7 @@ def uploads_autenticados(path: str, session: SessionDep, user: UIUser) -> FileRe
     if not file_path.is_relative_to(uploads_root) or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     if not pode_acessar_upload(session, user, f"/static/uploads/{path}"):
-        raise HTTPException(status_code=403, detail="Arquivo não autorizado")
+        raise NaoAutorizadoError
     return FileResponse(file_path)
 
 
