@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import ForeignKey, Numeric, case, func
+from sqlalchemy import CheckConstraint, ForeignKey, Numeric, case, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column
 
 from xtreme_system.auditoria.core import auditar, snapshot
@@ -31,6 +31,12 @@ class OrigemLancamento(StrEnum):
 
 class LancamentoInvestimento(Base):
     __tablename__ = "lancamento_investimento"
+    __table_args__ = (
+        CheckConstraint(
+            "valor > 0 OR (origem = 'veiculo' AND valor = 0)",
+            name="ck_lancamento_investimento_valor_positive",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     investidor_id: Mapped[int] = mapped_column(ForeignKey("investidor.id"), index=True)

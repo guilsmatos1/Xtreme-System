@@ -8,6 +8,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -71,6 +72,29 @@ def validar_coerencia_pagamento(
 
 class Venda(Base):
     __tablename__ = "venda"
+    __table_args__ = (
+        CheckConstraint("valor_venda > 0", name="ck_venda_valor_venda_positive"),
+        CheckConstraint(
+            "valor_entrada IS NULL OR valor_entrada >= 0",
+            name="ck_venda_valor_entrada_nonnegative",
+        ),
+        CheckConstraint(
+            "valor_entrada IS NULL OR valor_entrada <= valor_venda",
+            name="ck_venda_valor_entrada_lte_valor_venda",
+        ),
+        CheckConstraint(
+            "debitos IS NULL OR debitos >= 0",
+            name="ck_venda_debitos_nonnegative",
+        ),
+        CheckConstraint(
+            "valor_diferenca IS NULL OR valor_diferenca >= 0",
+            name="ck_venda_valor_diferenca_nonnegative",
+        ),
+        CheckConstraint(
+            "valor_pendente IS NULL OR valor_pendente >= 0",
+            name="ck_venda_valor_pendente_nonnegative",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     cliente_id: Mapped[int] = mapped_column(ForeignKey("cliente.id"), index=True)

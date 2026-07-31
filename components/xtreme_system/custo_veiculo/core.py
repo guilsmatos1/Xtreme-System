@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -15,6 +15,9 @@ from xtreme_system.veiculo.core import Veiculo, VeiculoRead
 
 class CustoVeiculo(Base):
     __tablename__ = "custo_veiculo"
+    __table_args__ = (
+        CheckConstraint("valor > 0", name="ck_custo_veiculo_valor_positive"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     veiculo_id: Mapped[int] = mapped_column(
