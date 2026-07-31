@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import DateTime, ForeignKey, Numeric, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.crud import core as crud
@@ -88,6 +88,7 @@ def normalizar_renavam(value: str | None) -> str | None:
 
 class Veiculo(Base):
     __tablename__ = "veiculo"
+    __table_args__ = (CheckConstraint("preco > 0", name="ck_veiculo_preco_positive"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tipo: Mapped[TipoVeiculo]

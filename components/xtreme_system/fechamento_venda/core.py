@@ -5,7 +5,15 @@ from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 from weakref import WeakKeyDictionary
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, ForeignKey, Numeric, UniqueConstraint, func, inspect
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Numeric,
+    UniqueConstraint,
+    func,
+    inspect,
+)
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Mapped, Session, lazyload, mapped_column, relationship
 
@@ -70,6 +78,10 @@ class ParticipacaoFechamentoVenda(Base):
             "fechamento_venda_id",
             "investidor_id",
             name="uq_participacao_fechamento_investidor",
+        ),
+        CheckConstraint(
+            "percentual > 0 AND percentual <= 100",
+            name="ck_participacao_percentual_range",
         ),
     )
 

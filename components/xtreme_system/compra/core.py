@@ -5,7 +5,16 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func, select
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    String,
+    func,
+    select,
+)
 from sqlalchemy.orm import Mapped, Query, Session, mapped_column, relationship
 
 from xtreme_system.cliente.core import Cliente, ClienteRead
@@ -25,6 +34,13 @@ class StatusCompra(StrEnum):
 
 class Compra(Base):
     __tablename__ = "compra"
+    __table_args__ = (
+        CheckConstraint("valor_compra > 0", name="ck_compra_valor_compra_positive"),
+        CheckConstraint(
+            "debitos IS NULL OR debitos >= 0",
+            name="ck_compra_debitos_nonnegative",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     cliente_id: Mapped[int] = mapped_column(
