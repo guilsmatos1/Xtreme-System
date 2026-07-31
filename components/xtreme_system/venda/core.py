@@ -367,12 +367,7 @@ def search(session: Session, term: str, column: str | None = None) -> list[Venda
 def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[Venda]:
-    sql_query = (
-        session.query(Venda)
-        .join(Cliente, Venda.cliente_id == Cliente.id)
-        .join(Veiculo, Venda.veiculo_id == Veiculo.id)
-        .outerjoin(Usuario, Venda.vendedor_id == Usuario.id)
-    )
+    sql_query = query(session)
 
     columns_map = {
         "cliente": Cliente.nome,

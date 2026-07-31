@@ -108,7 +108,7 @@ def search(
 def search_query(
     session: Session, term: str, column: str | None = None
 ) -> Query[CustoVeiculo]:
-    sql_query = session.query(CustoVeiculo).join(Veiculo)
+    sql_query = query(session)
 
     columns_map = {
         "veiculo": Veiculo.modelo,
