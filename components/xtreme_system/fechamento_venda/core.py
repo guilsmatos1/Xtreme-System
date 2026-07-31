@@ -144,6 +144,14 @@ class FechamentoVendaPreview(BaseModel):
     investidores: list[InvestidorRead]
 
 
+class ResultadoCalculo(BaseModel):
+    receita: Decimal
+    custo_veiculo: Decimal
+    custos_operacionais: Decimal
+    debitos: Decimal
+    lucro_liquido: Decimal
+
+
 def _schema_disponivel(session: Session) -> bool:
     bind = session.get_bind()
     engine = bind.engine if isinstance(bind, Connection) else bind
@@ -199,20 +207,14 @@ def list_all(
 
 
 def preview(session: Session, venda_obj: Venda) -> FechamentoVendaPreview:
-    receita, custo_veiculo, custos_operacionais, debitos, lucro = _calcular(
-        session, venda_obj
-    )
+    calculo = _calcular(session, venda_obj)
     motivo = _motivo_inelegivel(session, venda_obj)
     investidores = list(session.query(Investidor).order_by(Investidor.nome).all())
     return FechamentoVendaPreview(
         elegivel=motivo is None,
         motivo=motivo,
         ja_fechada=get_by_venda(session, venda_obj.id) is not None,
-        receita=receita,
-        custo_veiculo=custo_veiculo,
-        custos_operacionais=custos_operacionais,
-        debitos=debitos,
-        lucro_liquido=lucro,
+        **calculo.model_dump(),
         investidores=investidores,
     )
 
@@ -226,20 +228,14 @@ def confirmar(
 ) -> FechamentoVenda:
     if not _schema_disponivel(session):
         raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)
-    receita, custo_veiculo, custos_operacionais, debitos, lucro = _calcular(
-        session, venda_obj
-    )
+    calculo = _calcular(session, venda_obj)
     _validar_elegibilidade(session, venda_obj)
-    _validar_participacoes(session, data.participacoes, lucro)
+    _validar_participacoes(session, data.participacoes, calculo.lucro_liquido)
 
     fechamento = FechamentoVenda(
         venda_id=venda_obj.id,
         usuario_id=usuario_id,
-        receita=receita,
-        custo_veiculo=custo_veiculo,
-        custos_operacionais=custos_operacionais,
-        debitos=debitos,
-        lucro_liquido=lucro,
+        **calculo.model_dump(),
     )
     session.add(fechamento)
     session.flush()
@@ -258,12 +254,12 @@ def confirmar(
         investidor_id=venda_obj.veiculo.investidor_id,
         fechamento_venda_id=fechamento.id,
         tipo=caixa.TipoLancamento.receita_venda,
-        valor=receita,
+        valor=calculo.receita,
         descricao=f"Receita da venda #{venda_obj.id}",
         actor_id=usuario_id,
     )
-    if lucro > 0:
-        valores = _distribuir_lucro(lucro, data.participacoes)
+    if calculo.lucro_liquido > 0:
+        valores = _distribuir_lucro(calculo.lucro_liquido, data.participacoes)
         for item, valor in zip(data.participacoes, valores, strict=True):
             participacao = ParticipacaoFechamentoVenda(
                 fechamento_venda_id=fechamento.id,
@@ -357,9 +353,7 @@ def dre_por_mes(fechamentos: list[FechamentoVenda]) -> list[DreLinhaMes]:
     ]
 
 
-def _calcular(
-    session: Session, venda_obj: Venda
-) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
+def _calcular(session: Session, venda_obj: Venda) -> ResultadoCalculo:
     receita = _quantizar(venda_obj.valor_venda)
     custo_veiculo = _quantizar(venda_obj.veiculo.preco)
     custos_operacionais = _quantizar(
@@ -370,7 +364,13 @@ def _calcular(
     )
     debitos = _quantizar(venda_obj.debitos or Decimal("0"))
     lucro = _quantizar(receita - custo_veiculo - custos_operacionais - debitos)
-    return receita, custo_veiculo, custos_operacionais, debitos, lucro
+    return ResultadoCalculo(
+        receita=receita,
+        custo_veiculo=custo_veiculo,
+        custos_operacionais=custos_operacionais,
+        debitos=debitos,
+        lucro_liquido=lucro,
+    )
 
 
 def _motivo_inelegivel(session: Session, venda_obj: Venda) -> str | None:
