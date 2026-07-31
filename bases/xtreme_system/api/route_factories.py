@@ -113,8 +113,18 @@ def register_crud_routes(
     actor_field: str | None = None,
 ) -> None:
     response_model = None if pagina else list[read_schema]  # type: ignore[valid-type]
+    list_response_model: Any = list[read_schema]  # type: ignore[valid-type]
+    list_responses: dict[int | str, dict[str, Any]] | None = (
+        {200: {"model": list_response_model}} if pagina else None
+    )
+    read_responses: dict[int | str, dict[str, Any]] | None = (
+        {200: {"model": read_schema}} if pagina else None
+    )
+    create_responses: dict[int | str, dict[str, Any]] | None = (
+        {201: {"model": read_schema}} if pagina else None
+    )
 
-    @app.get(prefix, response_model=response_model)
+    @app.get(prefix, response_model=response_model, responses=list_responses)
     def _list(
         session: SessionDep,
         user: CurrentUser,
@@ -128,7 +138,11 @@ def register_crud_routes(
             for obj in module.list_all(session, limit=limit, offset=offset)
         ]
 
-    @app.get(f"{prefix}/{{item_id}}", response_model=None if pagina else read_schema)
+    @app.get(
+        f"{prefix}/{{item_id}}",
+        response_model=None if pagina else read_schema,
+        responses=read_responses,
+    )
     def _get(item_id: int, session: SessionDep, user: CurrentUser) -> EntityT | Any:
         obj = found(module.get(session, item_id), label)
         return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
@@ -137,6 +151,7 @@ def register_crud_routes(
         prefix,
         response_model=None if pagina else read_schema,
         status_code=201,
+        responses=create_responses,
     )
     def _create(
         data: create_schema,  # type: ignore[valid-type]
@@ -168,6 +183,7 @@ def register_crud_routes(
     @app.patch(
         f"{prefix}/{{item_id}}",
         response_model=None if pagina else read_schema,
+        responses=read_responses,
     )
     def _update(
         item_id: int,
