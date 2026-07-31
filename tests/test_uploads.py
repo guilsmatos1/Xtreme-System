@@ -14,8 +14,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.routes.ui_routes.upload_files import (
-    _uploaded_file_path,
     arquivo_disponivel,
+    uploaded_file_path,
 )
 from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
@@ -518,7 +518,7 @@ def test_validar_uploads_arquivo_sem_tamanho_detecta() -> None:
 
 
 def test_uploaded_file_path_url_fora_prefixo() -> None:
-    assert _uploaded_file_path("/outra/rota/foto.jpg") is None
+    assert uploaded_file_path("/outra/rota/foto.jpg") is None
 
 
 def test_uploaded_file_path_url_valida(
@@ -535,7 +535,7 @@ def test_uploaded_file_path_url_valida(
         "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
     )
 
-    result = _uploaded_file_path("/static/uploads/veiculos/1/foto.jpg")
+    result = uploaded_file_path("/static/uploads/veiculos/1/foto.jpg")
     assert result == expected
     assert result.is_file()
 
@@ -550,7 +550,7 @@ def test_uploaded_file_path_bloqueia_traversal_relativo(
         "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
     )
 
-    assert _uploaded_file_path("/static/uploads/../../etc/passwd") is None
+    assert uploaded_file_path("/static/uploads/../../etc/passwd") is None
 
 
 def test_uploaded_file_path_bloqueia_traversal_dotdot_meio(
@@ -564,7 +564,7 @@ def test_uploaded_file_path_bloqueia_traversal_dotdot_meio(
     )
 
     assert (
-        _uploaded_file_path("/static/uploads/veiculos/1/../../../../etc/hosts") is None
+        uploaded_file_path("/static/uploads/veiculos/1/../../../../etc/hosts") is None
     )
 
 
@@ -584,7 +584,7 @@ def test_uploaded_file_path_bloqueia_escapar_via_symlink(
         "xtreme_system.api.routes.ui_routes.upload_paths.ui_dir", fake_ui
     )
 
-    assert _uploaded_file_path("/static/uploads/link_escapando") is None
+    assert uploaded_file_path("/static/uploads/link_escapando") is None
 
 
 def test_static_upload_exige_login(

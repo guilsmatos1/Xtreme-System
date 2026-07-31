@@ -12,12 +12,12 @@ from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.routes.ui_routes.filters import (
     IdFiltro,
     PeriodoFiltro,
     TextoFiltro,
-    _vazio_para_none,
+    vazio_para_none,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
@@ -35,7 +35,7 @@ class FiltroAuditoria(PeriodoFiltro):
     usuario_id: IdFiltro = None
     tabela: TextoFiltro = None
     tipo_acao: Annotated[
-        auditoria.TipoAcao | None, BeforeValidator(_vazio_para_none)
+        auditoria.TipoAcao | None, BeforeValidator(vazio_para_none)
     ] = None
 
     @staticmethod
@@ -176,7 +176,7 @@ def _pretty(dados: dict[str, Any] | None) -> str | None:
 def ui_auditoria_detalhe(
     registro_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    reg = _found(auditoria.get(session, registro_id), "Registro de auditoria")
+    reg = found(auditoria.get(session, registro_id), "Registro de auditoria")
     nome: str | None = None
     if reg.usuario_id is not None:
         u = usuario.get(session, reg.usuario_id)

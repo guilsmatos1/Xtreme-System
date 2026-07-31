@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, _found
+from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, found
 from xtreme_system.api.route_factories import (
     JSON_LIST_LIMIT_MAX,
     json_visible,
@@ -100,7 +100,7 @@ def deletar_usuario(
 ) -> None:
     if user_id == current.id:
         raise HTTPException(status_code=400, detail="não pode excluir a si mesmo")
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     usuario.delete(session, obj, current.id)
 
 
@@ -111,7 +111,7 @@ def trocar_senha_usuario(
     admin: AdminUser,
     nova_senha: Annotated[str, Form()],
 ) -> None:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     try:
         usuario.change_password(session, obj, nova_senha, admin.id)
     except usuario.SenhaFracaError as exc:
@@ -231,7 +231,7 @@ def _fechamento_json(
 def preview_fechamento_venda(
     venda_id: int, session: SessionDep, user: CurrentUser
 ) -> dict[str, Any]:
-    venda_obj = _found(venda.get(session, venda_id), "Venda")
+    venda_obj = found(venda.get(session, venda_id), "Venda")
     return _fechamento_preview_json(fechamento_venda.preview(session, venda_obj), user)
 
 
@@ -246,7 +246,7 @@ def confirmar_fechamento_venda(
     session: SessionDep,
     admin: AdminUser,
 ) -> fechamento_venda.FechamentoVenda:
-    venda_obj = _found(venda.get(session, venda_id), "Venda")
+    venda_obj = found(venda.get(session, venda_id), "Venda")
     try:
         return fechamento_venda.confirmar(session, venda_obj, data, usuario_id=admin.id)
     except fechamento_venda.FechamentoVendaError as exc:
@@ -276,7 +276,7 @@ def obter_fechamento_venda(
     fechamento_id: int, session: SessionDep, user: CurrentUser
 ) -> dict[str, Any]:
     return _fechamento_json(
-        _found(fechamento_venda.get(session, fechamento_id), "Fechamento"), user
+        found(fechamento_venda.get(session, fechamento_id), "Fechamento"), user
     )
 
 

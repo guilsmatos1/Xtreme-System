@@ -9,18 +9,29 @@ JANELA_MAX_DIAS = 732
 ERRO_PERIODO_INVERTIDO = "data_de não pode ser maior que data_ate"
 ERRO_PERIODO_LONGO = f"período não pode exceder {JANELA_MAX_DIAS} dias"
 
+__all__ = [
+    "ERRO_PERIODO_INVERTIDO",
+    "ERRO_PERIODO_LONGO",
+    "JANELA_MAX_DIAS",
+    "DataFiltro",
+    "IdFiltro",
+    "PeriodoFiltro",
+    "TextoFiltro",
+    "vazio_para_none",
+]
 
-def _vazio_para_none(value: Any) -> Any:
+
+def vazio_para_none(value: Any) -> Any:
     """Formulário HTMX manda `?campo=` vazio; trata como ausente."""
     return value or None
 
 
-DataFiltro = Annotated[date | None, BeforeValidator(_vazio_para_none)]
+DataFiltro = Annotated[date | None, BeforeValidator(vazio_para_none)]
 IdFiltro = Annotated[
-    Annotated[int, Field(gt=0)] | None, BeforeValidator(_vazio_para_none)
+    Annotated[int, Field(gt=0)] | None, BeforeValidator(vazio_para_none)
 ]
 TextoFiltro = Annotated[
-    Annotated[str, Field(max_length=100)] | None, BeforeValidator(_vazio_para_none)
+    Annotated[str, Field(max_length=100)] | None, BeforeValidator(vazio_para_none)
 ]
 
 

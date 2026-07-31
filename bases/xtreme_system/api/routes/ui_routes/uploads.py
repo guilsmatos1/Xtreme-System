@@ -11,8 +11,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.routes.ui_routes.upload_files import (
-    _remover_upload,
-    _uploaded_file_path,
+    remover_upload,
+    uploaded_file_path,
 )
 from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.database.core import register_post_rollback
@@ -127,9 +127,9 @@ def excluir_anexo_entidade(
         raise HTTPException(status_code=404, detail=not_found_detail)
     session.info["usuario_id"] = actor_id
     delete_fn(session, anexo, actor_id)
-    path = _uploaded_file_path(anexo.url or "")
+    path = uploaded_file_path(anexo.url or "")
     if path is not None:
-        _remover_upload(path)
+        remover_upload(path)
 
 
 def remover_orfaos(

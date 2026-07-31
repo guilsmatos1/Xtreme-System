@@ -33,13 +33,33 @@ templates.env.filters["formatar_telefone"] = cliente.formatar_telefone
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+__all__ = [
+    "AdminUser",
+    "CurrentUser",
+    "DepFilter",
+    "NaoAdminError",
+    "NaoAutenticadoError",
+    "NaoAutorizadoError",
+    "SessionDep",
+    "UIAdmin",
+    "UIUser",
+    "found",
+    "get_current_user",
+    "get_ui_user",
+    "oauth2_scheme",
+    "require_admin",
+    "require_operacao",
+    "require_ui_admin",
+    "templates",
+]
+
 
 def _bind_usuario(session: Session, user: usuario.Usuario) -> usuario.Usuario:
     session.info["usuario_id"] = user.id
     return user
 
 
-def _found[T](obj: T | None, nome: str) -> T:
+def found[T](obj: T | None, nome: str) -> T:
     if obj is None:
         raise HTTPException(status_code=404, detail=f"{nome} não encontrado")
     return obj

@@ -50,7 +50,7 @@ from xtreme_system.api.crud_writes import (
 from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
-    _found,
+    found,
     get_ui_user,
     require_ui_admin,
 )
@@ -463,7 +463,7 @@ def register_edit_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         return form_response(
             form.templates,
             request,
@@ -646,7 +646,7 @@ def register_update_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         form_data = await request.form()
         dados_form = parse_form(form_data)
         perfil.filtrar_campos_form_ocultos(user, pagina, dados_form)
@@ -786,7 +786,7 @@ def register_delete_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         try:
             delete_with_hook(module, session, obj, before_delete, user.id)
         except IntegrityError:

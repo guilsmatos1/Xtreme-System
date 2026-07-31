@@ -29,7 +29,7 @@ from xtreme_system.api.crud_ui.routes import (
 )
 from xtreme_system.api.deps import (
     SessionDep,
-    _found,
+    found,
     require_operacao,
     templates,
 )
@@ -39,10 +39,10 @@ from xtreme_system.api.routes.ui_routes.nested_writes import (
     rollback_se_criou_aninhados,
 )
 from xtreme_system.api.routes.ui_routes.upload_files import (
-    _remover_upload,
-    _uploaded_file_path,
+    remover_upload,
+    uploaded_file_path,
 )
-from xtreme_system.api.routes.ui_routes.upload_paths import _uploads_compra_dir
+from xtreme_system.api.routes.ui_routes.upload_paths import uploads_compra_dir
 from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
@@ -124,9 +124,9 @@ def _remover_arquivos_comprovantes(
     session: Session, obj: compra.Compra, _actor_id: int | None = None
 ) -> None:
     for comprovante in imagem_comprovante_compra.list_by_compra(session, obj.id):
-        path = _uploaded_file_path(comprovante.url or "")
+        path = uploaded_file_path(comprovante.url or "")
         if path is not None:
-            _remover_upload(path)
+            remover_upload(path)
 
 
 def _deletar_compra_e_veiculo(
@@ -146,7 +146,7 @@ def _comprovantes_modal(
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
-    item = _found(compra.get(session, compra_id), "Compra")
+    item = found(compra.get(session, compra_id), "Compra")
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
     return templates.TemplateResponse(
         request,
@@ -168,7 +168,7 @@ def _comprovantes_erro_modal(
     compra_id: int,
     erro: str,
 ) -> HTMLResponse:
-    item = _found(compra.get(session, compra_id), "Compra")
+    item = found(compra.get(session, compra_id), "Compra")
     comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
     return templates.TemplateResponse(
         request,
@@ -203,10 +203,10 @@ def ui_compra_comprovantes_upload(
     compra_id: int,
     comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(compra.get(session, compra_id), "Compra")
+    found(compra.get(session, compra_id), "Compra")
     erro = salvar_anexos_entidade(
         session,
-        upload_dir=_uploads_compra_dir(compra_id),
+        upload_dir=uploads_compra_dir(compra_id),
         url_prefix=f"/static/uploads/compras/{compra_id}/comprovantes",
         create_fn=imagem_comprovante_compra.create,
         schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
@@ -229,7 +229,7 @@ def ui_compra_comprovantes_excluir(
     compra_id: int,
     comprovante_id: int,
 ) -> HTMLResponse:
-    comprovante = _found(
+    comprovante = found(
         imagem_comprovante_compra.get(session, comprovante_id), "Comprovante"
     )
     excluir_anexo_entidade(
@@ -420,7 +420,7 @@ async def _criar_compra(  # noqa: PLR0911
         sincronizar_caixa_compra(session, obj, user.id)
         salvar_arquivos(
             session,
-            upload_dir=_uploads_compra_dir(obj.id),
+            upload_dir=uploads_compra_dir(obj.id),
             url_prefix=f"/static/uploads/compras/{obj.id}/comprovantes",
             create_fn=imagem_comprovante_compra.create,
             schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,

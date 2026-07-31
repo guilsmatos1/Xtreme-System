@@ -6,7 +6,7 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
+from xtreme_system.api.deps import SessionDep, found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.upload_paths import (
     _uploads_procuracao_dir,
 )
@@ -39,7 +39,7 @@ def _procuracao_modal(
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -60,7 +60,7 @@ def _procuracao_erro_modal(
     veiculo_id: int,
     erro: str,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -94,7 +94,7 @@ def ui_veiculo_procuracao_upload(
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(veiculo.get(session, veiculo_id), "Veículo")
+    found(veiculo.get(session, veiculo_id), "Veículo")
     erro = salvar_anexos_entidade(
         session,
         upload_dir=_uploads_procuracao_dir(veiculo_id),
@@ -119,7 +119,7 @@ def ui_veiculo_procuracao_excluir(
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
-    doc = _found(documento_procuracao.get(session, doc_id), "Documento")
+    doc = found(documento_procuracao.get(session, doc_id), "Documento")
     excluir_anexo_entidade(
         session,
         anexo=doc,

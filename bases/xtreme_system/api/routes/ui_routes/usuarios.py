@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import success_response
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -137,7 +137,7 @@ def ui_usuario_excluir(
             _usuarios_ctx(session, user, erro="não pode excluir a si mesmo"),
             status_code=400,
         )
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     usuario.delete(session, obj, user.id)
     return success_response(
         templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
@@ -148,7 +148,7 @@ def ui_usuario_excluir(
 def ui_usuario_senha_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     return templates.TemplateResponse(request, "_form_senha.html", {"usuario": obj})
 
 
@@ -160,7 +160,7 @@ def ui_usuario_senha_alterar(
     user: UIAdmin,
     nova_senha: Annotated[str, Form()],
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     try:
         usuario.change_password(session, obj, nova_senha, user.id)
     except usuario.SenhaFracaError as exc:
@@ -179,7 +179,7 @@ def ui_usuario_senha_alterar(
 def ui_usuario_perfil_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     return templates.TemplateResponse(
         request,
         "_form_perfil_usuario.html",
@@ -195,7 +195,7 @@ def ui_usuario_perfil_alterar(
     user: UIAdmin,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     if perfil_id is not None and perfil.get(session, perfil_id) is None:
         return templates.TemplateResponse(
             request,
@@ -217,7 +217,7 @@ def ui_usuario_perfil_alterar(
 def ui_usuario_editar_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     return templates.TemplateResponse(
         request,
         "_form_usuario_editar.html",
@@ -238,7 +238,7 @@ def ui_usuario_editar(
     ativo: Annotated[bool, Form()] = True,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
-    obj = _found(usuario.get(session, user_id), "Usuário")
+    obj = found(usuario.get(session, user_id), "Usuário")
     try:
         if senha:
             usuario.validate_senha(senha)

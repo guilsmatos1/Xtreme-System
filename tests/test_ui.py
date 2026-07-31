@@ -2021,7 +2021,7 @@ def test_ui_compras_upload_comprovante_invalido_rejeita_lote(
 ) -> None:
     _login_admin(client)
     compra_id = _seed_compra(client, "45678912322")
-    monkeypatch.setattr(compras_ui, "_uploads_compra_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(compras_ui, "uploads_compra_dir", lambda _id: tmp_path)
 
     resp = client.post(
         f"/ui/compras/{compra_id}/comprovantes",
@@ -2834,7 +2834,7 @@ def test_ui_vendas_nao_grava_contrato_se_commit_final_falhar(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.vendas._uploads_contrato_venda_dir",
+        "xtreme_system.api.routes.ui_routes.vendas.uploads_contrato_venda_dir",
         lambda _id: tmp_path,
     )
 
@@ -2869,7 +2869,7 @@ def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
-        "xtreme_system.api.routes.ui_routes.vendas._uploads_contrato_venda_dir",
+        "xtreme_system.api.routes.ui_routes.vendas.uploads_contrato_venda_dir",
         lambda _id: tmp_path,
     )
 
@@ -2906,7 +2906,7 @@ def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
 def test_ui_compras_nao_grava_comprovante_se_commit_final_falhar(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(compras_ui, "_uploads_compra_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(compras_ui, "uploads_compra_dir", lambda _id: tmp_path)
 
     with _client_with_failing_final_commit() as (client, session, fail_commit):
         _login_admin(client)
@@ -3382,7 +3382,7 @@ def test_upload_imagem_veiculo_extensao_invalida_rejeitada(
     _login_admin(client)
     headers = _admin_headers(client)
     veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
-    monkeypatch.setattr(veiculos_imagens_ui, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(veiculos_imagens_ui, "uploads_dir", lambda _id: tmp_path)
 
     resp = client.post(
         f"/ui/veiculos/{veiculo_id}/imagens",
@@ -3404,7 +3404,7 @@ def test_upload_imagem_veiculo_remove_arquivo_se_create_falha(
     def falha_create(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("db indisponivel")
 
-    monkeypatch.setattr(veiculos_imagens_ui, "_uploads_dir", lambda _id: tmp_path)
+    monkeypatch.setattr(veiculos_imagens_ui, "uploads_dir", lambda _id: tmp_path)
     monkeypatch.setattr(imagem_veiculo, "create", falha_create)
 
     resp = client.post(

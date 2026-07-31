@@ -24,7 +24,7 @@ from xtreme_system.api.crud_ui.responses import (
 )
 from xtreme_system.api.crud_writes import create_with_hook, update_with_hook
 from xtreme_system.api.crud_writes import safe_write as _safe_write
-from xtreme_system.api.deps import CurrentUser, SessionDep, _found
+from xtreme_system.api.deps import CurrentUser, SessionDep, found
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
@@ -130,7 +130,7 @@ def register_crud_routes(
 
     @app.get(f"{prefix}/{{item_id}}", response_model=None if pagina else read_schema)
     def _get(item_id: int, session: SessionDep, user: CurrentUser) -> EntityT | Any:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         return _json_visible(obj, user, pagina, campos_protegidos, read_schema)
 
     @app.post(
@@ -183,7 +183,7 @@ def register_crud_routes(
     def _update_atomic(
         item_id: int, data: UpdateSchemaT, session: Session, actor_id: int | None
     ) -> EntityT:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         return _safe_write(
             lambda: _update_with_hooks(obj, data, session, actor_id),
             conflict_msg=write_conflict_detail(label),
@@ -203,7 +203,7 @@ def register_crud_routes(
         _delete_atomic(item_id, session, user.id)
 
     def _delete_atomic(item_id: int, session: Session, actor_id: int | None) -> None:
-        obj = _found(module.get(session, item_id), label)
+        obj = found(module.get(session, item_id), label)
         if before_delete:
             before_delete(session, obj, actor_id)
         if handle_delete_error:
