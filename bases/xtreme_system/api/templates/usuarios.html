@@ -24,12 +24,12 @@
 <div class="table-wrap">
   <table data-table="usuarios">
     <thead><tr>
-      <th style="width:1%" data-col="id" data-col-label="ID">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
-      <th data-col="username" data-col-label="Usuário">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
-      <th data-col="nome" data-col-label="Nome">{{ ui.sortable("nome", "Nome", sort, order, "/ui/usuarios") }}</th>
-      <th data-col="papel" data-col-label="Papel">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
+      <th style="width:1%" data-col="id" data-col-label="ID" aria-sort="{{ ui.sortable_aria("id", sort, order) }}">{{ ui.sortable("id", "ID", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="username" data-col-label="Usuário" aria-sort="{{ ui.sortable_aria("username", sort, order) }}">{{ ui.sortable("username", "Usuário", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="nome" data-col-label="Nome" aria-sort="{{ ui.sortable_aria("nome", sort, order) }}">{{ ui.sortable("nome", "Nome", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="papel" data-col-label="Papel" aria-sort="{{ ui.sortable_aria("papel", sort, order) }}">{{ ui.sortable("papel", "Papel", sort, order, "/ui/usuarios") }}</th>
       <th data-col="perfil" data-col-label="Perfil">Perfil</th>
-      <th data-col="ativo" data-col-label="Status">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
+      <th data-col="ativo" data-col-label="Status" aria-sort="{{ ui.sortable_aria("ativo", sort, order) }}">{{ ui.sortable("ativo", "Status", sort, order, "/ui/usuarios") }}</th>
       <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
     </tr></thead>
     {% include "_linhas_usuarios.html" %}
