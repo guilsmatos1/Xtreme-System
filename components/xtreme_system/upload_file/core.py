@@ -1,14 +1,15 @@
 """Helpers for upload files stored under /static/uploads."""
 
+import os
 from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy import event
-from sqlalchemy.orm import object_session
+from sqlalchemy.orm import Session, object_session
 
-from xtreme_system.database.core import register_post_commit
+from xtreme_system.database.core import register_post_commit, register_post_rollback
 
 _SOURCE_UI_DIR = Path(__file__).resolve().parents[3] / "bases" / "xtreme_system" / "api"
 _PACKAGE_UI_DIR = Path(__file__).resolve().parents[1] / "api"
@@ -38,6 +39,31 @@ def arquivo_disponivel(
     if pending_paths is not None and str(path) in set(pending_paths):
         return True
     return path.exists()
+
+
+def escrever_upload_atomico(
+    session: Session, upload_dir: Path, filename: str, content: bytes
+) -> Path:
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    path = upload_dir / filename
+    tmp_path = upload_dir / f".{filename}.tmp"
+    try:
+        tmp_path.write_bytes(content)
+        with tmp_path.open("rb") as arquivo:
+            os.fsync(arquivo.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+    def _remove_upload_on_rollback(
+        *, path: Path = path, tmp_path: Path = tmp_path
+    ) -> None:
+        path.unlink(missing_ok=True)
+        tmp_path.unlink(missing_ok=True)
+
+    register_post_rollback(session, _remove_upload_on_rollback)
+    return path
 
 
 def schedule_uploaded_file_delete(target: Any) -> None:

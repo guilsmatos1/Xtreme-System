@@ -29,6 +29,7 @@ from xtreme_system.compra.core import Compra
 from xtreme_system.database.core import invoke_post_commit
 from xtreme_system.imagem_comprovante_compra.core import ImagemComprovanteCompra
 from xtreme_system.investidor.core import Investidor
+from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo.core import TipoEntrada, TipoVeiculo, Veiculo
 
@@ -67,6 +68,36 @@ class _FakeDoc:
 class _FakeSession:
     def __init__(self) -> None:
         self.info: dict[str, Any] = {}
+
+
+def test_escrever_upload_atomico_remove_tmp_em_erro(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def falha_replace(_tmp_path: str, _path: str) -> None:
+        raise OSError("falha ao substituir")
+
+    monkeypatch.setattr(os, "replace", falha_replace)
+
+    with pytest.raises(OSError, match="falha ao substituir"):
+        escrever_upload_atomico(
+            cast(Session, _FakeSession()), tmp_path, "foto.jpg", b"dados"
+        )
+
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_escrever_upload_atomico_remove_arquivo_no_rollback(tmp_path: Path) -> None:
+    session = _FakeSession()
+    path = escrever_upload_atomico(
+        cast(Session, session), tmp_path, "foto.jpg", b"dados"
+    )
+
+    assert path.read_bytes() == b"dados"
+    for callback in session.info["_post_rollback_callbacks"]:
+        callback()
+
+    assert not path.exists()
+    assert not (tmp_path / ".foto.jpg.tmp").exists()
 
 
 class _FakeSchema(BaseModel):
