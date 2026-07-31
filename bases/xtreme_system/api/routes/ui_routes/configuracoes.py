@@ -43,16 +43,13 @@ def ui_configuracoes(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     config = whatsapp.get_config(session)
-    config_empresa = empresa.get_config(session)
-    return templates.TemplateResponse(
+    return _pagina_empresa(
         request,
-        "configuracoes.html",
-        {
-            "user": user,
-            "config": config,
-            "config_empresa": config_empresa,
-            "aba": "banco",
-        },
+        session,
+        user,
+        empresa.get_config(session),
+        config=config,
+        aba="banco",
     )
 
 
@@ -79,16 +76,14 @@ def ui_configuracoes_salvar(
         ),
         user.id,
     )
-    return templates.TemplateResponse(
+    return _pagina_empresa(
         request,
-        "configuracoes.html",
-        {
-            "user": user,
-            "config": config,
-            "config_empresa": empresa.get_config(session),
-            "sucesso": "Configurações salvas.",
-            "aba": "whatsapp",
-        },
+        session,
+        user,
+        empresa.get_config(session),
+        config=config,
+        sucesso="Configurações salvas.",
+        aba="whatsapp",
     )
 
 
@@ -121,16 +116,12 @@ def ui_configuracoes_empresa_salvar(
             signatario=signatario,
         ),
     )
-    return templates.TemplateResponse(
+    return _pagina_empresa(
         request,
-        "configuracoes.html",
-        {
-            "user": user,
-            "config": whatsapp.get_config(session),
-            "config_empresa": config_empresa,
-            "sucesso": "Dados da empresa salvos.",
-            "aba": "empresa",
-        },
+        session,
+        user,
+        config_empresa,
+        sucesso="Dados da empresa salvos.",
     )
 
 
@@ -143,20 +134,24 @@ def _pagina_empresa(
     user: usuario.Usuario,
     config_empresa: empresa.EmpresaConfig,
     *,
+    config: whatsapp.WhatsappConfig | None = None,
     erro: str | None = None,
     sucesso: str | None = None,
+    aba: str = "empresa",
+    status_code: int = 200,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "configuracoes.html",
         {
             "user": user,
-            "config": whatsapp.get_config(session),
+            "config": config or whatsapp.get_config(session),
             "config_empresa": config_empresa,
             "erro": erro,
             "sucesso": sucesso,
-            "aba": "empresa",
+            "aba": aba,
         },
+        status_code=status_code,
     )
 
 
@@ -253,16 +248,14 @@ def ui_configuracoes_exportar(
     except exportacao.ExportacaoError as exc:
         os.unlink(tmp_path)
         config = whatsapp.get_config(session)
-        return templates.TemplateResponse(
+        return _pagina_empresa(
             request,
-            "configuracoes.html",
-            {
-                "user": user,
-                "config": config,
-                "config_empresa": empresa.get_config(session),
-                "erro": str(exc),
-                "aba": "banco",
-            },
+            session,
+            user,
+            empresa.get_config(session),
+            config=config,
+            erro=str(exc),
+            aba="banco",
             status_code=500,
         )
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -294,29 +287,25 @@ async def ui_configuracoes_importar(
         await run_in_threadpool(exportacao.restore_database_from_file, tmp_path)
     except exportacao.ExportacaoError as exc:
         config = whatsapp.get_config(session)
-        return templates.TemplateResponse(
+        return _pagina_empresa(
             request,
-            "configuracoes.html",
-            {
-                "user": user,
-                "config": config,
-                "config_empresa": empresa.get_config(session),
-                "erro": str(exc),
-                "aba": "banco",
-            },
+            session,
+            user,
+            empresa.get_config(session),
+            config=config,
+            erro=str(exc),
+            aba="banco",
         )
     finally:
         os.unlink(tmp_path)
     session.expire_all()
     config = whatsapp.get_config(session)
-    return templates.TemplateResponse(
+    return _pagina_empresa(
         request,
-        "configuracoes.html",
-        {
-            "user": user,
-            "config": config,
-            "config_empresa": empresa.get_config(session),
-            "sucesso": "Dados importados com sucesso.",
-            "aba": "banco",
-        },
+        session,
+        user,
+        empresa.get_config(session),
+        config=config,
+        sucesso="Dados importados com sucesso.",
+        aba="banco",
     )
