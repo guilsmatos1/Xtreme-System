@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
+from xtreme_system.api.crud_ui.responses import success_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
@@ -134,8 +135,8 @@ def ui_usuario_criar(
             {"perfis": perfil.list_all(session), "erro": str(exc)},
             status_code=400,
         )
-    return templates.TemplateResponse(
-        request, "_usuarios_ok.html", _usuarios_ctx(session, user)
+    return success_response(
+        templates, request, "_usuarios_ok.html", _usuarios_ctx(session, user)
     )
 
 
@@ -152,8 +153,8 @@ def ui_usuario_excluir(
         )
     obj = _found(usuario.get(session, user_id), "Usuário")
     usuario.delete(session, obj, user.id)
-    return templates.TemplateResponse(
-        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return success_response(
+        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
 
 
@@ -183,8 +184,8 @@ def ui_usuario_senha_alterar(
             {"usuario": obj, "erro": str(exc)},
             status_code=400,
         )
-    return templates.TemplateResponse(
-        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return success_response(
+        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
 
 
@@ -221,8 +222,8 @@ def ui_usuario_perfil_alterar(
             status_code=400,
         )
     usuario.set_perfil(session, obj, perfil_id, user.id)
-    return templates.TemplateResponse(
-        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return success_response(
+        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )
 
 
@@ -295,6 +296,6 @@ def ui_usuario_editar(
                 {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
                 status_code=400,
             )
-    return templates.TemplateResponse(
-        request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return success_response(
+        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
     )

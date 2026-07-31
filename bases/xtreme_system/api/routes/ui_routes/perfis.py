@@ -13,6 +13,7 @@ from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
     rollback_integrity_error_response,
+    success_response,
     write_conflict_detail,
 )
 from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
@@ -132,8 +133,8 @@ async def ui_perfil_criar(
                 status_code=409,
             ),
         )
-    return templates.TemplateResponse(
-        request, "_perfis_ok.html", _perfis_ctx(session, user)
+    return success_response(
+        templates, request, "_perfis_ok.html", _perfis_ctx(session, user)
     )
 
 
@@ -164,8 +165,8 @@ async def ui_perfil_atualizar(
                 status_code=409,
             ),
         )
-    return templates.TemplateResponse(
-        request, "_perfis_ok.html", _perfis_ctx(session, user)
+    return success_response(
+        templates, request, "_perfis_ok.html", _perfis_ctx(session, user)
     )
 
 
@@ -191,6 +192,6 @@ def ui_perfil_excluir(
                 status_code=409,
             ),
         )
-    return templates.TemplateResponse(
-        request, "_linhas_perfis.html", _perfis_ctx(session, user)
+    return success_response(
+        templates, request, "_linhas_perfis.html", _perfis_ctx(session, user)
     )
