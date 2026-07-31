@@ -291,7 +291,7 @@ def veiculo_tem_outra_troca_concluida(
 def recomputar_status_veiculo_por_vendas(
     session: Session, veiculo_id: int, *, excluir_venda_id: int | None = None
 ) -> None:
-    v = session.get(Veiculo, veiculo_id)
+    v = session.get(Veiculo, veiculo_id, with_for_update=True)
     if v is None or v.status == StatusVeiculo.indisponivel:
         return
     if veiculo_tem_outra_troca_concluida(
