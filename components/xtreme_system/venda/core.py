@@ -110,6 +110,9 @@ class Venda(Base):
     )
 
 
+VENDA_NAO_CANCELADA = Venda.status != StatusVenda.cancelado
+
+
 class VendaCreate(BaseModel):
     cliente_id: int
     veiculo_id: int
@@ -403,12 +406,19 @@ def _mes_atual_inicio() -> date:
     return hoje.replace(day=1)
 
 
+def _inicio_janela_meses(hoje: date, meses: int) -> date:
+    """Retorna o primeiro dia do mês que inicia uma janela inclusiva."""
+    deslocamento = meses - 1
+    ano, mes = divmod(hoje.year * 12 + hoje.month - 1 - deslocamento, 12)
+    return date(ano, mes + 1, 1)
+
+
 def resumo_mes(session: Session) -> tuple[int, Decimal]:
     """Retorna (contagem, soma) de vendas do mês atual com status != cancelado."""
     resultado = (
         session.query(func.count(Venda.id), func.sum(Venda.valor_venda))
         .filter(Venda.data_venda >= _mes_atual_inicio())
-        .filter(Venda.status != StatusVenda.cancelado)
+        .filter(VENDA_NAO_CANCELADA)
         .all()
     )
     count, total = resultado[0] if resultado else (0, None)
@@ -418,9 +428,7 @@ def resumo_mes(session: Session) -> tuple[int, Decimal]:
 def ticket_medio(session: Session) -> Decimal:
     """Retorna valor médio de venda com status != cancelado."""
     valor = (
-        session.query(func.avg(Venda.valor_venda))
-        .filter(Venda.status != StatusVenda.cancelado)
-        .scalar()
+        session.query(func.avg(Venda.valor_venda)).filter(VENDA_NAO_CANCELADA).scalar()
     )
     return valor or Decimal("0")
 
@@ -430,7 +438,7 @@ def receita_por_tipo(session: Session) -> dict[TipoVeiculo, Decimal]:
     rows = (
         session.query(Veiculo.tipo, func.sum(Venda.valor_venda))
         .join(Venda, Venda.veiculo_id == Veiculo.id)
-        .filter(Venda.status != StatusVenda.cancelado)
+        .filter(VENDA_NAO_CANCELADA)
         .group_by(Veiculo.tipo)
         .all()
     )
@@ -463,7 +471,7 @@ def ranking_vendedores(
             func.sum(Venda.valor_venda).label("total_valor"),
         )
         .join(Venda, Venda.vendedor_id == Usuario.id)
-        .filter(Venda.status != StatusVenda.cancelado)
+        .filter(VENDA_NAO_CANCELADA)
         .group_by(Usuario.id)
         .order_by(func.sum(Venda.valor_venda).desc(), Usuario.id.asc())
         .limit(limite)
@@ -480,12 +488,7 @@ def tendencia_por_periodo(
     """Retorna vendas agregadas por semana (30d/90d) ou mês (12m)."""
     hoje = datetime.now(UTC).date()
     if periodo == "12m":
-        mes_inicial = hoje.month - 11
-        ano_inicial = hoje.year
-        if mes_inicial <= 0:
-            mes_inicial += 12
-            ano_inicial -= 1
-        inicio = date(ano_inicial, mes_inicial, 1)
+        inicio = _inicio_janela_meses(hoje, 12)
         granularidade = "mes"
     elif periodo == "90d":
         inicio = hoje - timedelta(days=89)
@@ -498,7 +501,7 @@ def tendencia_por_periodo(
         session.query(Venda)
         .filter(Venda.data_venda >= inicio)
         .filter(Venda.data_venda.isnot(None))
-        .filter(Venda.status != StatusVenda.cancelado)
+        .filter(VENDA_NAO_CANCELADA)
     )
 
     if granularidade == "mes":
@@ -568,12 +571,8 @@ def desempenho_vendas_mensal(
 ) -> list[tuple[str, int, Decimal]]:
     """Retorna (label, count, total) dos últimos N meses, incluindo meses sem vendas."""
     hoje = datetime.now(UTC).date()
-    mes_inicial = hoje.month - (meses - 1)
-    ano_inicial = hoje.year
-    while mes_inicial <= 0:
-        mes_inicial += 12
-        ano_inicial -= 1
-    inicio = date(ano_inicial, mes_inicial, 1)
+    inicio = _inicio_janela_meses(hoje, meses)
+    ano_inicial, mes_inicial = inicio.year, inicio.month
 
     ano_expr = extract("year", Venda.data_venda)
     mes_expr = extract("month", Venda.data_venda)
@@ -586,7 +585,7 @@ def desempenho_vendas_mensal(
         )
         .filter(Venda.data_venda >= inicio)
         .filter(Venda.data_venda.isnot(None))
-        .filter(Venda.status != StatusVenda.cancelado)
+        .filter(VENDA_NAO_CANCELADA)
         .group_by(ano_expr, mes_expr)
         .all()
     )
