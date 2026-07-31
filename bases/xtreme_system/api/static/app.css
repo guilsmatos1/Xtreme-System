@@ -440,6 +440,7 @@ tbody tr:hover td.col-actions { background: var(--surface-hover); }
 .badge--info    { background: var(--info-soft); color: var(--info); border-color: transparent; }
 .badge--warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
 .badge--plain::before { display: none; }
+.badge--noninteractive { opacity: .62; cursor: not-allowed; }
 
 /* ---- 12. Modal ----------------------------------------------------------- */
 dialog {

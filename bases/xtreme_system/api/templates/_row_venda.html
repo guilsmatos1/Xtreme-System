@@ -10,7 +10,7 @@
     {% if fechamento_id and pode_operacao(user, 'vendas', 'ver_fechamento') %}
       <button class="badge badge--success badge--plain" hx-get="/ui/fechamentos-vendas/{{ fechamento_id }}" hx-target="#modal" hx-swap="innerHTML">Fechada</button>
     {% elif fechamento_id %}
-      <span class="badge badge--success badge--plain">Fechada</span>
+      <span class="badge badge--success badge--plain badge--noninteractive" aria-disabled="true" title="Sem permissão para visualizar o fechamento">Fechada</span>
     {% elif v.status.value == 'pendente' %}
       <span class="badge badge--warning badge--plain">Pendente</span>
     {% elif v.status.value == 'aprovado' %}

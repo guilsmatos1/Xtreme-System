@@ -474,3 +474,4 @@ def test_ui_modal_fechamento_e_estado_fechada(client: TestClient) -> None:
     )
     assert fechado.status_code == 200
     assert "Fechada" in fechado.text
+    assert 'hx-get="/ui/fechamentos-vendas/' in fechado.text
