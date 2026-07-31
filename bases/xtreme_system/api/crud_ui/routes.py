@@ -90,6 +90,7 @@ class CrudUIBehaviorConfig[EntityT, CreateSchemaT: BaseModel, UpdateSchemaT: Bas
     before_delete: BeforeDeleteHook[EntityT] | None = None
     after_create: AfterWriteHook[EntityT] | None = None
     after_update: AfterWriteHook[EntityT] | None = None
+    after_delete: AfterWriteHook[EntityT] | None = None
 
 
 CrudUIListConfig = ListingSpec
@@ -198,6 +199,7 @@ class CrudUIDeleteRouteConfig[EntityT]:
     list_partial_template: str
     ctx_list: CtxList[EntityT]
     before_delete: BeforeDeleteHook[EntityT] | None
+    after_delete: AfterWriteHook[EntityT] | None
     delete_requires_admin: bool
     listing: ListingSpec[EntityT]
     excluir_dep: DepFactory | None = None
@@ -379,6 +381,7 @@ def register_crud_ui_routes(
                 list_partial_template=templates_config.list_partial_template,
                 ctx_list=ctx_list,
                 before_delete=behavior.before_delete,
+                after_delete=behavior.after_delete,
                 delete_requires_admin=routes.delete_requires_admin,
                 listing=listing,
                 excluir_dep=routes.excluir_dep,
@@ -839,6 +842,8 @@ def register_delete_route(
         obj = found(module.get(session, item_id), config.label)
         try:
             delete_with_hook(module, session, obj, config.before_delete, user.id)
+            if config.after_delete:
+                config.after_delete(session, obj, user.id)
         except IntegrityError:
 
             def build_conflict_response() -> HTMLResponse:
