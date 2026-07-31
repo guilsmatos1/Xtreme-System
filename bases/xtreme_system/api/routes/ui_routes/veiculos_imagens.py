@@ -6,9 +6,9 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
+from xtreme_system.api.deps import SessionDep, found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.upload_paths import (
-    _uploads_dir,
+    uploads_dir,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
@@ -40,7 +40,7 @@ def _imagem_modal(
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -66,7 +66,7 @@ def _imagem_erro_modal(
     veiculo_id: int,
     erro: str,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -105,10 +105,10 @@ def ui_veiculo_imagens_upload(
     veiculo_id: int,
     imagens: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(veiculo.get(session, veiculo_id), "Veículo")
+    found(veiculo.get(session, veiculo_id), "Veículo")
     erro = salvar_anexos_entidade(
         session,
-        upload_dir=_uploads_dir(veiculo_id),
+        upload_dir=uploads_dir(veiculo_id),
         url_prefix=f"/static/uploads/veiculos/{veiculo_id}",
         create_fn=imagem_veiculo.create,
         schema=imagem_veiculo.ImagemVeiculoCreate,
@@ -130,7 +130,7 @@ def ui_veiculo_imagens_excluir(
     veiculo_id: int,
     img_id: int,
 ) -> HTMLResponse:
-    img = _found(imagem_veiculo.get(session, img_id), "Imagem")
+    img = found(imagem_veiculo.get(session, img_id), "Imagem")
     excluir_anexo_entidade(
         session,
         anexo=img,

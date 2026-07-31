@@ -32,7 +32,7 @@ from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
-    _found,
+    found,
     require_operacao,
     templates,
 )
@@ -247,7 +247,7 @@ _ExcluirDep = Annotated[
 def _editar_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
+    obj = found(veiculo.get(session, item_id), "Veículo")
     return templates.TemplateResponse(
         request,
         "_form_veiculo.html",
@@ -262,7 +262,7 @@ def _detalhe_veiculo(
     session: SessionDep,
     user: UIUser,
 ) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
+    obj = found(veiculo.get(session, item_id), "Veículo")
     compra_atual = compra.get_latest_by_veiculo(session, item_id)
     custos = custo_veiculo.list_by_veiculo(session, item_id)
     documentos_vendedor = []
@@ -289,7 +289,7 @@ def _detalhe_veiculo(
 def _excluir_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
 ) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
+    obj = found(veiculo.get(session, item_id), "Veículo")
     try:
         delete_with_hook(
             veiculo,
@@ -364,7 +364,7 @@ def _erro_veiculo(
 async def _atualizar_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:
-    obj = _found(veiculo.get(session, item_id), "Veículo")
+    obj = found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
     dados_form = dict(form)
     perfil.filtrar_campos_form_ocultos(user, "veiculos", dados_form)

@@ -17,7 +17,7 @@ from xtreme_system.api.crud_ui.responses import (
     validation_error_detail,
     write_conflict_detail,
 )
-from xtreme_system.api.deps import SessionDep, UIAdmin, _found, templates
+from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -88,7 +88,7 @@ def ui_perfil_novo(request: Request, _: UIAdmin) -> HTMLResponse:
 def ui_perfil_editar(
     item_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(perfil.get(session, item_id), "Perfil")
+    obj = found(perfil.get(session, item_id), "Perfil")
     return templates.TemplateResponse(
         request,
         "_form_perfil.html",
@@ -143,7 +143,7 @@ async def ui_perfil_criar(
 async def ui_perfil_atualizar(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(perfil.get(session, item_id), "Perfil")
+    obj = found(perfil.get(session, item_id), "Perfil")
     form = await request.form()
     data = perfil.PerfilUpdate(
         nome=str(form.get("nome", "")),
@@ -175,7 +175,7 @@ async def ui_perfil_atualizar(
 def ui_perfil_excluir(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    obj = _found(perfil.get(session, item_id), "Perfil")
+    obj = found(perfil.get(session, item_id), "Perfil")
     try:
         perfil.delete(session, obj, user.id)
     except IntegrityError:

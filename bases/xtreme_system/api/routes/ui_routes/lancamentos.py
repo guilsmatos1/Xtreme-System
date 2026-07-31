@@ -13,7 +13,7 @@ from xtreme_system.api.crud_ui.responses import (
     ok_response,
     validation_error_detail,
 )
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found, templates
+from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
@@ -37,7 +37,7 @@ def _ctx_lancamentos(
     order_expr = col.desc() if order == "desc" else col.asc()
     lancamentos = list(query.order_by(order_expr).all())
     return {
-        "investidor": _found(investidor.get(session, investidor_id), "Investidor"),
+        "investidor": found(investidor.get(session, investidor_id), "Investidor"),
         "lancamentos": lancamentos,
         "saldo": caixa.saldo(session, investidor_id),
         "sort": sort,
@@ -111,7 +111,7 @@ def ui_investidor_lancamentos(
 def ui_investidor_lancamentos_exportar(
     investidor_id: int, session: SessionDep, _: UIUser
 ) -> Response:
-    investidor_obj = _found(investidor.get(session, investidor_id), "Investidor")
+    investidor_obj = found(investidor.get(session, investidor_id), "Investidor")
     lancamentos = caixa.list_by_investidor(session, investidor_id)
     return _csv_response(
         f"caixa-{investidor_obj.nome}.csv",
@@ -132,7 +132,7 @@ def ui_investidor_lancamentos_exportar(
 def ui_lancamento_novo(
     investidor_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
-    _found(investidor.get(session, investidor_id), "Investidor")
+    found(investidor.get(session, investidor_id), "Investidor")
     return templates.TemplateResponse(
         request,
         "_form_lancamento.html",
@@ -152,7 +152,7 @@ def ui_lancamento_editar(
     session: SessionDep,
     _: UIAdmin,
 ) -> HTMLResponse:
-    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Editável apenas na tela de Veículos"
@@ -172,7 +172,7 @@ def ui_lancamento_editar(
 async def ui_lancamento_criar(
     investidor_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    _found(investidor.get(session, investidor_id), "Investidor")
+    found(investidor.get(session, investidor_id), "Investidor")
     form = await request.form()
     try:
         data = caixa.LancamentoInvestimentoCreate.model_validate(
@@ -192,7 +192,7 @@ async def ui_lancamento_atualizar(
     session: SessionDep,
     user: UIAdmin,
 ) -> HTMLResponse:
-    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Editável apenas na tela de Veículos"
@@ -214,7 +214,7 @@ def ui_lancamento_excluir(
     session: SessionDep,
     user: UIAdmin,
 ) -> HTMLResponse:
-    obj = _found(caixa.get(session, lancamento_id), "Lançamento")
+    obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
         raise HTTPException(
             status_code=403, detail="Exclusão apenas na tela de Veículos"

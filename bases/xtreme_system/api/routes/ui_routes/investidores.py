@@ -22,7 +22,7 @@ from xtreme_system.api.deps import (
     SessionDep,
     UIAdmin,
     UIUser,
-    _found,
+    found,
     require_operacao,
     templates,
 )
@@ -182,7 +182,7 @@ _ExcluirInvestidorDep = Annotated[
 def ui_investidor_editar(
     item_id: int, request: Request, session: SessionDep, _: _EditarInvestidorDep
 ) -> HTMLResponse:
-    obj = _found(investidor.get(session, item_id), "Investidores")
+    obj = found(investidor.get(session, item_id), "Investidores")
     return templates.TemplateResponse(
         request, "_form_simples.html", _form_ctx_investidor(obj)
     )
@@ -248,7 +248,7 @@ async def ui_investidor_criar(
 async def ui_investidor_atualizar(
     item_id: int, request: Request, session: SessionDep, user: _EditarInvestidorDep
 ) -> HTMLResponse:
-    obj = _found(investidor.get(session, item_id), "Investidores")
+    obj = found(investidor.get(session, item_id), "Investidores")
     nome = str((await request.form()).get("nome") or "").strip()
     if not nome:
         return templates.TemplateResponse(
@@ -281,7 +281,7 @@ async def ui_investidor_atualizar(
 def ui_investidor_excluir(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirInvestidorDep
 ) -> HTMLResponse:
-    obj = _found(investidor.get(session, item_id), "Investidores")
+    obj = found(investidor.get(session, item_id), "Investidores")
     if caixa.list_by_investidor(session, item_id):
         return templates.TemplateResponse(
             request,

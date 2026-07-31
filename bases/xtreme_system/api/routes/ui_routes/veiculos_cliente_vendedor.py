@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import (
     SessionDep,
-    _found,
+    found,
     require_operacao,
     templates,
 )
@@ -29,7 +29,7 @@ def _cliente_vendedor_modal(
     veiculo_id: int,
     erro: str | None = None,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     item_compra = compra.get_latest_by_veiculo(session, veiculo_id)
     if item_compra is not None:
         session.refresh(item_compra.cliente)

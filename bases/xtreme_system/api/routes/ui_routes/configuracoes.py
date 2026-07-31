@@ -15,11 +15,11 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
 from xtreme_system.api.routes.ui_routes.upload_files import (
-    _remover_upload,
-    _uploaded_file_path,
+    remover_upload,
+    uploaded_file_path,
 )
 from xtreme_system.api.routes.ui_routes.upload_paths import (
-    _uploads_empresa_dir,
+    uploads_empresa_dir,
 )
 from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
@@ -180,7 +180,7 @@ def ui_configuracoes_empresa_logo_enviar(
 
     url_anterior = empresa.get_config(session).logo_url
     filename = f"{uuid4().hex}{sufixo}"
-    upload_dir = _uploads_empresa_dir()
+    upload_dir = uploads_empresa_dir()
     path = upload_dir / filename
     tmp_path = upload_dir / f".{filename}.tmp"
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -206,11 +206,11 @@ def ui_configuracoes_empresa_logo_enviar(
         _remover_novo_logo()
         raise
 
-    anterior = _uploaded_file_path(url_anterior) if url_anterior else None
+    anterior = uploaded_file_path(url_anterior) if url_anterior else None
     if anterior is not None and anterior != path:
 
         def _remover_logo_anterior(*, anterior: Path = anterior) -> None:
-            _remover_upload(anterior)
+            remover_upload(anterior)
 
         register_post_commit(session, _remover_logo_anterior)
     return _pagina_empresa(
@@ -226,9 +226,9 @@ def ui_configuracoes_empresa_logo_excluir(
 ) -> HTMLResponse:
     url_anterior = empresa.get_config(session).logo_url
     config_empresa = empresa.remover_logo(session)
-    anterior = _uploaded_file_path(url_anterior) if url_anterior else None
+    anterior = uploaded_file_path(url_anterior) if url_anterior else None
     if anterior is not None:
-        _remover_upload(anterior)
+        remover_upload(anterior)
     return _pagina_empresa(
         request, session, user, config_empresa, sucesso="Logo removido."
     )

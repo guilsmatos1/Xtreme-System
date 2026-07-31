@@ -22,12 +22,12 @@ from xtreme_system.api.deps import (
     SessionDep,
     UIAdmin,
     UIUser,
-    _found,
+    found,
     require_operacao,
     templates,
 )
 from xtreme_system.api.routes.ui_routes.upload_paths import (
-    _uploads_cliente_dir,
+    uploads_cliente_dir,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
@@ -110,7 +110,7 @@ def _ctx_lista_cliente(
 def _veiculos_cliente_modal(
     request: Request, session: Session, cliente_id: int
 ) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
+    item = found(cliente.get(session, cliente_id), "Cliente")
     return templates.TemplateResponse(
         request,
         "_modal_veiculos_cliente.html",
@@ -145,7 +145,7 @@ def _documentos_modal(
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
+    item = found(cliente.get(session, cliente_id), "Cliente")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -166,7 +166,7 @@ def _documentos_erro_modal(
     cliente_id: int,
     erro: str,
 ) -> HTMLResponse:
-    item = _found(cliente.get(session, cliente_id), "Cliente")
+    item = found(cliente.get(session, cliente_id), "Cliente")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -200,10 +200,10 @@ def ui_cliente_documentos_upload(
     cliente_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(cliente.get(session, cliente_id), "Cliente")
+    found(cliente.get(session, cliente_id), "Cliente")
     erro = salvar_anexos_entidade(
         session,
-        upload_dir=_uploads_cliente_dir(cliente_id),
+        upload_dir=uploads_cliente_dir(cliente_id),
         url_prefix=f"/static/uploads/clientes/{cliente_id}/documentos",
         create_fn=imagem_documento_cliente.create,
         schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
@@ -225,7 +225,7 @@ def ui_cliente_documentos_excluir(
     cliente_id: int,
     doc_id: int,
 ) -> HTMLResponse:
-    doc = _found(imagem_documento_cliente.get(session, doc_id), "Documento")
+    doc = found(imagem_documento_cliente.get(session, doc_id), "Documento")
     excluir_anexo_entidade(
         session,
         anexo=doc,

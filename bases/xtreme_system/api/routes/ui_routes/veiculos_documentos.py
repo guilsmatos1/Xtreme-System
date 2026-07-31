@@ -6,9 +6,9 @@ from fastapi import Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, _found, require_operacao, templates
+from xtreme_system.api.deps import SessionDep, found, require_operacao, templates
 from xtreme_system.api.routes.ui_routes.upload_paths import (
-    _uploads_dir,
+    uploads_dir,
 )
 from xtreme_system.api.routes.ui_routes.uploads import (
     excluir_anexo_entidade,
@@ -33,7 +33,7 @@ def _documentos_modal(
     *,
     action_oob: bool = False,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -54,7 +54,7 @@ def _documentos_erro_modal(
     veiculo_id: int,
     erro: str,
 ) -> HTMLResponse:
-    item = _found(veiculo.get(session, veiculo_id), "Veículo")
+    item = found(veiculo.get(session, veiculo_id), "Veículo")
     session.refresh(item)
     return templates.TemplateResponse(
         request,
@@ -88,10 +88,10 @@ def ui_veiculo_documentos_upload(
     veiculo_id: int,
     documentos: Annotated[list[UploadFile], File(default_factory=list)],
 ) -> HTMLResponse:
-    _found(veiculo.get(session, veiculo_id), "Veículo")
+    found(veiculo.get(session, veiculo_id), "Veículo")
     erro = salvar_anexos_entidade(
         session,
-        upload_dir=_uploads_dir(veiculo_id) / "documentos",
+        upload_dir=uploads_dir(veiculo_id) / "documentos",
         url_prefix=f"/static/uploads/veiculos/{veiculo_id}/documentos",
         create_fn=documento_veiculo.create,
         schema=documento_veiculo.DocumentoVeiculoCreate,
@@ -113,7 +113,7 @@ def ui_veiculo_documentos_excluir(
     veiculo_id: int,
     doc_id: int,
 ) -> HTMLResponse:
-    doc = _found(documento_veiculo.get(session, doc_id), "Documento")
+    doc = found(documento_veiculo.get(session, doc_id), "Documento")
     excluir_anexo_entidade(
         session,
         anexo=doc,

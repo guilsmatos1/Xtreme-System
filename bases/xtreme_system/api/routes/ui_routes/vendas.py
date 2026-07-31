@@ -33,7 +33,7 @@ from xtreme_system.api.crud_ui.routes import (
 from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
     SessionDep,
-    _found,
+    found,
     require_operacao,
     templates,
 )
@@ -42,8 +42,8 @@ from xtreme_system.api.routes.ui_routes.nested_writes import (
     criar_aninhado_ou_resposta_conflito,
     rollback_se_criou_aninhados,
 )
-from xtreme_system.api.routes.ui_routes.upload_files import _uploaded_file_path
-from xtreme_system.api.routes.ui_routes.upload_paths import _uploads_contrato_venda_dir
+from xtreme_system.api.routes.ui_routes.upload_files import uploaded_file_path
+from xtreme_system.api.routes.ui_routes.upload_paths import uploads_contrato_venda_dir
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import register_post_rollback
@@ -348,15 +348,13 @@ def _erro_venda(
 def _persistir_contrato_venda(
     session: Session, obj: venda.Venda, actor_id: int | None = None
 ) -> None:
-    upload_dir = _uploads_contrato_venda_dir(obj.id)
+    upload_dir = uploads_contrato_venda_dir(obj.id)
     filename = f"{uuid4().hex}.pdf"
     path = upload_dir / filename
     tmp_path = upload_dir / f".{filename}.tmp"
     config_empresa = empresa.get_config(session)
     logo_path = (
-        _uploaded_file_path(config_empresa.logo_url)
-        if config_empresa.logo_url
-        else None
+        uploaded_file_path(config_empresa.logo_url) if config_empresa.logo_url else None
     )
     if logo_path is not None and not logo_path.exists():
         logo_path = None
@@ -466,7 +464,7 @@ async def _atualizar_venda(
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
+    obj = found(venda.get(session, item_id), "Venda")
     form = await request.form()
 
     try:
@@ -512,7 +510,7 @@ def _criar_venda_com_hooks(
 def _baixar_contrato_venda(
     item_id: int, session: SessionDep, _: _BaixarContratoVendaDep
 ) -> RedirectResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
+    obj = found(venda.get(session, item_id), "Venda")
     documentos = documento_contrato_venda.list_by_venda(session, obj.id)
     if not documentos:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
@@ -530,7 +528,7 @@ def _regerar_contrato_venda(
     layout ou nos dados cadastrais da empresa — o PDF salvo não é atualizado
     sozinho quando esses dados mudam.
     """
-    obj = _found(venda.get(session, item_id), "Venda")
+    obj = found(venda.get(session, item_id), "Venda")
     _persistir_contrato_venda(session, obj, user.id)
     return RedirectResponse(f"/ui/vendas/{item_id}/contrato", status_code=303)
 
@@ -544,7 +542,7 @@ _FecharVendaDep = Annotated[
 def _form_fechamento_venda(
     item_id: int, request: Request, session: SessionDep, user: _FecharVendaDep
 ) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
+    obj = found(venda.get(session, item_id), "Venda")
     preview = fechamento_venda.preview(session, obj)
     return templates.TemplateResponse(
         request,
@@ -568,7 +566,7 @@ async def _confirmar_fechamento_venda(
     limit: int = 50,
     offset: int = 0,
 ) -> HTMLResponse:
-    obj = _found(venda.get(session, item_id), "Venda")
+    obj = found(venda.get(session, item_id), "Venda")
     form = await request.form()
     investidores = form.getlist("investidor_id")
     percentuais = form.getlist("percentual")
@@ -618,7 +616,7 @@ def _detalhe_fechamento_venda(
     session: SessionDep,
     user: _VerFechamentoVendaDep,
 ) -> HTMLResponse:
-    fechamento = _found(fechamento_venda.get(session, fechamento_id), "Fechamento")
+    fechamento = found(fechamento_venda.get(session, fechamento_id), "Fechamento")
     return templates.TemplateResponse(
         request,
         "_modal_fechamento_venda.html",

@@ -15,7 +15,7 @@ from xtreme_system.api.crud_ui.responses import (
     success_response,
     write_conflict_detail,
 )
-from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, _found
+from xtreme_system.api.deps import SessionDep, UIAdmin, UIUser, found
 from xtreme_system.usuario import core as usuario
 
 
@@ -89,7 +89,7 @@ def register_ui_simples(
     def _editar(
         item_id: int, request: Request, session: SessionDep, _: UIAdmin
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
+        obj = found(module.get(session, item_id), titulo)
         return templates.TemplateResponse(request, "_form_simples.html", _form_ctx(obj))
 
     @app.post(ui_prefix)
@@ -124,7 +124,7 @@ def register_ui_simples(
     async def _atualizar(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
+        obj = found(module.get(session, item_id), titulo)
         nome = await _nome(request)
         if not nome:
             return templates.TemplateResponse(
@@ -153,7 +153,7 @@ def register_ui_simples(
     def _excluir(
         item_id: int, request: Request, session: SessionDep, user: UIAdmin
     ) -> HTMLResponse:
-        obj = _found(module.get(session, item_id), titulo)
+        obj = found(module.get(session, item_id), titulo)
         msg = None
         try:
             module.delete(session, obj, user.id)
