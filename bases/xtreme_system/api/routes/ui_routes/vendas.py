@@ -23,10 +23,12 @@ from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
+    CrudUIReferenceConfig,
     CrudUIResourceConfig,
     CrudUIRouteConfig,
     CrudUITemplateConfig,
     register_crud_ui_routes,
+    register_reference_lookup_routes,
 )
 from xtreme_system.api.crud_writes import safe_write
 from xtreme_system.api.deps import (
@@ -79,19 +81,32 @@ _VerFechamentoVendaDep = Annotated[
 
 
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
-    veiculos = veiculo.list_all(session)
-    veiculos_disponiveis = [
-        v for v in veiculos if v.status == veiculo.StatusVeiculo.disponivel
-    ]
     return {
-        "clientes": cliente.list_all(session),
-        "veiculos": veiculos_disponiveis,
-        "veiculos_troca": veiculos,
         "status": list(venda.StatusVenda),
         "tipos": list(cliente.TipoCliente),
         "tipos_veiculo": list(veiculo.TipoVeiculo),
         "investidores": investidor.list_all(session),
     }
+
+
+def _veiculos_disponiveis_query(session: Session) -> Any:
+    return veiculo.query(session).filter(
+        veiculo.Veiculo.status == veiculo.StatusVeiculo.disponivel
+    )
+
+
+def _veiculos_disponiveis_search_query(session: Session, term: str) -> Any:
+    return veiculo.search_query(session, term).filter(
+        veiculo.Veiculo.status == veiculo.StatusVeiculo.disponivel
+    )
+
+
+def _label_cliente(obj: cliente.Cliente) -> str:
+    return f"{obj.nome} ({obj.documento})"
+
+
+def _label_veiculo(obj: veiculo.Veiculo) -> str:
+    return f"{obj.placa} — {obj.modelo}"
 
 
 def _parse_venda_form(form: Any) -> dict[str, Any]:
@@ -346,6 +361,33 @@ register_crud_ui_routes(
         editar_dep=require_operacao("vendas", "editar"),
         excluir_dep=require_operacao("vendas", "excluir"),
     ),
+)
+
+
+register_reference_lookup_routes(
+    app,
+    "/ui/vendas/referencias",
+    pagina="vendas",
+    references={
+        "clientes": CrudUIReferenceConfig(
+            query=cliente.query,
+            search_query=cliente.search_query,
+            label=_label_cliente,
+            campo="cliente",
+        ),
+        "veiculos": CrudUIReferenceConfig(
+            query=_veiculos_disponiveis_query,
+            search_query=_veiculos_disponiveis_search_query,
+            label=_label_veiculo,
+            campo="veiculo",
+        ),
+        "veiculos-troca": CrudUIReferenceConfig(
+            query=veiculo.query,
+            search_query=veiculo.search_query,
+            label=_label_veiculo,
+            campo="veiculo_troca",
+        ),
+    },
 )
 
 

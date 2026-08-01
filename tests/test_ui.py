@@ -1074,7 +1074,7 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
-def test_ctx_form_venda_carrega_todos_clientes_e_veiculos(
+def test_ctx_form_venda_nao_carrega_todos_clientes_e_veiculos(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
     calls: list[tuple[str, int | None]] = []
@@ -1100,10 +1100,31 @@ def test_ctx_form_venda_carrega_todos_clientes_e_veiculos(
     resp = client.get("/ui/vendas/novo")
 
     assert resp.status_code == 200
-    assert calls == [
-        ("veiculos", None),
-        ("clientes", None),
+    assert calls == []
+
+
+def test_ui_venda_referencias_busca_e_pagina(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_a = _criar_cliente(client, headers, "Cliente A", "11111111111")
+    cliente_b = _criar_cliente(client, headers, "Cliente B", "22222222222")
+
+    primeira = client.get("/ui/vendas/referencias/clientes?q=Cliente&limit=1&offset=0")
+    assert primeira.status_code == 200
+    assert primeira.json()["items"] == [
+        {"id": cliente_a, "label": "Cliente A (11111111111)"}
     ]
+    assert primeira.json()["has_more"] is True
+
+    segunda = client.get("/ui/vendas/referencias/clientes?q=Cliente&limit=1&offset=1")
+    assert segunda.status_code == 200
+    assert segunda.json()["items"] == [
+        {"id": cliente_b, "label": "Cliente B (22222222222)"}
+    ]
+
+    veiculos = client.get("/ui/vendas/referencias/veiculos?limit=1")
+    assert veiculos.status_code == 200
+    assert len(veiculos.json()["items"]) == 1
 
 
 def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(

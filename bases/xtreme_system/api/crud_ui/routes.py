@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any
 from urllib.parse import parse_qs, urlsplit
@@ -114,6 +114,14 @@ class CrudUIExportConfig[EntityT]:
     csv_row: CsvRow[EntityT] | None = None
     csv_fields: list[str | None] | None = None
     pagina: str | None = None
+
+
+@dataclass(frozen=True)
+class CrudUIReferenceConfig:
+    query: Callable[[Session], Any]
+    search_query: Callable[[Session, str], Any]
+    label: Callable[[Any], str]
+    campo: str
 
 
 # pylint: disable=too-many-instance-attributes
@@ -387,6 +395,56 @@ def register_crud_ui_routes(
                 excluir_dep=routes.excluir_dep,
             ),
         )
+
+
+def register_reference_lookup_routes(
+    app: FastAPI,
+    prefix: str,
+    *,
+    pagina: str,
+    references: Mapping[str, CrudUIReferenceConfig],
+) -> None:
+    """Register bounded, server-side lookups used by foreign-key form fields."""
+
+    @app.get(prefix + "/{reference}")
+    def _lookup(
+        reference: str,
+        session: SessionDep,
+        user: UIUser,
+        q: str = "",
+        limit: Annotated[int, Query(ge=1, le=50)] = 20,
+        offset: Annotated[int, Query(ge=0)] = 0,
+        ids: Annotated[list[int] | None, Query()] = None,
+    ) -> dict[str, Any]:
+        config = references.get(reference)
+        if config is None:
+            raise HTTPException(status_code=404, detail="Referência não encontrada")
+        if not perfil.pode_ver_campo(user, pagina, config.campo):
+            raise HTTPException(status_code=403, detail="Campo não permitido")
+
+        query = (
+            config.search_query(session, q.strip())
+            if q.strip() and not ids
+            else config.query(session)
+        )
+        entity = query.column_descriptions[0].get("entity")
+        id_column = getattr(entity, "id", None)
+        if id_column is None:
+            raise HTTPException(status_code=500, detail="Referência sem identificador")
+        if ids:
+            query = query.filter(id_column.in_(ids))
+
+        page = list(
+            query.order_by(id_column.asc()).offset(offset).limit(limit + 1).all()
+        )
+        return {
+            "items": [
+                {"id": item.id, "label": config.label(item)} for item in page[:limit]
+            ],
+            "has_more": len(page) > limit,
+            "limit": limit,
+            "offset": offset,
+        }
 
 
 def register_list_route(
