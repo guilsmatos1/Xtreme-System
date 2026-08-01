@@ -14,10 +14,12 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
+    conflict_form_response,
     error_response,
     ok_response,
     rollback_integrity_error_response,
     validation_error_detail,
+    write_conflict_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
@@ -399,7 +401,17 @@ async def _criar_compra(  # noqa: PLR0911
         novo_cliente_data,
         cliente.create,
         user.id,
-        lambda: _erro_compra(request, session, user, "Cliente já existe", dados_form),
+        lambda: conflict_form_response(
+            templates,
+            request,
+            "_form_compra.html",
+            ctx_form=_ctx_form_compra(session),
+            item_key="compra",
+            item=None,
+            erro=write_conflict_detail("Cliente"),
+            user=user,
+            dados=dados_form,
+        ),
     )
     if response is not None:
         return response
@@ -411,7 +423,17 @@ async def _criar_compra(  # noqa: PLR0911
         novo_veiculo_data,
         veiculo.create,
         user.id,
-        lambda: _erro_compra(request, session, user, "Veículo já existe", dados_form),
+        lambda: conflict_form_response(
+            templates,
+            request,
+            "_form_compra.html",
+            ctx_form=_ctx_form_compra(session),
+            item_key="compra",
+            item=None,
+            erro=write_conflict_detail("Veículo"),
+            user=user,
+            dados=dados_form,
+        ),
     )
     if response is not None:
         return response
@@ -466,8 +488,16 @@ async def _criar_compra(  # noqa: PLR0911
                 _ok_compra(request, session, user)
                 if idempotency_key
                 and compra.get_by_idempotency_key(session, idempotency_key)
-                else _erro_compra(
-                    request, session, user, "Compra já existe", dados_form
+                else conflict_form_response(
+                    templates,
+                    request,
+                    "_form_compra.html",
+                    ctx_form=_ctx_form_compra(session),
+                    item_key="compra",
+                    item=None,
+                    erro=write_conflict_detail("Compra"),
+                    user=user,
+                    dados=dados_form,
                 )
             ),
         )

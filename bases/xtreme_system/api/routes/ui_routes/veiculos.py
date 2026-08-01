@@ -12,11 +12,13 @@ from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.responses import (
+    conflict_form_response,
     delete_conflict_detail,
     error_response,
     ok_response,
     rollback_integrity_error_response,
     validation_error_detail,
+    write_conflict_detail,
 )
 from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
@@ -409,6 +411,17 @@ async def _atualizar_veiculo(
         caixa.sincronizar_lancamento_veiculo(session, atualizado, user.id)
     except IntegrityError:
         return rollback_integrity_error_response(
-            session, lambda: _erro_veiculo(request, session, user, "Veículo já existe")
+            session,
+            lambda: conflict_form_response(
+                templates,
+                request,
+                "_form_veiculo.html",
+                ctx_form=_ctx_form_veiculo(session),
+                item_key="veiculo",
+                item=obj,
+                erro=write_conflict_detail("Veículo"),
+                user=user,
+                dados=dados_form,
+            ),
         )
     return _ok_veiculo(request, session, user)
