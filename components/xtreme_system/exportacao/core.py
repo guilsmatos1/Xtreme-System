@@ -16,6 +16,7 @@ from xtreme_system.database.core import (
 
 _POSTGRES_REQUIRED = "Exportação/importação exige DATABASE_URL PostgreSQL"
 _TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "compra"})
+_PG_COMMAND_TIMEOUT_SECONDS = 300
 
 
 class ExportacaoError(Exception):
@@ -53,9 +54,28 @@ def _pg_env() -> dict[str, str]:
     return env
 
 
+def _run_pg_command(
+    cmd: list[str], *, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[bytes]:
+    try:
+        return subprocess.run(  # noqa: S603
+            cmd,
+            env=env,
+            capture_output=True,
+            check=False,
+            timeout=_PG_COMMAND_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        command = Path(cmd[0]).name
+        raise ExportacaoError(  # noqa: TRY003
+            f"{command} excedeu o tempo limite de "
+            f"{_PG_COMMAND_TIMEOUT_SECONDS} segundos."
+        ) from exc
+
+
 def dump_database_to_file(output_path: str | Path) -> None:
     cmd = ["pg_dump", *_pg_args(), "-Fc", "-Z", "6", "-f", str(output_path)]
-    result = subprocess.run(cmd, env=_pg_env(), capture_output=True, check=False)  # noqa: S603
+    result = _run_pg_command(cmd, env=_pg_env())
     if result.returncode != 0:
         stderr = result.stderr.decode() if result.stderr else "pg_dump falhou"
         raise ExportacaoError(stderr)
@@ -73,7 +93,7 @@ def dump_database() -> bytes:
 
 def _listar_tabelas_do_dump(tmp_path: str) -> set[str]:
     cmd = ["pg_restore", "--list", tmp_path]
-    result = subprocess.run(cmd, capture_output=True, check=False)  # noqa: S603
+    result = _run_pg_command(cmd)
     if result.returncode != 0:
         stderr = result.stderr.decode() if result.stderr else "pg_restore --list falhou"
         raise ExportacaoError(f"Arquivo de backup inválido: {stderr}")  # noqa: TRY003
@@ -120,9 +140,7 @@ def restore_database_from_file(dump_path: str | Path) -> None:
                 "--single-transaction",
                 str(dump_path),
             ]
-            result = subprocess.run(  # noqa: S603
-                cmd, env=_pg_env(), capture_output=True, check=False
-            )
+            result = _run_pg_command(cmd, env=_pg_env())
             if result.returncode != 0:
                 stderr = (
                     result.stderr.decode() if result.stderr else "pg_restore falhou"

@@ -42,9 +42,11 @@ def test_dump_database_usa_pg_dump_custom_format(
         env: dict[str, str],
         capture_output: bool,
         check: bool,
+        timeout: int,
     ) -> subprocess.CompletedProcess[bytes]:
         assert capture_output is True
         assert check is False
+        assert timeout == 300
         Path(cmd[-1]).write_bytes(b"dump")
         chamadas.append((cmd, env))
         return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
@@ -96,9 +98,11 @@ def test_restore_database_usa_pg_restore_com_replace(
         env: dict[str, str] | None = None,
         capture_output: bool,
         check: bool,
+        timeout: int,
     ) -> subprocess.CompletedProcess[bytes]:
         assert capture_output is True
         assert check is False
+        assert timeout == 300
         chamadas.append(cmd)
         if cmd[0] == "pg_restore" and "--list" in cmd:
             return subprocess.CompletedProcess(
@@ -157,10 +161,12 @@ def test_restore_database_rejeita_dump_sem_tabelas_essenciais(
         env: dict[str, str] | None = None,
         capture_output: bool,
         check: bool,
+        timeout: int,
     ) -> subprocess.CompletedProcess[bytes]:
         assert env is None
         assert capture_output is True
         assert check is False
+        assert timeout == 300
         assert cmd[0] == "pg_restore"
         assert "--list" in cmd
         return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
@@ -179,6 +185,37 @@ def test_restore_database_rejeita_dump_sem_tabelas_essenciais(
         exportacao.restore_database(b"dump")
 
     assert list(tmp_path.glob("pre_restore_*.dump")) == []
+
+
+def test_restore_database_timeout_releases_restore_lock(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+) -> None:
+    def fake_run(
+        cmd: list[str],
+        *,
+        timeout: int,
+        **_: object,
+    ) -> subprocess.CompletedProcess[bytes]:
+        assert cmd[0] == "pg_restore"
+        assert "--list" in cmd
+        raise subprocess.TimeoutExpired(cmd, timeout)
+
+    monkeypatch.setattr(
+        exportacao,
+        "get_settings",
+        lambda: SimpleNamespace(
+            database_url="postgresql+psycopg://user:secret@db:5433/appdb",
+            backup_dir=str(tmp_path),
+        ),
+    )
+    monkeypatch.setattr("xtreme_system.exportacao.core.subprocess.run", fake_run)
+
+    with pytest.raises(exportacao.ExportacaoError, match="tempo limite"):
+        exportacao.restore_database(b"dump")
+
+    with database.database_restore_lock():
+        pass
 
 
 def test_restore_database_rejeita_execucao_sobreposta() -> None:
