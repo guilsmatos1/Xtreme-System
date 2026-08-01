@@ -233,9 +233,15 @@ async def ui_investidor_criar(
             logger.warning(
                 "aporte_inicial_invalido", investidor_id=obj.id, valor_str=valor_str
             )
-        else:
-            if aporte is not None:
-                caixa.create(session, aporte, user.id)
+            session.rollback()
+            return templates.TemplateResponse(
+                request,
+                "_form_simples.html",
+                _form_ctx_investidor(None, "Valor investido inválido"),
+                status_code=400,
+            )
+        if aporte is not None:
+            caixa.create(session, aporte, user.id)
     return success_response(
         templates,
         request,
