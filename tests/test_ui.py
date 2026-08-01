@@ -936,6 +936,21 @@ def test_ui_investidores_crud_basico(client: TestClient) -> None:
     assert "R$ 0,00" in criado.text
 
 
+def test_ui_investidor_criar_rejeita_aporte_inicial_invalido(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/investidores",
+        data={"nome": "Investidor Com Aporte Inválido", "valor_investido": "1.234,56"},
+    )
+
+    assert resp.status_code == 400
+    assert "Valor investido inválido" in resp.text
+    assert "Investidor Com Aporte Inválido" not in client.get("/ui/investidores").text
+
+
 def test_ui_investidor_criar_falha_se_aporte_inicial_falhar(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
