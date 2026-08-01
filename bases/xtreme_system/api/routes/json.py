@@ -159,7 +159,6 @@ register_crud_routes(
     before_delete=caixa.deletar_lancamento_veiculo,
     after_create=caixa.criar_lancamento_veiculo,
     after_update=caixa.sincronizar_lancamento_veiculo,
-    handle_delete_error=False,
     pagina="veiculos",
 )
 
