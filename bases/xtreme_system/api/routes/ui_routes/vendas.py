@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_types import ListingSpec, SortField
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
+    conflict_form_response,
     error_response,
     ok_response,
     rollback_integrity_error_response,
@@ -476,8 +477,16 @@ async def _criar_venda(  # noqa: PLR0911
         novo_cliente_data,
         cliente.create,
         user.id,
-        lambda: _erro_venda(
-            request, session, user, "Cliente já existe", dados=dados_form
+        lambda: conflict_form_response(
+            templates,
+            request,
+            "_form_venda.html",
+            ctx_form=_ctx_form_venda(session),
+            item_key="venda",
+            item=None,
+            erro=write_conflict_detail("Cliente"),
+            user=user,
+            dados=dados_form,
         ),
     )
     if response is not None:
@@ -498,8 +507,16 @@ async def _criar_venda(  # noqa: PLR0911
         novo_veiculo_troca_data,
         veiculo.create,
         user.id,
-        lambda: _erro_venda(
-            request, session, user, "Veículo da troca já existe", dados=dados_form
+        lambda: conflict_form_response(
+            templates,
+            request,
+            "_form_venda.html",
+            ctx_form=_ctx_form_venda(session),
+            item_key="venda",
+            item=None,
+            erro=write_conflict_detail("Veículo da troca"),
+            user=user,
+            dados=dados_form,
         ),
     )
     if response is not None:
@@ -539,8 +556,16 @@ async def _criar_venda(  # noqa: PLR0911
             raise
         return rollback_integrity_error_response(
             session,
-            lambda: _erro_venda(
-                request, session, user, write_conflict_detail("Venda"), dados=dados_form
+            lambda: conflict_form_response(
+                templates,
+                request,
+                "_form_venda.html",
+                ctx_form=_ctx_form_venda(session),
+                item_key="venda",
+                item=None,
+                erro=write_conflict_detail("Venda"),
+                user=user,
+                dados=dados_form,
             ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)
@@ -569,8 +594,15 @@ async def _atualizar_venda(
         novo_veiculo_troca_data,
         veiculo.create,
         user.id,
-        lambda: _erro_venda(
-            request, session, user, "Veículo da troca já existe", venda_obj=obj
+        lambda: conflict_form_response(
+            templates,
+            request,
+            "_form_venda.html",
+            ctx_form=_ctx_form_venda(session),
+            item_key="venda",
+            item=obj,
+            erro=write_conflict_detail("Veículo da troca"),
+            user=user,
         ),
     )
     if response is not None:
@@ -606,8 +638,15 @@ async def _atualizar_venda(
             raise
         return rollback_integrity_error_response(
             session,
-            lambda: _erro_venda(
-                request, session, user, write_conflict_detail("Venda"), venda_obj=obj
+            lambda: conflict_form_response(
+                templates,
+                request,
+                "_form_venda.html",
+                ctx_form=_ctx_form_venda(session),
+                item_key="venda",
+                item=obj,
+                erro=write_conflict_detail("Venda"),
+                user=user,
             ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)

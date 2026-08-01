@@ -1992,7 +1992,7 @@ def test_ui_compras_rollback_em_integrityerror_de_veiculo(
         finally:
             app.dependency_overrides.clear()
 
-        assert resp.status_code == 400
+        assert resp.status_code == 409
         assert "Veículo já existe" in resp.text
         assert compra.list_all(session) == []
     engine.dispose()
