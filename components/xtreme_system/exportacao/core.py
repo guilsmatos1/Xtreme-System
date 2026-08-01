@@ -15,6 +15,9 @@ from xtreme_system.database.core import (
 )
 
 _POSTGRES_REQUIRED = "Exportação/importação exige DATABASE_URL PostgreSQL"
+_DUMP_FAILED = "Não foi possível exportar o banco de dados."
+_RESTORE_FAILED = "Não foi possível restaurar o banco de dados."
+_INVALID_BACKUP = "Arquivo de backup inválido."
 _TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "compra"})
 _PG_COMMAND_TIMEOUT_SECONDS = 300
 
@@ -77,8 +80,7 @@ def dump_database_to_file(output_path: str | Path) -> None:
     cmd = ["pg_dump", *_pg_args(), "-Fc", "-Z", "6", "-f", str(output_path)]
     result = _run_pg_command(cmd, env=_pg_env())
     if result.returncode != 0:
-        stderr = result.stderr.decode() if result.stderr else "pg_dump falhou"
-        raise ExportacaoError(stderr)
+        raise ExportacaoError(_DUMP_FAILED)
 
 
 def dump_database() -> bytes:
@@ -95,8 +97,7 @@ def _listar_tabelas_do_dump(tmp_path: str) -> set[str]:
     cmd = ["pg_restore", "--list", tmp_path]
     result = _run_pg_command(cmd)
     if result.returncode != 0:
-        stderr = result.stderr.decode() if result.stderr else "pg_restore --list falhou"
-        raise ExportacaoError(f"Arquivo de backup inválido: {stderr}")  # noqa: TRY003
+        raise ExportacaoError(_INVALID_BACKUP)
     tabelas = set()
     for linha in result.stdout.decode(errors="replace").splitlines():
         partes = linha.split()
@@ -142,10 +143,7 @@ def restore_database_from_file(dump_path: str | Path) -> None:
             ]
             result = _run_pg_command(cmd, env=_pg_env())
             if result.returncode != 0:
-                stderr = (
-                    result.stderr.decode() if result.stderr else "pg_restore falhou"
-                )
-                raise ExportacaoError(stderr)
+                raise ExportacaoError(_RESTORE_FAILED)
     except DatabaseRestoreInProgressError as exc:
         raise RestoreEmAndamentoError from exc
 
