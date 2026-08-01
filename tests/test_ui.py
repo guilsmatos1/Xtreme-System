@@ -85,6 +85,17 @@ def test_ui_veiculos_sem_cookie_redireciona_login() -> None:
         assert resp.headers["location"] == "/ui/login"
 
 
+def test_ui_configura_htmx_para_trocar_fragmentos_de_erro(client: TestClient) -> None:
+    _login_admin(client)
+    resp = client.get("/ui/veiculos")
+
+    assert resp.status_code == 200
+    assert '<meta name="htmx-config"' in resp.text
+    assert "responseHandling" in resp.text
+    assert "[45].." in resp.text
+    assert "error" in resp.text
+
+
 def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     resp = client.post(
         "/ui/login",
