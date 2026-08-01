@@ -236,6 +236,53 @@ def test_remover_investidor_com_veiculo_vinculado_retorna_409(
     assert resp.status_code == 409
 
 
+def test_remover_veiculo_com_compra_vinculada_retorna_409(
+    client: TestClient, unique_plate: str
+) -> None:
+    headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    investidor_id = client.post(
+        "/investidores", json={"nome": "Ana"}, headers=headers
+    ).json()["id"]
+    cliente_id = client.post(
+        "/clientes",
+        json={
+            "nome": "João Silva",
+            "documento": "12345678901",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    ).json()["id"]
+    veiculo_id = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Gol",
+            "cor": "Branco",
+            "ano": 2018,
+            "placa": unique_plate,
+            "km": 70000,
+            "preco": "32000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    ).json()["id"]
+    compra = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": veiculo_id,
+            "data_compra": "2026-07-01",
+            "valor_compra": "18000.00",
+        },
+        headers=headers,
+    )
+    assert compra.status_code == 201, compra.text
+
+    resp = client.delete(f"/veiculos/{veiculo_id}", headers=headers)
+
+    assert resp.status_code == 409
+
+
 def test_admin_nao_pode_se_autoexcluir(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     usuarios = client.get("/usuarios", headers=headers).json()
