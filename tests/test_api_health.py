@@ -21,7 +21,11 @@ def client(make_client: Callable[..., TestClient]) -> TestClient:
 def test_health_retorna_ok_sem_auth(client: TestClient) -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok", "database": "ok"}
+    assert resp.json() == {
+        "status": "ok",
+        "database": "ok",
+        "database_target": "primary",
+    }
 
 
 def test_raiz_redireciona_para_dashboard_ui(client: TestClient) -> None:
@@ -44,6 +48,7 @@ def test_health_degradado_quando_banco_indisponivel(client: TestClient) -> None:
         assert resp.json() == {
             "status": "degradado",
             "database": "indisponivel",
+            "database_target": "primary",
         }
     finally:
         app.dependency_overrides.clear()

@@ -17,7 +17,8 @@ Response (200):
 ```json
 {
   "status": "ok",
-  "database": "ok"
+  "database": "ok",
+  "database_target": "primary"
 }
 ```
 
@@ -26,9 +27,12 @@ Response (503) — banco indisponível:
 ```json
 {
   "status": "degradado",
-  "database": "indisponivel"
+  "database": "indisponivel",
+  "database_target": "primary"
 }
 ```
+
+`database_target` identifica o banco ativo: `primary` ou `fallback`.
 
 **Status Codes**:
 
