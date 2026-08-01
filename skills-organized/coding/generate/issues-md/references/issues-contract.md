@@ -27,7 +27,7 @@ Write one UTF-8 Markdown document with this structure:
 `path/to/file.py:120` — `function_name`
 
 ```python
-8-12 lines copied from the current file
+10-15 lines copied from the current file
 ```
 
 ### Description
@@ -105,7 +105,7 @@ headings — never hardcode it.
 - Put narrative and code in Markdown sections, never in JSON, YAML, or an escaped
 string. Use Markdown lists for files, tags, relationships, criteria, and
 critique details.
-- Include an actual 8-12 line snippet for verified locations, copied verbatim from
+- Include an actual 10-15 line snippet for verified locations, copied verbatim from
 the file — never fabricated or paraphrased. If no location can be verified,
 write `Not verified`, set `Uncertain` to `Yes`, and explain the missing evidence
 under `Weaknesses`.

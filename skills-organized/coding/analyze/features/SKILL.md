@@ -20,7 +20,7 @@ opportunities, prioritized by value delivered to the people who use it. Prioriti
 workflows, missing business-rule enforcement, and missing reads/actions that affect daily operation
 over cosmetic or purely technical issues.
 
-Quality over quantity. Target 8-12 opportunities, but only include findings with impact `High` or
+Quality over quantity. Target 10-15 opportunities, but only include findings with impact `High` or
 `Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
 cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
 to fill the count.
@@ -120,7 +120,7 @@ actions. Do not lower the bar just to reach a round number of findings.
 
 ## Output Requirements
 
-Deliver 8-12 opportunities (fewer if that's all the evidence supports), ordered from highest to
+Deliver 10-15 opportunities (fewer if that's all the evidence supports), ordered from highest to
 lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
 rather than padding the list with them.
 
@@ -128,7 +128,7 @@ For each opportunity, include:
 
 - **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
 - **Short title**: actionable, specific to the functional gap
-- **Location**: representative file, line range, function, and a real code snippet (8-12 lines)
+- **Location**: representative file, line range, function, and a real code snippet (10-15 lines)
 - **Impact**: `High` or `Medium`
 - **Category**: primary dimension from review dimensions
 - **Description**: specific explanation tied to the product behavior

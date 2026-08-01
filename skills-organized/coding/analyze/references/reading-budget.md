@@ -17,7 +17,7 @@ that was full-file reads of route modules where only handler shapes mattered.
   `rg -n "^(def |class |@router|{% macro )" <files>`, then `Read` with `offset`/`limit` only the
   ranges that sweep points at.
 - "Read enough surrounding context" means enough to judge the finding and quote it correctly — not
-  the whole file. A snippet in a report is 8-12 lines.
+  the whole file. A snippet in a report is 10-15 lines.
 - **Never re-read a file already in context.** If you need a second region of it, you already have
   the first — scroll your own context before issuing another `Read`.
 - Before opening anything over ~300 lines, state what the full file gives you that a scoped read

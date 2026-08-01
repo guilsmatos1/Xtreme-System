@@ -135,7 +135,7 @@ def validate(text: str) -> list[str]:
         for m in re.finditer(r"^```\w*$(.*?)^```$", block, re.M | re.S):
             n = len([ln for ln in m.group(1).splitlines() if ln.strip()])
             if n and not 8 <= n <= 12:
-                errors.append(f"{oid}: snippet has {n} non-empty lines, contract wants 8-12")
+                errors.append(f"{oid}: snippet has {n} non-empty lines, contract wants 10-15")
 
         if "#### Consolidation details" in block:
             missing = [lb for lb in CONSOLIDATION_LABELS if f"**{lb}:**" not in block]

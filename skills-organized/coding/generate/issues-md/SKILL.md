@@ -89,7 +89,7 @@ none is given, write `.loop/running/issues.md`.
 10. Assign IDs as `imp-YYYYMMDD-NNN` from the current local date and the final output order, starting
     at `001`.
 11. Resolve `Related opportunities` only after all IDs exist, and keep the references reciprocal.
-12. Verify each cited location still exists and copy the 8-12 line snippet verbatim from the file.
+12. Verify each cited location still exists and copy the 10-15 line snippet verbatim from the file.
     Where a location cannot be confirmed, apply the `Not verified` handling above.
 13. Build `Generated` and create the output directory in the **same** command that you use to write —
     never spend a separate turn resolving the timestamp:

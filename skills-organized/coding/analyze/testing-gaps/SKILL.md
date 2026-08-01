@@ -20,7 +20,7 @@ test quality — without changing correct existing behavior. Prioritize gaps tha
 reach production undetected (money, data integrity, auth, rollback) over stylistic test-style
 preferences.
 
-Quality over quantity. Target 8-12 opportunities, but only include findings with impact `High` or
+Quality over quantity. Target 10-15 opportunities, but only include findings with impact `High` or
 `Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
 cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
 to fill the count.
@@ -147,7 +147,7 @@ to reach a round number of findings.
 
 ## Output Requirements
 
-Deliver 8-12 opportunities (fewer if that's all the evidence supports), ordered from highest to
+Deliver 10-15 opportunities (fewer if that's all the evidence supports), ordered from highest to
 lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
 rather than padding the list with them.
 
@@ -155,7 +155,7 @@ For each opportunity, include:
 
 - **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
 - **Short title**: actionable, specific to the coverage gap
-- **Location**: file, line range, function, and a real code snippet (8-12 lines) showing the untested
+- **Location**: file, line range, function, and a real code snippet (10-15 lines) showing the untested
   branch or the risky mock
 - **Impact**: `High` or `Medium`
 - **Category**: primary dimension from review dimensions (e.g. "untested critical path", "dangerous
