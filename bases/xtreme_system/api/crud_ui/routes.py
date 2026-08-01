@@ -807,7 +807,18 @@ def register_update_route(
             )
         except HTTPException as exc:
             if exc.status_code != status.HTTP_409_CONFLICT:
-                raise
+                return error_response(
+                    form.templates,
+                    request,
+                    form.form_template,
+                    ctx_form=form.ctx_form(session),
+                    item_key=form.item_key,
+                    item=obj,
+                    user=user,
+                    erro=str(exc.detail),
+                    status_code=400,
+                    dados=dados_form,
+                )
             erro = str(exc.detail)
             return write_conflict_response(
                 session,

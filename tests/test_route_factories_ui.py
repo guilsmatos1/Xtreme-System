@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
@@ -845,6 +845,27 @@ def test_crud_ui_update_integrity_error_before_update_retorna_409(
 
     assert resp.status_code == 409
     assert "Stub já existe" in resp.text
+
+
+def test_crud_ui_update_http_exception_retorna_formulario_html(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    def fail_before_update(_session: Session, _data: _StubSchema) -> None:
+        raise HTTPException(status_code=403, detail="Atualização não permitida")
+
+    client = _stub_crud_client(
+        tmp_path,
+        _ConflictModule(fail_on="none"),
+        request,
+        before_update=fail_before_update,
+    )
+
+    resp = client.post("/ui/stubs/1", data={"nome": "Bloqueado"})
+
+    assert resp.status_code == 400
+    assert resp.headers["content-type"].startswith("text/html")
+    assert "Atualização não permitida" in resp.text
+    assert "name='nome'" in resp.text
 
 
 def test_crud_ui_delete_integrity_error_retorna_409(
