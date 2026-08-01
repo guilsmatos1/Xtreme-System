@@ -22,6 +22,7 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.database.connection import get_database_target
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -49,10 +50,20 @@ def health(session: SessionDep) -> JSONResponse:
         session.execute(text("SELECT 1"))
     except SQLAlchemyError:
         return JSONResponse(
-            {"status": "degradado", "database": "indisponivel"},
+            {
+                "status": "degradado",
+                "database": "indisponivel",
+                "database_target": get_database_target(),
+            },
             status_code=503,
         )
-    return JSONResponse({"status": "ok", "database": "ok"})
+    return JSONResponse(
+        {
+            "status": "ok",
+            "database": "ok",
+            "database_target": get_database_target(),
+        }
+    )
 
 
 # ---- Autenticação ----
