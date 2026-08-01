@@ -249,6 +249,49 @@ def test_dump_database_rejeita_database_url_nao_postgres(
         exportacao.dump_database()
 
 
+def test_comandos_pg_nao_expoem_stderr(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    stderr = b"could not connect to server at host=internal-db password=secret"
+
+    monkeypatch.setattr(
+        exportacao,
+        "get_settings",
+        lambda: SimpleNamespace(
+            database_url="postgresql+psycopg://user:secret@db:5433/appdb",
+            backup_dir=str(tmp_path),
+        ),
+    )
+
+    def fake_run(
+        cmd: list[str],
+        **_: object,
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=stderr)
+
+    monkeypatch.setattr("xtreme_system.exportacao.core.subprocess.run", fake_run)
+
+    with pytest.raises(exportacao.ExportacaoError) as dump_error:
+        exportacao.dump_database_to_file(tmp_path / "dump.dump")
+    assert str(dump_error.value) == "Não foi possível exportar o banco de dados."
+    assert "internal-db" not in str(dump_error.value)
+
+    with pytest.raises(exportacao.ExportacaoError) as restore_error:
+        exportacao.restore_database(b"dump")
+    assert str(restore_error.value) == "Arquivo de backup inválido."
+    assert "internal-db" not in str(restore_error.value)
+
+    monkeypatch.setattr(exportacao, "_validar_dump", lambda _: None)
+    monkeypatch.setattr(exportacao, "_salvar_backup_pre_restore", lambda: None)
+    with pytest.raises(exportacao.ExportacaoError) as restore_command_error:
+        exportacao.restore_database_from_file(tmp_path / "dump.dump")
+    assert str(restore_command_error.value) == (
+        "Não foi possível restaurar o banco de dados."
+    )
+    assert "internal-db" not in str(restore_command_error.value)
+
+
 def test_ui_configuracoes_exportar_baixa_dump(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
