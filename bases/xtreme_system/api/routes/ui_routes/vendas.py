@@ -1,6 +1,5 @@
 """HTMX routes for vendas."""
 
-from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -38,30 +37,27 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
-from xtreme_system.api.routes.ui_routes.nested_writes import (
-    criar_aninhado_ou_resposta_conflito,
-    rollback_se_criou_aninhados,
-)
 from xtreme_system.api.routes.ui_routes.upload_files import uploaded_file_path
 from xtreme_system.api.routes.ui_routes.upload_paths import uploads_contrato_venda_dir
+from xtreme_system.api.routes.ui_routes.venda_write import (
+    VendaErro,
+    preparar_venda,
+)
+from xtreme_system.api.routes.ui_routes.venda_write import (
+    parse_venda_form as _parse_venda_form,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.empresa import core as empresa
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
-from xtreme_system.perfil import core as perfil
 from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
-from xtreme_system.workflow.core import (
-    recompute_vehicle_status_on_delete,
-    validate_venda_create,
-    validate_venda_update,
-)
+from xtreme_system.workflow.core import recompute_vehicle_status_on_delete
 
 logger = structlog.get_logger(__name__)
 
@@ -108,77 +104,6 @@ def _label_cliente(obj: cliente.Cliente) -> str:
 
 def _label_veiculo(obj: veiculo.Veiculo) -> str:
     return f"{obj.placa} — {obj.modelo}"
-
-
-def _parse_venda_form(form: Any) -> dict[str, Any]:
-    data = dict(form)
-    if data.get("valor_entrada") == "":
-        data["valor_entrada"] = None
-    if data.get("debitos") == "":
-        data["debitos"] = None
-    if data.get("km") == "":
-        data["km"] = None
-    if data.get("parcelas") == "":
-        data["parcelas"] = None
-    if data.get("observacoes") == "":
-        data["observacoes"] = None
-    if data.get("veiculo_troca_id") == "":
-        data["veiculo_troca_id"] = None
-    if data.get("valor_diferenca") == "":
-        data["valor_diferenca"] = None
-    if data.get("valor_pendente") == "":
-        data["valor_pendente"] = None
-    if data.get("datas_pagamento") == "":
-        data["datas_pagamento"] = None
-    data["pagamento_pendente"] = bool(data.get("pagamento_pendente"))
-    if not data.get("data_venda"):
-        data["data_venda"] = str(datetime.now(UTC).date())
-    return data
-
-
-def _resolver_veiculo_troca(
-    session: Session, form: Any
-) -> tuple[veiculo.Veiculo | None, veiculo.VeiculoCreate | None, str | None]:
-    veiculo_sel = str(form.get("veiculo_troca_id") or "").strip()
-    if veiculo_sel:
-        try:
-            existente = veiculo.get(session, int(veiculo_sel))
-        except ValueError:
-            existente = None
-        if existente is None:
-            return None, None, "Veículo da troca inválido ou inexistente"
-        return existente, None, None
-
-    placa = str(form.get("veic_troca_placa") or "").strip().upper()
-    if not placa:
-        return None, None, None
-
-    if veiculo.get_by_placa(session, placa):
-        return None, None, "Placa já cadastrada — selecione o veículo na lista"
-    try:
-        novo_veiculo_data = veiculo.VeiculoCreate.model_validate(
-            {
-                "tipo": form.get("veic_troca_tipo"),
-                "tipo_entrada": veiculo.TipoEntrada.compra,
-                "placa": placa,
-                "modelo": str(form.get("veic_troca_modelo") or "").strip(),
-                "marca": str(form.get("veic_troca_marca") or "").strip() or None,
-                "cor": str(form.get("veic_troca_cor") or "").strip(),
-                "ano": int(form.get("veic_troca_ano") or 0),
-                "km": str(form.get("veic_troca_km") or "").strip() or None,
-                "chassi": str(form.get("veic_troca_chassi") or "").strip() or None,
-                "renavam": str(form.get("veic_troca_renavam") or "").strip() or None,
-                "preco": str(form.get("veic_troca_preco") or "").strip(),
-                "proprietario_registrado": str(
-                    form.get("veic_troca_proprietario_registrado") or ""
-                ).strip()
-                or None,
-                "investidor_id": int(form.get("veic_troca_investidor_id") or 0),
-            }
-        )
-    except (ValidationError, ValueError):
-        return None, None, "Dados do veículo da troca inválidos"
-    return None, novo_veiculo_data, None
 
 
 def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
@@ -457,8 +382,39 @@ def _persistir_contrato_venda(
     )
 
 
+def _resposta_erro_preparacao_venda(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    resultado: VendaErro,
+    *,
+    venda_obj: venda.Venda | None = None,
+) -> HTMLResponse:
+    if resultado.conflito is not None:
+        return conflict_form_response(
+            templates,
+            request,
+            "_form_venda.html",
+            ctx_form=_ctx_form_venda(session),
+            item_key="venda",
+            item=venda_obj,
+            erro=write_conflict_detail(resultado.conflito),
+            user=user,
+            dados=resultado.dados,
+        )
+    assert resultado.mensagem is not None  # noqa: S101
+    return _erro_venda(
+        request,
+        session,
+        user,
+        resultado.mensagem,
+        venda_obj=venda_obj,
+        dados=resultado.dados,
+    )
+
+
 @app.post("/ui/vendas")
-async def _criar_venda(  # noqa: PLR0911
+async def _criar_venda(
     request: Request,
     session: SessionDep,
     user: _CadastrarVendaDep,
@@ -467,84 +423,11 @@ async def _criar_venda(  # noqa: PLR0911
 ) -> HTMLResponse:
     form = await request.form()
     dados_form = dict(form)
-
-    cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
-    if erro:
-        return _erro_venda(request, session, user, erro, dados=dados_form)
-
-    novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
-        session,
-        novo_cliente_data,
-        cliente.create,
-        user.id,
-        lambda: conflict_form_response(
-            templates,
-            request,
-            "_form_venda.html",
-            ctx_form=_ctx_form_venda(session),
-            item_key="venda",
-            item=None,
-            erro=write_conflict_detail("Cliente"),
-            user=user,
-            dados=dados_form,
-        ),
-    )
-    if response is not None:
-        return response
-    if novo_cliente_obj is not None:
-        cliente_obj = novo_cliente_obj
-    assert cliente_obj is not None  # noqa: S101 -- invariante interna: erro is None garante cliente_obj definido
-
-    veiculo_troca_obj, novo_veiculo_troca_data, erro = _resolver_veiculo_troca(
-        session, form
-    )
-    if erro:
-        rollback_se_criou_aninhados(session, novo_cliente_data)
-        return _erro_venda(request, session, user, erro, dados=dados_form)
-
-    novo_veiculo_troca_obj, response = criar_aninhado_ou_resposta_conflito(
-        session,
-        novo_veiculo_troca_data,
-        veiculo.create,
-        user.id,
-        lambda: conflict_form_response(
-            templates,
-            request,
-            "_form_venda.html",
-            ctx_form=_ctx_form_venda(session),
-            item_key="venda",
-            item=None,
-            erro=write_conflict_detail("Veículo da troca"),
-            user=user,
-            dados=dados_form,
-        ),
-    )
-    if response is not None:
-        return response
-    if novo_veiculo_troca_obj is not None:
-        veiculo_troca_obj = novo_veiculo_troca_obj
-
-    dados_venda: dict[str, Any] = {
-        **_parse_venda_form(form),
-        "cliente_id": cliente_obj.id,
-        "vendedor_id": user.id,
-    }
-    if veiculo_troca_obj is not None:
-        dados_venda["veiculo_troca_id"] = veiculo_troca_obj.id
-
-    try:
-        data = venda.VendaCreate.model_validate(
-            perfil.filtrar_campos_form_ocultos(user, "vendas", dados_venda)
-        )
-        validate_venda_create(session, data)
-    except (ValidationError, HTTPException) as exc:
-        rollback_se_criou_aninhados(session, novo_cliente_data, novo_veiculo_troca_data)
-        msg = (
-            str(exc.detail)
-            if isinstance(exc, HTTPException)
-            else validation_error_detail(exc)
-        )
-        return _erro_venda(request, session, user, msg, dados=dados_form)
+    resultado = preparar_venda(session, form, user)
+    if isinstance(resultado, VendaErro):
+        return _resposta_erro_preparacao_venda(request, session, user, resultado)
+    assert isinstance(resultado.data, venda.VendaCreate)  # noqa: S101
+    data = resultado.data
 
     try:
         safe_write(
@@ -582,51 +465,13 @@ async def _atualizar_venda(
 ) -> HTMLResponse:
     obj = found(venda.get(session, item_id), "Venda")
     form = await request.form()
-
-    veiculo_troca_obj, novo_veiculo_troca_data, erro = _resolver_veiculo_troca(
-        session, form
-    )
-    if erro:
-        return _erro_venda(request, session, user, erro, venda_obj=obj)
-
-    novo_veiculo_troca_obj, response = criar_aninhado_ou_resposta_conflito(
-        session,
-        novo_veiculo_troca_data,
-        veiculo.create,
-        user.id,
-        lambda: conflict_form_response(
-            templates,
-            request,
-            "_form_venda.html",
-            ctx_form=_ctx_form_venda(session),
-            item_key="venda",
-            item=obj,
-            erro=write_conflict_detail("Veículo da troca"),
-            user=user,
-        ),
-    )
-    if response is not None:
-        return response
-    if novo_veiculo_troca_obj is not None:
-        veiculo_troca_obj = novo_veiculo_troca_obj
-
-    dados_venda: dict[str, Any] = {**_parse_venda_form(form)}
-    if veiculo_troca_obj is not None:
-        dados_venda["veiculo_troca_id"] = veiculo_troca_obj.id
-
-    try:
-        data = venda.VendaUpdate.model_validate(
-            perfil.filtrar_campos_form_ocultos(user, "vendas", dados_venda)
+    resultado = preparar_venda(session, form, user, obj=obj)
+    if isinstance(resultado, VendaErro):
+        return _resposta_erro_preparacao_venda(
+            request, session, user, resultado, venda_obj=obj
         )
-        validate_venda_update(session, obj, data)
-    except (ValidationError, HTTPException) as exc:
-        rollback_se_criou_aninhados(session, novo_veiculo_troca_data)
-        msg = (
-            str(exc.detail)
-            if isinstance(exc, HTTPException)
-            else validation_error_detail(exc)
-        )
-        return _erro_venda(request, session, user, msg, venda_obj=obj)
+    assert isinstance(resultado.data, venda.VendaUpdate)  # noqa: S101
+    data = resultado.data
 
     try:
         safe_write(
