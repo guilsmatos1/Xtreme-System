@@ -34,12 +34,16 @@ def live_server_url() -> Iterator[str]:
         session.add(u)
         session.flush()
         session.info["usuario_id"] = u.id
-        usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username="admin", senha="senha", papel=usuario.Papel.admin
-            ),
-        )
+        admin = usuario.get_by_username(session, "admin")
+        if admin is None:
+            admin = usuario.create(
+                session,
+                usuario.UsuarioCreate(
+                    username="admin", senha="senha", papel=usuario.Papel.admin
+                ),
+            )
+        else:
+            usuario.change_password(session, admin, "senha")
         inv = investidor.create(
             session, investidor.InvestidorCreate(nome="Investidor A")
         )

@@ -37,16 +37,17 @@ def test_wizard_htmx_cria_veiculo(
     page.get_by_test_id("compra-wizard-vehicle-model").fill("Civic E2E")
     page.get_by_test_id("compra-wizard-vehicle-color").fill("Branco")
     page.get_by_test_id("compra-wizard-vehicle-year").fill("2025")
-    page.get_by_test_id("compra-wizard-vehicle-mileage").fill("10")
-    page.get_by_test_id("compra-wizard-vehicle-investor").select_option(
-        label="Investidor A"
-    )
 
     page.get_by_test_id("compra-wizard-next").click()
     page.get_by_test_id("compra-wizard-purchase-value").fill("95000")
     page.get_by_test_id("compra-wizard-vehicle-debts").fill("123.45")
 
     page.get_by_test_id("compra-wizard-next").click()
+    page.get_by_test_id("compra-wizard-vehicle-mileage").fill("10")
+    page.get_by_test_id("compra-wizard-vehicle-investor").select_option(
+        label="Investidor A"
+    )
+
     page.get_by_test_id("compra-wizard-next").click()
     comprovante = tmp_path / "comprovante.pdf"
     comprovante.write_bytes(b"%PDF-1.4\n%%EOF\n")
