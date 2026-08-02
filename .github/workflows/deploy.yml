@@ -24,6 +24,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
+            export PATH="$HOME/.local/bin:$PATH"
 
             # Navigate to project directory
             cd ${{ secrets.DEPLOY_PATH }}
@@ -37,7 +38,7 @@ jobs:
             uv sync
 
             echo "🗄️ Running database migrations..."
-            uv run alembic upgrade head
+            uv run alembic upgrade heads
 
             echo "🔄 Restarting service..."
             sudo systemctl restart ${{ secrets.SERVICE_NAME }}
