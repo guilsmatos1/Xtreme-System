@@ -235,10 +235,6 @@ requires = ["hatchling", "hatch-polylith-bricks"]
 build-backend = "hatchling.build"
 ```
 
-Docker Compose (`docker-compose.yml`) define dois serviços:
-- `db` — `postgres:16`
-- `app` — `xtreme_system.api.core:app` na porta 8000
-
 ## Testes
 
 - Suite em `tests/` organizada por componente

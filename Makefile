@@ -1,7 +1,6 @@
-.PHONY: help hooks format lint test test-postgres test-e2e watch coverage ci pre-commit migrate revision run db-up db-test db-down
+.PHONY: help hooks format lint test test-postgres test-e2e watch coverage ci pre-commit migrate revision run db-test
 
 PYTHON := uv run python
-COMPOSE := $(shell docker compose version >/dev/null 2>&1 && printf 'docker compose' || printf 'docker-compose')
 PYTEST_ARGS ?= tests/ -q -n auto
 
 help:
@@ -20,8 +19,7 @@ help:
 		'  make migrate     Apply alembic migrations (upgrade head)' \
 		'  make revision m="msg"  Autogenerate an alembic migration' \
 		'  make run         Run the API with uvicorn' \
-		'  make db-up       Start the local Postgres container' \
-		'  make db-down     Stop the local Postgres container'
+		'  make db-test     Create the local xtreme_test database'
 
 hooks:
 	uv run pre-commit install
@@ -69,12 +67,5 @@ revision:
 run:
 	uv run uvicorn xtreme_system.api.core:app --host 0.0.0.0 --port 8000 --proxy-headers
 
-db-up:
-	$(COMPOSE) up -d
-
 db-test:
-	$(COMPOSE) up -d db
-	$(COMPOSE) exec -T db sh -c 'createdb -U postgres xtreme_test 2>/dev/null || true'
-
-db-down:
-	$(COMPOSE) down
+	createdb -U postgres xtreme_test 2>/dev/null || true

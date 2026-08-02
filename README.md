@@ -13,17 +13,10 @@ workspace [Polylith](https://polylith.gitbook.io/polylith) (namespace: `xtreme_s
 - Interface web com HTMX e Jinja2 para uso interno
 - Autenticação JWT + argon2 com dois modos: Bearer token (API) e cookie httpOnly (UI)
 - PostgreSQL via SQLAlchemy 2.0 + Alembic
-- Deployável via Docker Compose
 
 ## Setup
 
-### Opção 1: PostgreSQL via Docker (recomendado)
-
-```bash
-make db-up    # docker compose up -d (Postgres 16 na porta 5432)
-```
-
-### Opção 2: PostgreSQL via brew
+### PostgreSQL via brew
 
 ```bash
 brew services start postgresql@16    # ou a versão instalada
@@ -95,8 +88,7 @@ make pre-commit  # run all pre-commit hooks
 make migrate     # alembic upgrade head
 make revision m="msg"  # alembic revision --autogenerate
 make run         # uvicorn xtreme_system.api.core:app
-make db-up       # docker compose up -d (Postgres)
-make db-down     # docker compose down
+make db-test     # createdb xtreme_test (banco de testes)
 ```
 
 Comandos crus equivalentes:
@@ -126,7 +118,6 @@ Workspace Polylith (`workspace.toml`):
 | `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                                        |
 | `tests/`                    | Suite de testes; `make test` usa PostgreSQL migrado via Alembic; SQLite in-memory é fallback explícito para ciclos locais rápidos                                          |
 | `alembic/`                  | Configuração do Alembic + migrations em `versions/`                                                                                                                          |
-| `docker-compose.yml`        | Serviço `db` (postgres:16) + `app`                                                                                                                                           |
 
 
 Polylith namespace: `xtreme_system`. Cada componente (`auth`, `veiculo`, etc.)

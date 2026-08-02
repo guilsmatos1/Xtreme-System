@@ -8,7 +8,7 @@ The Xtreme Motors API is built with FastAPI and provides JSON endpoints for mana
 
 ## Health Check
 
-Health check para Docker/k8s — sem autenticação.
+Health check para orquestração/monitoramento — sem autenticação.
 
 **Endpoint**: `GET /health`
 
