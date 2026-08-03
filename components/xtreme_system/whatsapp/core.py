@@ -131,7 +131,13 @@ def _enviar(config: WhatsappConfig, texto: str) -> None:
 
 
 def _notificar_em_background(
-    api_url: str, api_key: str, instance: str, group_id: str, texto: str
+    api_url: str,
+    api_key: str,
+    instance: str,
+    group_id: str,
+    texto: str,
+    venda_id: int,
+    request_id: str | None,
 ) -> None:
     """Executada em thread separada — apenas o HTTP, sem acesso a banco."""
     config = WhatsappConfig(
@@ -141,10 +147,15 @@ def _notificar_em_background(
         evolution_instance=instance,
         evolution_group_id=group_id,
     )
+    log = logger.bind(venda_id=venda_id, request_id=request_id)
     try:
         _enviar(config, texto)
     except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
-        logger.warning("whatsapp_notify_failed", error=str(exc))
+        log.warning("whatsapp_notify_failed", error=str(exc))
+    except Exception:
+        log.exception("whatsapp_notify_error")
+    else:
+        log.info("whatsapp_notify_sent")
 
 
 def notificar_venda(
@@ -167,6 +178,8 @@ def notificar_venda(
     api_key = config.evolution_api_key
     instance = config.evolution_instance
     group_id = config.evolution_group_id
+    venda_id = venda_obj.id
+    request_id = structlog.contextvars.get_contextvars().get("request_id")
 
     def _agendar_envio() -> None:
         _NOTIFICACAO_EXECUTOR.submit(
@@ -176,6 +189,8 @@ def notificar_venda(
             instance,
             group_id,
             texto,
+            venda_id,
+            request_id,
         )
 
     register_post_commit(
