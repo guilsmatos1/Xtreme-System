@@ -54,6 +54,9 @@ from xtreme_system.api.routes.ui_routes.uploads import (
     salvar_anexos_entidade,
     salvar_arquivos,
 )
+from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
+    resolver_veiculo_inline,
+)
 from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
@@ -285,35 +288,15 @@ def _resolver_veiculo(
             return None, None, "Veículo inválido ou inexistente"
         return existente, None, None
 
-    placa = str(form.get("vei_placa") or "").strip().upper()
-    if not placa:
-        return None, None, "Informe a placa do veículo"
-    if veiculo.get_by_placa(session, placa):
-        return None, None, "Placa já cadastrada — selecione o veículo na lista"
-    try:
-        novo_veiculo_data = veiculo.VeiculoCreate.model_validate(
-            {
-                "tipo": form.get("vei_tipo"),
-                "tipo_entrada": form.get("vei_tipo_entrada"),
-                "placa": placa,
-                "modelo": str(form.get("vei_modelo") or "").strip(),
-                "marca": str(form.get("vei_marca") or "").strip() or None,
-                "cor": str(form.get("vei_cor") or "").strip(),
-                "ano": int(form.get("vei_ano") or 0),
-                "km": str(form.get("vei_km") or "").strip() or None,
-                "chassi": str(form.get("vei_chassi") or "").strip() or None,
-                "renavam": str(form.get("vei_renavam") or "").strip() or None,
-                "preco": None,
-                "proprietario_registrado": str(
-                    form.get("vei_proprietario_registrado") or ""
-                ).strip()
-                or None,
-                "investidor_id": int(form.get("vei_investidor_id") or 0),
-            }
-        )
-    except (ValidationError, ValueError):
-        return None, None, "Dados do veículo inválidos"
-    return None, novo_veiculo_data, None
+    return resolver_veiculo_inline(
+        session,
+        form,
+        prefix="vei_",
+        tipo_entrada=form.get("vei_tipo_entrada"),
+        preco=None,
+        required=True,
+        error_label="do veículo",
+    )
 
 
 def _sincronizar_status_veiculo_compra(
