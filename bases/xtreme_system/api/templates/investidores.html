@@ -5,7 +5,7 @@
 <div class="page-head">
   <div class="page-head__title">
     <h1>{{ titulo }}</h1>
-    <p class="page-head__subtitle">{{ itens | length }} registro{{ 's' if itens | length != 1 }} cadastrado{{ 's' if itens | length != 1 }}</p>
+    <p class="page-head__subtitle">{{ total_investidores }} registro{{ 's' if total_investidores != 1 }} cadastrado{{ 's' if total_investidores != 1 }}</p>
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost" href="{{ prefixo }}/exportar">
