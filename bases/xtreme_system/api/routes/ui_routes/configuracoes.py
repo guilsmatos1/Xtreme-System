@@ -269,16 +269,36 @@ async def ui_configuracoes_importar(
     user: UIAdmin,
     arquivo: Annotated[UploadFile, File()],
 ) -> HTMLResponse:
-    with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
-        tmp_path = f.name
-        while chunk := await arquivo.read(1024 * 1024):
-            f.write(chunk)
-    detach_request_session(request, keep=(user,))
+    log_context = {
+        "actor_id": user.id,
+        "actor_username": user.username,
+        "operation": "database_restore_import",
+    }
+    logger.info("database_restore_started", **log_context)
+    tmp_path: str | None = None
     try:
+        with tempfile.NamedTemporaryFile(suffix=".dump", delete=False) as f:
+            tmp_path = f.name
+            while chunk := await arquivo.read(1024 * 1024):
+                f.write(chunk)
+        detach_request_session(request, keep=(user,))
         await run_in_threadpool(exportacao.restore_database_from_file, tmp_path)
+        logger.info("database_restore_succeeded", **log_context)
     except exportacao.RestoreEmAndamentoError as exc:
+        logger.warning(
+            "database_restore_failed",
+            **log_context,
+            outcome="already_in_progress",
+            error=str(exc),
+        )
         return HTMLResponse(f"<p>{exc}</p>", status_code=409)
     except exportacao.ExportacaoError as exc:
+        logger.warning(
+            "database_restore_failed",
+            **log_context,
+            outcome="error",
+            error=str(exc),
+        )
         try:
             with database_traffic_lock():
                 config = whatsapp.get_config(session)
@@ -296,8 +316,16 @@ async def ui_configuracoes_importar(
                 "<p>O banco está sendo restaurado. Tente novamente em instantes.</p>",
                 status_code=503,
             )
+    except Exception:
+        logger.exception(
+            "database_restore_failed",
+            **log_context,
+            outcome="unexpected_error",
+        )
+        raise
     finally:
-        os.unlink(tmp_path)
+        if tmp_path is not None:
+            os.unlink(tmp_path)
     try:
         with database_traffic_lock():
             session.expire_all()
