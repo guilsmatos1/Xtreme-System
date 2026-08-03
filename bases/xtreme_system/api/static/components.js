@@ -18,18 +18,6 @@
   "use strict";
 
   document.addEventListener("alpine:init", function () {
-    /* Wizard multi-step dos formulários de compra, venda e veículo.
-
-       Uso: x-data="wizard(N)" na <form>, onde N é o passo inicial vindo do
-       servidor (o formulário volta renderizado no passo que falhou validação).
-
-       O total de passos é contado do DOM, não passado como argumento: cada
-       formulário tem um número diferente (5/4/5) e alguns passos podem ser
-       condicionais por permissão.
-
-       Os passos NÃO usam x-show: .wizard-step é display:none no CSS e
-       .is-active é display:grid, então o display:'' que o x-show aplicaria
-       cairia de volta em display:none. A visibilidade é feita por :class. */
     /* Foco dos modais servidos pelo servidor.
 
        Os modais chegam por swap do HTMX dentro de #modal, então não há um
@@ -84,6 +72,126 @@
       };
     });
 
+    /* Troca de veículo no formulário de venda.
+
+       Estado real, depois de destrinchar o JS que estava inline:
+         ativo      = checkbox "Houve troca de veículo?"
+         veiculoId  = id resolvido pelo typeahead (reference.js é quem escreve
+                      o hidden; aqui só lemos, via evento referencechange)
+         modoNovo   = usuário optou por cadastrar um veículo que não existe
+
+       Derivações:
+         campos [data-troca] e o aviso "Cadastrar novo veículo" <- visíveis sse ativo
+         bloco de cadastro inline <- visível sse ativo && !veiculoId && modoNovo
+         hidden veiculo_troca_novo <- exatamente a visibilidade do bloco acima,
+                                      que é o que o servidor precisa saber
+
+       A visibilidade é declarativa (x-show). Habilitar/limpar os campos do
+       bloco inline continua imperativo, mas centralizado aqui: sao ~12 campos
+       e o comportamento original limpa valores so em parte das transicoes. */
+    Alpine.data("trocaVeiculo", function (ativoInicial, modoNovoInicial) {
+      return {
+        ativo: !!ativoInicial,
+        modoNovo: String(modoNovoInicial) === "1",
+        veiculoId: "",
+
+        init: function () {
+          var hidden = this.hiddenId();
+          this.veiculoId = hidden ? hidden.value : "";
+          this.$watch("ativo", this.aplicar.bind(this));
+          this.$watch("veiculoId", this.aplicar.bind(this));
+          this.$watch("modoNovo", this.aplicar.bind(this));
+          this.aplicar();
+        },
+
+        hiddenId: function () {
+          return this.$el.querySelector("#veiculo-troca-search");
+        },
+
+        busca: function () {
+          return this.$el.querySelector("#veiculo-troca-input");
+        },
+
+        // Fonte da verdade da UI e do que vai para o servidor.
+        get mostrarNovos() {
+          return this.ativo && !this.veiculoId && this.modoNovo;
+        },
+
+        get modoNovoEnviado() {
+          return this.mostrarNovos ? "1" : "0";
+        },
+
+        // reference.js limpa o hidden no "input" antes de disparar
+        // referencechange (que so vem depois do fetch), entao os dois eventos
+        // precisam ser observados para o estado nao ficar defasado.
+        aoBuscar: function () {
+          var hidden = this.hiddenId();
+          if (hidden) hidden.value = "";
+          this.veiculoId = "";
+          this.preencherPlaca();
+        },
+
+        aoResolverReferencia: function () {
+          var hidden = this.hiddenId();
+          this.veiculoId = hidden ? hidden.value : "";
+        },
+
+        cadastrarNovo: function () {
+          var hidden = this.hiddenId();
+          if (hidden) hidden.value = "";
+          this.veiculoId = "";
+          this.modoNovo = true;
+          this.preencherPlaca();
+        },
+
+        // Adianta a placa digitada na busca, sem sobrescrever o que o usuario
+        // ja tiver corrigido no formulario de cadastro.
+        preencherPlaca: function () {
+          if (!this.modoNovo) return;
+          var placa = this.$el.querySelector("#veic-troca-placa");
+          var busca = this.busca();
+          if (placa && busca && !placa.value) {
+            placa.value = busca.value.trim().toUpperCase();
+          }
+        },
+
+        aplicar: function () {
+          var mostrar = this.mostrarNovos;
+          // O original so zera valores ao desligar a troca ou ao escolher um
+          // veiculo existente; ao apenas recolher o bloco, preserva o digitado.
+          var limpar = !this.ativo || !!this.veiculoId;
+          var campos = this.$el.querySelectorAll(
+            "[data-novo-veiculo-troca] input, [data-novo-veiculo-troca] select"
+          );
+          Array.prototype.forEach.call(campos, function (campo) {
+            campo.disabled = !mostrar;
+            if (!mostrar && limpar) campo.value = "";
+          });
+
+          if (!this.ativo) {
+            var hidden = this.hiddenId();
+            var busca = this.busca();
+            if (hidden) hidden.value = "";
+            if (busca) busca.value = "";
+            this.veiculoId = "";
+            this.modoNovo = false;
+          }
+        },
+      };
+    });
+
+    /* Wizard multi-step dos formulários de compra, venda e veículo.
+
+       Uso: x-data="wizard(N)" na <form>, onde N é o passo inicial vindo do
+       servidor (o formulário volta renderizado no passo que falhou validação).
+
+       O total de passos é contado do DOM, não passado como argumento: cada
+       formulário tem um número diferente (5/4/4) e alguns passos podem ser
+       condicionais por permissão.
+
+       Os passos NÃO usam x-show: .wizard-step é display:none no CSS e
+       .is-active é display:grid, então o display:'' que o x-show aplicaria
+       cairia de volta em display:none. A visibilidade é feita por :class. */
     Alpine.data("wizard", function (inicial) {
       return {
         step: Number(inicial) || 1,
