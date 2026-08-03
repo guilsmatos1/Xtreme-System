@@ -76,6 +76,7 @@ def _erro_lancamento(
     investidor_id: int,
     exc: ValidationError | HTTPException,
     obj: caixa.LancamentoInvestimento | None,
+    dados: dict[str, Any],
 ) -> HTMLResponse:
     erro = (
         str(exc.detail)
@@ -92,6 +93,7 @@ def _erro_lancamento(
         },
         item_key="lancamento",
         item=obj,
+        dados=dados,
         erro=erro,
         status_code=400,
     )
@@ -181,12 +183,13 @@ async def ui_lancamento_criar(
 ) -> HTMLResponse:
     found(investidor.get(session, investidor_id), "Investidor")
     form = await request.form()
+    dados_form = dict(form)
     try:
         data = caixa.LancamentoInvestimentoCreate.model_validate(
-            {**dict(form), "investidor_id": investidor_id}
+            {**dados_form, "investidor_id": investidor_id}
         )
     except ValidationError as exc:
-        return _erro_lancamento(request, investidor_id, exc, None)
+        return _erro_lancamento(request, investidor_id, exc, None, dados_form)
     caixa.create(session, data, user.id)
     return _ok_lancamentos(request, session, user, investidor_id)
 
@@ -203,10 +206,11 @@ async def ui_lancamento_atualizar(
     if is_lancamento_automatico(obj):
         raise HTTPException(status_code=400, detail=_LANCAMENTO_AUTOMATICO_ERRO)
     form = await request.form()
+    dados_form = dict(form)
     try:
-        data = caixa.LancamentoInvestimentoUpdate.model_validate(dict(form))
+        data = caixa.LancamentoInvestimentoUpdate.model_validate(dados_form)
     except ValidationError as exc:
-        return _erro_lancamento(request, investidor_id, exc, obj)
+        return _erro_lancamento(request, investidor_id, exc, obj, dados_form)
     caixa.update(session, obj, data, user.id)
     return _ok_lancamentos(request, session, user, investidor_id)
 

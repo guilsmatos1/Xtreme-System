@@ -132,6 +132,13 @@ def ui_usuario_criar(
     papel: Annotated[usuario.Papel, Form()] = usuario.Papel.funcionario,
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
+    dados_form = {
+        "username": username,
+        "senha": senha,
+        "nome": nome,
+        "papel": papel.value,
+        "perfil_id": perfil_id,
+    }
     try:
         usuario.create(
             session,
@@ -148,7 +155,7 @@ def ui_usuario_criar(
         return templates.TemplateResponse(
             request,
             "_form_usuario.html",
-            {"perfis": perfil.list_all(session), "erro": str(exc)},
+            {"perfis": perfil.list_all(session), "erro": str(exc), "dados": dados_form},
             status_code=400,
         )
     return _usuarios_response(request, session, user, "_usuarios_ok.html", success=True)
@@ -274,6 +281,14 @@ def ui_usuario_editar(
     perfil_id: Annotated[int | None, Form()] = None,
 ) -> HTMLResponse:
     obj = found(usuario.get(session, user_id), "Usuário")
+    dados_form = {
+        "username": username,
+        "senha": senha,
+        "nome": nome,
+        "papel": papel.value,
+        "ativo": ativo,
+        "perfil_id": perfil_id,
+    }
     try:
         if senha:
             usuario.validate_senha(senha)
@@ -295,7 +310,12 @@ def ui_usuario_editar(
         return templates.TemplateResponse(
             request,
             "_form_usuario_editar.html",
-            {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
+            {
+                "usuario": obj,
+                "perfis": perfil.list_all(session),
+                "erro": str(exc),
+                "dados": dados_form,
+            },
             status_code=400,
         )
     return _usuarios_response(

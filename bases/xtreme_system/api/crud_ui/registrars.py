@@ -539,6 +539,7 @@ def register_update_route(
                 user=user,
                 erro=validation_error_detail(exc),
                 status_code=400,
+                dados=dados_form,
             )
         except HTTPException as exc:
             return error_response(
