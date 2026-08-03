@@ -58,9 +58,11 @@ def configure_logging() -> None:
             renderer,
         ],
     )
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-
     root_logger = logging.getLogger()
-    root_logger.handlers = [handler]
+    handler_name = "xtreme-system"
+    if not any(handler.get_name() == handler_name for handler in root_logger.handlers):
+        handler = logging.StreamHandler(sys.stdout)
+        handler.set_name(handler_name)
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
     root_logger.setLevel(settings.log_level.upper())
