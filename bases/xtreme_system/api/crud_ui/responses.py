@@ -157,6 +157,7 @@ def list_response(
     offset: int = 0,
     erro: str | None = None,
     status_code: int = 200,
+    success: bool = False,
 ) -> HTMLResponse:
     qs_params = {
         chave: valor
@@ -196,12 +197,15 @@ def list_response(
         context["q"] = q
     if erro is not None:
         context["erro"] = erro
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         template,
         context,
         status_code=status_code,
     )
+    if success and request.headers.get("HX-Request"):
+        response.headers["HX-Trigger"] = json.dumps(_HTMX_SUCCESS_EVENTS)
+    return response
 
 
 def ok_response(

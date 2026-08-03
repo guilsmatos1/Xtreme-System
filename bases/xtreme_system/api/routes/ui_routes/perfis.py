@@ -3,17 +3,19 @@
 from typing import Any
 
 import structlog
-from fastapi import Request
+from fastapi import Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import ListState
+from xtreme_system.api.crud_ui.helpers import LIST_LIMIT_MAX, current_list_state
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import (
     delete_conflict_detail,
+    list_response,
     rollback_integrity_error_response,
-    success_response,
     validation_error_detail,
     write_conflict_detail,
 )
@@ -43,16 +45,43 @@ def _parse_restricoes(form: Any) -> dict[str, dict[str, list[str]]]:
     return restricoes
 
 
-def _perfis_ctx(
-    session: Session, user: usuario.Usuario, **extra: Any
-) -> dict[str, Any]:
-    return {
-        "user": user,
-        "perfis": perfil.list_all(session),
-        "sort": "",
-        "order": "asc",
-        **extra,
-    }
+def _perfis_response(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    template: str,
+    *,
+    state: ListState | None = None,
+    erro: str | None = None,
+    status_code: int = 200,
+    success: bool = False,
+) -> HTMLResponse:
+    state = state or current_list_state(request)
+    limit = state.limit or 50
+    todos = perfil.list_all(session)
+    if state.sort == "nome":
+        todos = sorted(
+            todos,
+            key=lambda item: _sort_key(item.nome),
+            reverse=state.order == "desc",
+        )
+    perfis = todos[state.offset : state.offset + limit]
+    return list_response(
+        templates,
+        request,
+        template,
+        user=user,
+        list_key="perfis",
+        lista=perfis,
+        ctx_list={},
+        sort=state.sort,
+        order=state.order,
+        limit=limit,
+        offset=state.offset,
+        erro=erro,
+        status_code=status_code,
+        success=success,
+    )
 
 
 @app.get("/ui/perfis")
@@ -62,17 +91,14 @@ def ui_perfis(
     user: UIAdmin,
     sort: str = "",
     order: str = "asc",
+    limit: int = Query(50, ge=1, le=LIST_LIMIT_MAX),
+    offset: int = Query(0, ge=0),
 ) -> HTMLResponse:
-    perfis = perfil.list_all(session)
-    if sort == "nome":
-        perfis = sorted(
-            perfis, key=lambda p: _sort_key(p.nome), reverse=order == "desc"
-        )
-    return templates.TemplateResponse(
-        request,
-        "perfis.html",
-        {"user": user, "perfis": perfis, "sort": sort, "order": order},
+    state = ListState(sort=sort, order=order, limit=limit, offset=offset)
+    template = (
+        "_linhas_perfis.html" if request.headers.get("HX-Request") else "perfis.html"
     )
+    return _perfis_response(request, session, user, template, state=state)
 
 
 @app.get("/ui/perfis/novo")
@@ -134,9 +160,7 @@ async def ui_perfil_criar(
                 status_code=409,
             ),
         )
-    return success_response(
-        templates, request, "_perfis_ok.html", _perfis_ctx(session, user)
-    )
+    return _perfis_response(request, session, user, "_perfis_ok.html", success=True)
 
 
 @app.post("/ui/perfis/{item_id}")
@@ -166,9 +190,7 @@ async def ui_perfil_atualizar(
                 status_code=409,
             ),
         )
-    return success_response(
-        templates, request, "_perfis_ok.html", _perfis_ctx(session, user)
-    )
+    return _perfis_response(request, session, user, "_perfis_ok.html", success=True)
 
 
 @app.post("/ui/perfis/{item_id}/excluir")
@@ -181,18 +203,15 @@ def ui_perfil_excluir(
     except IntegrityError:
         return rollback_integrity_error_response(
             session,
-            lambda: templates.TemplateResponse(
+            lambda: _perfis_response(
                 request,
+                session,
+                user,
                 "_linhas_perfis.html",
-                {
-                    **_perfis_ctx(session, user),
-                    "msg": delete_conflict_detail(
-                        "Perfil", "Perfil possui usuários vinculados"
-                    ),
-                },
+                erro=delete_conflict_detail(
+                    "Perfil", "Perfil possui usuários vinculados"
+                ),
                 status_code=409,
             ),
         )
-    return success_response(
-        templates, request, "_linhas_perfis.html", _perfis_ctx(session, user)
-    )
+    return _perfis_response(request, session, user, "_linhas_perfis.html", success=True)

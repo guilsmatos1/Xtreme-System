@@ -947,6 +947,61 @@ def test_ui_investidores_crud_basico(client: TestClient) -> None:
     assert "R$ 0,00" in criado.text
 
 
+def test_ui_listas_administrativas_paginam_usuarios_perfis_investidores(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    client.post(
+        "/ui/usuarios",
+        data={"username": "usuario pagina 1", "senha": "abc"},
+    )
+    client.post(
+        "/ui/usuarios",
+        data={"username": "usuario pagina 2", "senha": "abc"},
+    )
+    client.post("/ui/perfis", data={"nome": "Perfil pagina 1", "paginas": ["compras"]})
+    client.post("/ui/perfis", data={"nome": "Perfil pagina 2", "paginas": ["vendas"]})
+    client.post("/ui/investidores", data={"nome": "Investidor pagina 1"})
+    client.post("/ui/investidores", data={"nome": "Investidor pagina 2"})
+
+    for path, first_query, second_query, page_start in (
+        (
+            "/ui/usuarios",
+            "sort=username&limit=1&offset=1",
+            "sort=username&limit=1&offset=2",
+            2,
+        ),
+        (
+            "/ui/perfis",
+            "limit=1&offset=0",
+            "limit=1&offset=1",
+            1,
+        ),
+        (
+            "/ui/investidores",
+            "limit=1&offset=1",
+            "limit=1&offset=2",
+            2,
+        ),
+    ):
+        primeira = client.get(f"{path}?{first_query}")
+        segunda = client.get(f"{path}?{second_query}")
+
+        assert primeira.status_code == 200
+        assert f"Mostrando {page_start}" in primeira.text
+        assert "Próxima" in primeira.text
+        primeira_linhas = re.findall(r'id="(?:usuario|item)-\d+"', primeira.text)
+        assert len(primeira_linhas) == 1
+
+        assert segunda.status_code == 200
+        assert f"Mostrando {page_start + 1}" in segunda.text
+        assert "Anterior" in segunda.text
+        segunda_linhas = re.findall(r'id="(?:usuario|item)-\d+"', segunda.text)
+        assert len(segunda_linhas) == 1
+        assert primeira_linhas != segunda_linhas
+
+
 def test_ui_investidor_criar_rejeita_aporte_inicial_invalido(
     client: TestClient,
 ) -> None:

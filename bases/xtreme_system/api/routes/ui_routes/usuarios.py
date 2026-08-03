@@ -1,15 +1,17 @@
 """HTMX routes for usuarios."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
 import structlog
-from fastapi import Form, Request, Response
+from fastapi import Form, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import ListState
+from xtreme_system.api.crud_ui.helpers import LIST_LIMIT_MAX, current_list_state
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
-from xtreme_system.api.crud_ui.responses import success_response
+from xtreme_system.api.crud_ui.responses import list_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
@@ -29,18 +31,58 @@ _USUARIO_SORT_FIELDS: dict[str, str] = {
 }
 
 
-def _usuarios_ctx(
-    session: Session, user: usuario.Usuario, **extra: Any
-) -> dict[str, Any]:
+def _usuarios_stats(usuarios: list[usuario.Usuario]) -> dict[str, int]:
+    admins = sum(item.papel == usuario.Papel.admin for item in usuarios)
+    ativos = sum(item.ativo for item in usuarios)
     return {
-        "user": user,
-        "usuarios": usuario.list_all(session),
-        "perfis": perfil.list_all(session),
-        "sort": "",
-        "order": "asc",
-        "oob": True,
-        **extra,
+        "total_usuarios": len(usuarios),
+        "total_usuarios_ativos": ativos,
+        "total_usuarios_admins": admins,
+        "total_usuarios_funcionarios": len(usuarios) - admins,
     }
+
+
+def _usuarios_response(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    template: str,
+    *,
+    state: ListState | None = None,
+    erro: str | None = None,
+    status_code: int = 200,
+    success: bool = False,
+) -> HTMLResponse:
+    state = state or current_list_state(request)
+    limit = state.limit or 50
+    todos = usuario.list_all(session)
+    field = _USUARIO_SORT_FIELDS.get(state.sort)
+    if field:
+        todos = sorted(
+            todos,
+            key=lambda item: _sort_key(getattr(item, field)),
+            reverse=state.order == "desc",
+        )
+    usuarios = todos[state.offset : state.offset + limit]
+    return list_response(
+        templates,
+        request,
+        template,
+        user=user,
+        list_key="usuarios",
+        lista=usuarios,
+        ctx_list={
+            "perfis": perfil.list_all(session),
+            **_usuarios_stats(todos),
+        },
+        sort=state.sort,
+        order=state.order,
+        limit=limit,
+        offset=state.offset,
+        erro=erro,
+        status_code=status_code,
+        success=success,
+    )
 
 
 @app.get("/ui/usuarios")
@@ -50,25 +92,16 @@ def ui_usuarios(
     user: UIAdmin,
     sort: str = "",
     order: str = "asc",
+    limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> HTMLResponse:
-    usuarios = usuario.list_all(session)
-    field = _USUARIO_SORT_FIELDS.get(sort)
-    if field:
-        usuarios = sorted(
-            usuarios,
-            key=lambda u: _sort_key(getattr(u, field)),
-            reverse=order == "desc",
-        )
-    ctx = {
-        "user": user,
-        "usuarios": usuarios,
-        "perfis": perfil.list_all(session),
-        "sort": sort,
-        "order": order,
-    }
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_usuarios.html", ctx)
-    return templates.TemplateResponse(request, "usuarios.html", ctx)
+    state = ListState(sort=sort, order=order, limit=limit, offset=offset)
+    template = (
+        "_linhas_usuarios.html"
+        if request.headers.get("HX-Request")
+        else "usuarios.html"
+    )
+    return _usuarios_response(request, session, user, template, state=state)
 
 
 @app.get("/ui/usuarios/exportar")
@@ -121,9 +154,7 @@ def ui_usuario_criar(
             {"perfis": perfil.list_all(session), "erro": str(exc)},
             status_code=400,
         )
-    return success_response(
-        templates, request, "_usuarios_ok.html", _usuarios_ctx(session, user)
-    )
+    return _usuarios_response(request, session, user, "_usuarios_ok.html", success=True)
 
 
 @app.post("/ui/usuarios/{user_id}/excluir")
@@ -131,16 +162,18 @@ def ui_usuario_excluir(
     user_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     if user_id == user.id:
-        return templates.TemplateResponse(
+        return _usuarios_response(
             request,
+            session,
+            user,
             "usuarios.html",
-            _usuarios_ctx(session, user, erro="não pode excluir a si mesmo"),
+            erro="não pode excluir a si mesmo",
             status_code=400,
         )
     obj = found(usuario.get(session, user_id), "Usuário")
     usuario.delete(session, obj, user.id)
-    return success_response(
-        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return _usuarios_response(
+        request, session, user, "_linhas_usuarios.html", success=True
     )
 
 
@@ -170,8 +203,8 @@ def ui_usuario_senha_alterar(
             {"usuario": obj, "erro": str(exc)},
             status_code=400,
         )
-    return success_response(
-        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return _usuarios_response(
+        request, session, user, "_linhas_usuarios.html", success=True
     )
 
 
@@ -208,8 +241,8 @@ def ui_usuario_perfil_alterar(
             status_code=400,
         )
     usuario.set_perfil(session, obj, perfil_id, user.id)
-    return success_response(
-        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return _usuarios_response(
+        request, session, user, "_linhas_usuarios.html", success=True
     )
 
 
@@ -263,6 +296,6 @@ def ui_usuario_editar(
             {"usuario": obj, "perfis": perfil.list_all(session), "erro": str(exc)},
             status_code=400,
         )
-    return success_response(
-        templates, request, "_linhas_usuarios.html", _usuarios_ctx(session, user)
+    return _usuarios_response(
+        request, session, user, "_linhas_usuarios.html", success=True
     )

@@ -2,20 +2,22 @@
 
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Annotated
+from typing import Annotated, cast
 
 import structlog
-from fastapi import Depends, Request, Response
+from fastapi import Depends, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_types import ListState
+from xtreme_system.api.crud_ui.helpers import LIST_LIMIT_MAX, current_list_state
 from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import (
+    list_response,
     rollback_integrity_error_response,
-    success_response,
     write_conflict_detail,
 )
 from xtreme_system.api.deps import (
@@ -117,6 +119,41 @@ def _ctx_investidores(
     }
 
 
+def _investidores_response(
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    template: str,
+    *,
+    state: ListState | None = None,
+    erro: str | None = None,
+    status_code: int = 200,
+    success: bool = False,
+) -> HTMLResponse:
+    state = state or current_list_state(request)
+    limit = state.limit or 50
+    context = _ctx_investidores(session, state.sort, state.order)
+    todos = cast(list[investidor.Investidor], context.pop("itens"))
+    context["total_investidores"] = len(todos)
+    itens = todos[state.offset : state.offset + limit]
+    return list_response(
+        templates,
+        request,
+        template,
+        user=user,
+        list_key="itens",
+        lista=itens,
+        ctx_list=context,
+        sort=state.sort,
+        order=state.order,
+        limit=limit,
+        offset=state.offset,
+        erro=erro,
+        status_code=status_code,
+        success=success,
+    )
+
+
 def _form_ctx_investidor(
     item: investidor.Investidor | None, erro: str | None = None
 ) -> dict[str, object]:
@@ -135,11 +172,16 @@ def ui_investidores(
     user: UIUser,
     sort: str = "",
     order: str = "asc",
+    limit: int = Query(50, ge=1, le=LIST_LIMIT_MAX),
+    offset: int = Query(0, ge=0),
 ) -> HTMLResponse:
-    ctx = {"user": user, **_ctx_investidores(session, sort, order)}
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_investidores.html", ctx)
-    return templates.TemplateResponse(request, "investidores.html", ctx)
+    state = ListState(sort=sort, order=order, limit=limit, offset=offset)
+    template = (
+        "_linhas_investidores.html"
+        if request.headers.get("HX-Request")
+        else "investidores.html"
+    )
+    return _investidores_response(request, session, user, template, state=state)
 
 
 @app.get("/ui/investidores/exportar")
@@ -242,11 +284,8 @@ async def ui_investidor_criar(
             )
         if aporte is not None:
             caixa.create(session, aporte, user.id)
-    return success_response(
-        templates,
-        request,
-        "_investidores_ok.html",
-        {"user": user, **_ctx_investidores(session)},
+    return _investidores_response(
+        request, session, user, "_investidores_ok.html", success=True
     )
 
 
@@ -275,11 +314,8 @@ async def ui_investidor_atualizar(
                 status_code=409,
             ),
         )
-    return success_response(
-        templates,
-        request,
-        "_investidores_ok.html",
-        {"user": user, **_ctx_investidores(session)},
+    return _investidores_response(
+        request, session, user, "_investidores_ok.html", success=True
     )
 
 
@@ -289,20 +325,15 @@ def ui_investidor_excluir(
 ) -> HTMLResponse:
     obj = found(investidor.get(session, item_id), "Investidores")
     if caixa.list_by_investidor(session, item_id):
-        return templates.TemplateResponse(
+        return _investidores_response(
             request,
+            session,
+            user,
             "_linhas_investidores.html",
-            {
-                "user": user,
-                **_ctx_investidores(session),
-                "msg": "Não é possível excluir investidor com lançamentos.",
-            },
+            erro="Não é possível excluir investidor com lançamentos.",
             status_code=409,
         )
     investidor.delete(session, obj, user.id)
-    return success_response(
-        templates,
-        request,
-        "_linhas_investidores.html",
-        {"user": user, **_ctx_investidores(session), "oob": True},
+    return _investidores_response(
+        request, session, user, "_linhas_investidores.html", success=True
     )
