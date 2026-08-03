@@ -15,6 +15,9 @@ from xtreme_system.api.routes.ui_routes.client_resolution import resolver_client
 from xtreme_system.api.routes.ui_routes.nested_writes import (
     rollback_se_criou_aninhados,
 )
+from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
+    resolver_veiculo_inline,
+)
 from xtreme_system.cliente import core as cliente
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
@@ -89,36 +92,15 @@ def resolver_veiculo_troca(
             return None, None, "Veículo da troca inválido ou inexistente"
         return existente, None, None
 
-    placa = str(form.get("veic_troca_placa") or "").strip().upper()
-    if not placa:
-        return None, None, None
-
-    if veiculo.get_by_placa(session, placa):
-        return None, None, "Placa já cadastrada — selecione o veículo na lista"
-    try:
-        novo_veiculo_data = veiculo.VeiculoCreate.model_validate(
-            {
-                "tipo": form.get("veic_troca_tipo"),
-                "tipo_entrada": veiculo.TipoEntrada.compra,
-                "placa": placa,
-                "modelo": str(form.get("veic_troca_modelo") or "").strip(),
-                "marca": str(form.get("veic_troca_marca") or "").strip() or None,
-                "cor": str(form.get("veic_troca_cor") or "").strip(),
-                "ano": int(form.get("veic_troca_ano") or 0),
-                "km": str(form.get("veic_troca_km") or "").strip() or None,
-                "chassi": str(form.get("veic_troca_chassi") or "").strip() or None,
-                "renavam": str(form.get("veic_troca_renavam") or "").strip() or None,
-                "preco": str(form.get("veic_troca_preco") or "").strip(),
-                "proprietario_registrado": str(
-                    form.get("veic_troca_proprietario_registrado") or ""
-                ).strip()
-                or None,
-                "investidor_id": int(form.get("veic_troca_investidor_id") or 0),
-            }
-        )
-    except (ValidationError, ValueError):
-        return None, None, "Dados do veículo da troca inválidos"
-    return None, novo_veiculo_data, None
+    return resolver_veiculo_inline(
+        session,
+        form,
+        prefix="veic_troca_",
+        tipo_entrada=veiculo.TipoEntrada.compra,
+        preco=str(form.get("veic_troca_preco") or "").strip(),
+        required=False,
+        error_label="do veículo da troca",
+    )
 
 
 def _create_nested[EntityT, CreateDataT](
