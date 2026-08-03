@@ -14,7 +14,6 @@ from xtreme_system.api.crud_ui.responses import (
     validation_error_detail,
 )
 from xtreme_system.api.deps import (
-    NaoAutorizadoError,
     SessionDep,
     UIAdmin,
     UIUser,
@@ -33,6 +32,8 @@ _LANCAMENTO_SORT_FIELDS: dict[str, str] = {
     "descricao": "descricao",
     "valor": "valor",
 }
+
+_LANCAMENTO_AUTOMATICO_ERRO = "Lançamento automático não pode ser alterado manualmente"
 
 
 def _ctx_lancamentos(
@@ -162,7 +163,7 @@ def ui_lancamento_editar(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise NaoAutorizadoError
+        raise HTTPException(status_code=400, detail=_LANCAMENTO_AUTOMATICO_ERRO)
     return templates.TemplateResponse(
         request,
         "_form_lancamento.html",
@@ -200,7 +201,7 @@ async def ui_lancamento_atualizar(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise NaoAutorizadoError
+        raise HTTPException(status_code=400, detail=_LANCAMENTO_AUTOMATICO_ERRO)
     form = await request.form()
     try:
         data = caixa.LancamentoInvestimentoUpdate.model_validate(dict(form))
@@ -220,7 +221,7 @@ def ui_lancamento_excluir(
 ) -> HTMLResponse:
     obj = found(caixa.get(session, lancamento_id), "Lançamento")
     if is_lancamento_automatico(obj):
-        raise NaoAutorizadoError
+        raise HTTPException(status_code=400, detail=_LANCAMENTO_AUTOMATICO_ERRO)
     caixa.delete(session, obj, user.id)
     return templates.TemplateResponse(
         request,
