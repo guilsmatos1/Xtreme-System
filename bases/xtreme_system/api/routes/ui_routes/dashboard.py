@@ -15,6 +15,7 @@ from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+from xtreme_system.venda import analytics as venda_analytics
 from xtreme_system.venda import core as venda
 
 logger = structlog.get_logger(__name__)
@@ -142,7 +143,7 @@ def _ctx_dashboard(session: Session, mes: str | None = None) -> dict[str, Any]:
         session, mes_inicio
     )
 
-    desempenho_mensal = venda.desempenho_vendas_mensal(session, 6)
+    desempenho_mensal = venda_analytics.desempenho_vendas_mensal(session, 6)
     maior_total = max(
         (total for _, _, total in desempenho_mensal), default=Decimal("0")
     )
@@ -175,7 +176,7 @@ def _ctx_dashboard(session: Session, mes: str | None = None) -> dict[str, Any]:
         "vendas_mes_count": vendas_mes_count,
         "vendas_mes_total": vendas_mes_total,
         "ticket_medio": ticket_medio,
-        "ranking_vendedores": venda.ranking_vendedores(session),
+        "ranking_vendedores": venda_analytics.ranking_vendedores(session),
         "atividades_recentes": _atividades_recentes(session),
         "desempenho_chart": desempenho_chart,
         "desempenho_eixo_y": eixo_y_ticks,
