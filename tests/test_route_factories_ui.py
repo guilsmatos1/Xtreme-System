@@ -179,6 +179,91 @@ def test_register_ui_simples_rolls_back_when_write_fails_late(
     assert investidor.list_all(session) == []
 
 
+def test_register_ui_simples_update_integrity_error_returns_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    for nome, conteudo in {
+        "simples.html": "<p>{{ itens | length }} itens</p>",
+        "_linhas_simples.html": "<p>linhas</p>",
+        "_form_simples.html": "<p>form</p>",
+        "_simples_ok.html": "<p>ok</p>",
+    }.items():
+        (tmp_path / nome).write_text(conteudo)
+    templates = Jinja2Templates(directory=tmp_path)
+    engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
+    session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
+    admin = usuario.Usuario(username="admin", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(admin)
+    session.flush()
+    existing = investidor.create(session, investidor.InvestidorCreate(nome="Original"))
+    session.commit()
+
+    app = FastAPI()
+    register_ui_simples(
+        app,
+        templates,
+        "/ui/investidores",
+        "Investidores",
+        _FailAfterWriteModule(),
+        investidor.InvestidorCreate,
+        investidor.InvestidorUpdate,
+        "investidores.csv",
+    )
+    app.dependency_overrides[get_session] = lambda: session
+    app.dependency_overrides[get_ui_user] = lambda: admin
+
+    resp = TestClient(app).post(
+        f"/ui/investidores/{existing.id}", data={"nome": "Atualizado"}
+    )
+
+    assert resp.status_code == 409
+    assert investidor.get(session, existing.id).nome == "Original"  # type: ignore[union-attr]
+
+
+def test_register_ui_simples_delete_integrity_error_returns_409(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    for nome, conteudo in {
+        "simples.html": "<p>{{ itens | length }} itens</p>",
+        "_linhas_simples.html": "<p>{{ msg }}</p>",
+        "_form_simples.html": "<p>form</p>",
+        "_simples_ok.html": "<p>ok</p>",
+    }.items():
+        (tmp_path / nome).write_text(conteudo)
+    templates = Jinja2Templates(directory=tmp_path)
+    engine = create_test_engine()
+    request.addfinalizer(engine.dispose)
+    session = sessionmaker(bind=engine)()
+    request.addfinalizer(session.close)
+    admin = usuario.Usuario(username="admin", senha_hash="x", papel=usuario.Papel.admin)
+    session.add(admin)
+    session.flush()
+    existing = investidor.create(session, investidor.InvestidorCreate(nome="Original"))
+    session.commit()
+
+    app = FastAPI()
+    register_ui_simples(
+        app,
+        templates,
+        "/ui/investidores",
+        "Investidores",
+        _FailAfterWriteModule(),
+        investidor.InvestidorCreate,
+        investidor.InvestidorUpdate,
+        "investidores.csv",
+    )
+    app.dependency_overrides[get_session] = lambda: session
+    app.dependency_overrides[get_ui_user] = lambda: admin
+
+    resp = TestClient(app).post(f"/ui/investidores/{existing.id}/excluir")
+
+    assert resp.status_code == 409
+    assert "Investidores possui registros vinculados" in resp.text
+    assert investidor.get(session, existing.id) is not None
+
+
 def test_sort_key_nulls() -> None:
     """Nullable fields sort deterministically without crashing mixed lists."""
     assert _sort_key(None) == ""

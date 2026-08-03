@@ -164,6 +164,7 @@ def register_ui_simples(
                     request,
                     "_linhas_simples.html",
                     _ctx(user, session, msg=delete_conflict_detail(titulo)),
+                    status_code=409,
                 ),
             )
         return success_response(
