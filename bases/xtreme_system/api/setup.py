@@ -22,6 +22,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from jwt import InvalidTokenError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from xtreme_system.api.deps import (
     NaoAdminError,
@@ -149,7 +150,19 @@ def _cors_origins() -> list[str]:
     return [o.strip() for o in raw.split(",") if o.strip() and o.strip() != "*"]
 
 
-app = FastAPI(title="Xtreme Motors")
+class _APISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    environment: str = "development"
+
+
+def _docs_url() -> str | None:
+    if _APISettings().environment.strip().lower() == "production":
+        return None
+    return "/docs"
+
+
+app = FastAPI(title="Xtreme Motors", docs_url=_docs_url())
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
