@@ -19,3 +19,4 @@
 {% endfor %}
 </tbody>
 {% if msg %}<div id="msg" role="status" hx-swap-oob="true">{{ ui.icon("check") }}<span>{{ msg }}</span></div>{% endif %}
+{% if erro %}<div id="msg" hx-swap-oob="true">{{ ui.alert(erro) }}</div>{% endif %}

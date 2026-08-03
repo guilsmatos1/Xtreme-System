@@ -9,3 +9,4 @@
   {% endfor %}
 </tbody>
 {% if oob %}{{ ui.paginacao(request.url.path, qs_base, "#linhas", page_start, page_end, page_count, limit, offset_anterior, offset_proximo, tem_anterior, tem_proximo, oob=True) }}{% endif %}
+{% if erro %}<div id="msg" hx-swap-oob="true">{{ ui.alert(erro) }}</div>{% endif %}
