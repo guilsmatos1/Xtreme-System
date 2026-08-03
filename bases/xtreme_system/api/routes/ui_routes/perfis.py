@@ -2,7 +2,6 @@
 
 from typing import Any
 
-import structlog
 from fastapi import Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
@@ -23,8 +22,6 @@ from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
-
-logger = structlog.get_logger(__name__)
 
 # ---- Perfis (UI, admin) ----
 

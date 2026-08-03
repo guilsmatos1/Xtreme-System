@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 
-import structlog
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import func
@@ -17,8 +16,6 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import analytics as venda_analytics
 from xtreme_system.venda import core as venda
-
-logger = structlog.get_logger(__name__)
 
 # ---- Dashboard (KPIs, admin-only) ----
 

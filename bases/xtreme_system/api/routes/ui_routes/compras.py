@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 from uuid import uuid4
 
-import structlog
 from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
@@ -71,8 +70,6 @@ from xtreme_system.workflow.core import (
     sincronizar_caixa_compra,
     validate_cliente_veiculo_fks,
 )
-
-logger = structlog.get_logger(__name__)
 
 _EditarCompraDep = Annotated[
     usuario.Usuario, Depends(require_operacao("compras", "editar"))

@@ -2,7 +2,6 @@
 
 from typing import Annotated
 
-import structlog
 from fastapi import Form, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -16,8 +15,6 @@ from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
 from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
-
-logger = structlog.get_logger(__name__)
 
 # ---- Usuários (UI, admin) ----
 

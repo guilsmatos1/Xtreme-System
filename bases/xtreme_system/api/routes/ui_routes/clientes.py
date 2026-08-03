@@ -2,7 +2,6 @@
 
 from typing import Annotated, Any
 
-import structlog
 from fastapi import Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from markupsafe import Markup
@@ -40,8 +39,6 @@ from xtreme_system.compra import core as compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.usuario import core as usuario
 from xtreme_system.venda import core as venda
-
-logger = structlog.get_logger(__name__)
 
 
 def _table_cell(

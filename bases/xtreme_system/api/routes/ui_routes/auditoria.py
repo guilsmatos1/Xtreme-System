@@ -5,7 +5,6 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any, cast
 from urllib.parse import urlencode
 
-import structlog
 from fastapi import Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BeforeValidator, Field
@@ -22,8 +21,6 @@ from xtreme_system.api.routes.ui_routes.filters import (
 from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
-
-logger = structlog.get_logger(__name__)
 
 # ---- Auditoria (consulta, admin-only) ----
 
