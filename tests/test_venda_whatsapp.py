@@ -126,9 +126,13 @@ def test_criar_venda_dispara_notificacao(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     mensagens: list[str] = []
-    monkeypatch.setattr(
-        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
-    )
+    envio_concluido = threading.Event()
+
+    def _enviar(_config: whatsapp.WhatsappConfig, texto: str) -> None:
+        mensagens.append(texto)
+        envio_concluido.set()
+
+    monkeypatch.setattr(whatsapp, "_enviar", _enviar)
     _configurar(client)
 
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
@@ -139,7 +143,7 @@ def test_criar_venda_dispara_notificacao(
     )
 
     assert resp.status_code == 201
-    time.sleep(0.1)
+    assert envio_concluido.wait(timeout=1)
     assert len(mensagens) == 1
     assert "João Silva" in mensagens[0]
     assert "Gol" in mensagens[0]
@@ -255,9 +259,13 @@ def test_notificacao_usa_template_customizado(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     mensagens: list[str] = []
-    monkeypatch.setattr(
-        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
-    )
+    envio_concluido = threading.Event()
+
+    def _enviar(_config: whatsapp.WhatsappConfig, texto: str) -> None:
+        mensagens.append(texto)
+        envio_concluido.set()
+
+    monkeypatch.setattr(whatsapp, "_enviar", _enviar)
     _configurar(client, mensagem_template="Venda para {cliente} no valor de R$ {valor}")
 
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
@@ -268,7 +276,7 @@ def test_notificacao_usa_template_customizado(
     )
 
     assert resp.status_code == 201
-    time.sleep(0.1)
+    assert envio_concluido.wait(timeout=1)
     assert mensagens == ["Venda para João Silva no valor de R$ 40000.00"]
 
 
@@ -276,9 +284,13 @@ def test_notificacao_ignora_placeholder_desconhecido(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     mensagens: list[str] = []
-    monkeypatch.setattr(
-        whatsapp, "_enviar", lambda _config, texto: mensagens.append(texto)
-    )
+    envio_concluido = threading.Event()
+
+    def _enviar(_config: whatsapp.WhatsappConfig, texto: str) -> None:
+        mensagens.append(texto)
+        envio_concluido.set()
+
+    monkeypatch.setattr(whatsapp, "_enviar", _enviar)
     _configurar(client, mensagem_template="Olá {cliente}, código {inexistente}")
 
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
@@ -289,5 +301,5 @@ def test_notificacao_ignora_placeholder_desconhecido(
     )
 
     assert resp.status_code == 201
-    time.sleep(0.1)
+    assert envio_concluido.wait(timeout=1)
     assert mensagens == ["Olá João Silva, código {inexistente}"]
