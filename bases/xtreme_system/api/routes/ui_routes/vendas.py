@@ -3,7 +3,6 @@
 from typing import Annotated, Any
 from uuid import uuid4
 
-import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
@@ -58,8 +57,6 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
 from xtreme_system.workflow.core import recompute_vehicle_status_on_delete
-
-logger = structlog.get_logger(__name__)
 
 # ---- Vendas (UI) ----
 

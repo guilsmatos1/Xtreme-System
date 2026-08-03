@@ -2,7 +2,6 @@
 
 from typing import Annotated
 
-import structlog
 from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 
@@ -10,8 +9,6 @@ from xtreme_system.api.deps import SessionDep, UIUser, templates
 from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.usuario import core as usuario
-
-logger = structlog.get_logger(__name__)
 
 # ---- Conta (autoatendimento, qualquer usuário autenticado) ----
 

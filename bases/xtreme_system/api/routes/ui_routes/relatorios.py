@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime
 from typing import Annotated, Any
 from urllib.parse import urlencode
 
-import structlog
 from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -16,8 +15,6 @@ from xtreme_system.api.setup import app
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
-
-logger = structlog.get_logger(__name__)
 
 # ---- DRE por período (admin-only, a partir de fechamento_venda) ----
 
