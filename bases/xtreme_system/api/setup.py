@@ -24,6 +24,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from jwt import InvalidTokenError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from starlette.concurrency import run_in_threadpool
 
 from xtreme_system.api.deps import (
     NaoAdminError,
@@ -322,8 +323,8 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
     store = _get_rate_limit_store()
 
     if request.method == "POST" and path.endswith("/login"):
-        allowed, retry_after = store.allow(
-            f"login:{client_ip}", _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
+        allowed, retry_after = await run_in_threadpool(
+            store.allow, f"login:{client_ip}", _LOGIN_LIMIT, _LOGIN_WINDOW_SECONDS
         )
         if not allowed:
             return _rate_limit_response(
@@ -334,7 +335,9 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
         return await call_next(request)
 
     bucket = _rate_limit_bucket(request, client_ip)
-    allowed, retry_after = store.allow(bucket, _GERAL_LIMIT, _GERAL_WINDOW_SECONDS)
+    allowed, retry_after = await run_in_threadpool(
+        store.allow, bucket, _GERAL_LIMIT, _GERAL_WINDOW_SECONDS
+    )
     if not allowed:
         return _rate_limit_response(
             request,
