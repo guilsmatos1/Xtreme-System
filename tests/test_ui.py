@@ -2052,6 +2052,21 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert "Carlos Compra" not in csv_resp.text
 
 
+def test_ui_nova_compra_renderiza_clientes_cadastrados(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = _criar_cliente(client, headers, "Cliente Compra Select", "45678912301")
+
+    formulario = client.get("/ui/compras/novo")
+
+    assert formulario.status_code == 200
+    assert formulario.headers["cache-control"] == "no-store"
+    assert (
+        f'<option value="{cliente_id}">Cliente Compra Select · 45678912301</option>'
+        in formulario.text
+    )
+
+
 def test_ui_compra_conflito_de_idempotencia_nao_duplica_compra_nem_caixa(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

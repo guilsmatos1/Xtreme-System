@@ -382,7 +382,7 @@ def register_new_route(
         session: SessionDep,
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
-        return form_response(
+        response = form_response(
             form.templates,
             request,
             form.form_template,
@@ -391,6 +391,8 @@ def register_new_route(
             item=None,
             user=user,
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 def register_edit_route(
