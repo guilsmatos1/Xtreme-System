@@ -171,6 +171,92 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     expect(page.get_by_text("Cliente Venda E2E")).to_be_visible()
 
 
+@pytest.mark.e2e
+def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
+    page: Page, live_server_url: str
+) -> None:
+    _login(page, live_server_url)
+    page.goto(f"{live_server_url}/ui/vendas")
+
+    page.get_by_test_id("vendas-create").click()
+    expect(page.get_by_role("dialog", name="Nova venda")).to_be_visible()
+
+    page.get_by_test_id("venda-wizard-client-name").fill("Cliente Troca E2E")
+    page.get_by_test_id("venda-wizard-client-document").fill("44455566677")
+    page.get_by_test_id("venda-wizard-client-phone").fill("11977777777")
+    page.get_by_test_id("venda-wizard-next").click()
+
+    page.get_by_test_id("venda-wizard-vehicle-select").select_option(
+        label="ABC1234 — Onix"
+    )
+    page.get_by_test_id("venda-wizard-next").click()
+
+    page.get_by_test_id("venda-wizard-value").fill("130000")
+    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-next").click()
+
+    page.locator("#houve-troca").check()
+    cadastrar = page.get_by_role("button", name="Cadastrar novo veículo")
+    expect(cadastrar).to_be_visible()
+    cadastrar.click()
+
+    page.locator('select[name="veic_troca_tipo"]').select_option("carro")
+    page.locator('input[name="veic_troca_placa"]').fill("TRC1234")
+    page.locator('input[name="veic_troca_modelo"]').fill("Gol Troca E2E")
+    page.locator('input[name="veic_troca_cor"]').fill("Branco")
+    page.locator('input[name="veic_troca_ano"]').fill("2018")
+    page.locator('input[name="veic_troca_preco"]').fill("30000")
+    page.locator('select[name="veic_troca_investidor_id"]').select_option(
+        label="Investidor A"
+    )
+    page.get_by_test_id("venda-wizard-save").click()
+
+    expect(page.get_by_role("dialog", name="Nova venda")).not_to_be_visible()
+    expect(page.get_by_role("status")).to_contain_text("Alterações salvas com sucesso")
+
+    page.goto(f"{live_server_url}/ui/veiculos")
+    expect(page.get_by_text("Gol Troca E2E")).to_be_visible()
+    expect(page.get_by_text("TRC1234")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_modal_venda_troca_veiculo_existente_desabilita_cadastro_inline(
+    page: Page, live_server_url: str
+) -> None:
+    _login(page, live_server_url)
+    page.goto(f"{live_server_url}/ui/vendas")
+
+    page.get_by_test_id("vendas-create").click()
+    page.get_by_test_id("venda-wizard-client-name").fill("Cliente Existente E2E")
+    page.get_by_test_id("venda-wizard-client-document").fill("55566677788")
+    page.get_by_test_id("venda-wizard-client-phone").fill("11966666666")
+    page.get_by_test_id("venda-wizard-next").click()
+    vehicle_select = page.get_by_test_id("venda-wizard-vehicle-select")
+    expect(vehicle_select).to_be_visible()
+    vehicle_select.select_option(label="ABC1234 — Onix")
+    page.get_by_test_id("venda-wizard-next").click()
+    page.get_by_test_id("venda-wizard-value").fill("130000")
+    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-next").click()
+
+    page.locator("#houve-troca").check()
+    busca = page.locator("#veiculo-troca-input")
+    busca.fill("ABC1234")
+    opcao = page.locator('#veiculos-troca-list option[value="ABC1234 — Onix"]')
+    expect(opcao).to_have_count(1)
+    busca.evaluate(
+        """(input) => {
+            input.value = 'ABC1234 — Onix';
+            input.dispatchEvent(new Event('change', {bubbles: true}));
+        }"""
+    )
+
+    expect(page.locator("#veiculo-troca-search")).to_have_value("1")
+    expect(page.locator("#novo-veiculo-troca-campos")).not_to_be_visible()
+    expect(page.locator('input[name="veic_troca_placa"]')).to_be_disabled()
+    expect(page.get_by_role("button", name="Cadastrar novo veículo")).to_be_visible()
+
+
 def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
     page.goto(f"{live_server_url}/ui/vendas")
     page.get_by_test_id("vendas-create").click()

@@ -1356,6 +1356,31 @@ def test_ui_nova_venda_exibe_select_de_veiculos_sem_paginacao(
     assert 'data-reference-list="veiculos-list"' not in resp.text
 
 
+def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    resp = client.get("/ui/vendas/novo")
+
+    assert resp.status_code == 200
+    assert 'name="houve_troca"' in resp.text
+    assert 'id="cadastrar-veiculo-troca"' in resp.text
+    assert "Cadastrar novo veículo" in resp.text
+    assert resp.text.count('name="veic_troca_tipo" required') == 1
+    for campo in (
+        "veic_troca_placa",
+        "veic_troca_modelo",
+        "veic_troca_cor",
+        "veic_troca_ano",
+        "veic_troca_preco",
+        "veic_troca_investidor_id",
+    ):
+        assert re.search(
+            rf'<(?:input|select)[^>]*name="{campo}"[^>]*required', resp.text
+        )
+
+
 def test_ui_criar_venda_cadastra_veiculo_novo_na_troca(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
@@ -1373,6 +1398,9 @@ def test_ui_criar_venda_cadastra_veiculo_novo_na_troca(client: TestClient) -> No
             "forma_pagamento": "a_vista",
             "parcelas": "1",
             "status": "pendente",
+            "houve_troca": "1",
+            "veiculo_troca_novo": "1",
+            "veiculo_troca_label": "ABC1234",
             "veic_troca_tipo": "carro",
             "veic_troca_placa": "TRC1234",
             "veic_troca_modelo": "Gol",
@@ -1416,6 +1444,9 @@ def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
             "forma_pagamento": "a_vista",
             "parcelas": "1",
             "status": "pendente",
+            "houve_troca": "1",
+            "veiculo_troca_novo": "1",
+            "veiculo_troca_label": "ABC1234",
             "veic_troca_tipo": "carro",
             "veic_troca_placa": "ABC1234",
             "veic_troca_modelo": "Onix",
@@ -1428,6 +1459,9 @@ def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
 
     assert resp.status_code == 400
     assert "Placa já cadastrada" in resp.text
+    assert 'name="houve_troca" value="1" type="checkbox" checked' in resp.text
+    assert 'name="veiculo_troca_novo" value="1"' in resp.text
+    assert 'name="veic_troca_placa" value="ABC1234"' in resp.text
     assert client.get("/vendas", headers=headers).json() == []
 
 
