@@ -345,6 +345,46 @@ def test_ui_configuracoes_importar_restaura_dump(
     assert "Dados importados com sucesso." in resp.text
 
 
+def test_ui_configuracoes_importar_renderiza_erro_de_restore(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _login(client)
+
+    def fake_restore(_dump_path: str | Path) -> None:
+        raise exportacao.ExportacaoError("dump corrompido")
+
+    monkeypatch.setattr(exportacao, "restore_database_from_file", fake_restore)
+
+    resp = client.post(
+        "/ui/configuracoes/importar",
+        files={"arquivo": ("backup.dump", b"dump", "application/octet-stream")},
+    )
+
+    assert resp.status_code == 200
+    assert "dump corrompido" in resp.text
+
+
+def test_ui_configuracoes_importar_rejeita_restore_concorrente(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _login(client)
+
+    def fake_restore(_dump_path: str | Path) -> None:
+        raise exportacao.RestoreEmAndamentoError
+
+    monkeypatch.setattr(exportacao, "restore_database_from_file", fake_restore)
+
+    resp = client.post(
+        "/ui/configuracoes/importar",
+        files={"arquivo": ("backup.dump", b"dump", "application/octet-stream")},
+    )
+
+    assert resp.status_code == 409
+    assert "Já existe uma restauração do banco em andamento." in resp.text
+
+
 def test_ui_configuracoes_importar_aceita_dump_maior_que_20mb(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
