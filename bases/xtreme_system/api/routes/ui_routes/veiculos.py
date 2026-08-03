@@ -26,11 +26,13 @@ from xtreme_system.api.crud_ui.routes import (
     ColumnSpec,
     CrudUIBehaviorConfig,
     CrudUIExportConfig,
+    CrudUIReferenceConfig,
     CrudUIResourceConfig,
     CrudUIRouteConfig,
     CrudUITemplateConfig,
     delete_list_response,
     register_crud_ui_routes,
+    register_reference_lookup_routes,
 )
 from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
@@ -56,17 +58,38 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.workflow.core import validate_veiculo_fks
 
 
-def _ctx_form_veiculo(session: Session) -> dict[str, Any]:
-    veiculo_ids = veiculo.list_ids(session)
-    debitos_por_veiculo = compra.latest_debitos_by_veiculo_ids(session, veiculo_ids)
-    return {
+def _ctx_form_veiculo(
+    session: Session, veiculo_id: int | None = None
+) -> dict[str, Any]:
+    context = {
         "tipos": list(veiculo.TipoVeiculo),
         "tipo_entradas": list(veiculo.TipoEntrada),
-        "investidores": investidor.list_all(session),
-        "clientes": cliente.list_all(session),
         "tipos_cliente": list(cliente.TipoCliente),
-        "debitos_por_veiculo": debitos_por_veiculo,
     }
+    if veiculo_id is not None:
+        compra_atual = compra.get_latest_by_veiculo(session, veiculo_id)
+        context["debitos_por_veiculo"] = (
+            {veiculo_id: compra_atual.debitos} if compra_atual is not None else {}
+        )
+    return context
+
+
+def _label_cliente(obj: cliente.Cliente) -> str:
+    return f"{obj.nome} ({obj.documento})"
+
+
+def _label_investidor(obj: investidor.Investidor) -> str:
+    return obj.nome
+
+
+def _investidores_query(session: Session) -> Any:
+    return session.query(investidor.Investidor)
+
+
+def _investidores_search_query(session: Session, term: str) -> Any:
+    return _investidores_query(session).filter(
+        investidor.Investidor.nome.ilike(f"%{term}%")
+    )
 
 
 _STATUS_LABELS = {
@@ -223,6 +246,27 @@ register_crud_ui_routes(
     ),
 )
 
+
+register_reference_lookup_routes(
+    app,
+    "/ui/veiculos/referencias",
+    pagina="veiculos",
+    references={
+        "clientes": CrudUIReferenceConfig(
+            query=cliente.query,
+            search_query=cliente.search_query,
+            label=_label_cliente,
+            campo="cliente",
+        ),
+        "investidores": CrudUIReferenceConfig(
+            query=_investidores_query,
+            search_query=_investidores_search_query,
+            label=_label_investidor,
+            campo="investidor",
+        ),
+    },
+)
+
 _EditarDep = Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))]
 _ExcluirDep = Annotated[
     usuario.Usuario, Depends(require_operacao("veiculos", "excluir"))
@@ -237,7 +281,7 @@ def _editar_veiculo(
     return templates.TemplateResponse(
         request,
         "_form_veiculo.html",
-        {**_ctx_form_veiculo(session), "veiculo": obj, "user": user},
+        {**_ctx_form_veiculo(session, obj.id), "veiculo": obj, "user": user},
     )
 
 
@@ -339,13 +383,17 @@ def _ok_veiculo(
 
 
 def _erro_veiculo(
-    request: Request, session: Session, user: usuario.Usuario, msg: str
+    request: Request,
+    session: Session,
+    user: usuario.Usuario,
+    msg: str,
+    veiculo_id: int | None = None,
 ) -> HTMLResponse:
     return error_response(
         templates,
         request,
         "_form_veiculo.html",
-        ctx_form=_ctx_form_veiculo(session),
+        ctx_form=_ctx_form_veiculo(session, veiculo_id),
         item_key="veiculo",
         item=None,
         erro=msg,
@@ -375,7 +423,12 @@ async def _atualizar_veiculo(
         return templates.TemplateResponse(
             request,
             "_form_veiculo.html",
-            {**_ctx_form_veiculo(session), "veiculo": obj, "user": user, "erro": msg},
+            {
+                **_ctx_form_veiculo(session, obj.id),
+                "veiculo": obj,
+                "user": user,
+                "erro": msg,
+            },
             status_code=400,
         )
 
@@ -386,7 +439,9 @@ async def _atualizar_veiculo(
             try:
                 debitos = Decimal(debitos_raw.replace(",", "."))
             except Exception:
-                return _erro_veiculo(request, session, user, "Débitos inválidos")
+                return _erro_veiculo(
+                    request, session, user, "Débitos inválidos", item_id
+                )
 
     try:
         atualizado = veiculo.update(session, obj, data, user.id)
@@ -408,7 +463,7 @@ async def _atualizar_veiculo(
                 templates,
                 request,
                 "_form_veiculo.html",
-                ctx_form=_ctx_form_veiculo(session),
+                ctx_form=_ctx_form_veiculo(session, obj.id),
                 item_key="veiculo",
                 item=obj,
                 erro=write_conflict_detail("Veículo"),

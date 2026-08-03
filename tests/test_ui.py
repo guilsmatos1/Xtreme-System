@@ -1202,6 +1202,50 @@ def test_ctx_form_venda_nao_carrega_todos_clientes_e_veiculos(
     assert calls == []
 
 
+def test_ctx_form_veiculo_nao_carrega_frota_nem_referencias(
+    monkeypatch: pytest.MonkeyPatch, client: TestClient
+) -> None:
+    _login_admin(client)
+    calls: list[str] = []
+
+    def fail(name: str) -> Callable[..., list[Any]]:
+        def _fail(*_args: Any, **_kwargs: Any) -> list[Any]:
+            calls.append(name)
+            return []
+
+        return _fail
+
+    monkeypatch.setattr(veiculo, "list_ids", fail("veiculo.list_ids"))
+    monkeypatch.setattr(cliente, "list_all", fail("cliente.list_all"))
+    monkeypatch.setattr(investidor, "list_all", fail("investidor.list_all"))
+    monkeypatch.setattr(
+        compra,
+        "latest_debitos_by_veiculo_ids",
+        fail("compra.latest_debitos_by_veiculo_ids"),
+    )
+
+    resp = client.get("/ui/veiculos/novo")
+
+    assert resp.status_code == 200
+    assert calls == []
+    assert 'data-reference-url="/ui/veiculos/referencias/clientes"' in resp.text
+    assert 'data-reference-url="/ui/veiculos/referencias/investidores"' in resp.text
+
+    edit = client.get("/ui/veiculos/1/editar")
+    assert edit.status_code == 200
+    assert 'value="Investidor A"' in edit.text
+    assert calls == []
+
+
+def test_ui_veiculo_referencias_busca_investidores(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.get("/ui/veiculos/referencias/investidores?q=Investidor&limit=1")
+
+    assert resp.status_code == 200
+    assert resp.json()["items"] == [{"id": 1, "label": "Investidor A"}]
+
+
 def test_ui_venda_referencias_busca_e_pagina(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
