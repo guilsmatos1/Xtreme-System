@@ -10,6 +10,14 @@
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/columns.js" defer></script>
   <script src="/static/filters.js?v=3" defer></script>
+  <!-- Alpine: plugins e componentes ANTES do core. Os plugins precisam estar
+       registrados quando o core inicializa, e components.js escuta alpine:init,
+       que o core dispara ao carregar. Trocar esta ordem quebra os dois. -->
+  <script src="/static/alpine-persist.min.js" defer></script>
+  <script src="/static/alpine-focus.min.js" defer></script>
+  <script src="/static/alpine-mask.min.js" defer></script>
+  <script src="/static/components.js" defer></script>
+  <script src="/static/alpine.min.js" defer></script>
   <script>
     // Theme: restore before paint to avoid flash.
     (function () {
