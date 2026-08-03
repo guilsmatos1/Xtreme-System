@@ -622,10 +622,20 @@ def test_modal_veiculos_vinculados_cliente_sem_historico(
     page.goto(f"{live_server_url}/ui/clientes/todos")
 
     page.get_by_test_id("clientes-create").click()
-    page.get_by_test_id("cliente-form-name").fill("Cliente Sem Veiculos")
-    page.get_by_test_id("cliente-form-document").fill("55566677788")
-    page.get_by_test_id("cliente-form-type").select_option(label="Pessoa Fisica")
-    page.get_by_test_id("cliente-form-save").click()
+    dialog_cliente = page.get_by_role("dialog", name="Novo cliente")
+    form_cliente = dialog_cliente.locator("form")
+    expect(form_cliente).to_be_visible()
+    nome = form_cliente.get_by_test_id("cliente-form-name")
+    documento = form_cliente.get_by_test_id("cliente-form-document")
+    nome.fill("Cliente Sem Veiculos")
+    documento.fill("55566677788")
+    expect(nome).to_have_value("Cliente Sem Veiculos")
+    expect(documento).to_have_value("55566677788")
+    form_cliente.get_by_test_id("cliente-form-type").select_option(
+        label="Pessoa Fisica"
+    )
+    form_cliente.get_by_test_id("cliente-form-save").click()
+    expect(dialog_cliente).not_to_be_visible()
     expect(page.get_by_text("Cliente Sem Veiculos")).to_be_visible()
 
     linha = page.locator("tr", has_text="Cliente Sem Veiculos")

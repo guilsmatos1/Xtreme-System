@@ -1,5 +1,6 @@
 """API auth: login, proteção por autenticação e por papel."""
 
+import logging
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -52,6 +53,8 @@ def test_login_senha_errada(
 def test_login_registra_sucesso(
     client: TestClient, caplog: pytest.LogCaptureFixture
 ) -> None:
+    caplog.set_level(logging.INFO)
+
     resp = client.post("/login", data={"username": "admin", "password": "senha"})
     assert resp.status_code == 200
     assert "authentication_succeeded" in caplog.text

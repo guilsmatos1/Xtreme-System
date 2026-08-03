@@ -1,6 +1,7 @@
 """UI HTMX: login por cookie e proteção das telas."""
 
 import contextlib
+import logging
 import re
 from collections.abc import Callable, Iterator
 from datetime import UTC, date, datetime
@@ -111,6 +112,8 @@ def test_ui_http_exception_retorna_html_para_swap_htmx(client: TestClient) -> No
 def test_ui_login_seta_cookie_e_lista_veiculos(
     client: TestClient, caplog: pytest.LogCaptureFixture
 ) -> None:
+    caplog.set_level(logging.INFO)
+
     resp = client.post(
         "/ui/login",
         data={"username": "admin", "password": "senha"},
