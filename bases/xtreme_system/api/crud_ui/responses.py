@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 from urllib.parse import urlencode
 
+import structlog
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -12,6 +13,8 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import EntityT
+
+logger = structlog.get_logger(__name__)
 
 _HTMX_SUCCESS_EVENTS = {
     "htmx:toast": {"message": "Alterações salvas com sucesso."},
@@ -134,6 +137,7 @@ def conflict_form_response(
 def rollback_integrity_error_response(
     session: Session, build_response: Callable[[], HTMLResponse]
 ) -> HTMLResponse:
+    logger.warning("write_rolled_back", reason="integrity_error")
     session.rollback()
     return build_response()
 
