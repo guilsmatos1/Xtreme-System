@@ -1,6 +1,6 @@
 """Auditoria: model, snapshot helper e escrita/leitura de registros de auditoria."""
 
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any, Literal, get_args
 
@@ -117,10 +117,12 @@ def _filtros(
     if tipo_acao:
         stmt = stmt.where(Auditoria.tipo_acao == tipo_acao)
     if data_de is not None:
-        stmt = stmt.where(Auditoria.criado_em >= datetime.combine(data_de, time.min))
+        stmt = stmt.where(
+            Auditoria.criado_em >= datetime.combine(data_de, time.min, tzinfo=UTC)
+        )
     if data_ate is not None:
         # Exclusive upper bound cobre o dia inteiro e usa o índice
-        fim = datetime.combine(data_ate, time.min) + timedelta(days=1)
+        fim = datetime.combine(data_ate, time.min, tzinfo=UTC) + timedelta(days=1)
         stmt = stmt.where(Auditoria.criado_em < fim)
     return stmt
 

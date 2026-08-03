@@ -26,6 +26,11 @@ class _ServicoExternoConfig(_SnapshotTestBase):
 
 
 def _seed_admin(session: Session) -> usuario.Usuario:
+    existing = usuario.get_by_username(session, "admin")
+    if existing is not None:
+        session.info["usuario_id"] = existing.id
+        return existing
+
     admin = usuario.Usuario(username="admin", senha_hash="x", papel=usuario.Papel.admin)
     session.add(admin)
     session.flush()

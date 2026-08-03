@@ -60,7 +60,10 @@ class Compra(Base):
     valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     debitos: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     observacoes: Mapped[str | None]
-    status: Mapped[StatusCompra] = mapped_column(default=StatusCompra.pendente)
+    status: Mapped[StatusCompra] = mapped_column(
+        default=StatusCompra.pendente,
+        server_default="pendente",
+    )
 
     cliente: Mapped[Cliente] = relationship(lazy="selectin")
     veiculo: Mapped[Veiculo] = relationship(lazy="selectin")

@@ -23,12 +23,17 @@ def atomic_client() -> Iterator[tuple[TestClient, FastAPI, Session]]:
         session.add(u)
         session.flush()
         session.info["usuario_id"] = u.id
-        admin = usuario.create(
-            session,
-            usuario.UsuarioCreate(
-                username="admin", senha="senha", papel=usuario.Papel.admin
-            ),
-        )
+        admin = usuario.get_by_username(session, "admin")
+        if admin is None:
+            admin = usuario.create(
+                session,
+                usuario.UsuarioCreate(
+                    username="admin", senha="senha", papel=usuario.Papel.admin
+                ),
+            )
+        else:
+            admin.papel = usuario.Papel.admin
+            usuario.change_password(session, admin, "senha")
         session.commit()
 
         def override_session() -> Iterator[Session]:

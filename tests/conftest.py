@@ -85,12 +85,17 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
             session.flush()
             session.info["usuario_id"] = u.id
             for username, papel in usuarios:
-                usuario.create(
-                    session,
-                    usuario.UsuarioCreate(
-                        username=username, senha="senha", papel=papel
-                    ),
-                )
+                existing = usuario.get_by_username(session, username)
+                if existing is None:
+                    usuario.create(
+                        session,
+                        usuario.UsuarioCreate(
+                            username=username, senha="senha", papel=papel
+                        ),
+                    )
+                else:
+                    existing.papel = papel
+                    usuario.change_password(session, existing, "senha")
 
         if seed is not None:
             seed(session)
@@ -104,7 +109,16 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         kwargs = dict(client_kwargs or {})
         if client_addr is not None:
             kwargs.setdefault("client", client_addr)
-        return TestClient(app, **kwargs)
+
+        class ManagedTestClient(TestClient):
+            def __exit__(self, *args: Any) -> None:
+                try:
+                    super().__exit__(*args)
+                finally:
+                    session.close()
+                    engine.dispose()
+
+        return ManagedTestClient(app, **kwargs)
 
     yield _make
 

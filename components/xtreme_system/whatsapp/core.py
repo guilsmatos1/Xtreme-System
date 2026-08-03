@@ -37,11 +37,14 @@ class WhatsappConfig(Base):
     __tablename__ = "whatsapp_config"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    evolution_api_url: Mapped[str] = mapped_column(default="")
-    evolution_api_key: Mapped[str] = mapped_column(default="")
-    evolution_instance: Mapped[str] = mapped_column(default="")
-    evolution_group_id: Mapped[str] = mapped_column(default="")
-    mensagem_template: Mapped[str] = mapped_column(default=MENSAGEM_TEMPLATE_PADRAO)
+    evolution_api_url: Mapped[str] = mapped_column(default="", server_default="")
+    evolution_api_key: Mapped[str] = mapped_column(default="", server_default="")
+    evolution_instance: Mapped[str] = mapped_column(default="", server_default="")
+    evolution_group_id: Mapped[str] = mapped_column(default="", server_default="")
+    mensagem_template: Mapped[str] = mapped_column(
+        default=MENSAGEM_TEMPLATE_PADRAO,
+        server_default=MENSAGEM_TEMPLATE_PADRAO,
+    )
 
 
 class WhatsappConfigUpdate(BaseModel):

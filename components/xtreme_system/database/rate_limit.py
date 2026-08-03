@@ -93,30 +93,30 @@ class DatabaseRateLimiterStore:
     def _increment_current_window(
         self, conn: Connection, bucket: str, limit: int, cutoff: float, now: float
     ) -> bool:
-        return bool(
-            conn.execute(
-                update(rate_limit_state)
-                .where(rate_limit_state.c.bucket == bucket)
-                .where(rate_limit_state.c.window_started_at > cutoff)
-                .where(rate_limit_state.c.hit_count < limit)
-                .values(
-                    hit_count=rate_limit_state.c.hit_count + 1,
-                    updated_at=now,
-                )
-            ).rowcount
+        result = conn.execute(
+            update(rate_limit_state)
+            .where(rate_limit_state.c.bucket == bucket)
+            .where(rate_limit_state.c.window_started_at > cutoff)
+            .where(rate_limit_state.c.hit_count < limit)
+            .values(
+                hit_count=rate_limit_state.c.hit_count + 1,
+                updated_at=now,
+            )
+            .returning(rate_limit_state.c.bucket)
         )
+        return result.first() is not None
 
     def _reset_expired_window(
         self, conn: Connection, bucket: str, cutoff: float, now: float
     ) -> bool:
-        return bool(
-            conn.execute(
-                update(rate_limit_state)
-                .where(rate_limit_state.c.bucket == bucket)
-                .where(rate_limit_state.c.window_started_at <= cutoff)
-                .values(window_started_at=now, hit_count=1, updated_at=now)
-            ).rowcount
+        result = conn.execute(
+            update(rate_limit_state)
+            .where(rate_limit_state.c.bucket == bucket)
+            .where(rate_limit_state.c.window_started_at <= cutoff)
+            .values(window_started_at=now, hit_count=1, updated_at=now)
+            .returning(rate_limit_state.c.bucket)
         )
+        return result.first() is not None
 
     def _insert_bucket(self, conn: Connection, bucket: str, now: float) -> bool:
         statement = insert(rate_limit_state).values(
@@ -143,4 +143,5 @@ class DatabaseRateLimiterStore:
             statement = statement.on_conflict_do_nothing(index_elements=["bucket"])
         else:
             statement = statement.prefix_with("OR IGNORE")
-        return bool(conn.execute(statement).rowcount)
+        result = conn.execute(statement.returning(rate_limit_state.c.bucket))
+        return result.first() is not None

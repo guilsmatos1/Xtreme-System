@@ -13,15 +13,15 @@ class EmpresaConfig(Base):  # pylint: disable=too-many-instance-attributes
     __tablename__ = "empresa_config"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    nome: Mapped[str] = mapped_column(default="")
-    endereco: Mapped[str] = mapped_column(default="")
-    bairro: Mapped[str] = mapped_column(default="")
-    cidade: Mapped[str] = mapped_column(default="")
-    uf: Mapped[str] = mapped_column(default="")
+    nome: Mapped[str] = mapped_column(default="", server_default="")
+    endereco: Mapped[str] = mapped_column(default="", server_default="")
+    bairro: Mapped[str] = mapped_column(default="", server_default="")
+    cidade: Mapped[str] = mapped_column(default="", server_default="")
+    uf: Mapped[str] = mapped_column(default="", server_default="")
     cep: Mapped[str] = mapped_column(default="", server_default="")
     telefone: Mapped[str] = mapped_column(default="", server_default="")
-    cnpj: Mapped[str] = mapped_column(default="")
-    signatario: Mapped[str] = mapped_column(default="")
+    cnpj: Mapped[str] = mapped_column(default="", server_default="")
+    signatario: Mapped[str] = mapped_column(default="", server_default="")
     # Fora de EmpresaConfigUpdate: o form de texto não envia o logo e apagaria a URL.
     logo_url: Mapped[str] = mapped_column(default="", server_default="")
 
