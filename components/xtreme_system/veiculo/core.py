@@ -100,7 +100,7 @@ class Veiculo(Base):
     chassi: Mapped[str | None]
     renavam: Mapped[str | None]
     km: Mapped[int | None]
-    preco: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    preco: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     procuracao: Mapped[str | None]
     proprietario_registrado: Mapped[str | None]
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
@@ -133,7 +133,7 @@ class VeiculoCreate(BaseModel):
     chassi: str | None = None
     renavam: str | None = None
     km: int | None = Field(default=None, ge=0)
-    preco: Decimal = Field(gt=0)
+    preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
     proprietario_registrado: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
@@ -210,7 +210,7 @@ class VeiculoRead(BaseModel):
     chassi: str | None
     renavam: str | None
     km: int | None = None
-    preco: Decimal
+    preco: Decimal | None
     procuracao: str | None
     proprietario_registrado: str | None
     status: StatusVeiculo

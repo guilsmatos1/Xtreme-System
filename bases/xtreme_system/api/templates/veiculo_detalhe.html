@@ -36,7 +36,7 @@
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("cash") }} Preço Anunciado</div>
-    <div class="stat__value cell-num">{{ ui.moeda(veiculo.preco) }}</div>
+    <div class="stat__value cell-num">{% if veiculo.preco is not none %}{{ ui.moeda(veiculo.preco) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'custo') %}

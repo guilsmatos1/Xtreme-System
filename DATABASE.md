@@ -51,7 +51,7 @@ Veículos disponíveis para venda.
 | `chassi` | `VARCHAR` | Sim | - | |
 | `renavam` | `VARCHAR` | Sim | - | |
 | `km` | `INTEGER` | Sim | - | |
-| `preco` | `NUMERIC(12,2)` | Não | - | |
+| `preco` | `NUMERIC(12,2)` | Sim | - | Preço anunciado; pode ficar vazio até o veículo ser anunciado |
 | `procuracao` | `VARCHAR` | Sim | - | |
 | `proprietario_registrado` | `VARCHAR` | Sim | - | Nome do proprietário registrado no documento do veículo |
 | `status` | `statusveiculo` | Não | `disponivel` | Estado operacional do veículo |

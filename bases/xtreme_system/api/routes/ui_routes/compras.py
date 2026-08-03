@@ -303,7 +303,7 @@ def _resolver_veiculo(
                 "km": str(form.get("vei_km") or "").strip() or None,
                 "chassi": str(form.get("vei_chassi") or "").strip() or None,
                 "renavam": str(form.get("vei_renavam") or "").strip() or None,
-                "preco": str(form.get("valor_compra") or "").strip(),
+                "preco": None,
                 "proprietario_registrado": str(
                     form.get("vei_proprietario_registrado") or ""
                 ).strip()

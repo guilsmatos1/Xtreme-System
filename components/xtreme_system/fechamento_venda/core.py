@@ -19,6 +19,7 @@ from sqlalchemy.orm import Mapped, Session, lazyload, mapped_column, relationshi
 
 from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.caixa import core as caixa
+from xtreme_system.compra import core as compra
 from xtreme_system.crud import core as crud
 from xtreme_system.custo_veiculo.core import CustoVeiculo
 from xtreme_system.database.core import Base
@@ -367,7 +368,12 @@ def dre_por_mes(fechamentos: list[FechamentoVenda]) -> list[DreLinhaMes]:
 
 def _calcular(session: Session, venda_obj: Venda) -> ResultadoCalculo:
     receita = _quantizar(venda_obj.valor_venda)
-    custo_veiculo = _quantizar(venda_obj.veiculo.preco)
+    compra_atual = compra.get_latest_by_veiculo(session, venda_obj.veiculo_id)
+    custo_veiculo = _quantizar(
+        compra_atual.valor_compra
+        if compra_atual is not None
+        else venda_obj.veiculo.preco or Decimal("0")
+    )
     custos_operacionais = _quantizar(
         session.query(func.sum(CustoVeiculo.valor))
         .filter_by(veiculo_id=venda_obj.veiculo_id)

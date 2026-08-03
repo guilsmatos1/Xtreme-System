@@ -193,7 +193,7 @@ register_crud_ui_routes(
                 "preco",
                 "Preco Anunciado",
                 field="preco",
-                export=lambda v: f"{v.preco:.2f}",
+                export=lambda v: f"{v.preco:.2f}" if v.preco is not None else "",
             ),
             ColumnSpec(
                 "status", "Estado", field="status", export=lambda v: v.status.value

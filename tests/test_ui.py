@@ -1828,7 +1828,6 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert auditoria_resp.status_code == 200
     assert [row["registro_id"] for row in auditoria_resp.json()] == [veiculo_id]
-
     csv_resp = client.get("/ui/compras/exportar")
     assert csv_resp.status_code == 200
     assert (
@@ -1836,6 +1835,55 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert "text/csv" in csv_resp.headers["content-type"]
     assert "Carlos Compra" not in csv_resp.text
+
+
+def test_ui_compra_de_veiculo_novo_separa_preco_anunciado_do_custo(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Vendedor Novo Veículo",
+            "documento": "45678912301",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+
+    criado = client.post(
+        "/ui/compras",
+        data={
+            "cliente_id": str(cliente_resp.json()["id"]),
+            "vei_tipo": "carro",
+            "vei_tipo_entrada": "compra",
+            "vei_placa": "NOV1A23",
+            "vei_modelo": "Civic",
+            "vei_cor": "Preto",
+            "vei_ano": "2024",
+            "vei_investidor_id": str(investidor_id),
+            "data_compra": "2026-08-03",
+            "valor_compra": "73000.00",
+        },
+    )
+    assert criado.status_code == 200
+
+    veiculo_criado = next(
+        item
+        for item in client.get("/veiculos", headers=headers).json()
+        if item["placa"] == "NOV1A23"
+    )
+    assert veiculo_criado["preco"] is None
+
+    compra_criada = next(
+        item
+        for item in client.get("/compras", headers=headers).json()
+        if item["veiculo"]["placa"] == "NOV1A23"
+    )
+    assert compra_criada["valor_compra"] == "73000.00"
 
 
 def test_ctx_lista_compras_busca_comprovantes_em_lote(db_session: Session) -> None:
