@@ -96,6 +96,17 @@ def test_ui_configura_htmx_para_trocar_fragmentos_de_erro(client: TestClient) ->
     assert "error" in resp.text
 
 
+def test_ui_http_exception_retorna_html_para_swap_htmx(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.get("/ui/veiculos/999/detalhes")
+
+    assert resp.status_code == 404
+    assert resp.headers["content-type"].startswith("text/html")
+    assert resp.text == "Veículo não encontrado"
+    assert resp.text != '{"detail":"Veículo não encontrado"}'
+
+
 def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     resp = client.post(
         "/ui/login",
