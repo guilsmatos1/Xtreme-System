@@ -38,6 +38,7 @@ from xtreme_system.imagem_comprovante_compra import core as imagem_comprovante_c
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.investidor import core as investidor
+from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -472,6 +473,26 @@ def test_ui_perfis_htmx_sucesso_dispara_toast_e_fecha_modal(client: TestClient) 
         '{"htmx:toast": {"message": "Altera\\u00e7\\u00f5es salvas com sucesso."}, '
         '"htmx:close-modal": {}}'
     )
+
+
+def test_ui_perfil_editar_rejeita_erro_de_validacao(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    criado = client.post("/ui/perfis", data={"nome": "Perfil para validar"})
+    assert criado.status_code == 200
+
+    perfil_update = perfil.PerfilUpdate
+
+    def invalid_update(**_: object) -> perfil.PerfilUpdate:
+        return perfil_update.model_validate({"paginas": 123})
+
+    monkeypatch.setattr(perfil, "PerfilUpdate", invalid_update)
+
+    resp = client.post("/ui/perfis/1", data={"nome": "Perfil alterado"})
+
+    assert resp.status_code == 400
+    assert "paginas" in resp.text
 
 
 def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
