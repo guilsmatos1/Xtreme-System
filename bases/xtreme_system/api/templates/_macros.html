@@ -52,38 +52,6 @@
      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ paths.get(name, "") | safe }}</svg>
 {%- endmacro %}
 
-{% macro filtro_tabela(colunas, filter_col, filter_val, url, target, q="", sort="", order="asc") -%}
-{%- set selected = (colunas | selectattr("key", "equalto", filter_col) | first) -%}
-<form class="filter-bar" hx-get="{{ url }}" hx-target="{{ target }}" hx-swap="outerHTML">
-  <input type="hidden" name="q" value="{{ q }}">
-  <input type="hidden" name="sort" value="{{ sort }}">
-  <input type="hidden" name="order" value="{{ order }}">
-  <select name="filter_col" class="input" data-filter-col aria-label="Coluna do filtro">
-    <option value="">Filtrar por…</option>
-    {% for col in colunas %}
-    <option value="{{ col.key }}" data-options='{{ (col.options or []) | tojson }}'{% if col.key == filter_col %} selected{% endif %}>{{ col.label }}</option>
-    {% endfor %}
-  </select>
-  {% if selected and selected.options %}
-  <select name="filter_val" class="input" data-filter-val aria-label="Valor do filtro">
-    <option value="">Todos</option>
-    {% for value, label in selected.options %}
-    <option value="{{ value }}"{% if value == filter_val %} selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-  </select>
-  {% else %}
-  <input type="text" name="filter_val" class="input" data-filter-val placeholder="Valor…" value="{{ filter_val }}">
-  {% endif %}
-  <button type="submit" class="btn btn--ghost">{{ icon("search") }}Aplicar</button>
-  {% if filter_col %}
-  <a class="btn btn--ghost" title="Remover filtro"
-     href="{{ url }}?q={{ q | urlencode }}&sort={{ sort }}&order={{ order }}"
-     hx-get="{{ url }}?q={{ q | urlencode }}&sort={{ sort }}&order={{ order }}"
-     hx-target="{{ target }}" hx-swap="outerHTML">{{ icon("close") }}</a>
-  {% endif %}
-</form>
-{%- endmacro %}
-
 {% macro status_badge(status) -%}
 {%- if status.value == "disponivel" -%}
   <span class="badge badge--success badge--plain">Disponível</span>
