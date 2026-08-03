@@ -266,24 +266,4 @@
   </div>
 </div>
 {% if not veiculo %}
-<script>
-(function () {
-  var form = document.getElementById('form-novo-veiculo');
-  if (!form) return;
-
-  var selectVendedor = document.getElementById('cliente-vendedor-select');
-  var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
-  if (!selectVendedor) return;
-
-  function sincronizarVendedor() {
-    var existente = !!selectVendedor.value;
-    camposNovoCliente.forEach(function (campo) {
-      campo.disabled = existente;
-      campo.closest('.field').style.display = existente ? 'none' : '';
-    });
-  }
-  selectVendedor.addEventListener('change', sincronizarVendedor);
-  sincronizarVendedor();
-})();
-</script>
 {% endif %}

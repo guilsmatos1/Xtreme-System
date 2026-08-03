@@ -195,54 +195,54 @@
           {% endfor %}
         </div>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
           {% if pode_ver_campo(user, 'vendas', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <select class="select" id="cliente-select" data-testid="venda-wizard-client-select" name="cliente_id" autofocus>
+            <select class="select" id="cliente-select" x-model="clienteExistente" data-testid="venda-wizard-client-select" name="cliente_id" autofocus>
               <option value="">➕ Cadastrar novo cliente</option>
               {% for c in clientes %}
               <option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
               {% endfor %}
             </select>
           </label>
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-testid="venda-wizard-client-name" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
+            <input class="input" name="cli_nome" data-testid="venda-wizard-client-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
-            <select class="select" name="cli_tipo" data-novo-cliente>
+            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente">
               {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="venda-wizard-client-phone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="venda-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" data-testid="venda-wizard-client-email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
+            <input class="input" name="cli_email" data-testid="venda-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Endereço</span>
-            <input class="input" name="cli_endereco" data-novo-cliente value="{{ dados.get('cli_endereco', '') }}">
+            <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
-            <input class="input" name="cli_cidade" data-novo-cliente value="{{ dados.get('cli_cidade', '') }}">
+            <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Estado</span>
-            <input class="input" name="cli_estado" data-novo-cliente value="{{ dados.get('cli_estado', '') }}">
+            <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
           </label>
           {% endif %}
         </fieldset>
@@ -446,24 +446,6 @@
 {% if not venda %}
 {% endif %}
 {% if not venda %}
-<script>
-(function () {
-  var form = document.getElementById('form-nova-venda');
-  var selectCliente = document.getElementById('cliente-select');
-  var campos = form.querySelectorAll('[data-novo-cliente]');
-
-  function sincronizarCliente() {
-    var existente = !!selectCliente.value;
-    campos.forEach(function (campo) {
-      campo.disabled = existente;
-      campo.closest('.field').style.display = existente ? 'none' : '';
-    });
-  }
-  if (!selectCliente) return;
-  selectCliente.addEventListener('change', sincronizarCliente);
-  sincronizarCliente();
-})();
-</script>
 {% endif %}
 <script>
 (function () {
