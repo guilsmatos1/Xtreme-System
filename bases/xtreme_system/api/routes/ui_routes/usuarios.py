@@ -162,11 +162,16 @@ def ui_usuario_excluir(
     user_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     if user_id == user.id:
+        template = (
+            "_linhas_usuarios.html"
+            if request.headers.get("HX-Request")
+            else "usuarios.html"
+        )
         return _usuarios_response(
             request,
             session,
             user,
-            "usuarios.html",
+            template,
             erro="não pode excluir a si mesmo",
             status_code=400,
         )

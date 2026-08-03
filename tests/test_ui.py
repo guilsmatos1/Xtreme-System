@@ -2835,6 +2835,27 @@ def test_ui_admin_nao_pode_se_autoexcluir(client: TestClient) -> None:
     assert "não pode excluir a si mesmo" in resp.text.lower()
 
 
+def test_ui_admin_autoexclusao_htmx_retorna_apenas_linhas(client: TestClient) -> None:
+    """Erro de autoexclusão não deve substituir o alvo HTMX pela página inteira."""
+    _login_admin(client)
+    token_resp = client.post("/login", data={"username": "admin", "password": "senha"})
+    token = token_resp.json()["access_token"]
+    usuarios = client.get(
+        "/usuarios", headers={"Authorization": f"Bearer {token}"}
+    ).json()
+    admin_id = next(u["id"] for u in usuarios if u["username"] == "admin")
+
+    resp = client.post(
+        f"/ui/usuarios/{admin_id}/excluir",
+        headers={"HX-Request": "true"},
+    )
+
+    assert resp.status_code == 400
+    assert '<tbody id="linhas"' in resp.text
+    assert "não pode excluir a si mesmo" in resp.text.lower()
+    assert "<html" not in resp.text.lower()
+
+
 def test_ui_admin_troca_senha_de_outro(client: TestClient) -> None:
     """Admin pode trocar a senha de outro usuário pela UI."""
     _login_admin(client)
