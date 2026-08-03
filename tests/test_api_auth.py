@@ -40,9 +40,22 @@ def _token(client: TestClient, username: str) -> str:
     return str(resp.json()["access_token"])
 
 
-def test_login_senha_errada(client: TestClient) -> None:
+def test_login_senha_errada(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
     resp = client.post("/login", data={"username": "admin", "password": "x"})
     assert resp.status_code == 401
+    assert "authentication_failed" in caplog.text
+    assert "admin" in caplog.text
+
+
+def test_login_registra_sucesso(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    resp = client.post("/login", data={"username": "admin", "password": "senha"})
+    assert resp.status_code == 200
+    assert "authentication_succeeded" in caplog.text
+    assert "admin" in caplog.text
 
 
 def test_get_sem_token(client: TestClient) -> None:

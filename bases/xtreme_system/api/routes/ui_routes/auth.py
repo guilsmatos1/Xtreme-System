@@ -38,6 +38,7 @@ def ui_login(
         or not user.ativo
         or not auth.verify_password(password, user.senha_hash)
     ):
+        logger.warning("authentication_failed", username=username, channel="ui")
         config_empresa = empresa.get_config(session)
         return templates.TemplateResponse(
             request,
@@ -46,6 +47,7 @@ def ui_login(
             status_code=401,
         )
     token = auth.create_access_token(user.username)
+    logger.info("authentication_succeeded", username=user.username, channel="ui")
     resp = RedirectResponse("/ui/veiculos", status_code=303)
     resp.set_cookie(
         "access_token",

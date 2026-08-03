@@ -3,6 +3,7 @@
 from datetime import date
 from typing import Annotated, Any
 
+import structlog
 from fastapi import Depends, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -40,6 +41,7 @@ from xtreme_system.workflow.core import (
 )
 
 AUDITORIA_LIMIT_MAX = 200
+logger = structlog.get_logger(__name__)
 
 # ---- Health check (sem auth) ----
 
@@ -80,8 +82,10 @@ def login(
         or not user.ativo
         or not auth.verify_password(form.password, user.senha_hash)
     ):
+        logger.warning("authentication_failed", username=form.username, channel="api")
         raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
     token = auth.create_access_token(user.username)
+    logger.info("authentication_succeeded", username=user.username, channel="api")
     return auth.Token(access_token=token)
 
 
