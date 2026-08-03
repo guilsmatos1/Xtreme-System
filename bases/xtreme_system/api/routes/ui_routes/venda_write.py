@@ -205,7 +205,7 @@ def _validar_venda(
     dados_venda: dict[str, Any],
     obj: venda.Venda | None,
 ) -> venda.VendaCreate | venda.VendaUpdate:
-    dados_permitidos = perfil.filtrar_campos_form_ocultos(user, "vendas", dados_venda)
+    dados_permitidos = perfil.campos_form_visiveis(user, "vendas", dados_venda)
     data: venda.VendaCreate | venda.VendaUpdate
     if obj is None:
         data = venda.VendaCreate.model_validate(dados_permitidos)

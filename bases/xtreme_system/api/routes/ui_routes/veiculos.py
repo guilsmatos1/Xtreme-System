@@ -369,7 +369,7 @@ async def _atualizar_veiculo(
     obj = found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
     dados_form = dict(form)
-    perfil.filtrar_campos_form_ocultos(user, "veiculos", dados_form)
+    dados_form = perfil.campos_form_visiveis(user, "veiculos", dados_form)
 
     try:
         data = veiculo.VeiculoUpdate.model_validate(dados_form)

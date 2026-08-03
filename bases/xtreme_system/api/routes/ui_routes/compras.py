@@ -445,7 +445,7 @@ async def _criar_compra(  # noqa: PLR0911
 
     try:
         data = compra.CompraCreate.model_validate(
-            perfil.filtrar_campos_form_ocultos(
+            perfil.campos_form_visiveis(
                 user,
                 "compras",
                 {

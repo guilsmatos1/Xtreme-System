@@ -743,7 +743,7 @@ def test_crud_ui_create_filtra_campos_do_perfil(
         return data
 
     monkeypatch.setattr(
-        "xtreme_system.api.crud_ui.routes.perfil.filtrar_campos_form_ocultos",
+        "xtreme_system.api.crud_ui.routes.perfil.campos_form_visiveis",
         filtrar,
     )
     recebido: list[_StubSchema] = []

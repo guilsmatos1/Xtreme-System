@@ -159,7 +159,7 @@ def test_campos_protegidos_de_veiculos_tem_mapa_de_form() -> None:
     }
 
 
-def test_filtrar_campos_form_ocultos_remove_inputs_mapeados(
+def test_campos_form_visiveis_does_not_mutate_inputs(
     db_session: Session,
 ) -> None:
     vendedores = perfil.Perfil(
@@ -172,9 +172,10 @@ def test_filtrar_campos_form_ocultos_remove_inputs_mapeados(
     vendedor = _usuario(db_session, usuario.Papel.funcionario, vendedores)
     data = {"valor_compra": "1000", "observacoes": "ok"}
 
-    perfil.filtrar_campos_form_ocultos(vendedor, "compras", data)
+    filtered_data = perfil.campos_form_visiveis(vendedor, "compras", data)
 
-    assert data == {"observacoes": "ok"}
+    assert data == {"valor_compra": "1000", "observacoes": "ok"}
+    assert filtered_data == {"observacoes": "ok"}
 
 
 def test_operacoes_sao_opt_in(db_session: Session) -> None:
