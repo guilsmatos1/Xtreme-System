@@ -265,68 +265,6 @@
     </form>
   </div>
 </div>
-<script>
-(function () {
-  function setupReference(input) {
-    var hidden = document.getElementById(input.id.replace('-input', '-search'));
-    var list = document.getElementById(input.getAttribute('list'));
-    var more = document.querySelector('[data-reference-list="' + list.id + '"]');
-    if (!hidden || !list || !more) return;
-
-    var offset = 0;
-    var query = '';
-    var requestNumber = 0;
-    var selectedId = input.dataset.selectedId || hidden.value || '';
-
-    function optionFor(item) {
-      var option = document.createElement('option');
-      option.value = item.label;
-      option.dataset.id = item.id;
-      return option;
-    }
-
-    function sync() {
-      var match = Array.prototype.slice.call(list.options).filter(function (option) {
-        return option.value === input.value;
-      })[0];
-      hidden.value = match ? match.dataset.id || '' : '';
-    }
-
-    function load(reset, ids) {
-      if (reset) {
-        offset = 0;
-        query = input.value.trim();
-        list.innerHTML = '';
-      }
-      var request = ++requestNumber;
-      var params = new URLSearchParams({ limit: '20', offset: String(offset) });
-      if (query) params.set('q', query);
-      (ids || []).forEach(function (id) { params.append('ids', id); });
-      fetch(input.dataset.referenceUrl + '?' + params.toString())
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          if (request !== requestNumber) return;
-          data.items.forEach(function (item) { list.appendChild(optionFor(item)); });
-          more.hidden = !data.has_more;
-          offset += data.items.length;
-          sync();
-        })
-        .catch(function () { more.hidden = true; });
-    }
-
-    input.addEventListener('input', function () {
-      selectedId = '';
-      hidden.value = '';
-      load(true);
-    });
-    input.addEventListener('change', sync);
-    more.addEventListener('click', function () { load(false); });
-    load(true, selectedId ? [selectedId] : []);
-  }
-
-  document.querySelectorAll('[data-reference-url]').forEach(setupReference);
-})();
-</script>
 {% if not veiculo %}
 <script>
 (function () {
