@@ -1,20 +1,16 @@
 """HTMX routes for documento do veículo."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import Depends, File, Request, UploadFile
-from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session
+from fastapi import Depends
 
-from xtreme_system.api.deps import SessionDep, found, require_operacao, templates
-from xtreme_system.api.routes.ui_routes.upload_paths import (
-    uploads_dir,
+from xtreme_system.api.deps import require_operacao
+from xtreme_system.api.routes.ui_routes.attachment_routes import (
+    AttachmentRouteConfig,
+    callback_from,
+    register_attachment_routes,
 )
-from xtreme_system.api.routes.ui_routes.uploads import (
-    excluir_anexo_entidade,
-    pending_upload_paths,
-    salvar_anexos_entidade,
-)
+from xtreme_system.api.routes.ui_routes.upload_paths import uploads_dir
 from xtreme_system.api.setup import app
 from xtreme_system.documento_veiculo import core as documento_veiculo
 from xtreme_system.usuario import core as usuario
@@ -25,102 +21,32 @@ _DocumentoDep = Annotated[
 ]
 
 
-def _documentos_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    veiculo_id: int,
-    *,
-    action_oob: bool = False,
-) -> HTMLResponse:
-    item = found(veiculo.get(session, veiculo_id), "Veículo")
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request,
-        "_modal_documentos_veiculo.html",
-        {
-            "veiculo": item,
-            "user": user,
-            "action_oob": action_oob,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-    )
+def _get_veiculo(session: Any, item_id: int) -> Any:
+    return veiculo.get(session, item_id)
 
 
-def _documentos_erro_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    veiculo_id: int,
-    erro: str,
-) -> HTMLResponse:
-    item = found(veiculo.get(session, veiculo_id), "Veículo")
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request,
-        "_modal_documentos_veiculo.html",
-        {
-            "veiculo": item,
-            "user": user,
-            "erro": erro,
-            "action_oob": False,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-        status_code=400,
-    )
-
-
-@app.get("/ui/veiculos/{veiculo_id}/documentos")
-def ui_veiculo_documentos(
-    request: Request,
-    session: SessionDep,
-    user: _DocumentoDep,
-    veiculo_id: int,
-) -> HTMLResponse:
-    return _documentos_modal(request, session, user, veiculo_id)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/documentos")
-def ui_veiculo_documentos_upload(
-    request: Request,
-    session: SessionDep,
-    user: _DocumentoDep,
-    veiculo_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    found(veiculo.get(session, veiculo_id), "Veículo")
-    erro = salvar_anexos_entidade(
-        session,
-        upload_dir=uploads_dir(veiculo_id) / "documentos",
-        url_prefix=f"/static/uploads/veiculos/{veiculo_id}/documentos",
-        create_fn=documento_veiculo.create,
+register_attachment_routes(
+    app,
+    AttachmentRouteConfig(
+        name="veiculo_documentos",
+        path="/ui/veiculos/{veiculo_id}/documentos",
+        parent_param="veiculo_id",
+        attachment_param="doc_id",
+        parent_loader=_get_veiculo,
+        attachment_loader=callback_from(globals(), "documento_veiculo.get"),
+        parent_label="Veículo",
+        parent_context_key="veiculo",
+        template="_modal_documentos_veiculo.html",
+        upload_dir=lambda item_id: uploads_dir(item_id) / "documentos",
+        url_prefix=lambda item_id: f"/static/uploads/veiculos/{item_id}/documentos",
+        create_fn=callback_from(globals(), "documento_veiculo.create"),
         schema=documento_veiculo.DocumentoVeiculoCreate,
         fk_field="veiculo_id",
-        fk_id=veiculo_id,
-        arquivos=documentos,
-        actor_id=user.id,
-    )
-    if erro:
-        return _documentos_erro_modal(request, session, user, veiculo_id, erro)
-    return _documentos_modal(request, session, user, veiculo_id, action_oob=True)
-
-
-@app.post("/ui/veiculos/{veiculo_id}/documentos/{doc_id}/excluir")
-def ui_veiculo_documentos_excluir(
-    request: Request,
-    session: SessionDep,
-    user: _DocumentoDep,
-    veiculo_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    doc = found(documento_veiculo.get(session, doc_id), "Documento")
-    excluir_anexo_entidade(
-        session,
-        anexo=doc,
-        parent_field="veiculo_id",
-        parent_id=veiculo_id,
-        delete_fn=documento_veiculo.delete,
-        actor_id=user.id,
-        not_found_detail="Documento não encontrado",
-    )
-    return _documentos_modal(request, session, user, veiculo_id, action_oob=True)
+        delete_fn=callback_from(globals(), "documento_veiculo.delete"),
+        upload_field="documentos",
+        attachment_label="Documento",
+        get_dependency=_DocumentoDep,
+        upload_dependency=_DocumentoDep,
+        delete_dependency=_DocumentoDep,
+    ),
+)

@@ -3,7 +3,7 @@
 from typing import Annotated, Any
 
 import structlog
-from fastapi import Depends, File, Request, UploadFile
+from fastapi import Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from markupsafe import Markup
 from sqlalchemy.orm import Session
@@ -26,13 +26,13 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
+from xtreme_system.api.routes.ui_routes.attachment_routes import (
+    AttachmentRouteConfig,
+    callback_from,
+    register_attachment_routes,
+)
 from xtreme_system.api.routes.ui_routes.upload_paths import (
     uploads_cliente_dir,
-)
-from xtreme_system.api.routes.ui_routes.uploads import (
-    excluir_anexo_entidade,
-    pending_upload_paths,
-    salvar_anexos_entidade,
 )
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
@@ -74,6 +74,11 @@ _EditarClienteDep = Annotated[
 _ExcluirDocumentoDep = Annotated[
     usuario.Usuario, Depends(require_operacao("clientes", "excluir_documento"))
 ]
+
+
+def _get_uploads_cliente_dir(item_id: int) -> Any:
+    return uploads_cliente_dir(item_id)
+
 
 # ---- Clientes (UI) ----
 
@@ -137,105 +142,31 @@ def _veiculos_cliente_modal(
     )
 
 
-def _documentos_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    cliente_id: int,
-    *,
-    action_oob: bool = False,
-) -> HTMLResponse:
-    item = found(cliente.get(session, cliente_id), "Cliente")
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request,
-        "_modal_documentos_cliente.html",
-        {
-            "cliente": item,
-            "user": user,
-            "action_oob": action_oob,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-    )
-
-
-def _documentos_erro_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    cliente_id: int,
-    erro: str,
-) -> HTMLResponse:
-    item = found(cliente.get(session, cliente_id), "Cliente")
-    session.refresh(item)
-    return templates.TemplateResponse(
-        request,
-        "_modal_documentos_cliente.html",
-        {
-            "cliente": item,
-            "user": user,
-            "erro": erro,
-            "action_oob": False,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-        status_code=400,
-    )
-
-
-@app.get("/ui/clientes/{cliente_id}/documentos")
-def ui_cliente_documentos(
-    request: Request,
-    session: SessionDep,
-    user: _EditarClienteDep,
-    cliente_id: int,
-) -> HTMLResponse:
-    return _documentos_modal(request, session, user, cliente_id)
-
-
-@app.post("/ui/clientes/{cliente_id}/documentos")
-def ui_cliente_documentos_upload(
-    request: Request,
-    session: SessionDep,
-    user: _EditarClienteDep,
-    cliente_id: int,
-    documentos: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    found(cliente.get(session, cliente_id), "Cliente")
-    erro = salvar_anexos_entidade(
-        session,
-        upload_dir=uploads_cliente_dir(cliente_id),
-        url_prefix=f"/static/uploads/clientes/{cliente_id}/documentos",
-        create_fn=imagem_documento_cliente.create,
+register_attachment_routes(
+    app,
+    AttachmentRouteConfig(
+        name="cliente_documentos",
+        path="/ui/clientes/{cliente_id}/documentos",
+        parent_param="cliente_id",
+        attachment_param="doc_id",
+        parent_loader=callback_from(globals(), "cliente.get"),
+        attachment_loader=callback_from(globals(), "imagem_documento_cliente.get"),
+        parent_label="Cliente",
+        parent_context_key="cliente",
+        template="_modal_documentos_cliente.html",
+        upload_dir=_get_uploads_cliente_dir,
+        url_prefix=lambda item_id: f"/static/uploads/clientes/{item_id}/documentos",
+        create_fn=callback_from(globals(), "imagem_documento_cliente.create"),
         schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
         fk_field="cliente_id",
-        fk_id=cliente_id,
-        arquivos=documentos,
-        actor_id=user.id,
-    )
-    if erro:
-        return _documentos_erro_modal(request, session, user, cliente_id, erro)
-    return _documentos_modal(request, session, user, cliente_id, action_oob=True)
-
-
-@app.post("/ui/clientes/{cliente_id}/documentos/{doc_id}/excluir")
-def ui_cliente_documentos_excluir(
-    request: Request,
-    session: SessionDep,
-    user: _ExcluirDocumentoDep,
-    cliente_id: int,
-    doc_id: int,
-) -> HTMLResponse:
-    doc = found(imagem_documento_cliente.get(session, doc_id), "Documento")
-    excluir_anexo_entidade(
-        session,
-        anexo=doc,
-        parent_field="cliente_id",
-        parent_id=cliente_id,
-        delete_fn=imagem_documento_cliente.delete,
-        actor_id=user.id,
-        not_found_detail="Documento não encontrado",
-    )
-    return _documentos_modal(request, session, user, cliente_id, action_oob=True)
+        delete_fn=callback_from(globals(), "imagem_documento_cliente.delete"),
+        upload_field="documentos",
+        attachment_label="Documento",
+        get_dependency=_EditarClienteDep,
+        upload_dependency=_EditarClienteDep,
+        delete_dependency=_ExcluirDocumentoDep,
+    ),
+)
 
 
 @app.get("/ui/clientes")
