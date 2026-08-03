@@ -2,11 +2,14 @@
 
 from collections.abc import Callable
 
+import structlog
 from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
+
+logger = structlog.get_logger(__name__)
 
 
 def criar_aninhado_ou_resposta_conflito[EntityT, CreateDataT](
@@ -28,4 +31,5 @@ def rollback_se_criou_aninhados(
     session: Session, *dados_aninhados: object | None
 ) -> None:
     if any(dado is not None for dado in dados_aninhados):
+        logger.warning("nested_write_rolled_back")
         session.rollback()
