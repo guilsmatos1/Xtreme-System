@@ -4,12 +4,54 @@ import threading
 import time
 from collections.abc import Callable
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
+
+
+def test_notificacao_em_background_loga_correlacao_e_erros(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    log = MagicMock()
+    logger = MagicMock()
+    logger.bind.return_value = log
+    monkeypatch.setattr(whatsapp, "logger", logger)
+
+    monkeypatch.setattr(whatsapp, "_enviar", lambda _config, _texto: None)
+    whatsapp._notificar_em_background(  # noqa: SLF001
+        "http://evolution",
+        "chave",
+        "instancia",
+        "grupo",
+        "texto",
+        4312,
+        "req-test-123",
+    )
+
+    logger.bind.assert_called_once_with(venda_id=4312, request_id="req-test-123")
+    log.info.assert_called_once_with("whatsapp_notify_sent")
+
+    log.reset_mock()
+
+    def _falha_inesperada(_config: whatsapp.WhatsappConfig, _texto: str) -> None:
+        raise RuntimeError("configuração inválida")
+
+    monkeypatch.setattr(whatsapp, "_enviar", _falha_inesperada)
+    whatsapp._notificar_em_background(  # noqa: SLF001
+        "http://evolution",
+        "chave",
+        "instancia",
+        "grupo",
+        "texto",
+        4312,
+        "req-test-123",
+    )
+
+    log.exception.assert_called_once_with("whatsapp_notify_error")
 
 
 @pytest.fixture
