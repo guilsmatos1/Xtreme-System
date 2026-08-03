@@ -1980,6 +1980,50 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     assert "Carlos Compra" not in csv_resp.text
 
 
+def test_ui_compra_conflito_de_idempotencia_nao_duplica_compra_nem_caixa(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _client_with_failing_final_commit() as (client, session, _fail_commit):
+        _login_admin(client)
+        headers = _admin_headers(client)
+        veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+        veiculo_obj = veiculo.get(session, veiculo_id)
+        assert veiculo_obj is not None
+        caixa.criar_lancamento_veiculo(session, veiculo_obj)
+        cliente_id = _criar_cliente(
+            client, headers, "Cliente Idempotente", "45678912301"
+        )
+        dados = {
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "idempotency_key": "compra-race-1",
+            "data_compra": "2026-07-09",
+            "valor_compra": "84000.00",
+        }
+
+        primeira = client.post("/ui/compras", data=dados)
+        assert primeira.status_code == 200
+
+        lookup_original = compra.get_by_idempotency_key
+        lookup_calls = 0
+
+        def lookup_com_race(session: Session, key: str) -> compra.Compra | None:
+            nonlocal lookup_calls
+            lookup_calls += 1
+            if lookup_calls == 1:
+                return None
+            return lookup_original(session, key)
+
+        monkeypatch.setattr(compra, "get_by_idempotency_key", lookup_com_race)
+
+        segunda = client.post("/ui/compras", data=dados)
+
+        assert segunda.status_code == 200
+        assert lookup_calls == 2
+        assert len(compra.list_all(session)) == 1
+        assert len(caixa.list_all(session)) == 1
+
+
 def test_ui_compra_de_veiculo_novo_separa_preco_anunciado_do_custo(
     client: TestClient,
 ) -> None:
