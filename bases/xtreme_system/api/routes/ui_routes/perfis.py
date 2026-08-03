@@ -169,11 +169,23 @@ async def ui_perfil_atualizar(
 ) -> HTMLResponse:
     obj = found(perfil.get(session, item_id), "Perfil")
     form = await request.form()
-    data = perfil.PerfilUpdate(
-        nome=str(form.get("nome", "")),
-        paginas=form.getlist("paginas"),
-        restricoes=_parse_restricoes(form),
-    )
+    try:
+        data = perfil.PerfilUpdate(
+            nome=str(form.get("nome", "")),
+            paginas=form.getlist("paginas"),
+            restricoes=_parse_restricoes(form),
+        )
+    except ValidationError as exc:
+        return templates.TemplateResponse(
+            request,
+            "_form_perfil.html",
+            {
+                "perfil": obj,
+                "paginas_disponiveis": perfil.PAGINAS,
+                "erro": validation_error_detail(exc),
+            },
+            status_code=400,
+        )
     try:
         perfil.update(session, obj, data, user.id)
     except IntegrityError:
