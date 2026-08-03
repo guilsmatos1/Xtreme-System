@@ -3428,6 +3428,66 @@ def test_ui_nao_exclui_investidor_com_lancamentos(client: TestClient) -> None:
     assert "Carlos" in resp.text
 
 
+def test_ui_lancamentos_crud_manual(client: TestClient) -> None:
+    headers = _admin_headers(client)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+
+    _login_admin(client)
+    novo = client.get(f"/ui/investidores/{investidor_id}/lancamentos/novo")
+    assert novo.status_code == 200
+    assert "Novo lançamento" in novo.text
+
+    criado = client.post(
+        f"/ui/investidores/{investidor_id}/lancamentos",
+        data={
+            "tipo": "aporte",
+            "valor": "1000.00",
+            "descricao": "Aporte manual",
+        },
+    )
+    assert criado.status_code == 200
+    lancamentos = client.get("/lancamentos-caixa", headers=headers).json()
+    manual = next(
+        item
+        for item in lancamentos
+        if item["investidor_id"] == investidor_id
+        and item["origem"] == "manual"
+        and item["descricao"] == "Aporte manual"
+    )
+
+    editar = client.get(
+        f"/ui/investidores/{investidor_id}/lancamentos/{manual['id']}/editar"
+    )
+    assert editar.status_code == 200
+    assert "Editar lançamento" in editar.text
+
+    atualizado = client.post(
+        f"/ui/investidores/{investidor_id}/lancamentos/{manual['id']}",
+        data={
+            "tipo": "aporte",
+            "valor": "1250.00",
+            "descricao": "Aporte atualizado",
+        },
+    )
+    assert atualizado.status_code == 200
+    atualizado_item = next(
+        item
+        for item in client.get("/lancamentos-caixa", headers=headers).json()
+        if item["id"] == manual["id"]
+    )
+    assert atualizado_item["valor"] == "1250.00"
+    assert atualizado_item["descricao"] == "Aporte atualizado"
+
+    excluido = client.post(
+        f"/ui/investidores/{investidor_id}/lancamentos/{manual['id']}/excluir"
+    )
+    assert excluido.status_code == 200
+    assert all(
+        item["id"] != manual["id"]
+        for item in client.get("/lancamentos-caixa", headers=headers).json()
+    )
+
+
 def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(
     client: TestClient,
 ) -> None:
@@ -3459,8 +3519,16 @@ def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(
     assert resp.status_code == 400
 
 
-def test_lancamento_de_veiculo_nao_pode_ser_alterado_via_ui(
-    client: TestClient,
+@pytest.mark.parametrize(
+    ("method", "suffix", "data"),
+    [
+        ("get", "/editar", None),
+        ("post", "", {"valor": "1.00"}),
+        ("post", "/excluir", None),
+    ],
+)
+def test_lancamento_automatico_nao_pode_ser_alterado_via_ui(
+    client: TestClient, method: str, suffix: str, data: dict[str, str] | None
 ) -> None:
     headers = _admin_headers(client)
     inv = client.post("/investidores", json={"nome": "Dora UI"}, headers=headers).json()
@@ -3478,33 +3546,33 @@ def test_lancamento_de_veiculo_nao_pode_ser_alterado_via_ui(
         },
         headers=headers,
     ).json()
+    cliente_id = _criar_cliente(client, headers, "Comprador Dora UI", "32132132155")
+    compra_resp = client.post(
+        "/compras",
+        json={
+            "cliente_id": cliente_id,
+            "veiculo_id": v["id"],
+            "data_compra": "2026-07-09",
+            "valor_compra": "17000.00",
+        },
+        headers=headers,
+    )
+    assert compra_resp.status_code == 201
     lancamentos = client.get("/lancamentos-caixa", headers=headers).json()
-    lanc_id = next(item["id"] for item in lancamentos if item["veiculo_id"] == v["id"])
+    automatico = next(item for item in lancamentos if item["veiculo_id"] == v["id"])
 
     _login_admin(client)
-    for method, path, data in (
-        (
-            "get",
-            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}/editar",
-            None,
-        ),
-        (
-            "post",
-            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}",
-            {"valor": "1.00"},
-        ),
-        (
-            "post",
-            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}/excluir",
-            None,
-        ),
-    ):
-        if data is None:
-            resp = getattr(client, method)(path)
-        else:
-            resp = getattr(client, method)(path, data=data)
-        assert resp.status_code == 400
-        assert "Lançamento automático não pode ser alterado manualmente" in resp.text
+    path = (
+        f"/ui/investidores/{automatico['investidor_id']}"
+        f"/lancamentos/{automatico['id']}{suffix}"
+    )
+    resp = client.get(path) if method == "get" else client.post(path, data=data)
+    assert resp.status_code == 400
+    assert "Lançamento automático não pode ser alterado manualmente" in resp.text
+    assert any(
+        item["id"] == automatico["id"]
+        for item in client.get("/lancamentos-caixa", headers=headers).json()
+    )
 
 
 def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
