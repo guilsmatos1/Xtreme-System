@@ -66,7 +66,7 @@
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
             <span class="field__label">Preço Anunciado (R$) *</span>
-            <input class="input" name="preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
+            <input class="input" name="preco" data-testid="veiculo-edit-preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
           </label>
           {% endif %}
 
@@ -236,7 +236,7 @@
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
         {% if veiculo %}
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="veiculo-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
         <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
         <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>

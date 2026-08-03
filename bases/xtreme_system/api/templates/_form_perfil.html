@@ -12,7 +12,7 @@
         <div class="form-grid">
           <label class="field field--full">
             <span class="field__label">Nome</span>
-            <input class="input" name="nome" value="{{ perfil.nome if perfil else '' }}" required autofocus>
+            <input class="input" name="nome" data-testid="perfil-form-nome" value="{{ perfil.nome if perfil else '' }}" required autofocus>
           </label>
         </div>
         <div class="field field--full" style="margin-top:var(--s-4)">
@@ -60,7 +60,7 @@
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="perfil-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

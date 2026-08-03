@@ -295,7 +295,13 @@
       msg.textContent = e.detail.message;
     });
     document.body.addEventListener("htmx:close-modal", function () {
-      document.getElementById("modal").innerHTML = "";
+      // HX-Trigger fires before htmx swaps/settles the response that carried
+      // it, so clearing #modal here synchronously would race htmx's own
+      // swap of that same element and silently break any OOB swaps (table
+      // rows, pagination, stats) bundled in the same response.
+      setTimeout(function () {
+        document.getElementById("modal").innerHTML = "";
+      }, 0);
     });
 
     // Replace the native confirm() behind hx-confirm with a styled modal.

@@ -229,7 +229,7 @@
           </div>
           {% endif %}
           {% if delete_allowed %}
-          <button class="mmgr__del" type="button" hx-post="{{ delete_url_prefix }}{{ anexo.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="{{ delete_confirm }}" aria-label="{{ delete_label }}">{{ icon("trash") }}</button>
+          <button class="mmgr__del" type="button" data-testid="{{ title_id }}-delete-{{ anexo.id }}" hx-post="{{ delete_url_prefix }}{{ anexo.id }}/excluir" hx-target="#modal" hx-swap="innerHTML" hx-confirm="{{ delete_confirm }}" aria-label="{{ delete_label }}">{{ icon("trash") }}</button>
           {% endif %}
         </div>
         {% endfor %}
@@ -241,14 +241,14 @@
     {% if upload_allowed %}
     <form class="mmgr__upload" hx-post="{{ upload_url }}" hx-target="#modal" hx-swap="innerHTML" hx-encoding="multipart/form-data" enctype="multipart/form-data">
       <label class="mmgr__drop">
-        <input type="file" name="{{ input_name }}" accept="{{ accept }}" multiple required
+        <input type="file" name="{{ input_name }}" data-testid="{{ title_id }}-upload-input" accept="{{ accept }}" multiple required
                onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : '{{ drop_text }}'">
         <span class="mmgr__drop-icon">{{ icon(drop_icon) }}</span>
         <span class="mmgr__drop-text">{{ drop_text }}</span>
         <span class="mmgr__drop-hint">{{ drop_hint }}</span>
       </label>
       <div class="mmgr__upload-actions">
-        <button class="btn btn--primary" type="submit">{{ icon("plus") }}{{ submit_text }}</button>
+        <button class="btn btn--primary" type="submit" data-testid="{{ title_id }}-upload-submit">{{ icon("plus") }}{{ submit_text }}</button>
       </div>
     </form>
     {% endif %}

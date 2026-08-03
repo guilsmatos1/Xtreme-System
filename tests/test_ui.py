@@ -2467,6 +2467,47 @@ def test_ui_exportacao_respeita_permissao_de_campo(client: TestClient) -> None:
     assert "85000.00" not in resp.text
 
 
+def test_ui_clientes_modal_cadastro_cria_cliente(client: TestClient) -> None:
+    _login_admin(client)
+
+    novo = client.get("/ui/clientes/todos/novo")
+    assert novo.status_code == 200
+    assert 'data-testid="cliente-form-name"' in novo.text
+
+    criado = client.post(
+        "/ui/clientes/todos",
+        data={
+            "nome": "Cliente Modal Teste",
+            "documento": "12345678905",
+            "tipo": "pessoa_fisica",
+            "email": "cliente.modal@example.com",
+            "telefone": "11988887777",
+        },
+    )
+
+    assert criado.status_code == 200
+    assert "Cliente Modal Teste" in criado.text
+
+
+def test_ui_clientes_modal_cadastro_preserva_erro_de_validacao(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/clientes/todos",
+        data={
+            "nome": "Cliente Documento Invalido",
+            "documento": "abc",
+            "tipo": "pessoa_fisica",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert 'data-testid="cliente-form-name"' in resp.text
+    assert "Cliente Documento Invalido" not in client.get("/ui/clientes/todos").text
+
+
 def _login_admin(client: TestClient) -> None:
     client.post("/ui/login", data={"username": "admin", "password": "senha"})
 

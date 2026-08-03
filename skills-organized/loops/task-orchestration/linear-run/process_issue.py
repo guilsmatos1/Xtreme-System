@@ -69,7 +69,7 @@ ESTIMATED_EFFORT_RE = re.compile(
 # finishes loading the same row reads "model: loading", which this does not match.
 # Both groups are captured: the effort alone is not enough to prove codex honoured
 # the --model flag instead of silently falling back to another model.
-VARIANT_RE = re.compile(r"model:\s*(\S+)\s+(low|medium|high)\b", re.IGNORECASE)
+VARIANT_RE = re.compile(r"model:\s*(\S+)\s+(low|medium|high|xhigh)\b", re.IGNORECASE)
 VARIANT_CONFIRM_TIMEOUT_S = 20.0
 WORKER_TITLE_PREFIX = "CODEX | "
 

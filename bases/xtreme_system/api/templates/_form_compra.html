@@ -49,7 +49,7 @@
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
             <span class="field__label">Valor da compra *</span>
-            <input class="input" name="valor_compra" type="text" inputmode="decimal" value="{{ compra.valor_compra }}" required>
+            <input class="input" name="valor_compra" data-testid="compra-edit-value" type="text" inputmode="decimal" value="{{ compra.valor_compra }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
@@ -258,7 +258,7 @@
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
         {% if compra %}
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="compra-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
         <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">{{ ui.icon("arrow-left") }} Voltar</button>
         <button type="button" class="btn btn--primary" id="wizard-proximo" data-testid="compra-wizard-next">Próximo {{ ui.icon("arrow-right") }}</button>

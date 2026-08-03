@@ -12,23 +12,23 @@
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Tipo</span>
-            <select class="select" name="tipo" required>
+            <select class="select" name="tipo" data-testid="lancamento-form-tipo" required>
   {% for t in tipos %}<option value="{{ t.value }}"{% if lancamento and lancamento.tipo == t %} selected{% endif %}>{{ 'Aporte' if t.value == 'aporte' else 'Saque' }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Valor (R$)</span>
-            <input class="input" name="valor" type="text" inputmode="decimal" value="{{ lancamento.valor if lancamento else '' }}" required>
+            <input class="input" name="valor" data-testid="lancamento-form-valor" type="text" inputmode="decimal" value="{{ lancamento.valor if lancamento else '' }}" required>
           </label>
           <label class="field field--full">
             <span class="field__label">Descrição</span>
-  <input class="input" name="descricao" value="{{ lancamento.descricao if lancamento else '' }}" autofocus>
+  <input class="input" name="descricao" data-testid="lancamento-form-descricao" value="{{ lancamento.descricao if lancamento else '' }}" autofocus>
           </label>
         </div>
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="lancamento-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

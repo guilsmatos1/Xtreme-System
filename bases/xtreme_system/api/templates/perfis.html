@@ -8,7 +8,7 @@
     <p class="page-head__subtitle">Controle quais páginas cada perfil de usuário pode acessar</p>
   </div>
   <div class="page-head__actions">
-    <button class="btn btn--primary" hx-get="/ui/perfis/novo" hx-target="#modal" hx-swap="innerHTML">
+    <button class="btn btn--primary" data-testid="perfis-create" hx-get="/ui/perfis/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Novo perfil
     </button>
   </div>

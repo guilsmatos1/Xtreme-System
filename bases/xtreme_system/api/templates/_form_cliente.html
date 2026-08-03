@@ -12,16 +12,16 @@
         <div class="form-grid">
           <label class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="nome" value="{{ cliente.nome if cliente else '' }}" required autofocus>
+            <input class="input" name="nome" data-testid="cliente-form-name" value="{{ cliente.nome if cliente else '' }}" required autofocus>
           </label>
 
           <label class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="documento" value="{{ cliente.documento if cliente else '' }}" required>
+            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ cliente.documento if cliente else '' }}" required>
           </label>
           <label class="field">
             <span class="field__label">Tipo *</span>
-            <select class="select" name="tipo" required>
+            <select class="select" name="tipo" data-testid="cliente-form-type" required>
               {% for t in tipos %}
               <option value="{{ t.value }}"{% if cliente and cliente.tipo == t %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
               {% endfor %}
@@ -30,11 +30,11 @@
 
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="email" type="email" value="{{ cliente.email if cliente and cliente.email else '' }}">
+            <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ cliente.email if cliente and cliente.email else '' }}">
           </label>
           <label class="field">
             <span class="field__label">Telefone</span>
-            <input class="input" name="telefone" value="{{ cliente.telefone if cliente and cliente.telefone else '' }}">
+            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ cliente.telefone if cliente and cliente.telefone else '' }}">
           </label>
 
           <label class="field field--full">
@@ -68,7 +68,7 @@
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="cliente-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

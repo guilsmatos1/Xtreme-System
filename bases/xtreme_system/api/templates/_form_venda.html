@@ -34,7 +34,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" type="text" inputmode="decimal" value="{{ venda.valor_venda }}" required>
+            <input class="input" name="valor_venda" data-testid="venda-edit-value" type="text" inputmode="decimal" value="{{ venda.valor_venda }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
@@ -219,12 +219,12 @@
           </label>
           <label class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
+            <input class="input" name="cli_nome" data-testid="venda-wizard-client-name" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
           </label>
           {% endif %}
           <label class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Tipo</span>
@@ -263,7 +263,7 @@
           <label class="field field--full">
             <span class="field__label">Veículo *</span>
             <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" value="{{ dados.get('veiculo_id', '') }}">
-            <input class="input" id="veiculo-input" name="veiculo_label" placeholder="Buscar por placa ou modelo" list="veiculos-list" required aria-describedby="veiculo-selecao"
+            <input class="input" id="veiculo-input" data-testid="venda-wizard-vehicle-search" name="veiculo_label" placeholder="Buscar por placa ou modelo" list="veiculos-list" required aria-describedby="veiculo-selecao"
                    value="{{ dados.get('veiculo_label', '') }}"
                    data-reference-url="/ui/vendas/referencias/veiculos"
                    data-selected-id="{{ dados.get('veiculo_id', '') }}">
@@ -295,7 +295,7 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" type="text" inputmode="decimal" value="{{ dados.get('valor_venda', '') }}" required>
+            <input class="input" name="valor_venda" data-testid="venda-wizard-value" type="text" inputmode="decimal" value="{{ dados.get('valor_venda', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
@@ -314,7 +314,7 @@
           {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
           <label class="field">
             <span class="field__label">Forma de pagamento *</span>
-            <input class="input" name="forma_pagamento" value="{{ dados.get('forma_pagamento', '') }}" required>
+            <input class="input" name="forma_pagamento" data-testid="venda-wizard-payment-method" value="{{ dados.get('forma_pagamento', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
@@ -447,11 +447,11 @@
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
         {% if venda %}
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="venda-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
-        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">{{ ui.icon("arrow-left") }} Voltar</button>
-        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo {{ ui.icon("arrow-right") }}</button>
-        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="button" class="btn btn--default" id="wizard-voltar" data-testid="venda-wizard-back" style="display:none">{{ ui.icon("arrow-left") }} Voltar</button>
+        <button type="button" class="btn btn--primary" id="wizard-proximo" data-testid="venda-wizard-next">Próximo {{ ui.icon("arrow-right") }}</button>
+        <button type="submit" class="btn btn--primary" id="wizard-salvar" data-testid="venda-wizard-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>

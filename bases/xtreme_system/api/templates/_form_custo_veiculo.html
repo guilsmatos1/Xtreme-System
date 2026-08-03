@@ -12,7 +12,7 @@
         <div class="form-grid">
           <label class="field">
             <span class="field__label">Veículo *</span>
-            <select class="select" name="veiculo_id" required>
+            <select class="select" name="veiculo_id" data-testid="custo-veiculo-form-vehicle" required>
               <option value="">Selecione</option>
               {% for veic in veiculos %}
               <option value="{{ veic.id }}"{% if custo and custo.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
@@ -21,7 +21,7 @@
           </label>
           <label class="field">
             <span class="field__label">Categoria *</span>
-            <input class="input" name="categoria" list="categorias-custo" value="{{ custo.categoria if custo else '' }}" required>
+            <input class="input" name="categoria" data-testid="custo-veiculo-form-category" list="categorias-custo" value="{{ custo.categoria if custo else '' }}" required>
             {% if not custo %}
             <datalist id="categorias-custo">
               <option value="Documentação">
@@ -42,7 +42,7 @@
           {% if not custo or pode_ver_campo(user, 'custos-veiculos', 'valor') %}
           <label class="field">
             <span class="field__label">Valor *</span>
-            <input class="input" name="valor" type="text" inputmode="decimal" value="{{ custo.valor if custo else '' }}" required>
+            <input class="input" name="valor" data-testid="custo-veiculo-form-value" type="text" inputmode="decimal" value="{{ custo.valor if custo else '' }}" required>
           </label>
           {% endif %}
           <label class="field field--full">
@@ -53,7 +53,7 @@
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="custo-veiculo-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

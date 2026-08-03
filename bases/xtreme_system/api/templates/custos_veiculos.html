@@ -12,7 +12,7 @@
       {{ ui.icon("inbox") }} Exportar dados
     </a>
     {% if is_admin(user) %}
-    <button class="btn btn--primary" hx-get="/ui/custos-veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
+    <button class="btn btn--primary" data-testid="custos-veiculos-create" hx-get="/ui/custos-veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Novo custo
     </button>
     {% endif %}

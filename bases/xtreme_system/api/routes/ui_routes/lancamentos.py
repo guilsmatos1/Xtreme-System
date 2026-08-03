@@ -45,6 +45,7 @@ def _ctx_lancamentos(
     lancamentos = list(query.order_by(order_expr).all())
     return {
         "investidor": found(investidor.get(session, investidor_id), "Investidor"),
+        "investidor_id": investidor_id,
         "lancamentos": lancamentos,
         "saldo": caixa.saldo(session, investidor_id),
         "sort": sort,

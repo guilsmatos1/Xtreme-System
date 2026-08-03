@@ -11,18 +11,18 @@
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <label class="field">
           <span class="field__label">Nome *</span>
-          <input class="input" name="nome" value="{{ item.nome if item else '' }}" required autofocus>
+          <input class="input" name="nome" data-testid="simples-form-nome" value="{{ item.nome if item else '' }}" required autofocus>
         </label>
         {% if not item and prefixo == '/ui/investidores' %}
         <label class="field">
           <span class="field__label">Valor Investido</span>
-          <input class="input" name="valor_investido" type="text" inputmode="decimal" placeholder="0,00">
+          <input class="input" name="valor_investido" data-testid="simples-form-valor-investido" type="text" inputmode="decimal" placeholder="0,00">
         </label>
         {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
-        <button type="submit" class="btn btn--primary">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" data-testid="simples-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

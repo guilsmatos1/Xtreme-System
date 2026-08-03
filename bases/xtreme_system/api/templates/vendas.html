@@ -12,7 +12,7 @@
       {{ ui.icon("inbox") }} Exportar dados
     </a>
     {% if pode_operacao(user, 'vendas', 'cadastrar') %}
-    <button class="btn btn--primary" hx-get="/ui/vendas/novo" hx-target="#modal" hx-swap="innerHTML">
+    <button class="btn btn--primary" data-testid="vendas-create" hx-get="/ui/vendas/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Nova venda
     </button>
     {% endif %}
