@@ -3382,6 +3382,54 @@ def test_lancamento_de_veiculo_nao_pode_ser_editado_ou_excluido_via_api(
     assert resp.status_code == 400
 
 
+def test_lancamento_de_veiculo_nao_pode_ser_alterado_via_ui(
+    client: TestClient,
+) -> None:
+    headers = _admin_headers(client)
+    inv = client.post("/investidores", json={"nome": "Dora UI"}, headers=headers).json()
+    v = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Kwid UI",
+            "cor": "Branco",
+            "ano": 2023,
+            "placa": "YYY8Y89",
+            "km": 500,
+            "preco": "18000.00",
+            "investidor_id": inv["id"],
+        },
+        headers=headers,
+    ).json()
+    lancamentos = client.get("/lancamentos-caixa", headers=headers).json()
+    lanc_id = next(item["id"] for item in lancamentos if item["veiculo_id"] == v["id"])
+
+    _login_admin(client)
+    for method, path, data in (
+        (
+            "get",
+            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}/editar",
+            None,
+        ),
+        (
+            "post",
+            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}",
+            {"valor": "1.00"},
+        ),
+        (
+            "post",
+            f"/ui/investidores/{inv['id']}/lancamentos/{lanc_id}/excluir",
+            None,
+        ),
+    ):
+        if data is None:
+            resp = getattr(client, method)(path)
+        else:
+            resp = getattr(client, method)(path, data=data)
+        assert resp.status_code == 400
+        assert "Lançamento automático não pode ser alterado manualmente" in resp.text
+
+
 def test_editar_preco_ou_investidor_do_veiculo_via_api_sincroniza_caixa(
     client: TestClient,
 ) -> None:
