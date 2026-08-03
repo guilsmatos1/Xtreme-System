@@ -8,7 +8,6 @@
   "image",
   "Nenhuma imagem",
   "Envie fotos deste veículo usando a área abaixo.",
-  pode_enviar_imagens,
   "/ui/veiculos/" ~ veiculo.id ~ "/imagens",
   "imagens",
   ".jpg,.jpeg,.png,.webp",
@@ -16,7 +15,6 @@
   "Arraste imagens aqui ou clique para selecionar",
   "JPG, PNG ou WEBP",
   "Enviar imagens",
-  pode_excluir_imagens,
   "/ui/veiculos/" ~ veiculo.id ~ "/imagens/",
   "Excluir esta imagem?",
   "Excluir imagem",
@@ -24,7 +22,9 @@
   "Imagem de " ~ veiculo.modelo,
   "imagem",
   "image",
-  true
+  true,
+  upload_allowed=pode_operacao(user, 'veiculos', 'enviar_imagens'),
+  delete_allowed=pode_operacao(user, 'veiculos', 'excluir_imagens')
 ) }}
 {% if action_oob %}
 {% set v = veiculo %}

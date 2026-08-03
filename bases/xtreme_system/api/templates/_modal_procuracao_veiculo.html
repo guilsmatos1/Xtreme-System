@@ -8,7 +8,6 @@
   "file",
   "Nenhum documento",
   "Envie documentos de procuração deste veículo usando a área abaixo.",
-  pode_operacao(user, 'veiculos', 'enviar_procuracao'),
   "/ui/veiculos/" ~ veiculo.id ~ "/procuracao",
   "documentos",
   ".pdf,.jpg,.jpeg,.png,.webp",
@@ -16,12 +15,13 @@
   "Arraste documentos aqui ou clique para selecionar",
   "PDF, JPG, PNG ou WEBP",
   "Enviar documentos",
-  pode_operacao(user, 'veiculos', 'excluir_procuracao'),
   "/ui/veiculos/" ~ veiculo.id ~ "/procuracao/",
   "Excluir este documento?",
   "Excluir documento",
   "Ampliar documento",
-  "Documento de procuração de " ~ veiculo.modelo
+  "Documento de procuração de " ~ veiculo.modelo,
+  upload_allowed=pode_operacao(user, 'veiculos', 'enviar_procuracao'),
+  delete_allowed=pode_operacao(user, 'veiculos', 'excluir_procuracao')
 ) }}
 {% if action_oob %}
 {% set v = veiculo %}

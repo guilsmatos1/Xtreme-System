@@ -8,7 +8,6 @@
   "file",
   "Nenhum documento",
   "Envie documentos deste veículo usando a área abaixo.",
-  true,
   "/ui/veiculos/" ~ veiculo.id ~ "/documentos",
   "documentos",
   ".pdf,.jpg,.jpeg,.png,.webp",
@@ -16,12 +15,13 @@
   "Arraste documentos aqui ou clique para selecionar",
   "PDF, JPG, PNG ou WEBP",
   "Enviar documentos",
-  true,
   "/ui/veiculos/" ~ veiculo.id ~ "/documentos/",
   "Excluir este documento?",
   "Excluir documento",
   "Ampliar documento",
-  "Documento do veículo " ~ veiculo.modelo
+  "Documento do veículo " ~ veiculo.modelo,
+  upload_allowed=pode_operacao(user, 'veiculos', 'upload_documento'),
+  delete_allowed=pode_operacao(user, 'veiculos', 'upload_documento')
 ) }}
 {% if action_oob %}
 {% set v = veiculo %}

@@ -8,7 +8,6 @@
   "file",
   "Nenhum comprovante",
   "Envie comprovantes desta compra usando a área abaixo.",
-  pode_operacao(user, 'compras', 'enviar_comprovante'),
   "/ui/compras/" ~ compra.id ~ "/comprovantes",
   "comprovantes",
   ".pdf,.jpg,.jpeg,.png,.webp",
@@ -16,13 +15,14 @@
   "Arraste comprovantes aqui ou clique para selecionar",
   "PDF, JPG, PNG ou WEBP",
   "Enviar comprovantes",
-  pode_operacao(user, 'compras', 'excluir_comprovante'),
   "/ui/compras/" ~ compra.id ~ "/comprovantes/",
   "Excluir este comprovante?",
   "Excluir comprovante",
   "Ampliar comprovante",
   "Comprovante da compra " ~ compra.id,
-  "comprovante"
+  "comprovante",
+  upload_allowed=pode_operacao(user, 'compras', 'enviar_comprovante'),
+  delete_allowed=pode_operacao(user, 'compras', 'excluir_comprovante')
 ) }}
 {% if action_oob %}
 {% set c = compra %}
