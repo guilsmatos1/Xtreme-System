@@ -6,6 +6,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Callable
+from html import escape
 from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 from pathlib import Path
 from typing import Any
@@ -370,6 +371,21 @@ def _handle_nao_autenticado(
     _request: Request, _exc: NaoAutenticadoError
 ) -> RedirectResponse:
     return RedirectResponse("/ui/login", status_code=303)
+
+
+@app.exception_handler(HTTPException)
+def _handle_http_exception(request: Request, exc: HTTPException) -> Response:
+    if request.url.path.startswith("/ui/"):
+        return HTMLResponse(
+            escape(str(exc.detail)),
+            status_code=exc.status_code,
+            headers=exc.headers,
+        )
+    return JSONResponse(
+        {"detail": exc.detail},
+        status_code=exc.status_code,
+        headers=exc.headers,
+    )
 
 
 @app.exception_handler(NaoAdminError)
