@@ -1367,6 +1367,8 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
     assert 'name="houve_troca"' in resp.text
     assert 'id="cadastrar-veiculo-troca"' in resp.text
     assert "Cadastrar novo veículo" in resp.text
+    assert 'data-reference-list="veiculos-troca-list"' not in resp.text
+    assert re.search(r'id="veiculo-troca-input"[^>]*data-reference-autoload', resp.text)
     assert resp.text.count('name="veic_troca_tipo" required') == 1
     for campo in (
         "veic_troca_placa",

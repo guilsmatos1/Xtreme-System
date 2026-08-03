@@ -79,10 +79,9 @@
             <input class="input" id="veiculo-troca-input" name="veiculo_troca_label" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list"
                    value="{{ dados.get('veiculo_troca_label', venda.veiculo_troca.placa if venda and venda.veiculo_troca else '') }}"
                    data-reference-url="/ui/vendas/referencias/veiculos-troca"
+                   data-reference-autoload
                    data-selected-id="{{ venda.veiculo_troca_id if venda and venda.veiculo_troca_id is not none else dados.get('veiculo_troca_id', '') }}">
             <datalist id="veiculos-troca-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="veiculos-troca-list" hidden>Carregar mais</button>
             <span id="veiculo-troca-nao-encontrado" style="display:none"><button type="button" id="cadastrar-veiculo-troca" class="btn btn--ghost btn--sm">Cadastrar novo veículo</button></span>
           </label>
           {% endif %}
@@ -358,10 +357,9 @@
             <input class="input" id="veiculo-troca-input" name="veiculo_troca_label" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list"
                    value="{{ dados.get('veiculo_troca_label', '') }}"
                    data-reference-url="/ui/vendas/referencias/veiculos-troca"
+                   data-reference-autoload
                    data-selected-id="{{ dados.get('veiculo_troca_id', '') }}">
             <datalist id="veiculos-troca-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="veiculos-troca-list" hidden>Carregar mais</button>
             <span id="veiculo-troca-nao-encontrado" style="display:none"><button type="button" id="cadastrar-veiculo-troca" class="btn btn--ghost btn--sm">Cadastrar novo veículo</button></span>
           </label>
           {% endif %}
@@ -458,7 +456,7 @@
     var hidden = document.getElementById(input.id.replace('-input', '-search'));
     var list = document.getElementById(input.getAttribute('list'));
     var more = document.querySelector('[data-reference-list="' + list.id + '"]');
-    if (!hidden || !list || !more) return;
+    if (!hidden || !list) return;
 
     var offset = 0;
     var query = '';
@@ -477,6 +475,7 @@
         return option.value === input.value;
       })[0];
       hidden.value = match ? match.dataset.id || '' : '';
+      input.dispatchEvent(new CustomEvent('referencechange'));
     }
 
     function load(reset, ids) {
@@ -503,11 +502,12 @@
               hidden.value = item.id;
             }
           });
-          more.hidden = !data.has_more;
+          if (more) more.hidden = !data.has_more;
           offset += data.items.length;
           sync();
+          if (data.has_more && input.hasAttribute('data-reference-autoload')) load(false);
         })
-        .catch(function () { more.hidden = true; });
+        .catch(function () { if (more) more.hidden = true; });
     }
 
     input.addEventListener('input', function () {
@@ -516,7 +516,7 @@
       load(true);
     });
     input.addEventListener('change', sync);
-    more.addEventListener('click', function () { load(false); });
+    if (more) more.addEventListener('click', function () { load(false); });
     load(true, selectedId ? [selectedId] : []);
   }
 
@@ -676,6 +676,7 @@
     sincronizarVeiculoTroca();
   });
   input.addEventListener('change', sincronizarVeiculoTroca);
+  input.addEventListener('referencechange', sincronizarVeiculoTroca);
   if (btnCadastrar) btnCadastrar.addEventListener('click', mostrarNovoVeiculo);
   checkbox.addEventListener('change', sincronizarTroca);
   sincronizarTroca();

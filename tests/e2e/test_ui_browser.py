@@ -254,6 +254,7 @@ def test_modal_venda_troca_veiculo_existente_desabilita_cadastro_inline(
     expect(page.locator("#veiculo-troca-search")).to_have_value("1")
     expect(page.locator("#novo-veiculo-troca-campos")).not_to_be_visible()
     expect(page.locator('input[name="veic_troca_placa"]')).to_be_disabled()
+    expect(page.get_by_role("button", name="Carregar mais")).to_have_count(0)
     expect(page.get_by_role("button", name="Cadastrar novo veículo")).to_be_visible()
 
 
