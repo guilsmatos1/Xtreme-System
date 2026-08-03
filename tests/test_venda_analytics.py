@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from xtreme_system.venda import core as venda
+from xtreme_system.venda import analytics as venda
 
 
 @pytest.mark.parametrize(

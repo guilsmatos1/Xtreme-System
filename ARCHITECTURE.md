@@ -191,6 +191,13 @@ Cada componente segue o mesmo padrão interno: `core.py` exporta as funções
 públicas (CRUD e helpers), `models.py` define os modelos SQLAlchemy, e
 `schemas.py` (quando presente) define os schemas Pydantic.
 
+No componente `venda`, `core.py` mantém a entidade, schemas e CRUD. As
+consultas somente-leitura de dashboard ficam em `analytics.py`; a sincronização
+cross-aggregate do status de veículos fica em `status_veiculo.py`. Essa regra
+usa a precedência `vendido > reservado > disponivel`, trata uma troca concluída
+como `disponivel` e preserva `indisponivel` como override manual. O workflow de
+exclusão apenas adapta o hook da API para essa função centralizada.
+
 ## Banco de dados
 
 - **SQLAlchemy 2.0** com engine síncrono (`psycopg`)

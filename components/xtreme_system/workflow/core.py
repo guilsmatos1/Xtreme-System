@@ -10,6 +10,7 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
+from xtreme_system.venda import status_veiculo
 
 
 def is_lancamento_automatico(obj: caixa.LancamentoInvestimento) -> bool:
@@ -102,10 +103,10 @@ def validate_venda_update(
 def recompute_vehicle_status_on_delete(
     session: Session, venda_obj: venda.Venda, _actor_id: int | None = None
 ) -> None:
-    venda.recomputar_status_veiculo_por_vendas(
+    status_veiculo.recomputar_status_veiculo_por_vendas(
         session, venda_obj.veiculo_id, excluir_venda_id=venda_obj.id
     )
     if venda_obj.veiculo_troca_id is not None:
-        venda.recomputar_status_veiculo_por_vendas(
+        status_veiculo.recomputar_status_veiculo_por_vendas(
             session, venda_obj.veiculo_troca_id, excluir_venda_id=venda_obj.id
         )

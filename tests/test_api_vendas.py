@@ -15,6 +15,7 @@ from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda_core
+from xtreme_system.venda import status_veiculo
 from xtreme_system.workflow.core import validate_veiculo_disponivel_para_venda
 
 
@@ -38,7 +39,7 @@ def test_recomputar_status_de_veiculo_bloqueia_linha() -> None:
     session = Mock(spec=Session)
     session.get.return_value = SimpleNamespace(status=veiculo.StatusVeiculo.disponivel)
 
-    venda_core.recomputar_status_veiculo_por_vendas(session, 123)
+    status_veiculo.recomputar_status_veiculo_por_vendas(session, 123)
 
     session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
 
