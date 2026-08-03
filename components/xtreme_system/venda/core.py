@@ -109,7 +109,7 @@ class Venda(Base):
     vendedor_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuario.id"), index=True
     )
-    data_venda: Mapped[date | None] = mapped_column(Date)
+    data_venda: Mapped[date | None] = mapped_column(Date, index=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     valor_venda: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     valor_entrada: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
