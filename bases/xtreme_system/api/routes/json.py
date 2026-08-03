@@ -51,6 +51,10 @@ def health(session: SessionDep) -> JSONResponse:
     try:
         session.execute(text("SELECT 1"))
     except SQLAlchemyError:
+        logger.exception(
+            "health_check_database_unavailable",
+            database_target=get_database_target(),
+        )
         return JSONResponse(
             {
                 "status": "degradado",

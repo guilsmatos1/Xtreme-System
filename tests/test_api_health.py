@@ -34,7 +34,9 @@ def test_raiz_redireciona_para_dashboard_ui(client: TestClient) -> None:
     assert resp.headers["location"] == "/ui/dashboard"
 
 
-def test_health_degradado_quando_banco_indisponivel(client: TestClient) -> None:
+def test_health_degradado_quando_banco_indisponivel(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
     mock: Session = MagicMock(spec=Session)
     cast(Any, mock.execute).side_effect = SQLAlchemyError("indisponivel")
 
@@ -50,5 +52,7 @@ def test_health_degradado_quando_banco_indisponivel(client: TestClient) -> None:
             "database": "indisponivel",
             "database_target": "primary",
         }
+        assert "health_check_database_unavailable" in caplog.text
+        assert "indisponivel" in caplog.text
     finally:
         app.dependency_overrides.clear()
