@@ -30,6 +30,60 @@
        Os passos NÃO usam x-show: .wizard-step é display:none no CSS e
        .is-active é display:grid, então o display:'' que o x-show aplicaria
        cairia de volta em display:none. A visibilidade é feita por :class. */
+    /* Foco dos modais servidos pelo servidor.
+
+       Os modais chegam por swap do HTMX dentro de #modal, então não há um
+       x-data por modal: o componente vive no container, que é permanente, e
+       observa a chegada/saída do conteúdo.
+
+       x-trap cobre o que antes eram ~50 linhas manuais: foca o primeiro
+       elemento ao abrir, cicla o Tab dentro do painel, marca o fundo com
+       aria-hidden (.inert, que não existia antes) e trava o scroll da página
+       (.noscroll).
+
+       O retorno de foco fica com .noreturn, ou seja, por nossa conta: o x-trap
+       memoriza o que estava focado no instante em que o trap ativa, e nesse
+       momento o htmx já fez o swap e o botão que abriu o modal já perdeu o
+       foco. Capturamos o gatilho antes disso, em htmx:beforeRequest. */
+    Alpine.data("modalFoco", function () {
+      return {
+        aberto: false,
+        gatilho: null,
+
+        init: function () {
+          var self = this;
+          this.sincronizar();
+          new MutationObserver(function () {
+            self.sincronizar();
+          }).observe(this.$el, { childList: true });
+
+          // O gatilho e capturado ANTES do swap: quando o modal entra, o htmx
+          // ja trocou o conteudo e o botao perdeu o foco, entao o retorno
+          // automatico do x-trap (.noreturn desliga) restauraria o alvo errado.
+          document.body.addEventListener("htmx:beforeRequest", function (e) {
+            var alvo = e.detail && e.detail.target;
+            if (alvo && alvo.id === "modal") self.gatilho = document.activeElement;
+          });
+        },
+
+        sincronizar: function () {
+          var aberto = !!this.$el.querySelector(".modal");
+          if (this.aberto && !aberto) this.restaurarFoco();
+          this.aberto = aberto;
+        },
+
+        restaurarFoco: function () {
+          var gatilho = this.gatilho;
+          this.gatilho = null;
+          if (gatilho && document.contains(gatilho)) gatilho.focus();
+        },
+
+        fechar: function () {
+          if (this.aberto) this.$el.innerHTML = "";
+        },
+      };
+    });
+
     Alpine.data("wizard", function (inicial) {
       return {
         step: Number(inicial) || 1,

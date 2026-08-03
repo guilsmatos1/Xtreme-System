@@ -154,31 +154,10 @@
   </div>
 
   <div id="msg" role="status" aria-live="polite"></div>
-  <div id="modal"></div>
+  <div id="modal" x-data="modalFoco" x-trap.inert.noscroll.noreturn="aberto"
+       @keydown.escape.window="fechar()"></div>
 
   <script>
-    var lastModalTrigger = null;
-    var activeServerModal = null;
-
-    function focusServerModal(modal) {
-      if (!modal) return;
-      activeServerModal = modal;
-      var target = modal.querySelector("[autofocus]")
-        || modal.querySelector("button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])");
-      if (!target) {
-        target = modal.querySelector(".modal__panel");
-        if (target) target.setAttribute("tabindex", "-1");
-      }
-      if (target) target.focus();
-    }
-
-    function restoreModalFocus() {
-      var trigger = lastModalTrigger;
-      lastModalTrigger = null;
-      activeServerModal = null;
-      if (trigger && document.contains(trigger)) trigger.focus();
-    }
-
     function toggleTheme() {
       var el = document.documentElement;
       var cur = el.getAttribute("data-theme")
@@ -230,8 +209,8 @@
         return field.value !== field.defaultValue;
       });
       function discard() {
+        // O x-trap em #modal devolve o foco ao gatilho quando o painel sai.
         modal.remove();
-        if (modal === activeServerModal) restoreModalFocus();
       }
       if (changed) {
         showConfirmDialog("Descartar as alterações?", discard);
@@ -240,51 +219,6 @@
       }
     }
 
-    document.body.addEventListener("htmx:beforeRequest", function (e) {
-      var target = e.detail && e.detail.target;
-      if (target && target.id === "modal") lastModalTrigger = document.activeElement;
-    });
-
-    document.addEventListener("keydown", function (e) {
-      var modal = document.querySelector("#modal > .modal");
-      if (!modal) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
-        modal.remove();
-        if (modal === activeServerModal) restoreModalFocus();
-        return;
-      }
-      if (e.key !== "Tab") return;
-      var focusable = Array.prototype.filter.call(modal.querySelectorAll(
-        "button:not([disabled]), input:not([disabled]), select:not([disabled]), " +
-        "textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])"
-      ), function (element) { return element.getClientRects().length > 0; });
-      if (!focusable.length) {
-        e.preventDefault();
-        focusServerModal(modal);
-        return;
-      }
-      var first = focusable[0], last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    });
-
-    new MutationObserver(function () {
-      var modal = document.querySelector("#modal > .modal");
-      if (modal && modal !== activeServerModal) {
-        activeServerModal = modal;
-        setTimeout(function () {
-          if (document.querySelector("#modal > .modal") === modal) focusServerModal(modal);
-        }, 0);
-      } else if (!modal && activeServerModal) {
-        restoreModalFocus();
-      }
-    }).observe(document.getElementById("modal"), { childList: true });
     // Close mobile drawer after navigating.
     document.addEventListener("click", function (e) {
       if (e.target.closest(".nav__link, .sidebar__user-link")) document.body.classList.remove("nav-open");
