@@ -485,6 +485,10 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   background-image: none;
   padding-right: var(--s-3);
 }
+.modal__panel--wizard .input[list] {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
 
 /* Stepper */
 .stepper { display: flex; align-items: flex-start; margin-bottom: var(--s-2); }

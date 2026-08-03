@@ -156,6 +156,7 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     page.get_by_test_id("venda-wizard-next").click()
 
     veiculo_input = page.get_by_test_id("venda-wizard-vehicle-search")
+    expect(veiculo_input).to_have_css("appearance", "auto")
     _selecionar_referencia(
         page, veiculo_input, "#veiculos-list", "ABC1234", "ABC1234 — Onix"
     )
