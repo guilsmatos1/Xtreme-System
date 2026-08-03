@@ -680,7 +680,7 @@ def register_create_route(
     ) -> HTMLResponse:
         form_data = await request.form()
         dados_form = config.parse_form(form_data)
-        perfil.filtrar_campos_form_ocultos(user, config.pagina, dados_form)
+        dados_form = perfil.campos_form_visiveis(user, config.pagina, dados_form)
         try:
             data = config.create_schema.model_validate(dados_form)
         except ValidationError as exc:
@@ -765,7 +765,7 @@ def register_update_route(
         obj = found(module.get(session, item_id), config.label)
         form_data = await request.form()
         dados_form = config.parse_form(form_data)
-        perfil.filtrar_campos_form_ocultos(user, config.pagina, dados_form)
+        dados_form = perfil.campos_form_visiveis(user, config.pagina, dados_form)
         try:
             data = config.update_schema.model_validate(dados_form)
         except ValidationError as exc:

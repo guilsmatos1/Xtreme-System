@@ -1,5 +1,6 @@
 """Perfil de permissões: quais páginas da UI um perfil de usuário pode acessar."""
 
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -28,9 +29,9 @@ __all__ = [
     "PerfilCreate",
     "PerfilRead",
     "PerfilUpdate",
+    "campos_form_visiveis",
     "create",
     "delete",
-    "filtrar_campos_form_ocultos",
     "get",
     "list_all",
     "pagina_da_rota",
@@ -41,15 +42,16 @@ __all__ = [
 ]
 
 
-def filtrar_campos_form_ocultos(
-    user: Any, pagina: str | None, data: dict[str, Any]
+def campos_form_visiveis(
+    user: Any, pagina: str | None, data: Mapping[str, Any]
 ) -> dict[str, Any]:
+    filtered_data = dict(data)
     if pagina is None:
-        return data
+        return filtered_data
     for campo, campo_form in CAMPOS_FORM_PROTEGIDOS.get(pagina, {}).items():
         if not pode_ver_campo(user, pagina, campo):
-            data.pop(campo_form, None)
-    return data
+            filtered_data.pop(campo_form, None)
+    return filtered_data
 
 
 class Perfil(Base):
