@@ -70,6 +70,13 @@ def validar_coerencia_pagamento(
         raise ValueError(ERRO_PAGAMENTO_SEM_PENDENCIA_COM_DATAS)
 
 
+def validar_coerencia_valores(
+    valor_venda: Decimal, valor_entrada: Decimal | None
+) -> None:
+    if valor_entrada is not None and valor_entrada > valor_venda:
+        raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+
+
 class Venda(Base):
     __tablename__ = "venda"
     __table_args__ = (
@@ -169,8 +176,7 @@ class VendaCreate(BaseModel):
 
     @model_validator(mode="after")
     def validar_valores(self) -> Self:
-        if self.valor_entrada is not None and self.valor_entrada > self.valor_venda:
-            raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+        validar_coerencia_valores(self.valor_venda, self.valor_entrada)
         validar_coerencia_pagamento(
             self.pagamento_pendente, self.valor_pendente, self.datas_pagamento
         )
@@ -196,20 +202,6 @@ class VendaUpdate(BaseModel):
     valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
 
-    @model_validator(mode="after")
-    def validar_valores(self) -> Self:
-        if (
-            self.valor_venda is not None
-            and self.valor_entrada is not None
-            and self.valor_entrada > self.valor_venda
-        ):
-            raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
-        if "pagamento_pendente" in self.model_fields_set:
-            validar_coerencia_pagamento(
-                self.pagamento_pendente, self.valor_pendente, self.datas_pagamento
-            )
-        return self
-
 
 def validate_valores_venda_update(venda_obj: Venda, data: VendaUpdate) -> None:
     valor_venda = (
@@ -220,8 +212,7 @@ def validate_valores_venda_update(venda_obj: Venda, data: VendaUpdate) -> None:
         if data.valor_entrada is not None
         else venda_obj.valor_entrada
     )
-    if valor_entrada is not None and valor_entrada > valor_venda:
-        raise ValueError(ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA)
+    validar_coerencia_valores(valor_venda, valor_entrada)
     pagamento_pendente = (
         data.pagamento_pendente
         if "pagamento_pendente" in data.model_fields_set
@@ -295,7 +286,6 @@ def create(session: Session, data: VendaCreate, actor_id: int | None = None) -> 
 def update(
     session: Session, obj: Venda, data: VendaUpdate, actor_id: int | None = None
 ) -> Venda:
-    validate_valores_venda_update(obj, data)
     veiculo_anterior_id = obj.veiculo_id
     veiculo_troca_anterior_id = obj.veiculo_troca_id
     obj = crud.update(session, obj, data, actor_id)
