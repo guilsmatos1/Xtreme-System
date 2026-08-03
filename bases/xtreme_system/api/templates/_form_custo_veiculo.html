@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% set dados = dados or {} %}
 <div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mcv-title">
     <div class="modal__head">
@@ -15,13 +16,13 @@
             <select class="select" name="veiculo_id" data-testid="custo-veiculo-form-vehicle" required>
               <option value="">Selecione</option>
               {% for veic in veiculos %}
-              <option value="{{ veic.id }}"{% if custo and custo.veiculo_id == veic.id %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
+              <option value="{{ veic.id }}"{% if dados.get('veiculo_id', custo.veiculo_id if custo else '')|string == veic.id|string %} selected{% endif %}>{{ veic.placa }} · {{ veic.modelo }}</option>
               {% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Categoria *</span>
-            <input class="input" name="categoria" data-testid="custo-veiculo-form-category" list="categorias-custo" value="{{ custo.categoria if custo else '' }}" required>
+            <input class="input" name="categoria" data-testid="custo-veiculo-form-category" list="categorias-custo" value="{{ dados.get('categoria', custo.categoria if custo else '') }}" required>
             {% if not custo %}
             <datalist id="categorias-custo">
               <option value="Documentação">
@@ -37,17 +38,17 @@
           </label>
           <label class="field">
             <span class="field__label">Data *</span>
-            <input class="input" name="data_custo" type="date" value="{{ custo.data_custo.isoformat() if custo and custo.data_custo else hoje.isoformat() }}" required>
+          <input class="input" name="data_custo" type="date" value="{{ dados.get('data_custo', custo.data_custo.isoformat() if custo and custo.data_custo else hoje.isoformat()) }}" required>
           </label>
           {% if not custo or pode_ver_campo(user, 'custos-veiculos', 'valor') %}
           <label class="field">
             <span class="field__label">Valor *</span>
-            <input class="input" name="valor" data-testid="custo-veiculo-form-value" type="text" inputmode="decimal" value="{{ custo.valor if custo else '' }}" required>
+            <input class="input" name="valor" data-testid="custo-veiculo-form-value" type="text" inputmode="decimal" value="{{ dados.get('valor', custo.valor if custo else '') }}" required>
           </label>
           {% endif %}
           <label class="field field--full">
             <span class="field__label">Descrição</span>
-            <textarea class="input" name="descricao" rows="4">{{ custo.descricao if custo and custo.descricao else '' }}</textarea>
+            <textarea class="input" name="descricao" rows="4">{{ dados.get('descricao', custo.descricao if custo and custo.descricao else '') or '' }}</textarea>
           </label>
         </div>
       </div>

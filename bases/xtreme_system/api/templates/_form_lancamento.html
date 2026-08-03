@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% set dados = dados or {} %}
 <div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="ml-title">
     <div class="modal__head">
@@ -13,16 +14,16 @@
           <label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="tipo" data-testid="lancamento-form-tipo" required>
-  {% for t in tipos %}<option value="{{ t.value }}"{% if lancamento and lancamento.tipo == t %} selected{% endif %}>{{ 'Aporte' if t.value == 'aporte' else 'Saque' }}</option>{% endfor %}
+  {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('tipo', lancamento.tipo.value if lancamento else '') == t.value %} selected{% endif %}>{{ 'Aporte' if t.value == 'aporte' else 'Saque' }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
             <span class="field__label">Valor (R$)</span>
-            <input class="input" name="valor" data-testid="lancamento-form-valor" type="text" inputmode="decimal" value="{{ lancamento.valor if lancamento else '' }}" required>
+            <input class="input" name="valor" data-testid="lancamento-form-valor" type="text" inputmode="decimal" value="{{ dados.get('valor', lancamento.valor if lancamento else '') }}" required>
           </label>
           <label class="field field--full">
             <span class="field__label">Descrição</span>
-  <input class="input" name="descricao" data-testid="lancamento-form-descricao" value="{{ lancamento.descricao if lancamento else '' }}" autofocus>
+  <input class="input" name="descricao" data-testid="lancamento-form-descricao" value="{{ dados.get('descricao', lancamento.descricao if lancamento else '') or '' }}" autofocus>
           </label>
         </div>
       </div>

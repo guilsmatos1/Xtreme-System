@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% set dados = dados or {} %}
 <div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mc-title">
     <div class="modal__head">
@@ -12,57 +13,57 @@
         <div class="form-grid">
           <label class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="nome" data-testid="cliente-form-name" value="{{ cliente.nome if cliente else '' }}" required autofocus>
+            <input class="input" name="nome" data-testid="cliente-form-name" value="{{ dados.get('nome', cliente.nome if cliente else '') }}" required autofocus>
           </label>
 
           <label class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ cliente.documento if cliente else '' }}" required>
+            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ dados.get('documento', cliente.documento if cliente else '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" data-testid="cliente-form-type" required>
               {% for t in tipos %}
-              <option value="{{ t.value }}"{% if cliente and cliente.tipo == t %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
+              <option value="{{ t.value }}"{% if dados.get('tipo', cliente.tipo.value if cliente else '') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
               {% endfor %}
             </select>
           </label>
 
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ cliente.email if cliente and cliente.email else '' }}">
+            <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ dados.get('email', cliente.email if cliente and cliente.email else '') or '' }}">
           </label>
           <label class="field">
             <span class="field__label">Telefone</span>
-            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ cliente.telefone if cliente and cliente.telefone else '' }}">
+            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ dados.get('telefone', cliente.telefone if cliente and cliente.telefone else '') or '' }}">
           </label>
 
           <label class="field field--full">
             <span class="field__label">Endereço</span>
-            <input class="input" name="endereco" value="{{ cliente.endereco if cliente and cliente.endereco else '' }}">
+            <input class="input" name="endereco" value="{{ dados.get('endereco', cliente.endereco if cliente and cliente.endereco else '') or '' }}">
           </label>
 
           <label class="field">
             <span class="field__label">Bairro</span>
-            <input class="input" name="bairro" value="{{ cliente.bairro if cliente and cliente.bairro else '' }}">
+            <input class="input" name="bairro" value="{{ dados.get('bairro', cliente.bairro if cliente and cliente.bairro else '') or '' }}">
           </label>
           <label class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cep" value="{{ cliente.cep if cliente and cliente.cep else '' }}">
+            <input class="input" name="cep" value="{{ dados.get('cep', cliente.cep if cliente and cliente.cep else '') or '' }}">
           </label>
 
           <label class="field">
             <span class="field__label">Cidade</span>
-            <input class="input" name="cidade" value="{{ cliente.cidade if cliente and cliente.cidade else '' }}">
+            <input class="input" name="cidade" value="{{ dados.get('cidade', cliente.cidade if cliente and cliente.cidade else '') or '' }}">
           </label>
           <label class="field">
             <span class="field__label">Estado</span>
-            <input class="input" name="estado" maxlength="2" value="{{ cliente.estado if cliente and cliente.estado else '' }}">
+            <input class="input" name="estado" maxlength="2" value="{{ dados.get('estado', cliente.estado if cliente and cliente.estado else '') or '' }}">
           </label>
 
           <label class="field field--full">
             <span class="field__label">Profissão</span>
-            <input class="input" name="profissao" value="{{ cliente.profissao if cliente and cliente.profissao else '' }}">
+            <input class="input" name="profissao" value="{{ dados.get('profissao', cliente.profissao if cliente and cliente.profissao else '') or '' }}">
           </label>
         </div>
       </div>
