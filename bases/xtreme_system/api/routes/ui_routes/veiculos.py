@@ -11,11 +11,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
+from xtreme_system.api.crud_ui.helpers import current_list_state
+from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import (
     conflict_form_response,
     delete_conflict_detail,
     error_response,
-    ok_response,
+    list_response,
     rollback_integrity_error_response,
     validation_error_detail,
     write_conflict_detail,
@@ -109,23 +111,26 @@ def _ctx_lista_veiculos(
     }
 
 
-def _listar_veiculos(
-    session: Session, *, limit: int | None = None, offset: int = 0
-) -> list[veiculo.Veiculo]:
-    return veiculo.list_all(session, limit=limit, offset=offset)
-
-
-def _buscar_veiculos(
-    session: Session, term: str, column: str | None = None
-) -> list[veiculo.Veiculo]:
-    return veiculo.search(session, term, column=column)
-
-
 _VEICULOS_LISTING = ListingSpec(
     searchable=True,
-    source="functions",
-    list_func=_listar_veiculos,
-    search_func=_buscar_veiculos,
+    source="query",
+    query_func=veiculo.query,
+    search_query_func=veiculo.search_query,
+    sort_fields={
+        "modelo": SortField("modelo", veiculo.Veiculo.modelo),
+        "placa": SortField("placa", veiculo.Veiculo.placa),
+        "tipo": SortField("tipo", veiculo.Veiculo.tipo),
+        "ano": SortField("ano", veiculo.Veiculo.ano),
+        "km": SortField("km", veiculo.Veiculo.km),
+        "preco": SortField("preco", veiculo.Veiculo.preco),
+        "status": SortField("status", veiculo.Veiculo.status),
+        "tipo_entrada": SortField("tipo_entrada", veiculo.Veiculo.tipo_entrada),
+        "revisao": SortField("revisao", veiculo.Veiculo.revisao),
+        "investidor": SortField("investidor", investidor.Investidor.nome),
+        "procuracao": SortField("procuracao", veiculo.Veiculo.procuracao),
+        "debitos": SortField("debitos", _DEBITOS_SORT_SQL),
+        "tempo_estoque": SortField("criado_em", veiculo.Veiculo.criado_em),
+    },
 )
 
 
@@ -158,28 +163,7 @@ register_crud_ui_routes(
         after_create=caixa.criar_lancamento_veiculo,
         after_update=caixa.sincronizar_lancamento_veiculo,
     ),
-    listing=ListingSpec(
-        searchable=True,
-        paginated=False,
-        source="query",
-        query_func=veiculo.query,
-        search_query_func=veiculo.search_query,
-        sort_fields={
-            "modelo": SortField("modelo", veiculo.Veiculo.modelo),
-            "placa": SortField("placa", veiculo.Veiculo.placa),
-            "tipo": SortField("tipo", veiculo.Veiculo.tipo),
-            "ano": SortField("ano", veiculo.Veiculo.ano),
-            "km": SortField("km", veiculo.Veiculo.km),
-            "preco": SortField("preco", veiculo.Veiculo.preco),
-            "status": SortField("status", veiculo.Veiculo.status),
-            "tipo_entrada": SortField("tipo_entrada", veiculo.Veiculo.tipo_entrada),
-            "revisao": SortField("revisao", veiculo.Veiculo.revisao),
-            "investidor": SortField("investidor", investidor.Investidor.nome),
-            "procuracao": SortField("procuracao", veiculo.Veiculo.procuracao),
-            "debitos": SortField("debitos", _DEBITOS_SORT_SQL),
-            "tempo_estoque": SortField("criado_em", veiculo.Veiculo.criado_em),
-        },
-    ),
+    listing=_VEICULOS_LISTING,
     export=CrudUIExportConfig(
         csv_filename="veiculos.csv",
         columns=[
@@ -334,8 +318,9 @@ def _excluir_veiculo(
 def _ok_veiculo(
     request: Request, session: Session, user: usuario.Usuario
 ) -> HTMLResponse:
-    veiculos = _listar_veiculos(session)
-    return ok_response(
+    state = current_list_state(request)
+    veiculos = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=state)
+    return list_response(
         templates,
         request,
         "_veiculos_ok.html",
@@ -343,6 +328,13 @@ def _ok_veiculo(
         list_key="veiculos",
         lista=veiculos,
         ctx_list=_ctx_lista_veiculos(session, veiculos),
+        sort=state.sort,
+        order=state.order,
+        q=state.q,
+        search_column=state.search_column,
+        limit=state.limit or 50,
+        offset=state.offset,
+        success=True,
     )
 
 

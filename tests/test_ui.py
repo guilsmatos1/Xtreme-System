@@ -342,8 +342,16 @@ def test_ui_veiculos_kpis_contam_todo_o_estoque(
         r"Total no estoque</div>\s*<div class=\"stat__value cell-num\">51</div>",
         pagina.text,
     )
-    assert pagina.text.count('id="veiculo-') == 51
-    assert "Próxima" not in pagina.text
+    assert pagina.text.count('id="veiculo-') == 50
+    assert "Mostrando 1\N{EN DASH}50" in pagina.text
+    assert "Próxima" in pagina.text
+
+    segunda_pagina = local_client.get("/ui/veiculos?limit=50&offset=50")
+
+    assert segunda_pagina.status_code == 200
+    assert segunda_pagina.text.count('id="veiculo-') == 1
+    assert "Mostrando 51\N{EN DASH}51" in segunda_pagina.text
+    assert "Anterior" in segunda_pagina.text
 
 
 def test_ui_veiculos_lista_com_km_vazio(
