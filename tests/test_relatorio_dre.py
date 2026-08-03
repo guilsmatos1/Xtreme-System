@@ -161,15 +161,20 @@ def test_listar_para_dre_recorta_periodo(session: Session) -> None:
     assert [f.id for f in fechamentos] == [dentro.id]
 
 
-def test_listar_para_dre_nao_carrega_relacionamentos(session: Session) -> None:
+def test_listar_para_dre_carrega_relacionamentos_do_relatorio(
+    session: Session,
+) -> None:
     _fechar(session, data_fechamento=date(2026, 1, 10))
     session.expire_all()
 
     fechamentos = fechamento_venda.listar_para_dre(session)
 
     assert len(fechamentos) == 1
+    assert "venda" not in inspect(fechamentos[0]).unloaded
+    assert "veiculo" not in inspect(fechamentos[0].venda).unloaded
+    assert "investidor" not in inspect(fechamentos[0].venda.veiculo).unloaded
     unloaded = inspect(fechamentos[0]).unloaded
-    assert {"venda", "usuario", "participacoes"}.issubset(unloaded)
+    assert {"usuario", "participacoes"}.issubset(unloaded)
 
 
 def test_listar_para_dre_inclui_limites_do_periodo(session: Session) -> None:
