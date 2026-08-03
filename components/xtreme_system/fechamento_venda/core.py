@@ -315,7 +315,6 @@ def listar_para_dre(
     if not _schema_disponivel(session):
         raise FechamentoVendaError(ERRO_SCHEMA_DESATUALIZADO)
     query = session.query(FechamentoVenda).options(
-        lazyload(FechamentoVenda.venda),
         lazyload(FechamentoVenda.usuario),
         lazyload(FechamentoVenda.participacoes),
     )
