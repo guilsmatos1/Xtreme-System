@@ -507,6 +507,78 @@ def test_ui_perfil_editar_rejeita_erro_de_validacao(
     assert "paginas" in resp.text
 
 
+def test_ui_perfil_criar_retorna_conflito_em_integrity_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    criar = perfil.create
+
+    def falhar_apos_criar(
+        session: Session,
+        data: perfil.PerfilCreate,
+        actor_id: int | None = None,
+    ) -> perfil.Perfil:
+        criar(session, data, actor_id)
+        raise IntegrityError("INSERT", {}, RuntimeError("perfil duplicado"))
+
+    monkeypatch.setattr(perfil, "create", falhar_apos_criar)
+
+    resp = client.post("/ui/perfis", data={"nome": "Perfil duplicado"})
+
+    assert resp.status_code == 409
+    assert "Perfil já existe" in resp.text
+
+
+def test_ui_perfil_atualizar_retorna_conflito_em_integrity_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    criado = client.post("/ui/perfis", data={"nome": "Perfil original"})
+    assert criado.status_code == 200
+    next(app.dependency_overrides[get_session]()).commit()
+    atualizar = perfil.update
+
+    def falhar_apos_atualizar(
+        session: Session,
+        obj: perfil.Perfil,
+        data: perfil.PerfilUpdate,
+        actor_id: int | None = None,
+    ) -> perfil.Perfil:
+        atualizar(session, obj, data, actor_id)
+        raise IntegrityError("UPDATE", {}, RuntimeError("perfil duplicado"))
+
+    monkeypatch.setattr(perfil, "update", falhar_apos_atualizar)
+
+    resp = client.post("/ui/perfis/1", data={"nome": "Perfil duplicado"})
+
+    assert resp.status_code == 409
+    assert "Perfil já existe" in resp.text
+
+
+def test_ui_perfil_excluir_retorna_conflito_em_integrity_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    criado = client.post("/ui/perfis", data={"nome": "Perfil vinculado"})
+    assert criado.status_code == 200
+    excluir = perfil.delete
+
+    def falhar_apos_excluir(
+        session: Session,
+        obj: perfil.Perfil,
+        actor_id: int | None = None,
+    ) -> None:
+        excluir(session, obj, actor_id)
+        raise IntegrityError("DELETE", {}, RuntimeError("perfil vinculado"))
+
+    monkeypatch.setattr(perfil, "delete", falhar_apos_excluir)
+
+    resp = client.post("/ui/perfis/1/excluir")
+
+    assert resp.status_code == 409
+    assert "Perfil possui usuários vinculados" in resp.text
+
+
 def test_upload_imagem_veiculo_salva_url_estatica_acessivel(
     client: TestClient,
 ) -> None:
