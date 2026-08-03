@@ -9,7 +9,7 @@
     </div>
     <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
           hx-encoding="multipart/form-data" enctype="multipart/form-data"
-          {% if not veiculo %}id="form-novo-veiculo"{% endif %}>
+          {% if not veiculo %}id="form-novo-veiculo" x-data="wizard({{ dados.get('wizard_step', 1) }})"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
 
@@ -125,10 +125,10 @@
 
         </div>
         {% else %}
-        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ dados.get('wizard_step', 1) }}">
-        <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
+        <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        <div class="wizard-steps">Passo <span x-text="step">{{ dados.get('wizard_step', 1) }}</span> de <span x-text="total">4</span></div>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }">
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required autofocus>
@@ -143,7 +143,7 @@
           </label>{% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
             <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase">
@@ -166,7 +166,7 @@
           </label>{% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           <label class="field">
             <span class="field__label">Preço Anunciado (R$) *</span>
             <input class="input" name="preco" type="text" inputmode="decimal" value="{{ dados.get('preco', '') }}" required>
@@ -191,7 +191,7 @@
           </label>
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
           <label class="field field--full">
             <span class="field__label">Cliente vendedor</span>
             <input class="input" id="cliente-vendedor-input" name="cliente_vendedor_label"
@@ -257,9 +257,9 @@
         {% if veiculo %}
         <button type="submit" class="btn btn--primary" data-testid="veiculo-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
-        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
-        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>
-        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="button" class="btn btn--default" x-show="step > 1" style="display:none" @click="voltar()">Voltar</button>
+        <button type="button" class="btn btn--primary" x-show="step < total" @click="proximo()">Próximo</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" style="display:none">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>
@@ -269,53 +269,11 @@
 <script>
 (function () {
   var form = document.getElementById('form-novo-veiculo');
-  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
-  var total = steps.length;
-  var stepInput = document.getElementById('wizard-step');
-  var current = Number(stepInput.value) || 1;
-
-  var btnVoltar = document.getElementById('wizard-voltar');
-  var btnProximo = document.getElementById('wizard-proximo');
-  var btnSalvar = document.getElementById('wizard-salvar');
-  var stepAtual = document.getElementById('wizard-step-atual');
-
-  form.addEventListener('submit', function () { stepInput.value = current; });
-
-  function stepEl(n) {
-    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
-  }
-
-  function show(n) {
-    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
-    stepAtual.textContent = n;
-    btnVoltar.style.display = n > 1 ? '' : 'none';
-    btnProximo.style.display = n < total ? '' : 'none';
-    btnSalvar.style.display = n === total ? '' : 'none';
-  }
-
-  function validStep(n) {
-    var controls = stepEl(n).querySelectorAll('input, select');
-    for (var i = 0; i < controls.length; i++) {
-      var el = controls[i];
-      if (el.disabled) continue;
-      if (!el.checkValidity()) { el.reportValidity(); return false; }
-    }
-    return true;
-  }
-
-  btnProximo.addEventListener('click', function () {
-    if (!validStep(current)) return;
-    current = Math.min(current + 1, total);
-    show(current);
-  });
-
-  btnVoltar.addEventListener('click', function () {
-    current = Math.max(current - 1, 1);
-    show(current);
-  });
+  if (!form) return;
 
   var selectVendedor = document.getElementById('cliente-vendedor-select');
   var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
+  if (!selectVendedor) return;
 
   function sincronizarVendedor() {
     var existente = !!selectVendedor.value;
@@ -326,8 +284,6 @@
   }
   selectVendedor.addEventListener('change', sincronizarVendedor);
   sincronizarVendedor();
-
-  show(current);
 })();
 </script>
 {% endif %}

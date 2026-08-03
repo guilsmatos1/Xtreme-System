@@ -18,6 +18,53 @@
   "use strict";
 
   document.addEventListener("alpine:init", function () {
-    // Componentes registrados nas etapas seguintes.
+    /* Wizard multi-step dos formulários de compra, venda e veículo.
+
+       Uso: x-data="wizard(N)" na <form>, onde N é o passo inicial vindo do
+       servidor (o formulário volta renderizado no passo que falhou validação).
+
+       O total de passos é contado do DOM, não passado como argumento: cada
+       formulário tem um número diferente (5/4/5) e alguns passos podem ser
+       condicionais por permissão.
+
+       Os passos NÃO usam x-show: .wizard-step é display:none no CSS e
+       .is-active é display:grid, então o display:'' que o x-show aplicaria
+       cairia de volta em display:none. A visibilidade é feita por :class. */
+    Alpine.data("wizard", function (inicial) {
+      return {
+        step: Number(inicial) || 1,
+        total: 1,
+
+        init: function () {
+          this.total = this.$el.querySelectorAll(".wizard-step").length || 1;
+        },
+
+        proximo: function () {
+          if (!this.validStep(this.step)) return;
+          this.step = Math.min(this.step + 1, this.total);
+        },
+
+        voltar: function () {
+          this.step = Math.max(this.step - 1, 1);
+        },
+
+        // Só valida o passo visível: os demais têm campos required que ainda
+        // não foram preenchidos, e o submit nativo do browser ignora campos
+        // com display:none, então validar tudo travaria o avanço.
+        validStep: function (n) {
+          var passo = this.$el.querySelector('.wizard-step[data-step="' + n + '"]');
+          if (!passo) return true;
+          var controls = passo.querySelectorAll("input, select, textarea");
+          for (var i = 0; i < controls.length; i++) {
+            if (controls[i].disabled) continue;
+            if (!controls[i].checkValidity()) {
+              controls[i].reportValidity();
+              return false;
+            }
+          }
+          return true;
+        },
+      };
+    });
   });
 })();
