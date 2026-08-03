@@ -5,7 +5,7 @@ from typing import Annotated, Any, cast
 from uuid import uuid4
 
 import structlog
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -33,9 +33,13 @@ from xtreme_system.api.crud_ui.routes import (
 from xtreme_system.api.crud_writes import delete_with_hook
 from xtreme_system.api.deps import (
     SessionDep,
-    found,
     require_operacao,
     templates,
+)
+from xtreme_system.api.routes.ui_routes.attachment_routes import (
+    AttachmentRouteConfig,
+    callback_from,
+    register_attachment_routes,
 )
 from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
 from xtreme_system.api.routes.ui_routes.nested_writes import (
@@ -46,14 +50,11 @@ from xtreme_system.api.routes.ui_routes.upload_files import (
     remover_upload,
     uploaded_file_path,
 )
-from xtreme_system.api.routes.ui_routes.upload_paths import uploads_compra_dir
-from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
-from xtreme_system.api.routes.ui_routes.uploads import (
-    excluir_anexo_entidade,
-    pending_upload_paths,
-    salvar_anexos_entidade,
-    salvar_arquivos,
+from xtreme_system.api.routes.ui_routes.upload_paths import (
+    uploads_compra_dir,
 )
+from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
+from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
     resolver_veiculo_inline,
 )
@@ -169,110 +170,41 @@ def _deletar_veiculo_apos_compra(
         )
 
 
-def _comprovantes_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    compra_id: int,
-    *,
-    action_oob: bool = False,
-) -> HTMLResponse:
-    item = found(compra.get(session, compra_id), "Compra")
-    comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
-    return templates.TemplateResponse(
-        request,
-        "_modal_comprovantes_compra.html",
-        {
-            "compra": item,
-            "comprovantes": comprovantes,
-            "user": user,
-            "action_oob": action_oob,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-    )
+def _comprovantes_context(
+    session: Session, compra_obj: compra.Compra, _user: usuario.Usuario
+) -> dict[str, Any]:
+    return {
+        "comprovantes": imagem_comprovante_compra.list_by_compra(session, compra_obj.id)
+    }
 
 
-def _comprovantes_erro_modal(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    compra_id: int,
-    erro: str,
-) -> HTMLResponse:
-    item = found(compra.get(session, compra_id), "Compra")
-    comprovantes = imagem_comprovante_compra.list_by_compra(session, compra_id)
-    return templates.TemplateResponse(
-        request,
-        "_modal_comprovantes_compra.html",
-        {
-            "compra": item,
-            "comprovantes": comprovantes,
-            "user": user,
-            "erro": erro,
-            "action_oob": False,
-            "pending_upload_paths": pending_upload_paths(session),
-        },
-        status_code=400,
-    )
-
-
-@app.get("/ui/compras/{compra_id}/comprovantes")
-def ui_compra_comprovantes(
-    request: Request,
-    session: SessionDep,
-    user: _AbrirComprovanteDep,
-    compra_id: int,
-) -> HTMLResponse:
-    return _comprovantes_modal(request, session, user, compra_id)
-
-
-@app.post("/ui/compras/{compra_id}/comprovantes")
-def ui_compra_comprovantes_upload(
-    request: Request,
-    session: SessionDep,
-    user: _EnviarComprovanteDep,
-    compra_id: int,
-    comprovantes: Annotated[list[UploadFile], File(default_factory=list)],
-) -> HTMLResponse:
-    found(compra.get(session, compra_id), "Compra")
-    erro = salvar_anexos_entidade(
-        session,
-        upload_dir=uploads_compra_dir(compra_id),
-        url_prefix=f"/static/uploads/compras/{compra_id}/comprovantes",
-        create_fn=imagem_comprovante_compra.create,
+register_attachment_routes(
+    app,
+    AttachmentRouteConfig(
+        name="compra_comprovantes",
+        path="/ui/compras/{compra_id}/comprovantes",
+        parent_param="compra_id",
+        attachment_param="comprovante_id",
+        parent_loader=callback_from(globals(), "compra.get"),
+        attachment_loader=callback_from(globals(), "imagem_comprovante_compra.get"),
+        parent_label="Compra",
+        parent_context_key="compra",
+        template="_modal_comprovantes_compra.html",
+        upload_dir=callback_from(globals(), "uploads_compra_dir"),
+        url_prefix=lambda item_id: f"/static/uploads/compras/{item_id}/comprovantes",
+        create_fn=callback_from(globals(), "imagem_comprovante_compra.create"),
         schema=imagem_comprovante_compra.ImagemComprovanteCompraCreate,
         fk_field="compra_id",
-        fk_id=compra_id,
-        arquivos=comprovantes,
-        actor_id=user.id,
-    )
-    if erro:
-        return _comprovantes_erro_modal(request, session, user, compra_id, erro)
-
-    return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
-
-
-@app.post("/ui/compras/{compra_id}/comprovantes/{comprovante_id}/excluir")
-def ui_compra_comprovantes_excluir(
-    request: Request,
-    session: SessionDep,
-    user: _ExcluirComprovanteDep,
-    compra_id: int,
-    comprovante_id: int,
-) -> HTMLResponse:
-    comprovante = found(
-        imagem_comprovante_compra.get(session, comprovante_id), "Comprovante"
-    )
-    excluir_anexo_entidade(
-        session,
-        anexo=comprovante,
-        parent_field="compra_id",
-        parent_id=compra_id,
-        delete_fn=imagem_comprovante_compra.delete,
-        actor_id=user.id,
-        not_found_detail="Comprovante não encontrado",
-    )
-    return _comprovantes_modal(request, session, user, compra_id, action_oob=True)
+        delete_fn=callback_from(globals(), "imagem_comprovante_compra.delete"),
+        upload_field="comprovantes",
+        attachment_label="Comprovante",
+        get_dependency=_AbrirComprovanteDep,
+        upload_dependency=_EnviarComprovanteDep,
+        delete_dependency=_ExcluirComprovanteDep,
+        refresh_parent=False,
+        extra_context=_comprovantes_context,
+    ),
+)
 
 
 def _resolver_veiculo(
