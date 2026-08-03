@@ -263,8 +263,15 @@ def _erro_compra(
     )
 
 
-def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
-    compras = compra.list_all(session)
+def _ok_compra(
+    request: Request,
+    session: Session,
+    user: Any,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+) -> HTMLResponse:
+    compras = compra.list_all(session, limit=limit, offset=offset)
     return ok_response(
         templates,
         request,
@@ -278,13 +285,17 @@ def _ok_compra(request: Request, session: Session, user: Any) -> HTMLResponse:
 
 @app.post("/ui/compras")
 async def _criar_compra(  # noqa: PLR0911
-    request: Request, session: SessionDep, user: _CadastrarCompraDep
+    request: Request,
+    session: SessionDep,
+    user: _CadastrarCompraDep,
+    limit: int = 50,
+    offset: int = 0,
 ) -> HTMLResponse:
     form = await request.form()
     dados_form = dict(form)
     idempotency_key = str(form.get("idempotency_key") or "").strip() or None
     if idempotency_key and compra.get_by_idempotency_key(session, idempotency_key):
-        return _ok_compra(request, session, user)
+        return _ok_compra(request, session, user, limit=limit, offset=offset)
 
     comprovantes = cast(
         list[UploadFile],
@@ -397,7 +408,7 @@ async def _criar_compra(  # noqa: PLR0911
         return rollback_integrity_error_response(
             session,
             lambda: (
-                _ok_compra(request, session, user)
+                _ok_compra(request, session, user, limit=limit, offset=offset)
                 if idempotency_key
                 and compra.get_by_idempotency_key(session, idempotency_key)
                 else conflict_form_response(
@@ -413,7 +424,7 @@ async def _criar_compra(  # noqa: PLR0911
                 )
             ),
         )
-    return _ok_compra(request, session, user)
+    return _ok_compra(request, session, user, limit=limit, offset=offset)
 
 
 register_crud_ui_routes(
