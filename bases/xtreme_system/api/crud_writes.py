@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+import structlog
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -16,11 +17,18 @@ from xtreme_system.api.crud_types import (
     UpdateSchemaT,
 )
 
+logger = structlog.get_logger(__name__)
+
 
 def safe_write(op: Callable[[], ResultT], *, conflict_msg: str) -> ResultT:
     try:
         return op()
-    except IntegrityError:
+    except IntegrityError as exc:
+        logger.warning(
+            "write_conflict",
+            conflict_msg=conflict_msg,
+            erro=str(exc.orig),
+        )
         raise HTTPException(status_code=409, detail=conflict_msg) from None
 
 
