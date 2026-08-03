@@ -173,7 +173,6 @@
     empty_icon,
     empty_title,
     empty_text,
-    upload_allowed,
     upload_url,
     input_name,
     accept,
@@ -181,7 +180,6 @@
     drop_text,
     drop_hint,
     submit_text,
-    delete_allowed,
     delete_url_prefix,
     delete_confirm,
     delete_label,
@@ -189,7 +187,9 @@
     image_alt,
     doc_label="documento",
     doc_icon="file",
-    images_only=False
+    images_only=False,
+    upload_allowed=False,
+    delete_allowed=False
 ) -%}
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="{{ title_id }}">
   <div class="modal__panel">

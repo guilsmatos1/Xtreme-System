@@ -8,7 +8,6 @@
   "file",
   "Nenhum documento",
   "Envie documentos deste cliente usando a área abaixo.",
-  true,
   "/ui/clientes/" ~ cliente.id ~ "/documentos",
   "documentos",
   ".pdf,.jpg,.jpeg,.png,.webp",
@@ -16,12 +15,13 @@
   "Arraste documentos aqui ou clique para selecionar",
   "PDF, JPG, PNG ou WEBP",
   "Enviar documentos",
-  pode_operacao(user, 'clientes', 'excluir_documento'),
   "/ui/clientes/" ~ cliente.id ~ "/documentos/",
   "Excluir este documento?",
   "Excluir documento",
   "Ampliar documento",
-  "Documento de " ~ cliente.nome
+  "Documento de " ~ cliente.nome,
+  upload_allowed=pode_operacao(user, 'clientes', 'editar'),
+  delete_allowed=pode_operacao(user, 'clientes', 'excluir_documento')
 ) }}
 {% if action_oob %}
 {% set c = cliente %}
