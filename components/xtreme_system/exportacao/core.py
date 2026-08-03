@@ -1,6 +1,7 @@
 """Exportação/importação do banco via pg_dump / pg_restore."""
 
 import os
+import re
 import subprocess
 import tempfile
 from datetime import UTC, datetime
@@ -20,6 +21,7 @@ _RESTORE_FAILED = "Não foi possível restaurar o banco de dados."
 _INVALID_BACKUP = "Arquivo de backup inválido."
 _TABELAS_ESSENCIAIS = frozenset({"usuario", "veiculo", "cliente", "venda", "compra"})
 _PG_COMMAND_TIMEOUT_SECONDS = 300
+_PASSWORD_IN_STDERR = re.compile(r"(?i)(password\s*[=:]\s*)[^\s,]+")
 
 
 class ExportacaoError(Exception):
@@ -76,11 +78,19 @@ def _run_pg_command(
         ) from exc
 
 
+def _command_error(message: str, result: subprocess.CompletedProcess[bytes]) -> str:
+    stderr = result.stderr.decode(errors="replace").strip()
+    if not stderr:
+        return message
+    stderr = _PASSWORD_IN_STDERR.sub(r"\1[redacted]", stderr)
+    return f"{message} Detalhes: {stderr}"
+
+
 def dump_database_to_file(output_path: str | Path) -> None:
     cmd = ["pg_dump", *_pg_args(), "-Fc", "-Z", "6", "-f", str(output_path)]
     result = _run_pg_command(cmd, env=_pg_env())
     if result.returncode != 0:
-        raise ExportacaoError(_DUMP_FAILED)
+        raise ExportacaoError(_command_error(_DUMP_FAILED, result))
 
 
 def dump_database() -> bytes:
@@ -97,7 +107,7 @@ def _listar_tabelas_do_dump(tmp_path: str) -> set[str]:
     cmd = ["pg_restore", "--list", tmp_path]
     result = _run_pg_command(cmd)
     if result.returncode != 0:
-        raise ExportacaoError(_INVALID_BACKUP)
+        raise ExportacaoError(_command_error(_INVALID_BACKUP, result))
     tabelas = set()
     for linha in result.stdout.decode(errors="replace").splitlines():
         partes = linha.split()
@@ -143,7 +153,7 @@ def restore_database_from_file(dump_path: str | Path) -> None:
             ]
             result = _run_pg_command(cmd, env=_pg_env())
             if result.returncode != 0:
-                raise ExportacaoError(_RESTORE_FAILED)
+                raise ExportacaoError(_command_error(_RESTORE_FAILED, result))
     except DatabaseRestoreInProgressError as exc:
         raise RestoreEmAndamentoError from exc
 

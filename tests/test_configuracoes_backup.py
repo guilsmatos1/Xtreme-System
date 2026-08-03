@@ -249,7 +249,7 @@ def test_dump_database_rejeita_database_url_nao_postgres(
         exportacao.dump_database()
 
 
-def test_comandos_pg_nao_expoem_stderr(
+def test_comandos_pg_incluem_stderr_redigido_no_erro(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -274,22 +274,28 @@ def test_comandos_pg_nao_expoem_stderr(
 
     with pytest.raises(exportacao.ExportacaoError) as dump_error:
         exportacao.dump_database_to_file(tmp_path / "dump.dump")
-    assert str(dump_error.value) == "Não foi possível exportar o banco de dados."
-    assert "internal-db" not in str(dump_error.value)
+    assert "Não foi possível exportar o banco de dados." in str(dump_error.value)
+    assert "internal-db" in str(dump_error.value)
+    assert "password=[redacted]" in str(dump_error.value)
+    assert "password=secret" not in str(dump_error.value)
 
     with pytest.raises(exportacao.ExportacaoError) as restore_error:
         exportacao.restore_database(b"dump")
-    assert str(restore_error.value) == "Arquivo de backup inválido."
-    assert "internal-db" not in str(restore_error.value)
+    assert "Arquivo de backup inválido." in str(restore_error.value)
+    assert "internal-db" in str(restore_error.value)
+    assert "password=[redacted]" in str(restore_error.value)
+    assert "password=secret" not in str(restore_error.value)
 
     monkeypatch.setattr(exportacao, "_validar_dump", lambda _: None)
     monkeypatch.setattr(exportacao, "_salvar_backup_pre_restore", lambda: None)
     with pytest.raises(exportacao.ExportacaoError) as restore_command_error:
         exportacao.restore_database_from_file(tmp_path / "dump.dump")
-    assert str(restore_command_error.value) == (
-        "Não foi possível restaurar o banco de dados."
+    assert "Não foi possível restaurar o banco de dados." in str(
+        restore_command_error.value
     )
-    assert "internal-db" not in str(restore_command_error.value)
+    assert "internal-db" in str(restore_command_error.value)
+    assert "password=[redacted]" in str(restore_command_error.value)
+    assert "password=secret" not in str(restore_command_error.value)
 
 
 def test_ui_configuracoes_exportar_baixa_dump(
