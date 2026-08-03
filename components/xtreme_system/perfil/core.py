@@ -1,6 +1,7 @@
 """Perfil de permissões: quais páginas da UI um perfil de usuário pode acessar."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -9,7 +10,10 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+from xtreme_system.perfil import permissions as _permissions
 from xtreme_system.perfil import policy as _policy
+from xtreme_system.perfil.permissions import PerfilLike, UsuarioLike
+from xtreme_system.usuario import core as usuario
 
 CAMPOS_FORM_PROTEGIDOS = _policy.CAMPOS_FORM_PROTEGIDOS
 CAMPOS_PROTEGIDOS = _policy.CAMPOS_PROTEGIDOS
@@ -42,8 +46,18 @@ __all__ = [
 ]
 
 
+@dataclass(frozen=True)
+class _PermissionUser:
+    is_admin: bool
+    perfil: PerfilLike | None
+
+
+def _permission_user(user: usuario.Usuario) -> UsuarioLike:
+    return _PermissionUser(is_admin=usuario.is_admin(user), perfil=user.perfil)
+
+
 def campos_form_visiveis(
-    user: Any, pagina: str | None, data: Mapping[str, Any]
+    user: usuario.Usuario, pagina: str | None, data: Mapping[str, Any]
 ) -> dict[str, Any]:
     filtered_data = dict(data)
     if pagina is None:
@@ -106,8 +120,6 @@ def update(
 
 
 def delete(session: Session, obj: Perfil, actor_id: int | None = None) -> None:
-    from xtreme_system.usuario import core as usuario  # noqa: PLC0415 (import circular)
-
     for user in session.query(usuario.Usuario).filter_by(perfil_id=obj.id):
         usuario.set_perfil(session, user, None, actor_id)
     crud.delete(session, obj, actor_id)
@@ -121,35 +133,13 @@ def pagina_da_rota(path: str) -> str | None:
     return segmento if segmento in PAGINAS_VALIDAS else None
 
 
-def pode_acessar(user: Any, pagina: str) -> bool:
-    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
-
-    if is_admin(user):
-        return True
-    return bool(user.perfil and pagina in user.perfil.paginas)
+def pode_acessar(user: usuario.Usuario, pagina: str) -> bool:
+    return _permissions.pode_acessar(_permission_user(user), pagina)
 
 
-def pode_ver_campo(user: Any, pagina: str, campo: str) -> bool:
-    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
-
-    if is_admin(user):
-        return True
-    if not user.perfil:
-        return False
-    if pagina not in user.perfil.paginas:
-        return False
-    ocultos = (user.perfil.restricoes or {}).get(pagina, {}).get("campos_ocultos", [])
-    return campo not in ocultos
+def pode_ver_campo(user: usuario.Usuario, pagina: str, campo: str) -> bool:
+    return _permissions.pode_ver_campo(_permission_user(user), pagina, campo)
 
 
-def pode_operacao(user: Any, pagina: str, operacao: str) -> bool:
-    from xtreme_system.usuario.core import is_admin  # noqa: PLC0415
-
-    if is_admin(user):
-        return True
-    if not user.perfil:
-        return False
-    if pagina not in user.perfil.paginas:
-        return False
-    permitidas = (user.perfil.restricoes or {}).get(pagina, {}).get("operacoes", [])
-    return operacao in permitidas
+def pode_operacao(user: usuario.Usuario, pagina: str, operacao: str) -> bool:
+    return _permissions.pode_operacao(_permission_user(user), pagina, operacao)
