@@ -258,15 +258,12 @@
           {% if pode_ver_campo(user, 'vendas', 'veiculo') %}
           <label class="field field--full">
             <span class="field__label">Veículo *</span>
-            <input class="input" id="veiculo-search" name="veiculo_id" type="hidden" value="{{ dados.get('veiculo_id', '') }}">
-            <input class="input" id="veiculo-input" data-testid="venda-wizard-vehicle-search" name="veiculo_label" placeholder="Buscar por placa ou modelo" list="veiculos-list" required aria-describedby="veiculo-selecao"
-                   value="{{ dados.get('veiculo_label', '') }}"
-                   data-reference-url="/ui/vendas/referencias/veiculos"
-                   data-selected-id="{{ dados.get('veiculo_id', '') }}">
-            <small id="veiculo-selecao" class="field__hint" aria-live="polite"></small>
-            <datalist id="veiculos-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="veiculos-list" hidden>Carregar mais</button>
+            <select class="select" id="veiculo-select" data-testid="venda-wizard-vehicle-select" name="veiculo_id" required>
+              <option value="">Selecione um veículo</option>
+              {% for v in veiculos %}
+              <option value="{{ v.id }}"{% if dados.get('veiculo_id')|string == v.id|string %} selected{% endif %}>{{ v.placa }} — {{ v.modelo }}</option>
+              {% endfor %}
+            </select>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'km') %}
@@ -478,11 +475,6 @@
         return option.value === input.value;
       })[0];
       hidden.value = match ? match.dataset.id || '' : '';
-      if (input.id === 'veiculo-input') {
-        input.setCustomValidity(hidden.value ? '' : 'Selecione um veículo da lista');
-        var hint = document.getElementById('veiculo-selecao');
-        if (hint) hint.textContent = hidden.value ? 'Veículo selecionado: ' + input.value : '';
-      }
     }
 
     function load(reset, ids) {
@@ -519,7 +511,6 @@
     input.addEventListener('input', function () {
       selectedId = '';
       hidden.value = '';
-      if (input.id === 'veiculo-input') input.setCustomValidity('');
       load(true);
     });
     input.addEventListener('change', sync);

@@ -78,6 +78,9 @@ def _ctx_form_venda(session: Session) -> dict[str, Any]:
     return {
         "status": list(venda.StatusVenda),
         "clientes": cliente.list_all(session),
+        "veiculos": _veiculos_disponiveis_query(session)
+        .order_by(veiculo.Veiculo.id)
+        .all(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos_veiculo": list(veiculo.TipoVeiculo),
         "investidores": investidor.list_all(session),

@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import Locator, Page, expect
+from playwright.sync_api import Page, expect
 
 
 @pytest.mark.e2e
@@ -155,10 +155,8 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     page.get_by_test_id("venda-wizard-client-phone").fill("11999999999")
     page.get_by_test_id("venda-wizard-next").click()
 
-    veiculo_input = page.get_by_test_id("venda-wizard-vehicle-search")
-    expect(veiculo_input).to_have_css("appearance", "auto")
-    _selecionar_referencia(
-        page, veiculo_input, "#veiculos-list", "ABC1234", "ABC1234 — Onix"
+    page.get_by_test_id("venda-wizard-vehicle-select").select_option(
+        label="ABC1234 — Onix"
     )
     page.get_by_test_id("venda-wizard-next").click()
 
@@ -173,27 +171,6 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     expect(page.get_by_text("Cliente Venda E2E")).to_be_visible()
 
 
-def _selecionar_referencia(
-    page: Page, input_locator: Locator, datalist_selector: str, busca: str, label: str
-) -> None:
-    """Simula a seleção de uma sugestão de um <input list> alimentado via fetch.
-
-    O datalist real não é clicável pelo Playwright, então digitamos um termo
-    parcial para disparar a busca assíncrona, esperamos a opção aparecer e então
-    aplicamos o valor final disparando apenas o evento "change" (sem "input",
-    que limparia e refaria a busca com o rótulo completo).
-    """
-    input_locator.fill(busca)
-    expect(page.locator(f'{datalist_selector} option[value="{label}"]')).to_have_count(
-        1
-    )
-    input_locator.evaluate(
-        "(el, value) => { el.value = value; "
-        "el.dispatchEvent(new Event('change', { bubbles: true })); }",
-        label,
-    )
-
-
 def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
     page.goto(f"{live_server_url}/ui/vendas")
     page.get_by_test_id("vendas-create").click()
@@ -204,9 +181,8 @@ def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
     page.get_by_test_id("venda-wizard-client-phone").fill("11988888888")
     page.get_by_test_id("venda-wizard-next").click()
 
-    veiculo_input = page.get_by_test_id("venda-wizard-vehicle-search")
-    _selecionar_referencia(
-        page, veiculo_input, "#veiculos-list", "ABC1234", "ABC1234 — Onix"
+    page.get_by_test_id("venda-wizard-vehicle-select").select_option(
+        label="ABC1234 — Onix"
     )
     page.get_by_test_id("venda-wizard-next").click()
 

@@ -1342,7 +1342,7 @@ def test_ui_venda_referencias_busca_e_pagina(client: TestClient) -> None:
     assert len(veiculos.json()["items"]) == 1
 
 
-def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(
+def test_ui_nova_venda_exibe_select_de_veiculos_sem_paginacao(
     client: TestClient,
 ) -> None:
     _login_admin(client)
@@ -1350,13 +1350,10 @@ def test_ui_nova_venda_valida_selecao_de_veiculo_no_campo_visivel(
     resp = client.get("/ui/vendas/novo")
 
     assert resp.status_code == 200
-    assert 'id="veiculo-search" name="veiculo_id" type="hidden"' in resp.text
-    assert 'id="veiculo-input"' in resp.text
-    assert 'id="veiculo-input"' in resp.text
-    assert 'list="veiculos-list" required' in resp.text
-    assert 'id="veiculo-selecao"' in resp.text
-    assert "Selecione um veículo da lista" in resp.text
-    assert "input, select, textarea" in resp.text
+    assert 'id="veiculo-select"' in resp.text
+    assert 'name="veiculo_id" required' in resp.text
+    assert '<option value="1">ABC1234 — Onix</option>' in resp.text
+    assert 'data-reference-list="veiculos-list"' not in resp.text
 
 
 def test_ui_criar_venda_cadastra_veiculo_novo_na_troca(client: TestClient) -> None:
