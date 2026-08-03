@@ -206,22 +206,17 @@
           {% if pode_ver_campo(user, 'vendas', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <input class="input" id="cliente-input" name="cliente_label" list="clientes-list"
-                   placeholder="Buscar por nome ou documento" autofocus
-                   value="{{ dados.get('cliente_label', '') }}"
-                   data-reference-url="/ui/vendas/referencias/clientes"
-                   data-selected-id="{{ dados.get('cliente_id', '') }}">
-            <input id="cliente-search" name="cliente_id" type="hidden" value="{{ dados.get('cliente_id', '') }}">
-            <datalist id="clientes-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="clientes-list" hidden>Carregar mais</button>
-            <small class="field__hint">Deixe vazio para cadastrar um novo cliente.</small>
+            <select class="select" id="cliente-select" data-testid="venda-wizard-client-select" name="cliente_id" autofocus>
+              <option value="">➕ Cadastrar novo cliente</option>
+              {% for c in clientes %}
+              <option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
+              {% endfor %}
+            </select>
           </label>
           <label class="field field--full">
             <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-testid="venda-wizard-client-name" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
           </label>
-          {% endif %}
           <label class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
             <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
@@ -229,16 +224,16 @@
           <label class="field">
             <span class="field__label">Tipo</span>
             <select class="select" name="cli_tipo" data-novo-cliente>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('cli_tipo', '') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+              {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
-            <span class="field__label">Telefone</span>
-            <input class="input" name="cli_telefone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}">
+            <span class="field__label">Telefone *</span>
+            <input class="input" name="cli_telefone" data-testid="venda-wizard-client-phone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
+            <input class="input" name="cli_email" data-testid="venda-wizard-client-email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
           </label>
           <label class="field field--full">
             <span class="field__label">Endereço</span>
@@ -256,6 +251,7 @@
             <span class="field__label">CEP</span>
             <input class="input" name="cli_cep" data-novo-cliente value="{{ dados.get('cli_cep', '') }}">
           </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2">
@@ -599,20 +595,18 @@
 <script>
 (function () {
   var form = document.getElementById('form-nova-venda');
-  var input = document.getElementById('cliente-input');
-  var hidden = document.getElementById('cliente-search');
+  var selectCliente = document.getElementById('cliente-select');
   var campos = form.querySelectorAll('[data-novo-cliente]');
 
   function sincronizarCliente() {
-    var existente = !!hidden.value;
+    var existente = !!selectCliente.value;
     campos.forEach(function (campo) {
       campo.disabled = existente;
       campo.closest('.field').style.display = existente ? 'none' : '';
     });
   }
-  if (!input || !hidden) return;
-  input.addEventListener('change', sincronizarCliente);
-  input.addEventListener('input', sincronizarCliente);
+  if (!selectCliente) return;
+  selectCliente.addEventListener('change', sincronizarCliente);
   sincronizarCliente();
 })();
 </script>

@@ -77,7 +77,8 @@ _VerFechamentoVendaDep = Annotated[
 def _ctx_form_venda(session: Session) -> dict[str, Any]:
     return {
         "status": list(venda.StatusVenda),
-        "tipos": list(cliente.TipoCliente),
+        "clientes": cliente.list_all(session),
+        "tipos_cliente": list(cliente.TipoCliente),
         "tipos_veiculo": list(veiculo.TipoVeiculo),
         "investidores": investidor.list_all(session),
     }

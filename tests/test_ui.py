@@ -1245,7 +1245,7 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
-def test_ctx_form_venda_nao_carrega_todos_clientes_e_veiculos(
+def test_ctx_form_venda_carrega_clientes_para_o_select_e_nao_veiculos(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
     calls: list[tuple[str, int | None]] = []
@@ -1271,7 +1271,7 @@ def test_ctx_form_venda_nao_carrega_todos_clientes_e_veiculos(
     resp = client.get("/ui/vendas/novo")
 
     assert resp.status_code == 200
-    assert calls == []
+    assert calls == [("clientes", None)]
 
 
 def test_ctx_form_veiculo_nao_carrega_frota_nem_referencias(

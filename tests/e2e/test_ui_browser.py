@@ -152,6 +152,7 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
 
     page.get_by_test_id("venda-wizard-client-name").fill("Cliente Venda E2E")
     page.get_by_test_id("venda-wizard-client-document").fill("22233344455")
+    page.get_by_test_id("venda-wizard-client-phone").fill("11999999999")
     page.get_by_test_id("venda-wizard-next").click()
 
     veiculo_input = page.get_by_test_id("venda-wizard-vehicle-search")
@@ -199,6 +200,7 @@ def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
 
     page.get_by_test_id("venda-wizard-client-name").fill("Cliente Venda Setup")
     page.get_by_test_id("venda-wizard-client-document").fill("33344455566")
+    page.get_by_test_id("venda-wizard-client-phone").fill("11988888888")
     page.get_by_test_id("venda-wizard-next").click()
 
     veiculo_input = page.get_by_test_id("venda-wizard-vehicle-search")
