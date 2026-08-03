@@ -3,6 +3,20 @@ set -euo pipefail
 
 TARGET_BRANCH="${AGENT_FINISH_TARGET_BRANCH:-master}"
 
+temporary_worktree_root=""
+temporary_worktree=""
+
+cleanup_temporary_worktree() {
+  if [[ -n "${temporary_worktree}" && -d "${temporary_worktree}" ]]; then
+    git worktree remove --force "${temporary_worktree}" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "${temporary_worktree_root}" && -d "${temporary_worktree_root}" ]]; then
+    rmdir "${temporary_worktree_root}" >/dev/null 2>&1 || true
+  fi
+}
+
+trap cleanup_temporary_worktree EXIT
+
 current_branch="$(git branch --show-current)"
 if [[ -z "${current_branch}" ]]; then
   printf '%s\n' "agent-finish: detached HEAD is not supported" >&2
@@ -24,8 +38,11 @@ if [[ "${current_branch}" != "${TARGET_BRANCH}" ]]; then
   )"
 
   if [[ -z "${target_worktree}" ]]; then
-    printf '%s\n' "agent-finish: target branch '${TARGET_BRANCH}' is not checked out in a worktree" >&2
-    exit 1
+    temporary_worktree_root="$(mktemp -d "${TMPDIR:-/tmp}/xtreme-system-finish.XXXXXX")"
+    temporary_worktree="${temporary_worktree_root}/target"
+    git worktree add --quiet "${temporary_worktree}" "${TARGET_BRANCH}"
+    target_worktree="${temporary_worktree}"
+    printf '%s\n' "agent-finish: using temporary worktree for '${TARGET_BRANCH}'"
   fi
 
   # Only tracked modifications can be clobbered by the merge. Untracked files
