@@ -108,7 +108,9 @@ def test_ui_http_exception_retorna_html_para_swap_htmx(client: TestClient) -> No
     assert resp.text != '{"detail":"Veículo não encontrado"}'
 
 
-def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
+def test_ui_login_seta_cookie_e_lista_veiculos(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
     resp = client.post(
         "/ui/login",
         data={"username": "admin", "password": "senha"},
@@ -116,6 +118,8 @@ def test_ui_login_seta_cookie_e_lista_veiculos(client: TestClient) -> None:
     )
     assert resp.status_code == 303
     assert "access_token" in resp.cookies
+    assert "authentication_succeeded" in caplog.text
+    assert "admin" in caplog.text
 
     pagina = client.get("/ui/veiculos")
     assert pagina.status_code == 200
