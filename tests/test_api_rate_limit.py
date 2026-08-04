@@ -2,6 +2,7 @@
 
 import time as time_module
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import cast
 
 import pytest
@@ -13,7 +14,9 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.setup import (
     _GERAL_LIMIT,
     _LOGIN_LIMIT,
+    _get_rate_limit_store,
     _MemoryRateLimiterStore,
+    _rate_limit_store_state,
     reset_rate_limiters,
 )
 from xtreme_system.database.rate_limit import DatabaseRateLimiterStore, rate_limit_state
@@ -118,6 +121,29 @@ def test_requests_gerais_bloqueiam_apos_limite(client: TestClient) -> None:
     assert "Retry-After" in resp.headers
 
 
+def test_rate_limit_middleware_delega_store_sincrono_ao_threadpool(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _MemoryRateLimiterStore()
+    monkeypatch.setitem(_rate_limit_store_state, "store", store)
+    chamadas: list[tuple[object, tuple[object, ...]]] = []
+
+    async def fake_run_in_threadpool(func: object, *args: object) -> tuple[bool, float]:
+        chamadas.append((func, args))
+        return True, 0.0
+
+    monkeypatch.setattr(
+        "xtreme_system.api.setup.run_in_threadpool", fake_run_in_threadpool
+    )
+
+    response = client.get("/investidores")
+
+    assert response.status_code == 401
+    assert len(chamadas) == 1
+    assert getattr(chamadas[0][0], "__self__", None) is store
+    assert chamadas[0][1][1] == _GERAL_LIMIT
+
+
 def _token(client: TestClient, username: str) -> str:
     resp = client.post("/login", data={"username": username, "password": "senha"})
     assert resp.status_code == 200
@@ -193,6 +219,18 @@ def test_memory_rate_limiter_limpa_buckets_antigos(
     assert store.allow("novo", limit=1, window_seconds=60) == (True, 0.0)
 
     assert list(vars(store)["_hits"]) == ["novo"]
+
+
+def test_rate_limit_store_inicializa_uma_unica_instancia_com_concorrencia(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RATE_LIMIT_STORE", "memory")
+    monkeypatch.setitem(_rate_limit_store_state, "store", None)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        stores = list(executor.map(lambda _: _get_rate_limit_store(), range(16)))
+
+    assert len({id(store) for store in stores}) == 1
 
 
 def test_database_rate_limiter_usa_contador_por_janela(db_session: Session) -> None:

@@ -10,6 +10,7 @@ from collections.abc import Callable
 from html import escape
 from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import structlog
@@ -129,21 +130,28 @@ class _MemoryRateLimiterStore:
 
 
 _rate_limit_store_state: dict[str, RateLimiterStore | None] = {"store": None}
+_rate_limit_store_lock = Lock()
 
 
 def _get_rate_limit_store() -> RateLimiterStore:
     store = _rate_limit_store_state["store"]
-    if store is None:
-        if os.environ.get("RATE_LIMIT_STORE", "database").lower() == "memory":
-            store = _MemoryRateLimiterStore()
-        else:
-            store = DatabaseRateLimiterStore()
-        _rate_limit_store_state["store"] = store
+    if store is not None:
+        return store
+
+    with _rate_limit_store_lock:
+        store = _rate_limit_store_state["store"]
+        if store is None:
+            if os.environ.get("RATE_LIMIT_STORE", "database").lower() == "memory":
+                store = _MemoryRateLimiterStore()
+            else:
+                store = DatabaseRateLimiterStore()
+            _rate_limit_store_state["store"] = store
     return store
 
 
 def configure_rate_limit_store(store: RateLimiterStore) -> None:
-    _rate_limit_store_state["store"] = store
+    with _rate_limit_store_lock:
+        _rate_limit_store_state["store"] = store
 
 
 def _cors_origins() -> list[str]:
