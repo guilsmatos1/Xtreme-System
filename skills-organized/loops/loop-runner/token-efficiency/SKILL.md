@@ -33,9 +33,9 @@ context. This skill coordinates the batch; it does not analyze sessions itself.
    - Do not inspect rollout contents or alter the generated jobs.
 
 3. Invoke skill `loops--task-orchestration--skill-dispatcher` with the generated jobs file.
-   Follow that skill exactly: run its helper detached, poll its JSONL output, and
-   wait for its final summary. It provides the required strict sequencing and
-   fresh Orca terminal for every analysis.
+   Follow that skill and [../../references/orchestration-harness.md](../../references/orchestration-harness.md):
+   run the helper detached, poll JSONL, wait for the final summary (strict sequencing +
+   fresh Orca terminal per analysis).
 
 4. After the dispatcher finishes, audit the expected artifacts:
 

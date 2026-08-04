@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--observability
-description: Analyze the codebase for observability gaps — missing or unstructured logging, absent metrics/tracing on critical paths, and errors that fail silently with no operational signal — prioritized by how much operational blindness they create. Use when asked to review logging, observability, monitoring, tracing, or metrics coverage, or produce a prioritized list of concrete observability issues tied to specific files and line numbers.
+description: Analyze observability gaps (logging, metrics, tracing on critical paths). Use when asked about silent failures or missing operational signals.
 metadata:
     skill-organizer:
         original-name: coding--analyze--observability

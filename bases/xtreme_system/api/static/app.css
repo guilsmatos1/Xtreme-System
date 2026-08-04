@@ -45,7 +45,7 @@
   --r-sm:   3px;
   --r:      5px;
   --r-md:   6px;
-  --r-lg:   8px;
+  --r-lg:   11px;
   --r-full: 999px;
 
   /* Shadows — discretas, planas */
@@ -334,7 +334,9 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s, transform .15s;
 }
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .card--pad { padding: var(--s-4); }
 .panel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); align-items: stretch; margin-bottom: var(--s-4); }
 .toolbar {
@@ -393,6 +395,7 @@ th.col-actions, td.col-actions {
 th.col-actions { z-index: 3; }
 td.col-actions { background: var(--surface); z-index: 1; }
 tbody tr:hover td.col-actions { background: var(--surface-hover); }
+.cell-check { width: 15px; height: 15px; color: var(--success); vertical-align: middle; }
 
 /* ---- 11. Badge ----------------------------------------------------------- */
 .badge {

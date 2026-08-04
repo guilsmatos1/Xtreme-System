@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--api-consistency
-description: Analyze the codebase for API contract inconsistencies — divergent error shapes, status codes, naming, pagination, and versioning across endpoints that do the same kind of thing differently — prioritized by how much they break client expectations. Use when asked to review API consistency, audit endpoint contracts, find inconsistent error/response formats, check naming or status-code conventions across routes, or produce a prioritized list of concrete API-consistency issues tied to specific files and line numbers.
+description: Analyze API contract inconsistencies across endpoints. Use when asked about divergent error shapes, status codes, pagination, or API versioning.
 metadata:
     skill-organizer:
         original-name: coding--analyze--api-consistency

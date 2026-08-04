@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--features
-description: Analyze the system from the product/functionality angle and identify the 10 highest-impact functional issues, prioritized by value to the end user. Use when asked what features are missing, what workflows are incomplete or awkward, what business rules are unenforced, or for a prioritized roadmap of functional issues tied to specific routes, components, and screens.
+description: Analyze product/workflow gaps and rank the highest-impact functional issues. Use when asked what features are missing or which workflows are incomplete.
 metadata:
     skill-organizer:
         original-name: coding--analyze--features

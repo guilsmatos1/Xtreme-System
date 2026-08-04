@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--data-integrity
-description: Analyze the codebase for data-integrity risks — missing DB constraints, unsafe migrations, orphaned/inconsistent records, and application logic that can leave the database in a contradictory state — prioritized by the risk of silent, hard-to-detect corruption. Use when asked to review data integrity, audit the schema/migrations, find missing constraints or referential-integrity gaps, or produce a prioritized list of concrete data-integrity issues tied to specific files and line numbers.
+description: Analyze data-integrity risks (constraints, migrations, orphaned records). Use when asked about inconsistent DB state or unsafe schema changes.
 metadata:
     skill-organizer:
         original-name: coding--analyze--data-integrity

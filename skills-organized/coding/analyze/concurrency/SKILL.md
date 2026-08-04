@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--concurrency
-description: Analyze the codebase for concurrency weaknesses — race conditions, non-atomic check-then-act logic, missing locks on shared/mutable state, and non-idempotent writes vulnerable to retries or duplicate requests — prioritized by how likely concurrent access is and how bad the outcome would be. Use when asked to review concurrency, find race conditions, audit locking/idempotency, check for double-submit or duplicate-write bugs, or produce a prioritized list of concrete concurrency issues tied to specific files and line numbers.
+description: Analyze concurrency risks (races, check-then-act, non-idempotent writes). Use when asked about race conditions, locks, or duplicate-request safety.
 metadata:
     skill-organizer:
         original-name: coding--analyze--concurrency

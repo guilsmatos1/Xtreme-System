@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--testing-gaps
-description: Analyze the codebase for test-coverage weaknesses — untested critical paths, flaky or dangerously-mocked tests, missing negative/edge-case coverage, and untested rollback/authorization behavior — prioritized by the risk of an undetected regression. Use when asked to review test coverage, find testing gaps, audit test quality, check for flaky/mocked tests, or produce a prioritized list of concrete testing issues tied to specific files and line numbers.
+description: Analyze test-coverage weaknesses (critical paths, flakes, bad mocks, missing negatives). Use when asked about testing gaps or untested rollback/auth behavior.
 metadata:
     skill-organizer:
         original-name: coding--analyze--testing-gaps

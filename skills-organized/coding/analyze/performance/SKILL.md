@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--performance
-description: Analyze the codebase for performance weaknesses — N+1 queries, missing indexes, blocking I/O on hot paths, unbounded payloads/loops, and inefficient data access patterns — prioritized by real-world latency and resource impact. Use when asked to review performance, find slow queries, audit database access patterns, check for N+1 issues, or produce a prioritized list of concrete performance issues tied to specific files and line numbers.
+description: Analyze performance weaknesses (N+1, missing indexes, blocking I/O, unbounded work). Use when asked about latency, slow queries, or resource cost.
 metadata:
     skill-organizer:
         original-name: coding--analyze--performance

@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--llm-adherence
-description: Analyze Python codebases for real modularization opportunities that improve maintainability, reduce coupling, clarify contracts, and help LLMs make small safe edits. Use when asked to review Python architecture, find refactoring opportunities, split large files/functions/classes, detect weak module boundaries, identify duplicated logic, circular imports, global dependencies, private API access, untyped dict/Any contracts, mixed CLI/API/UI/domain logic, or propose modularization work for safer AI-assisted maintenance.
+description: Analyze Python modularization for LLM-friendly, low-coupling edits. Use when asked to improve module boundaries or LLM editability.
 metadata:
     skill-organizer:
         original-name: coding--analyze--llm-adherence

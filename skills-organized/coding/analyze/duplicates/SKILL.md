@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--duplicates
-description: Analyze the codebase for code consolidation opportunities — duplicated, near-duplicated, and redundant code that can be unified without losing any functionality. Use when asked to find duplication, copy-paste, repeated logic, parallel implementations of the same rule, redundant helpers/templates/queries, or a prioritized list of safe behavior-preserving merges.
+description: Analyze safe code consolidation of duplicated or parallel logic. Use when asked to find duplication, copy-paste, or redundant helpers/templates.
 metadata:
     skill-organizer:
         original-name: coding--analyze--duplicates

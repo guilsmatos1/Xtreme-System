@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--ui-ux
-description: Analyze the system's UI/UX and visual design and identify the 10 highest-impact interface issues, prioritized by how much friction they remove for the daily user. Use when asked for a UX review, design audit, interface critique, accessibility check, visual consistency review, form/table usability analysis, or a prioritized list of concrete UI issues tied to specific templates, CSS rules, and screens.
+description: Analyze UI/UX friction and rank the highest-impact interface issues. Use when asked for a UX review, design audit, or daily-user friction list.
 metadata:
     skill-organizer:
         original-name: coding--analyze--ui-ux

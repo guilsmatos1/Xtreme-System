@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--error-handling
-description: Analyze the codebase for error-handling weaknesses — swallowed exceptions, lost context, unsafe rollback/session handling, leaked internals, and missing resilience — prioritized by correctness and operational risk. Use when asked to review error handling, exception handling, failure modes, resilience, logging/observability of errors, or a prioritized list of concrete error-handling issues tied to specific files and line numbers.
+description: Analyze error-handling weaknesses (swallowed errors, bad rollbacks, leaked internals). Use when asked about exception handling, session rollback, or error responses.
 metadata:
     skill-organizer:
         original-name: coding--analyze--error-handling

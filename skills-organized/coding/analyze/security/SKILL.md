@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--security
-description: Analyze the codebase for security weaknesses — injection, broken auth/authorization, exposed secrets, unsafe deserialization, missing input validation, and other OWASP-class risks — prioritized by exploitability and blast radius. Use when asked to review security, find vulnerabilities, audit auth/permissions, check for injection or exposed secrets, or produce a prioritized list of concrete security issues tied to specific files and line numbers.
+description: Analyze security weaknesses (injection, authz, secrets, unsafe input). Use when asked for a security review, vulnerability audit, or auth/permissions check.
 metadata:
     skill-organizer:
         original-name: coding--analyze--security

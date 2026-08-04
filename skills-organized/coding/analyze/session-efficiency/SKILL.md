@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--session-efficiency
-description: Analyzes exactly one Codex worker rollout and writes its canonical token-efficiency report. Use only for isolated jobs dispatched by loops--loop-runner--token-efficiency through Orca.
+description: Analyze token efficiency for exactly one Codex worker session. Use only when loops--loop-runner--token-efficiency dispatches an isolated session job.
 metadata:
     skill-organizer:
         original-name: coding--analyze--session-efficiency

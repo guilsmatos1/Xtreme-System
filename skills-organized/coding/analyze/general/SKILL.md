@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--general
-description: Analyze a codebase thoroughly and identify the highest-impact improvement opportunities, prioritized by impact. Use when asked for a code review, technical debt audit, architecture critique, performance review, testing gap analysis, or a prioritized list of concrete issues tied to specific files and snippets.
+description: Analyze the codebase for highest-impact improvement opportunities. Use when asked for a broad code review or prioritized technical-debt list.
 metadata:
     skill-organizer:
         original-name: analyze-codebase
