@@ -42,7 +42,7 @@
 
   <section class="card card--pad">
     <h3 style="margin-bottom:var(--s-4)">Alterar senha</h3>
-    {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso) }}</div>{% endif %}
+    {% if sucesso %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(sucesso, "success") }}</div>{% endif %}
     {% if erro %}<div style="margin-bottom:var(--s-4)">{{ ui.alert(erro) }}</div>{% endif %}
     <form method="post" action="/ui/conta/senha">
       <div class="form-grid">

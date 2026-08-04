@@ -243,6 +243,7 @@ def test_configuracoes_salva_e_recarrega(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "http://evolution:8080" in resp.text
     assert "1203630@g.us" in resp.text
+    assert 'class="alert alert--success"' in resp.text
 
     resp = client.get("/ui/configuracoes")
     assert resp.status_code == 200

@@ -3060,6 +3060,7 @@ def test_ui_conta_troca_propria_senha(client: TestClient) -> None:
 
     assert resp.status_code == 200
     assert "Senha alterada com sucesso." in resp.text
+    assert 'class="alert alert--success"' in resp.text
 
     login = client.post(
         "/ui/login",
