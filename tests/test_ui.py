@@ -3807,6 +3807,47 @@ def test_veiculo_criado_via_api_gera_lancamento_visivel_no_caixa(
     assert "20.000,00" not in pagina.text
 
 
+def test_ui_lancamentos_aplica_limit_offset_e_paginacao(client: TestClient) -> None:
+    headers = _admin_headers(client)
+    inv = client.post(
+        "/investidores", json={"nome": "Paginação"}, headers=headers
+    ).json()
+    for descricao in ("Primeiro", "Segundo", "Terceiro"):
+        response = client.post(
+            "/lancamentos-caixa",
+            json={
+                "investidor_id": inv["id"],
+                "tipo": "aporte",
+                "valor": "100.00",
+                "descricao": descricao,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 201
+
+    _login_admin(client)
+    pagina = client.get(f"/ui/investidores/{inv['id']}/lancamentos?limit=1&offset=1")
+
+    assert pagina.status_code == 200
+    assert "Segundo" in pagina.text
+    assert "Primeiro" not in pagina.text
+    assert "Terceiro" not in pagina.text
+    assert "Mostrando 2" in pagina.text
+    assert 'hx-get="/ui/investidores/' in pagina.text
+    assert "offset=2" in pagina.text
+    assert "limit=1" in pagina.text
+
+
+@pytest.mark.parametrize("query", ["limit=0", "limit=201", "offset=-1"])
+def test_ui_lancamentos_rejeita_paginacao_invalida(
+    client: TestClient, query: str
+) -> None:
+    _login_admin(client)
+    pagina = client.get(f"/ui/investidores/1/lancamentos?{query}")
+
+    assert pagina.status_code == 422
+
+
 def test_ui_nao_exclui_investidor_com_lancamentos(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)

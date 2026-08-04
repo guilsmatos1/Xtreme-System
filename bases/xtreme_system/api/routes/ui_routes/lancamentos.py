@@ -1,16 +1,17 @@
 """HTMX routes for lancamentos de caixa por investidor."""
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.helpers import LIST_LIMIT_MAX, current_list_state
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import (
     error_response,
-    ok_response,
+    list_response,
     validation_error_detail,
 )
 from xtreme_system.api.deps import (
@@ -37,13 +38,18 @@ _LANCAMENTO_AUTOMATICO_ERRO = "Lançamento automático não pode ser alterado ma
 
 
 def _ctx_lancamentos(
-    session: Session, investidor_id: int, sort: str = "", order: str = "asc"
+    session: Session,
+    investidor_id: int,
+    sort: str = "",
+    order: str = "asc",
+    limit: int = 50,
+    offset: int = 0,
 ) -> dict[str, Any]:
     query = caixa.query_by_investidor(session, investidor_id)
     field = _LANCAMENTO_SORT_FIELDS.get(sort, "id")
     col = getattr(caixa.LancamentoInvestimento, field)
     order_expr = col.desc() if order == "desc" else col.asc()
-    lancamentos = list(query.order_by(order_expr).all())
+    lancamentos = list(query.order_by(order_expr).offset(offset).limit(limit).all())
     return {
         "investidor": found(investidor.get(session, investidor_id), "Investidor"),
         "investidor_id": investidor_id,
@@ -51,14 +57,25 @@ def _ctx_lancamentos(
         "saldo": caixa.saldo(session, investidor_id),
         "sort": sort,
         "order": order,
+        "limit": limit,
+        "offset": offset,
     }
 
 
 def _ok_lancamentos(
     request: Request, session: Session, user: usuario.Usuario, investidor_id: int
 ) -> HTMLResponse:
-    ctx = _ctx_lancamentos(session, investidor_id)
-    return ok_response(
+    state = current_list_state(request)
+    limit = state.limit or 50
+    ctx = _ctx_lancamentos(
+        session,
+        investidor_id,
+        state.sort,
+        state.order,
+        limit,
+        state.offset,
+    )
+    return list_response(
         templates,
         request,
         "_lancamentos_ok.html",
@@ -68,6 +85,11 @@ def _ok_lancamentos(
         ctx_list={
             chave: valor for chave, valor in ctx.items() if chave != "lancamentos"
         },
+        sort=state.sort,
+        order=state.order,
+        limit=limit,
+        offset=state.offset,
+        success=True,
     )
 
 
@@ -107,15 +129,31 @@ def ui_investidor_lancamentos(
     user: UIUser,
     sort: str = "",
     order: str = "asc",
+    limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> HTMLResponse:
     ctx = {
-        "user": user,
         "investidor_id": investidor_id,
-        **_ctx_lancamentos(session, investidor_id, sort, order),
+        **_ctx_lancamentos(session, investidor_id, sort, order, limit, offset),
     }
-    if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "_linhas_lancamentos.html", ctx)
-    return templates.TemplateResponse(request, "investidor_lancamentos.html", ctx)
+    template = (
+        "_linhas_lancamentos.html"
+        if request.headers.get("HX-Request")
+        else "investidor_lancamentos.html"
+    )
+    return list_response(
+        templates,
+        request,
+        template,
+        user=user,
+        list_key="lancamentos",
+        lista=ctx.pop("lancamentos"),
+        ctx_list=ctx,
+        sort=sort,
+        order=order,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @app.get("/ui/investidores/{investidor_id}/lancamentos/exportar")
