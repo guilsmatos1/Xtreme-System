@@ -1,5 +1,6 @@
 """FastAPI app initialization, middlewares, and error handlers."""
 
+import json
 import math
 import os
 import time
@@ -12,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
@@ -171,6 +172,35 @@ app.add_middleware(
     allow_methods=_CORS_ALLOWED_METHODS,
     allow_headers=_CORS_ALLOWED_HEADERS,
 )
+
+_HTMX_SUCCESS_EVENTS = {
+    "htmx:toast": {"message": "Alterações salvas com sucesso.", "variant": "success"},
+    "htmx:close-modal": {},
+}
+
+
+@app.middleware("http")
+async def _htmx_write_feedback(
+    request: Request,
+    call_next: Callable[[Request], Any],
+) -> Any:
+    response = await call_next(request)
+    is_write = request.method in {"POST", "PUT", "PATCH", "DELETE"}
+    is_htmx_ui = request.url.path.startswith("/ui/") and request.headers.get(
+        "HX-Request"
+    )
+    is_success_html = (
+        status.HTTP_200_OK <= response.status_code < status.HTTP_300_MULTIPLE_CHOICES
+        and response.headers.get("content-type", "").startswith("text/html")
+    )
+    if (
+        is_write
+        and is_htmx_ui
+        and is_success_html
+        and "HX-Trigger" not in response.headers
+    ):
+        response.headers["HX-Trigger"] = json.dumps(_HTMX_SUCCESS_EVENTS)
+    return response
 
 
 @app.on_event("startup")
