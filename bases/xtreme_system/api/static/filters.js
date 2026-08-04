@@ -1,6 +1,12 @@
 /* Campos decimais: formata em pt-BR na exibição (1.234,56) e normaliza de
    volta para ponto decimal antes de cada requisição do HTMX. Também remove
-   parâmetros vazios em formulários marcados com data-omit-empty-params. */
+   parâmetros vazios em formulários marcados com data-omit-empty-params.
+
+   Não migrado para x-mask: o plugin vendorizado (alpine-mask.min.js) modela
+   $money como entrada estilo maquininha de cartão — os dígitos entram da
+   direita, os 2 últimos são sempre centavos — não como formatador de um
+   valor já digitado por extenso. Testado em 2026-08-04: preencher "140000"
+   (R$140.000) salvou R$140,00. Ver docs/migracao-alpine.md, etapa 8. */
 (function () {
   "use strict";
 

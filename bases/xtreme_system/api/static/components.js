@@ -18,6 +18,19 @@
   "use strict";
 
   document.addEventListener("alpine:init", function () {
+    /* Estado do diálogo de confirmação, num store (não em appShell) porque
+       #modal precisa lê-lo para desligar o próprio x-trap enquanto o
+       confirm-dialog estiver aberto — dois x-trap.inert ativos ao mesmo
+       tempo em elementos irmãos se marcam mutuamente como inert/aria-hidden,
+       o que deixava o confirm-dialog inacessível assim que aparecia por
+       cima de um #modal já aberto (dirty check e hx-confirm de formulários
+       dentro de modal). Ver #modal e #confirm-dialog em base.html. */
+    Alpine.store("confirmacao", {
+      aberto: false,
+      pergunta: "",
+      callback: null,
+    });
+
     /* Foco dos modais servidos pelo servidor.
 
        Os modais chegam por swap do HTMX dentro de #modal, então não há um
@@ -68,6 +81,38 @@
 
         fechar: function () {
           if (this.aberto) this.$el.innerHTML = "";
+        },
+
+        // Fecha com confirmação se o formulário do modal tiver mudado —
+        // substitui closeModalOnBackdrop(modal), que fazia o mesmo dirty
+        // check à mão. Usado pelo clique no backdrop e pelos botões
+        // "Cancelar"/fechar dos formulários de _form_*.html.
+        fecharComConfirmacao: function () {
+          var form = this.$el.querySelector("form");
+          var changed = form && Array.prototype.some.call(form.elements, function (field) {
+            if (field.disabled) return false;
+            if (field.type === "file") return field.files && field.files.length > 0;
+            if (field.type === "checkbox" || field.type === "radio") {
+              return field.checked !== field.defaultChecked;
+            }
+            if (field.tagName === "SELECT") {
+              return Array.prototype.some.call(field.options, function (option) {
+                return option.selected !== option.defaultSelected;
+              });
+            }
+            return field.value !== field.defaultValue;
+          });
+          var self = this;
+          if (changed) {
+            window.dispatchEvent(new CustomEvent("pedir-confirmacao", {
+              detail: {
+                pergunta: "Descartar as alterações?",
+                onConfirmar: function () { self.fechar(); },
+              },
+            }));
+          } else {
+            this.fechar();
+          }
         },
       };
     });
@@ -180,6 +225,91 @@
       };
     });
 
+    /* Painel de colunas das tabelas (ordenar/ocultar).
+
+       columns.js (window.ColunasJS) continua dono de localStorage,
+       aplicação de preferências na tabela e do drag-and-drop no nível de
+       DOM (cálculo de posição por coordenadas do mouse); este componente é
+       só a UI do modal. O array `colunas` é a fonte da verdade da ordem
+       durante o drag — reordenamos o array por índice em vez de mover nós,
+       assim ele nunca diverge do que será persistido. */
+    Alpine.data("colunas", function () {
+      return {
+        aberto: false,
+        colunas: [],
+        tableEl: null,
+        tableKey: "",
+        dragIdx: null,
+
+        init: function () {
+          var self = this;
+          window.addEventListener("abrir-colunas", function (e) {
+            self.abrir(e.detail.table);
+          });
+        },
+
+        abrir: function (table) {
+          var C = window.ColunasJS;
+          this.tableEl = table;
+          this.tableKey = table.getAttribute("data-table");
+          var defaults = C.defaultCols(table);
+          var labels = C.colLabels(table);
+          var prefs = C.load(this.tableKey);
+          var order = C.resolvedOrder(prefs, defaults);
+          var hidden = prefs.hidden || [];
+          this.colunas = order.map(function (key) {
+            return { key: key, label: labels[key], visivel: hidden.indexOf(key) === -1 };
+          });
+          this.aberto = true;
+        },
+
+        persistir: function () {
+          var order = this.colunas.map(function (col) { return col.key; });
+          var hidden = this.colunas
+            .filter(function (col) { return !col.visivel; })
+            .map(function (col) { return col.key; });
+          window.ColunasJS.save(this.tableKey, { order: order, hidden: hidden });
+          window.ColunasJS.applyPrefs(this.tableEl);
+        },
+
+        restaurar: function () {
+          var table = this.tableEl;
+          window.ColunasJS.reset(this.tableKey);
+          window.ColunasJS.applyPrefs(table);
+          this.abrir(table);
+        },
+
+        fechar: function () {
+          this.aberto = false;
+        },
+
+        arrastar: function (event, idx) {
+          this.dragIdx = idx;
+          event.target.classList.add("dragging");
+        },
+
+        sobreArrastar: function (event) {
+          event.preventDefault();
+          if (this.dragIdx === null) return;
+          var list = event.currentTarget.closest(".cols-list");
+          var after = window.ColunasJS.dragIndexAfter(list, event.clientY);
+          var from = this.dragIdx;
+          var to = after === -1 ? this.colunas.length - 1 : after;
+          if (to === from) return;
+          var moved = this.colunas.splice(from, 1)[0];
+          this.colunas.splice(to, 0, moved);
+          this.dragIdx = to;
+        },
+
+        soltar: function () {
+          var dragging = this.$el.querySelector(".dragging");
+          if (dragging) dragging.classList.remove("dragging");
+          this.dragIdx = null;
+          this.persistir();
+        },
+      };
+    });
+
     /* Wizard multi-step dos formulários de compra, venda e veículo.
 
        Uso: x-data="wizard(N)" na <form>, onde N é o passo inicial vindo do
@@ -225,6 +355,144 @@
             }
           }
           return true;
+        },
+      };
+    });
+
+    /* Soma dos percentuais de rateio no fechamento de venda
+       (_modal_fechamento_venda.html). Uso: x-data="rateioLucro(N)", onde N é
+       o número de investidores. O submit fica desabilitado até a soma bater
+       100%, dentro da tolerância de centavos do arredondamento.
+
+       `percentuais` é um array reativo, um valor por investidor
+       (x-model.number="percentuais[i]"); total()/valido() derivam dele em
+       vez de reler o DOM a cada input, que é o que a primeira versão fazia e
+       se mostrou frágil dentro do escopo aninhado de modalFoco. */
+    Alpine.data("rateioLucro", function (n) {
+      return {
+        percentuais: new Array(Number(n) || 0).fill(0),
+
+        total: function () {
+          return this.percentuais.reduce(function (sum, valor) {
+            return sum + (Number(valor) || 0);
+          }, 0);
+        },
+
+        valido: function () {
+          return Math.round(this.total() * 100) === 10000;
+        },
+      };
+    });
+
+    /* Alternar visibilidade de um campo de senha/API key (configuracoes.html).
+       :type troca password<->text no input irmão; o componente só guarda o
+       booleano, o input e o botão ficam declarativos. */
+    Alpine.data("campoSenha", function () {
+      return {
+        visivel: false,
+        alternar: function () {
+          this.visivel = !this.visivel;
+        },
+      };
+    });
+
+    /* Inserir um placeholder ({cliente}, {veiculo}, ...) na posição do
+       cursor de um textarea (configuracoes.html, template da mensagem). */
+    Alpine.data("templateComPlaceholders", function () {
+      return {
+        inserir: function (ph) {
+          var textarea = this.$refs.textarea;
+          var start = textarea.selectionStart || textarea.value.length;
+          var value = textarea.value;
+          textarea.value = value.slice(0, start) + "{" + ph + "}" + value.slice(start);
+          textarea.focus();
+        },
+      };
+    });
+
+    /* Casca da página (x-data no <body>): tema, drawer mobile, toast (#msg)
+       e o diálogo de confirmação compartilhado por hx-confirm e pelo dirty
+       check de modalFoco.fecharComConfirmacao(). Fica aqui, e não em vários
+       listeners soltos em base.html, pela mesma convenção do resto do
+       arquivo — ver cabeçalho. */
+    Alpine.data("appShell", function () {
+      return {
+        navAberto: false,
+        mensagem: "",
+        msgTimeout: null,
+
+        fecharDrawer: function () {
+          this.navAberto = false;
+        },
+
+        alternarDrawer: function () {
+          this.navAberto = !this.navAberto;
+        },
+
+        fecharDrawerAoNavegar: function (event) {
+          if (event.target.closest(".nav__link, .sidebar__user-link")) this.navAberto = false;
+        },
+
+        alternarTema: function () {
+          var el = document.documentElement;
+          var atual = el.getAttribute("data-theme")
+            || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          var proximo = atual === "dark" ? "light" : "dark";
+          el.setAttribute("data-theme", proximo);
+          localStorage.setItem("theme", proximo);
+        },
+
+        // Feedback compartilhado das submissões htmx bem-sucedidas
+        // (HX-Trigger: htmx:toast).
+        receberToast: function (event) {
+          var self = this;
+          this.mensagem = event.detail.message;
+          clearTimeout(this.msgTimeout);
+          this.msgTimeout = setTimeout(function () { self.mensagem = ""; }, 3500);
+        },
+
+        // HX-Trigger dispara antes do htmx trocar/assentar a resposta que o
+        // carregou, entao limpar #modal aqui de forma sincrona colidiria com
+        // o proprio swap do htmx e quebraria silenciosamente qualquer OOB
+        // swap (linhas de tabela, paginacao, stats) empacotado na mesma
+        // resposta.
+        fecharModalAposHtmx: function () {
+          setTimeout(function () {
+            document.getElementById("modal").innerHTML = "";
+          }, 0);
+        },
+
+        abrirConfirmacao: function (pergunta, callback) {
+          var store = Alpine.store("confirmacao");
+          store.pergunta = pergunta;
+          store.callback = callback;
+          store.aberto = true;
+          this.$nextTick(function () {
+            if (this.$refs.confirmOk) this.$refs.confirmOk.focus();
+          }.bind(this));
+        },
+
+        // Substitui o window.confirm() nativo por trás de hx-confirm.
+        receberHtmxConfirm: function (event) {
+          if (!event.detail.question) return;
+          event.preventDefault();
+          this.abrirConfirmacao(event.detail.question, function () {
+            event.detail.issueRequest(true);
+          });
+        },
+
+        confirmar: function () {
+          var store = Alpine.store("confirmacao");
+          var callback = store.callback;
+          store.aberto = false;
+          store.callback = null;
+          if (callback) callback();
+        },
+
+        cancelarConfirmacao: function () {
+          var store = Alpine.store("confirmacao");
+          store.aberto = false;
+          store.callback = null;
         },
       };
     });

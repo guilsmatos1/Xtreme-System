@@ -166,7 +166,7 @@
         {{ title }}
         {% if anexos %}<span class="mmgr__count">{{ anexos | length }}</span>{% endif %}
       </h2>
-      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ icon("close") }}</button>
+      <button class="btn btn--ghost btn--sm" type="button" @click="fechar()" aria-label="Fechar">{{ icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% if erro %}{{ alert(erro) }}{% endif %}

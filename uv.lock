@@ -2194,6 +2194,7 @@ dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
     { name = "fpdf2" },
+    { name = "httpx" },
     { name = "jinja2" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pwdlib", extra = ["argon2"] },
@@ -2210,7 +2211,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "deptry" },
-    { name = "httpx" },
     { name = "import-linter" },
     { name = "mypy" },
     { name = "polyfactory" },
@@ -2234,6 +2234,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "fastapi", specifier = ">=0.139.0" },
     { name = "fpdf2", specifier = ">=2.8.5" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
@@ -2250,7 +2251,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "deptry", specifier = ">=0.25.1" },
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "import-linter", specifier = ">=2.3" },
     { name = "mypy", specifier = ">=1.17.0" },
     { name = "polyfactory", specifier = ">=3.3.0" },

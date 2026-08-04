@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.139.0",
     "fpdf2>=2.8.5",
     "jinja2>=3.1.6",
+    "httpx>=0.28.1",
     "psycopg[binary]>=3.3.4",
     "pwdlib[argon2]>=0.3.0",
     "pydantic>=2",
@@ -24,7 +25,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "deptry>=0.25.1",
-    "httpx>=0.28.1",
     "import-linter>=2.3",
     "mypy>=1.17.0",
     "polyfactory>=3.3.0",
@@ -98,6 +98,8 @@ select = [
 ]
 ignore = [
     "PLR0913",
+    "TRY003",
+    "PLR2004",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -152,7 +154,7 @@ ignore_decorators = ["app.*"]
 [tool.deptry]
 extend_exclude = [".opencode", ".agents", "alembic"]
 known_first_party = ["xtreme_system"]
-per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn"], "DEP003" = ["markupsafe"] }
+per_rule_ignores = { "DEP002" = ["alembic", "jinja2", "psycopg", "python-multipart", "uvicorn", "starlette"], "DEP003" = ["markupsafe"] }
 
 [tool.xenon]
 max-absolute = "B"
@@ -214,6 +216,7 @@ ignore_errors = false
 "components/xtreme_system/empresa" = "xtreme_system/empresa"
 "components/xtreme_system/veiculo" = "xtreme_system/veiculo"
 "components/xtreme_system/whatsapp" = "xtreme_system/whatsapp"
+"components/xtreme_system/rsd" = "xtreme_system/rsd"
 "components/xtreme_system/imagem_veiculo" = "xtreme_system/imagem_veiculo"
 "components/xtreme_system/compra" = "xtreme_system/compra"
 "components/xtreme_system/imagem_comprovante_venda" = "xtreme_system/imagem_comprovante_venda"

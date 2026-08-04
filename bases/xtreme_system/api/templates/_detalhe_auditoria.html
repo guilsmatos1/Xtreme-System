@@ -4,7 +4,7 @@
   <div class="modal__panel" style="max-width:720px">
     <div class="modal__head">
       <h2 id="auditoria-detalhe-title">Registro #{{ reg.id }}</h2>
-      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+      <button class="btn btn--ghost btn--sm" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       <dl class="details-list" style="margin-bottom:var(--s-4)">

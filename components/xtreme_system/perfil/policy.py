@@ -5,11 +5,12 @@ PAGINAS: list[tuple[str, str]] = [
     ("investidores", "Investidores"),
     ("clientes", "Clientes"),
     ("compras", "Compras"),
+    ("consignacoes", "Consignações"),
     ("custos-veiculos", "Custos"),
     ("vendas", "Vendas"),
 ]
 PAGINAS_VALIDAS = {chave for chave, _ in PAGINAS}
-ROTAS_DERIVADAS = {"fechamentos-vendas": "vendas"}
+ROTAS_DERIVADAS = {"fechamentos-vendas": "vendas", "rsd": "veiculos"}
 
 # Campos sensíveis e operações que podem ser restringidos por perfil, por página.
 CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
@@ -42,6 +43,19 @@ CAMPOS_PROTEGIDOS: dict[str, list[tuple[str, str]]] = {
         ("veiculo", "Veículo"),
         ("valor_compra", "Valor da Compra"),
         ("debitos", "Débitos"),
+        ("observacoes", "Observações"),
+        ("usuario", "Usuário"),
+    ],
+    "consignacoes": [
+        ("data_consignacao", "Data da Consignação"),
+        ("proprietario", "Proprietário"),
+        ("documento_proprietario", "Documento do Proprietário"),
+        ("status", "Estado"),
+        ("placa", "Placa"),
+        ("veiculo", "Veículo"),
+        ("valor_venda", "Valor de Venda"),
+        ("comissao_percentual", "Comissão (%)"),
+        ("data_vencimento", "Data de Vencimento"),
         ("observacoes", "Observações"),
         ("usuario", "Usuário"),
     ],
@@ -97,6 +111,16 @@ CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
         "debitos": "debitos",
         "observacoes": "observacoes",
     },
+    "consignacoes": {
+        "data_consignacao": "data_consignacao",
+        "proprietario": "cliente_id",
+        "status": "status",
+        "veiculo": "veiculo_id",
+        "valor_venda": "valor_venda",
+        "comissao_percentual": "comissao_percentual",
+        "data_vencimento": "data_vencimento",
+        "observacoes": "observacoes",
+    },
     "custos-veiculos": {"valor": "valor"},
     "vendas": {
         "cliente": "cliente_id",
@@ -146,6 +170,14 @@ OPERACOES: dict[str, list[tuple[str, str]]] = {
         ("abrir_comprovante", "Abrir comprovantes"),
         ("enviar_comprovante", "Enviar comprovantes"),
         ("excluir_comprovante", "Excluir comprovante"),
+    ],
+    "consignacoes": [
+        ("cadastrar", "Cadastrar"),
+        ("editar", "Editar"),
+        ("excluir", "Excluir"),
+        ("abrir_contrato", "Abrir contratos"),
+        ("enviar_contrato", "Enviar contratos"),
+        ("excluir_contrato", "Excluir contrato"),
     ],
     "custos-veiculos": [("editar", "Editar"), ("excluir", "Excluir")],
     "vendas": [

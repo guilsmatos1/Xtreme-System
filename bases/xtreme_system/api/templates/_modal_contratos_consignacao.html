@@ -1,0 +1,31 @@
+{% import "_macros.html" as ui %}
+{{ ui.anexos_modal(
+  "modal-contratos-title",
+  "Contratos — Placa " ~ consignacao.veiculo.placa,
+  contratos,
+  erro,
+  pending_upload_paths,
+  "file",
+  "Nenhum contrato",
+  "Envie contratos desta consignação usando a área abaixo.",
+  "/ui/consignacoes/" ~ consignacao.id ~ "/contratos",
+  "contratos",
+  ".pdf,.jpg,.jpeg,.png,.webp",
+  "file",
+  "Arraste contratos aqui ou clique para selecionar",
+  "PDF, JPG, PNG ou WEBP",
+  "Enviar contratos",
+  "/ui/consignacoes/" ~ consignacao.id ~ "/contratos/",
+  "Excluir este contrato?",
+  "Excluir contrato",
+  "Ampliar contrato",
+  "Contrato da consignação " ~ consignacao.id,
+  "contrato",
+  upload_allowed=pode_operacao(user, 'consignacoes', 'enviar_contrato'),
+  delete_allowed=pode_operacao(user, 'consignacoes', 'excluir_contrato')
+) }}
+{% if action_oob %}
+{% set c = consignacao %}
+{% set has_contratos = contratos %}
+{% if pode_operacao(user, 'consignacoes', 'abrir_contrato') %}{% include "_action_consignacao_contratos.html" %}{% endif %}
+{% endif %}

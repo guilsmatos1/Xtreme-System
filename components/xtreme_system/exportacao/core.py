@@ -72,7 +72,7 @@ def _run_pg_command(
         )
     except subprocess.TimeoutExpired as exc:
         command = Path(cmd[0]).name
-        raise ExportacaoError(  # noqa: TRY003
+        raise ExportacaoError(
             f"{command} excedeu o tempo limite de "
             f"{_PG_COMMAND_TIMEOUT_SECONDS} segundos."
         ) from exc
@@ -122,7 +122,7 @@ def _validar_dump(tmp_path: str) -> None:
     tabelas = _listar_tabelas_do_dump(tmp_path)
     faltando = sorted(_TABELAS_ESSENCIAIS - tabelas)
     if faltando:
-        raise ExportacaoError(  # noqa: TRY003
+        raise ExportacaoError(
             "Arquivo não parece ser um backup válido do xtreme-system "
             f"(tabelas ausentes: {', '.join(faltando)})."
         )

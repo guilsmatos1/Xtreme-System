@@ -7,6 +7,7 @@ for _module_name in (
     "auth",
     "clientes",
     "compras",
+    "consignacoes",
     "conta",
     "custos_veiculos",
     "configuracoes",

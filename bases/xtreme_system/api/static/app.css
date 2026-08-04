@@ -520,6 +520,7 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .settings-tabs__panel { display: none; flex-direction: column; gap: var(--s-4); min-width: 0; }
 #tab-banco:checked ~ .settings-layout .settings-tabs__panel--banco,
 #tab-whatsapp:checked ~ .settings-layout .settings-tabs__panel--whatsapp,
+#tab-rsd:checked ~ .settings-layout .settings-tabs__panel--rsd,
 #tab-tema:checked ~ .settings-layout .settings-tabs__panel--tema,
 #tab-empresa:checked ~ .settings-layout .settings-tabs__panel--empresa { display: flex; }
 
@@ -553,18 +554,21 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .settings-nav__dot--ok { background: var(--success); }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"],
 #tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"],
+#tab-rsd:checked ~ .settings-layout .settings-nav label[for="tab-rsd"],
 #tab-tema:checked ~ .settings-layout .settings-nav label[for="tab-tema"],
 #tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] {
   background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 24%, transparent);
 }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__icon,
 #tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__icon,
+#tab-rsd:checked ~ .settings-layout .settings-nav label[for="tab-rsd"] .settings-nav__icon,
 #tab-tema:checked ~ .settings-layout .settings-nav label[for="tab-tema"] .settings-nav__icon,
 #tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] .settings-nav__icon {
   background: var(--accent); color: var(--accent-contrast);
 }
 #tab-banco:checked ~ .settings-layout .settings-nav label[for="tab-banco"] .settings-nav__title,
 #tab-whatsapp:checked ~ .settings-layout .settings-nav label[for="tab-whatsapp"] .settings-nav__title,
+#tab-rsd:checked ~ .settings-layout .settings-nav label[for="tab-rsd"] .settings-nav__title,
 #tab-tema:checked ~ .settings-layout .settings-nav label[for="tab-tema"] .settings-nav__title,
 #tab-empresa:checked ~ .settings-layout .settings-nav label[for="tab-empresa"] .settings-nav__title {
   color: var(--accent);

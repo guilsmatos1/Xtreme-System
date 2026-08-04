@@ -3,13 +3,21 @@
 Documento de continuidade da adoção do Alpine no frontend (branch
 `guilsmatos1/alpine-frontend-dedup`). Cobre:
 
-1. O que falta implementar — [etapa 7](#etapa-7--painel-de-colunas-columnsjs) e
-   [etapa 8](#etapa-8--campos-decimais-via-x-mask)
-2. [Por que a suíte de testes falha de forma intermitente](#a-suíte-de-testes-é-instável-por-banco-compartilhado)
-3. [O wizard de veículo, que está inalcançável](#o-wizard-de-veículo-é-inalcançável-e-estava-quebrado)
+1. [Etapa 7](#etapa-7--painel-de-colunas-columnsjs--feito) (feita) e
+   [etapa 8](#etapa-8--campos-decimais-via-x-mask--tentado-e-revertido)
+   (tentada e revertida — ver resultado)
+2. [Consolidação de JS vanilla fora das 8 frentes originais](#js-vanilla-fora-do-escopo-das-8-frentes)
+   — rateio, toggles de `configuracoes.html` e o `<script>` global de
+   `base.html`, todos concluídos
+3. [Por que a suíte de testes falha de forma intermitente](#a-suíte-de-testes-é-instável-por-banco-compartilhado)
+4. [O wizard de veículo, que está inalcançável](#o-wizard-de-veículo-é-inalcançável-e-estava-quebrado)
 
-Estado atual: 6 das 8 frentes concluídas. JS mantido à mão saiu de **954 para
-781 linhas**, e `_form_compra.html`, `_form_venda.html` e `_form_veiculo.html`
+Estado atual: as 8 frentes originais estão fechadas (7 implementada, 8
+tentada e revertida com achado documentado). Da auditoria posterior de JS
+vanilla fora do escopo original, os 3 itens de menor/médio risco também
+foram concluídos — só o `<script>` global de `base.html` restava, e também
+foi migrado. JS mantido à mão saiu de **954 para 781 linhas** nas 8 frentes
+originais, e `_form_compra.html`, `_form_venda.html` e `_form_veiculo.html`
 ficaram com zero `<script>` inline.
 
 ---
@@ -47,9 +55,30 @@ comportamento. Como ordem de atributo é arbitrária, ponha a diretiva **antes**
 
 ---
 
-## Etapa 7 — Painel de colunas (`columns.js`)
+## ~~Etapa 7~~ — Painel de colunas (`columns.js`) — feito
 
-### Situação
+### Feito
+
+Implementado conforme os passos abaixo. `templates/_modal_colunas.html` existe
+com `x-data="colunas"`, `x-for` sobre o array e as diretivas de teclado/backdrop
+do passo 3. `Alpine.data("colunas", ...)` está em `components.js:191-266`, com
+`init/abrir/persistir/restaurar/fechar`. O drag-and-drop (passo 5) foi
+resolvido pela alternativa que a doc apontava como preferível: reordena o
+array `colunas` por índice (`arrastar`/`sobreArrastar`/`soltar`) em vez de
+mover nós do DOM, eliminando a divergência array↔DOM. `columns.js` caiu de 256
+para 172 linhas — `openPanel()` saiu, `ensureButton` agora só dispara o evento
+`abrir-colunas`, e ganhou `dragIndexAfter`, exposta via `window.ColunasJS` para
+o componente consumir. O item 4 (`$persist` com chave dinâmica) foi descartado
+como a ressalva já previa — `load`/`save` continuam com `localStorage` cru. O
+partial é incluído via `{% include "_modal_colunas.html" %}` em 11 templates
+(`veiculos.html`, `clientes.html`, `compras.html`, `usuarios.html`,
+`auditoria.html`, `custos_veiculos.html`, `investidores.html`,
+`investidor_lancamentos.html`, `perfis.html`, `relatorios_dre.html`,
+`consignacoes.html`). O e2e pedido em "Como verificar" existe em
+`tests/e2e/test_columns_panel.py` e cobre os 5 pontos listados, incluindo o
+reorder por drag sobrevivendo a um swap do htmx.
+
+### Situação (histórico do planejamento)
 
 `bases/xtreme_system/api/static/columns.js` tem 256 linhas e faz três coisas
 distintas:
@@ -128,9 +157,44 @@ apareceria.
 
 ---
 
-## Etapa 8 — Campos decimais via `x-mask`
+## Etapa 8 — Campos decimais via `x-mask` — tentado e revertido
 
-### Situação
+### Resultado (2026-08-04)
+
+Implementado conforme os passos abaixo e testado com a suíte e2e completa
+antes de mesclar. **O `$money` do plugin vendorizado não é o formatador de
+locale que esta seção presumia** — ele modela entrada estilo maquininha de
+cartão: os dígitos entram pela direita e os 2 últimos são sempre os centavos,
+não um separador de milhar aplicado a um valor já digitado por extenso.
+
+Reprodução: `tests/e2e/test_ui_browser.py::test_modal_venda_editar_atualiza_valor`
+preenche o campo de valor com `"140000"` (R$140.000) esperando salvar
+`R$ 140.000,00`. Com `x-mask:dynamic="$money($input, ',', '.')"` no campo, o
+valor salvo foi **R$ 140,00** — silenciosamente errado, sem exceção em lugar
+nenhum. Mais 4 testes do mesmo arquivo falharam pelo mesmo motivo
+(`test_modal_lancamento_cria_e_edita`, `test_modal_veiculo_editar_atualiza_preco`,
+`test_modal_compra_editar_atualiza_valor`,
+`test_modal_venda_fechamento_confirma_rateio`).
+
+Revertido por completo: os 27 `x-mask:dynamic="$money(...)"` nos 7 templates
+(`_form_lancamento.html`, `_form_compra.html`, `_form_simples.html`,
+`_form_venda.html`, `_form_consignacao.html`, `_form_custo_veiculo.html`,
+`_form_veiculo.html`) e `static/filters.js` voltaram ao estado anterior
+(`formatDecimalInput`/`formatDecimalInputs` com listeners de `blur` e
+`htmx:load`). A suíte e2e completa (29 testes) volta a passar depois do
+revert. Isso confirma, com dado real em vez de estimativa, a recomendação que
+já estava registrada abaixo: esta é a etapa de pior relação custo/benefício
+do plano, e o risco descrito ("erro silencioso vira valor errado no banco")
+não era hipotético.
+
+Se algum dia isso for retomado, não é com `x-mask:dynamic="$money(...)"` —
+seria necessário ou (a) adaptar a UX ao modelo de entrada por centavos do
+plugin (mudança de produto, não só de implementação), ou (b) escrever uma
+função de máscara própria que reproduza o comportamento atual de
+`formatDecimalInput` (formata no `blur` um valor já digitado por extenso),
+descartando o `$money` do plugin vendorizado.
+
+### Situação (histórico do planejamento, anterior à tentativa acima)
 
 `static/filters.js` tem 58 linhas e três responsabilidades:
 
@@ -243,16 +307,17 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_t
 3. Dar à fixture `live_server_url` um teardown que remova o que semeou. Resolve
    a contaminação entre suítes, não a corrida do `-n auto`.
 
-**Bug de ergonomia relacionado.** O target `test-e2e-headless` do `Makefile` não
-define `TEST_DATABASE_URL` (diferente de `test-postgres`), então falha de cara:
+**Bug de ergonomia relacionado — corrigido.** O target `test-e2e-headless` do
+`Makefile` não definia `TEST_DATABASE_URL` (diferente de `test-postgres`), então
+falhava de cara:
 
 ```
 ERROR: TEST_DATABASE_URL is required so tests run against an Alembic-migrated
 PostgreSQL database.
 ```
 
-Correção de uma linha: replicar no target de e2e o mesmo prefixo de variável que
-`test-postgres` usa.
+`test-e2e` e `test-e2e-headless` agora dependem de `db-test` e exportam
+`TEST_DATABASE_URL` com o mesmo valor que `test-postgres` usa.
 
 **Cuidado ao diagnosticar.** Nem toda falha aqui é ruído. Durante esta migração
 uma regressão real (`test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro`)
@@ -333,14 +398,110 @@ motivo errado. Foi o que aconteceu na primeira tentativa de cobrir esse wizard.
 
 ---
 
+### JS vanilla fora do escopo das 8 frentes
+
+Achados de uma auditoria posterior a este documento (branch
+`guilsmatos1/alpine-frontend-dedup`, revisão de 2026-08-03): pontos que
+continuam vanilla mas **nunca entraram no plano das 8 frentes** — ao
+contrário de `filters.js` e do drag-and-drop de `columns.js`, que a doc
+avalia explicitamente e decide manter vanilla, os itens abaixo simplesmente
+não foram considerados.
+
+#### ~~`base.html` carrega ~95 linhas de JS imperativo em toda página~~ — feito
+
+`base.html:161-233` tinha, dentro de um `<script>` global (fora de
+`components.js`, violando a convenção de "toda lógica em `Alpine.data()`" de
+L22-27): `toggleTheme()`, `showConfirmDialog()`, `closeModalOnBackdrop()`,
+fechamento do drawer mobile ao clicar em link e auto-dismiss do toast via
+`MutationObserver`. O `<script>` inteiro foi removido.
+
+`<body>` ganhou `x-data="appShell"` (`components.js`), que concentra tema
+(`alternarTema()`, ainda com `localStorage` cru — `$persist` não compensava
+aqui, mesma lógica da ressalva do item 4 da etapa 7), drawer mobile
+(`navAberto`, `:class="{ 'nav-open': navAberto }"` no lugar do
+`classList.toggle` direto) e o toast (`#msg` vira `x-text="mensagem"`, com
+`setTimeout` de auto-dismiss guardado em `msgTimeout`).
+
+`showConfirmDialog()` virou um diálogo declarativo (`#confirm-dialog` em
+`base.html`, sempre presente no DOM, `x-show`/`x-trap` como o `#modal`
+principal) em vez de `innerHTML` + listeners manuais. Estado do diálogo
+(`aberto`/`pergunta`/`callback`) foi para `Alpine.store("confirmacao")`, não
+para dentro de `appShell`: os dois `x-trap.inert` (o de `#modal` e o do
+diálogo de confirmação) são elementos irmãos, e dois `x-trap.inert` ativos ao
+mesmo tempo se marcam mutuamente como `aria-hidden` — foi exatamente o que
+aconteceu na primeira tentativa (o diálogo de confirmação ficava invisível
+para a árvore de acessibilidade assim que aparecia por cima de um `#modal`
+já aberto, quebrando o fluxo de "descartar alterações?"). A correção foi
+condicionar o trap do `#modal` a `aberto && !$store.confirmacao.aberto`, para
+que ele se desative enquanto o diálogo de confirmação estiver por cima.
+
+`closeModalOnBackdrop(modal)` virou `modalFoco.fecharComConfirmacao()`
+(`components.js`) — mesmo dirty check, mas como método do componente que já
+existe no `#modal`, chamado via `@click`/`x-on:click` nos ~30 pontos que
+antes usavam `onclick="closeModalOnBackdrop(...)"` em 12 templates de
+formulário. `htmx:confirm`, `htmx:toast` e `htmx:close-modal` viraram
+`x-on:htmx:*` no próprio `<body>`, no lugar de três
+`document.body.addEventListener` soltos.
+
+#### ~~Fechar modal duplicado em 6 templates~~ — feito
+
+`onclick="document.getElementById('modal').innerHTML=''"` aparecia em:
+`_detalhe_auditoria.html:7`, `_modal_cliente_vendedor.html:7`,
+`_modal_fechamento_venda.html:9,35,64`, `_modal_veiculos_cliente.html:7`,
+`_macros.html:169`. Todos reimplementavam à mão o que `modalFoco.fechar()`
+(`components.js:69-71`) já fazia, disponível via `x-data="modalFoco"` no
+`#modal` de `base.html:162`. Trocado por `@click="fechar()"` nos 6
+templates — todos são renderizados como fragmento htmx dentro de `#modal`,
+logo estão no escopo do `x-data`. `_detalhe_auditoria.html:3` e
+`_modal_cliente_vendedor.html:2` mantêm seu próprio `onclick` de backdrop
+(`this.remove()` / `closeModalOnBackdrop(this)`), que é outro padrão e ficou
+fora do escopo desta troca.
+
+#### ~~Lógica de view inline fora de `components.js`~~ — feito
+
+- `_modal_fechamento_venda.html` — o `<script>` que recalculava o total do
+  rateio a cada `input` virou `Alpine.data("rateioLucro", ...)`
+  (`components.js`). Primeira versão relia num `atualizar()` que relia o DOM
+  via `this.$el.querySelectorAll('input[name="percentual"]')` a cada evento —
+  igual ao script original, mas isso não reagiu de forma confiável dentro do
+  escopo aninhado de `modalFoco` (o e2e
+  `test_modal_venda_fechamento_confirma_rateio` pegou: o botão "Confirmar
+  fechamento" ficava sempre desabilitado). Reescrito com `percentuais` como
+  array reativo (`x-model.number="percentuais[i]"`, um por investidor) e
+  `total()`/`valido()` derivados dele — sem reler o DOM —, o que corrigiu o
+  problema e é o padrão mais robusto para este caso.
+- `configuracoes.html` — os dois `onclick` inline (mostrar/ocultar API key,
+  inserir placeholder no `<textarea>`) viraram `Alpine.data("campoSenha", ...)`
+  e `Alpine.data("templateComPlaceholders", ...)`.
+
+#### Não é lacuna: exceções que a própria doc já cobre
+
+Para não reabrir debate: `columns.js`/`filters.js` como camada de dados por
+trás da UI Alpine (etapas 7 e 8 acima), `normalizeDecimal`/`htmx:configRequest`
+em `filters.js` (integração com htmx, não estado de view — etapa 8 foi
+revertida, mas esse ponto da doc original continua correto), e o tooltip de
+`dashboard.html:109-137` (interação de mouse pontual, não reaproveitada em
+outro lugar) continuam vanilla por decisão já registrada, não por omissão.
+
+#### Status final desta seção
+
+Todos os itens de consolidação levantados nesta auditoria (2026-08-03) foram
+implementados em 2026-08-04 e verificados com a suíte e2e completa (29
+testes): fechar modal (feito antes desta auditoria), rateio de
+`_modal_fechamento_venda.html`, toggles de `configuracoes.html`, e o
+`<script>` global de `base.html`. Nenhum é bug — eram dívida de consolidação,
+não comportamento quebrado.
+
+---
+
 ## Referência rápida
 
 | arquivo | papel |
 |---|---|
-| `static/components.js` | todos os `Alpine.data()`: `modalFoco`, `trocaVeiculo`, `wizard` |
+| `static/components.js` | todos os `Alpine.data()`/`Alpine.store()`: `modalFoco`, `trocaVeiculo`, `colunas`, `wizard`, `rateioLucro`, `campoSenha`, `templateComPlaceholders`, `appShell`, store `confirmacao` |
 | `static/reference.js` | typeahead de chave estrangeira, unificado |
-| `static/columns.js` | preferências de coluna — **alvo da etapa 7** |
-| `static/filters.js` | decimais + integração htmx — **alvo da etapa 8** |
+| `static/columns.js` | dados/DOM por trás do painel Alpine — **etapa 7, feita** |
+| `static/filters.js` | decimais (vanilla) + integração htmx — **etapa 8, revertida** |
 | `static/alpine*.min.js` | Alpine 3.15.12 vendorizado (core, persist, focus, mask) |
 | `rules/frontend.md` | regras vigentes do frontend |
 | `tests/e2e/test_reference_field.py` | trava o contrato de `htmx:load` |

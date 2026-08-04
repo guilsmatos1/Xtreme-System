@@ -1,10 +1,10 @@
 {% import "_macros.html" as ui %}
-<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-vendedor-title">
+<div class="modal" x-on:click.self="fecharComConfirmacao()" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-vendedor-title">
   <div class="modal__panel">
     <div class="modal__head">
       <h3 id="modal-cliente-vendedor-title">Cliente vendedor — {{ veiculo.modelo }} ({{ veiculo.placa }})</h3>
       <button class="icon-btn" type="button" aria-label="Fechar"
-              onclick="document.getElementById('modal').innerHTML=''">{{ ui.icon("close") }}</button>
+              @click="fechar()">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% if erro %}{{ ui.alert(erro) }}{% endif %}

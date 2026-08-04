@@ -44,6 +44,7 @@ MODELS_PARA_REGISTRAR = (
     "usuario",
     "venda",
     "whatsapp",
+    "rsd",
 )
 
 CSV_PATH = Path("xtreme.csv")

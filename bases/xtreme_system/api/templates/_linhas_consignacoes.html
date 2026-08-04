@@ -1,0 +1,12 @@
+{% import "_macros.html" as ui %}
+<tbody id="linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for c in consignacoes %}
+    {% include "_row_consignacao.html" %}
+  {% else %}
+  <tr class="empty-row"><td colspan="11">
+    {% call ui.empty("inbox", "Nenhuma consignação encontrada", "Cadastre uma consignação para começar.") %}{% endcall %}
+  </td></tr>
+  {% endfor %}
+</tbody>
+{% if oob %}{{ ui.paginacao(request.url.path, qs_base, "#linhas", page_start, page_end, page_count, limit, offset_anterior, offset_proximo, tem_anterior, tem_proximo, oob=True) }}{% endif %}
+{% if erro %}<div id="msg" hx-swap-oob="true">{{ ui.alert(erro) }}</div>{% endif %}

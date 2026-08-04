@@ -47,8 +47,14 @@ def create_test_engine() -> Engine:
             _reset_postgres_schema(engine, schema)
             _run_migrations(scoped_url)
             _migrated_urls.add(scoped_url)
-        else:
-            _truncate_all_tables(engine)
+        # Sempre trunca, mesmo logo após migrar: a migração `seed_default_admin`
+        # insere um usuário "admin" real (bootstrap de produção), então um
+        # schema recém-migrado não está vazio como os testes assumem. Sem
+        # isto, o primeiro teste a tocar um schema por processo herda esse
+        # "admin" pré-existente e falha com UsernameJaExisteError se tentar
+        # criar o seu próprio — deterministicamente, mas só nesse teste, o
+        # que lia como flakiness.
+        _truncate_all_tables(engine)
         return engine
 
     if not os.environ.get("XTREME_ALLOW_SQLITE_TEST_DB"):

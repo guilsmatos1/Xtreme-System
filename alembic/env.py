@@ -19,6 +19,7 @@ from xtreme_system.auditoria import core as _auditoria  # noqa: F401
 from xtreme_system.caixa import core as _caixa  # noqa: F401
 from xtreme_system.cliente import core as _cliente  # noqa: F401
 from xtreme_system.compra import core as _compra  # noqa: F401
+from xtreme_system.consignacao import core as _consignacao  # noqa: F401
 from xtreme_system.custo_veiculo import core as _custo_veiculo  # noqa: F401
 from xtreme_system.database import rate_limit as _rate_limit  # noqa: F401
 from xtreme_system.database.core import Base, get_settings
@@ -28,6 +29,7 @@ from xtreme_system.documento_veiculo import core as _documento_veiculo  # noqa: 
 from xtreme_system.empresa import core as _empresa  # noqa: F401
 from xtreme_system.fechamento_venda import core as _fechamento_venda  # noqa: F401
 from xtreme_system.imagem_comprovante_compra import core as _imagem_comprovante_compra  # noqa: F401
+from xtreme_system.imagem_contrato_consignacao import core as _imagem_contrato_consignacao  # noqa: F401
 from xtreme_system.imagem_comprovante_venda import core as _imagem_comprovante_venda  # noqa: F401
 from xtreme_system.imagem_documento_cliente import core as _imagem_documento_cliente  # noqa: F401
 from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
@@ -37,6 +39,7 @@ from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
 from xtreme_system.venda import core as _venda  # noqa: F401
 from xtreme_system.whatsapp import core as _whatsapp  # noqa: F401
+from xtreme_system.rsd import core as _rsd  # noqa: F401
 
 target_metadata = Base.metadata
 # ConfigParser (usado por Config.set_main_option) trata "%" como início de

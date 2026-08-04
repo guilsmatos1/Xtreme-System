@@ -23,6 +23,7 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.consignacao import core as consignacao
 from xtreme_system.database.connection import get_database_target
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
@@ -356,6 +357,31 @@ register_crud_routes(
     after_create=sincronizar_caixa_compra,
     after_update=sincronizar_caixa_compra,
     pagina="compras",
+    actor_field="usuario_id",
+)
+
+# ---- Consignações ----
+
+
+def _validate_consignacao_create(session: Session, data: Any) -> None:
+    validate_cliente_veiculo_fks(session, data)
+
+
+def _validate_consignacao_update(session: Session, _obj: Any, data: Any) -> None:
+    validate_cliente_veiculo_fks(session, data)
+
+
+register_crud_routes(
+    app,
+    consignacao,
+    "/consignacoes",
+    "Consignação",
+    read_schema=consignacao.ConsignacaoRead,
+    create_schema=consignacao.ConsignacaoCreate,
+    update_schema=consignacao.ConsignacaoUpdate,
+    before_create=_validate_consignacao_create,
+    before_update=_validate_consignacao_update,
+    pagina="consignacoes",
     actor_field="usuario_id",
 )
 

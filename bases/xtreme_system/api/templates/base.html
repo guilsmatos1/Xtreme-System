@@ -29,9 +29,14 @@
 </head>
 {% import "_macros.html" as ui %}
 {% set path = request.url.path if request else "" %}
-<body>
+<body x-data="appShell" :class="{ 'nav-open': navAberto }"
+      x-on:click="fecharDrawerAoNavegar($event)"
+      x-on:htmx:toast="receberToast($event)"
+      x-on:htmx:close-modal="fecharModalAposHtmx()"
+      x-on:htmx:confirm="receberHtmxConfirm($event)"
+      x-on:pedir-confirmacao.window="abrirConfirmacao($event.detail.pergunta, $event.detail.onConfirmar)">
   <div class="app">
-    <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
+    <div class="scrim" x-on:click="fecharDrawer()"></div>
 
     <aside class="sidebar" aria-label="Navegação principal">
       <div class="sidebar__brand">
@@ -48,7 +53,7 @@
       </nav>
       {% endif %}
 
-      {% if user and (pode_acessar(user, 'veiculos') or pode_acessar(user, 'compras') or pode_acessar(user, 'custos-veiculos') or pode_acessar(user, 'vendas')) %}
+      {% if user and (pode_acessar(user, 'veiculos') or pode_acessar(user, 'compras') or pode_acessar(user, 'consignacoes') or pode_acessar(user, 'custos-veiculos') or pode_acessar(user, 'vendas')) %}
       <div class="sidebar__section">Veículos</div>
       <nav class="nav">
         {% if user and pode_acessar(user, 'veiculos') %}
@@ -59,6 +64,11 @@
         {% if user and pode_acessar(user, 'compras') %}
         <a class="nav__link {{ 'is-active' if path.startswith('/ui/compras') }}" href="/ui/compras">
           {{ ui.icon("package") }} Compras
+        </a>
+        {% endif %}
+        {% if user and pode_acessar(user, 'consignacoes') %}
+        <a class="nav__link {{ 'is-active' if path.startswith('/ui/consignacoes') }}" href="/ui/consignacoes">
+          {{ ui.icon("refresh") }} Consignações
         </a>
         {% endif %}
         {% if user and pode_acessar(user, 'vendas') %}
@@ -144,7 +154,7 @@
           Xtreme Motors
         </div>
         <button class="icon-btn" type="button" aria-label="Abrir menu"
-                onclick="document.body.classList.toggle('nav-open')">{{ ui.icon("menu") }}</button>
+                x-on:click="alternarDrawer()">{{ ui.icon("menu") }}</button>
       </header>
 
       <main class="content__inner">
@@ -153,106 +163,21 @@
     </div>
   </div>
 
-  <div id="msg" role="status" aria-live="polite"></div>
-  <div id="modal" x-data="modalFoco" x-trap.inert.noscroll.noreturn="aberto"
+  <div id="msg" role="status" aria-live="polite" x-text="mensagem"></div>
+  <div id="modal" x-data="modalFoco" x-trap.inert.noscroll.noreturn="aberto && !$store.confirmacao.aberto"
        @keydown.escape.window="fechar()"></div>
-
-  <script>
-    function toggleTheme() {
-      var el = document.documentElement;
-      var cur = el.getAttribute("data-theme")
-        || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      var next = cur === "dark" ? "light" : "dark";
-      el.setAttribute("data-theme", next);
-      localStorage.setItem("theme", next);
-    }
-    // Styled replacement for window.confirm(), shared by the discard-changes
-    // flow below and the htmx:confirm handler.
-    function showConfirmDialog(question, onConfirm) {
-      var box = document.createElement("div");
-      box.className = "modal";
-      box.innerHTML =
-        '<div class="modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-q" style="max-width:400px">' +
-          '<div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-q"></p></div>' +
-          '<div class="modal__foot">' +
-            '<button type="button" class="btn btn--default" data-cancel>Cancelar</button>' +
-            '<button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent" data-ok>Confirmar</button>' +
-          '</div>' +
-        '</div>';
-      box.querySelector("#confirm-q").textContent = question;
-      document.body.appendChild(box);
-      box.querySelector("[data-ok]").focus();
-      function close() { box.remove(); document.removeEventListener("keydown", onKey); }
-      function onKey(ev) { if (ev.key === "Escape") close(); }
-      document.addEventListener("keydown", onKey);
-      box.addEventListener("click", function (ev) { if (ev.target === box) close(); });
-      box.querySelector("[data-cancel]").addEventListener("click", close);
-      box.querySelector("[data-ok]").addEventListener("click", function () {
-        close();
-        onConfirm();
-      });
-    }
-
-    function closeModalOnBackdrop(modal) {
-      var form = modal.querySelector("form");
-      var changed = form && Array.prototype.some.call(form.elements, function (field) {
-        if (field.disabled) return false;
-        if (field.type === "file") return field.files && field.files.length > 0;
-        if (field.type === "checkbox" || field.type === "radio") {
-          return field.checked !== field.defaultChecked;
-        }
-        if (field.tagName === "SELECT") {
-          return Array.prototype.some.call(field.options, function (option) {
-            return option.selected !== option.defaultSelected;
-          });
-        }
-        return field.value !== field.defaultValue;
-      });
-      function discard() {
-        // O x-trap em #modal devolve o foco ao gatilho quando o painel sai.
-        modal.remove();
-      }
-      if (changed) {
-        showConfirmDialog("Descartar as alterações?", discard);
-      } else {
-        discard();
-      }
-    }
-
-    // Close mobile drawer after navigating.
-    document.addEventListener("click", function (e) {
-      if (e.target.closest(".nav__link, .sidebar__user-link")) document.body.classList.remove("nav-open");
-    });
-    // Auto-dismiss the toast (#msg) a few seconds after it receives content.
-    (function () {
-      var msg = document.getElementById("msg"), t;
-      new MutationObserver(function () {
-        clearTimeout(t);
-        if (msg.children.length) t = setTimeout(function () { msg.innerHTML = ""; }, 3500);
-      }).observe(msg, { childList: true });
-    })();
-
-    // Shared server-driven feedback for successful HTMX form submissions.
-    document.body.addEventListener("htmx:toast", function (e) {
-      var msg = document.getElementById("msg");
-      msg.textContent = e.detail.message;
-    });
-    document.body.addEventListener("htmx:close-modal", function () {
-      // HX-Trigger fires before htmx swaps/settles the response that carried
-      // it, so clearing #modal here synchronously would race htmx's own
-      // swap of that same element and silently break any OOB swaps (table
-      // rows, pagination, stats) bundled in the same response.
-      setTimeout(function () {
-        document.getElementById("modal").innerHTML = "";
-      }, 0);
-    });
-
-    // Replace the native confirm() behind hx-confirm with a styled modal.
-    document.body.addEventListener("htmx:confirm", function (e) {
-      if (!e.detail.question) return;
-      e.preventDefault();
-      showConfirmDialog(e.detail.question, function () { e.detail.issueRequest(true); });
-    });
-  </script>
+  <div id="confirm-dialog" class="modal" x-show="$store.confirmacao.aberto" x-cloak
+       x-trap.inert.noscroll.noreturn="$store.confirmacao.aberto"
+       x-on:keydown.escape.window="cancelarConfirmacao()" x-on:click.self="cancelarConfirmacao()"
+       role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-q">
+    <div class="modal__panel" style="max-width:400px">
+      <div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-dialog-q" x-text="$store.confirmacao.pergunta"></p></div>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--default" x-on:click="cancelarConfirmacao()">Cancelar</button>
+        <button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent"
+                x-on:click="confirmar()" x-ref="confirmOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
