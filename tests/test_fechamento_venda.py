@@ -1,5 +1,6 @@
 """Fechamento financeiro de vendas."""
 
+import re
 from collections.abc import Callable, Iterator
 from decimal import Decimal
 
@@ -491,3 +492,7 @@ def test_ui_modal_fechamento_e_estado_fechada(client: TestClient) -> None:
     assert fechado.status_code == 200
     assert "Fechada" in fechado.text
     assert 'hx-get="/ui/fechamentos-vendas/' in fechado.text
+
+    detalhe = client.get(f"/ui/fechamentos-vendas/{venda_id}")
+    assert detalhe.status_code == 200
+    assert re.search(r"\b\d{4}-\d{2}-\d{2}\b", detalhe.text)
