@@ -17,7 +17,7 @@ from xtreme_system.api.crud_types import EntityT
 logger = structlog.get_logger(__name__)
 
 _HTMX_SUCCESS_EVENTS = {
-    "htmx:toast": {"message": "Alterações salvas com sucesso."},
+    "htmx:toast": {"message": "Alterações salvas com sucesso.", "variant": "success"},
     "htmx:close-modal": {},
 }
 

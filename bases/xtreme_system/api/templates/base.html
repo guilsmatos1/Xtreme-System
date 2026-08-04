@@ -292,7 +292,14 @@
     // Shared server-driven feedback for successful HTMX form submissions.
     document.body.addEventListener("htmx:toast", function (e) {
       var msg = document.getElementById("msg");
-      msg.textContent = e.detail.message;
+      msg.className = "toast--" + (e.detail.variant || "success");
+      msg.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M20 6 9 17l-5-5"></path></svg>';
+      var text = document.createElement("span");
+      text.textContent = e.detail.message;
+      msg.appendChild(text);
     });
     document.body.addEventListener("htmx:close-modal", function () {
       // HX-Trigger fires before htmx swaps/settles the response that carried

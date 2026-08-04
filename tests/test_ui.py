@@ -543,7 +543,8 @@ def test_ui_perfis_htmx_sucesso_dispara_toast_e_fecha_modal(client: TestClient) 
 
     assert resp.status_code == 200
     assert resp.headers["HX-Trigger"] == (
-        '{"htmx:toast": {"message": "Altera\\u00e7\\u00f5es salvas com sucesso."}, '
+        '{"htmx:toast": {"message": "Altera\\u00e7\\u00f5es salvas com sucesso.", '
+        '"variant": "success"}, '
         '"htmx:close-modal": {}}'
     )
 
