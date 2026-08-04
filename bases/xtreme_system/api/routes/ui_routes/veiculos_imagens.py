@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 
 from xtreme_system.api.deps import require_operacao
 from xtreme_system.api.routes.ui_routes.attachment_routes import (
@@ -11,11 +11,12 @@ from xtreme_system.api.routes.ui_routes.attachment_routes import (
     register_attachment_routes,
 )
 from xtreme_system.api.routes.ui_routes.upload_paths import uploads_dir
-from xtreme_system.api.setup import app
 from xtreme_system.imagem_veiculo import core as imagem_veiculo
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+router = APIRouter()
 
 _AbrirImagensDep = Annotated[
     usuario.Usuario, Depends(require_operacao("veiculos", "abrir_imagens"))
@@ -48,7 +49,7 @@ def _imagens_context(
 
 
 register_attachment_routes(
-    app,
+    router,
     AttachmentRouteConfig(
         name="veiculo_imagens",
         path="/ui/veiculos/{veiculo_id}/imagens",

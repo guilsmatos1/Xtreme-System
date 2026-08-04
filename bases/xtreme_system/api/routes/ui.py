@@ -2,6 +2,10 @@
 
 import importlib
 
+from fastapi import APIRouter
+
+routers: list[APIRouter] = []
+
 for _module_name in (
     "auditoria",
     "auth",
@@ -23,4 +27,9 @@ for _module_name in (
     "veiculos_procuracao",
     "vendas",
 ):
-    importlib.import_module(f"xtreme_system.api.routes.ui_routes.{_module_name}")
+    module = importlib.import_module(
+        f"xtreme_system.api.routes.ui_routes.{_module_name}"
+    )
+    routers.append(module.router)
+
+__all__ = ["routers"]

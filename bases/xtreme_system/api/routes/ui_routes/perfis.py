@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import Query, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -19,11 +19,12 @@ from xtreme_system.api.crud_ui.responses import (
     write_conflict_detail,
 )
 from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
-from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 # ---- Perfis (UI, admin) ----
+
+router = APIRouter()
 
 
 def _parse_restricoes(form: Any) -> dict[str, dict[str, list[str]]]:
@@ -81,7 +82,7 @@ def _perfis_response(
     )
 
 
-@app.get("/ui/perfis")
+@router.get("/ui/perfis")
 def ui_perfis(
     request: Request,
     session: SessionDep,
@@ -98,7 +99,7 @@ def ui_perfis(
     return _perfis_response(request, session, user, template, state=state)
 
 
-@app.get("/ui/perfis/novo")
+@router.get("/ui/perfis/novo")
 def ui_perfil_novo(request: Request, _: UIAdmin) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
@@ -107,7 +108,7 @@ def ui_perfil_novo(request: Request, _: UIAdmin) -> HTMLResponse:
     )
 
 
-@app.get("/ui/perfis/{item_id}/editar")
+@router.get("/ui/perfis/{item_id}/editar")
 def ui_perfil_editar(
     item_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -119,7 +120,7 @@ def ui_perfil_editar(
     )
 
 
-@app.post("/ui/perfis")
+@router.post("/ui/perfis")
 async def ui_perfil_criar(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -160,7 +161,7 @@ async def ui_perfil_criar(
     return _perfis_response(request, session, user, "_perfis_ok.html", success=True)
 
 
-@app.post("/ui/perfis/{item_id}")
+@router.post("/ui/perfis/{item_id}")
 async def ui_perfil_atualizar(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -202,7 +203,7 @@ async def ui_perfil_atualizar(
     return _perfis_response(request, session, user, "_perfis_ok.html", success=True)
 
 
-@app.post("/ui/perfis/{item_id}/excluir")
+@router.post("/ui/perfis/{item_id}/excluir")
 def ui_perfil_excluir(
     item_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:

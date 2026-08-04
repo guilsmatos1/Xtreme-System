@@ -3,21 +3,21 @@
 from typing import Annotated
 
 import structlog
-from fastapi import Form, Request, Response
+from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from xtreme_system.api.deps import SessionDep, UIUser, templates
-from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.empresa import core as empresa
 from xtreme_system.usuario import core as usuario
 
 logger = structlog.get_logger(__name__)
+router = APIRouter()
 
 # ---- Login / logout ----
 
 
-@app.get("/ui/login")
+@router.get("/ui/login")
 def ui_login_form(request: Request, session: SessionDep) -> HTMLResponse:
     config_empresa = empresa.get_config(session)
     return templates.TemplateResponse(
@@ -25,7 +25,7 @@ def ui_login_form(request: Request, session: SessionDep) -> HTMLResponse:
     )
 
 
-@app.post("/ui/login")
+@router.post("/ui/login")
 def ui_login(
     request: Request,
     session: SessionDep,
@@ -59,7 +59,7 @@ def ui_login(
     return resp
 
 
-@app.post("/ui/logout")
+@router.post("/ui/logout")
 def ui_logout(request: Request, session: SessionDep, user: UIUser) -> RedirectResponse:
     usuario.invalidate_tokens(session, user)
     resp = RedirectResponse("/ui/login", status_code=303)

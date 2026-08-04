@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, cast
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -94,7 +94,7 @@ def _require_json_operacao(user: usuario.Usuario, pagina: str, operacao: str) ->
 
 
 def register_crud_routes(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     label: str,

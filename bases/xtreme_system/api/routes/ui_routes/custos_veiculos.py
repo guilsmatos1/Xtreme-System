@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
@@ -19,9 +19,10 @@ from xtreme_system.api.crud_ui.routes import (
     register_crud_ui_routes,
 )
 from xtreme_system.api.deps import require_operacao, templates
-from xtreme_system.api.setup import app
 from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.veiculo import core as veiculo
+
+router = APIRouter()
 
 
 def _ctx_form_custo(session: Session) -> dict[str, Any]:
@@ -53,7 +54,7 @@ def _validar_veiculo_fk(session: Session, data: Any) -> None:
 
 
 register_crud_ui_routes(
-    app,
+    router,
     templates,
     custo_veiculo,
     "/ui/custos-veiculos",

@@ -6,7 +6,7 @@ from inspect import Parameter, Signature
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import APIRouter, FastAPI, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -114,7 +114,9 @@ def _route_signature(
     return Signature(parameters=parameters, return_annotation=HTMLResponse)
 
 
-def register_attachment_routes(app: FastAPI, config: AttachmentRouteConfig) -> None:
+def register_attachment_routes(
+    app: FastAPI | APIRouter, config: AttachmentRouteConfig
+) -> None:
     """Register the standard GET/upload/delete attachment route trio."""
 
     def render(

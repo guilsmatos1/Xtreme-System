@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -12,10 +12,11 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.compra import core as compra
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+router = APIRouter()
 
 _AbrirClienteVendedorDep = Annotated[
     usuario.Usuario, Depends(require_operacao("veiculos", "abrir_cliente_vendedor"))
@@ -46,7 +47,7 @@ def _cliente_vendedor_modal(
     )
 
 
-@app.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
+@router.get("/ui/veiculos/{veiculo_id}/cliente-vendedor")
 def ui_veiculo_cliente_vendedor(
     request: Request,
     session: SessionDep,

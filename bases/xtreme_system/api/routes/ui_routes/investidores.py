@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Annotated, cast
 
 import structlog
-from fastapi import Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -28,12 +28,12 @@ from xtreme_system.api.deps import (
     require_operacao,
     templates,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 
 logger = structlog.get_logger(__name__)
+router = APIRouter()
 
 
 @dataclass(frozen=True)
@@ -165,7 +165,7 @@ def _form_ctx_investidor(
     }
 
 
-@app.get("/ui/investidores")
+@router.get("/ui/investidores")
 def ui_investidores(
     request: Request,
     session: SessionDep,
@@ -184,7 +184,7 @@ def ui_investidores(
     return _investidores_response(request, session, user, template, state=state)
 
 
-@app.get("/ui/investidores/exportar")
+@router.get("/ui/investidores/exportar")
 def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
@@ -205,7 +205,7 @@ def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
     )
 
 
-@app.get("/ui/investidores/novo")
+@router.get("/ui/investidores/novo")
 def ui_investidor_novo(request: Request, _: UIAdmin) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "_form_simples.html", _form_ctx_investidor(None)
@@ -220,7 +220,7 @@ _ExcluirInvestidorDep = Annotated[
 ]
 
 
-@app.get("/ui/investidores/{item_id}/editar")
+@router.get("/ui/investidores/{item_id}/editar")
 def ui_investidor_editar(
     item_id: int, request: Request, session: SessionDep, _: _EditarInvestidorDep
 ) -> HTMLResponse:
@@ -230,7 +230,7 @@ def ui_investidor_editar(
     )
 
 
-@app.post("/ui/investidores")
+@router.post("/ui/investidores")
 async def ui_investidor_criar(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -289,7 +289,7 @@ async def ui_investidor_criar(
     )
 
 
-@app.post("/ui/investidores/{item_id}")
+@router.post("/ui/investidores/{item_id}")
 async def ui_investidor_atualizar(
     item_id: int, request: Request, session: SessionDep, user: _EditarInvestidorDep
 ) -> HTMLResponse:
@@ -319,7 +319,7 @@ async def ui_investidor_atualizar(
     )
 
 
-@app.post("/ui/investidores/{item_id}/excluir")
+@router.post("/ui/investidores/{item_id}/excluir")
 def ui_investidor_excluir(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirInvestidorDep
 ) -> HTMLResponse:

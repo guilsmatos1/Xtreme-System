@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Form, Query, Request, Response
+from fastapi import APIRouter, Form, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -12,11 +12,12 @@ from xtreme_system.api.crud_ui.query import sort_key as _sort_key
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.crud_ui.responses import list_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, found, templates
-from xtreme_system.api.setup import app
 from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 
 # ---- Usuários (UI, admin) ----
+
+router = APIRouter()
 
 
 _USUARIO_SORT_FIELDS: dict[str, str] = {
@@ -82,7 +83,7 @@ def _usuarios_response(
     )
 
 
-@app.get("/ui/usuarios")
+@router.get("/ui/usuarios")
 def ui_usuarios(
     request: Request,
     session: SessionDep,
@@ -101,7 +102,7 @@ def ui_usuarios(
     return _usuarios_response(request, session, user, template, state=state)
 
 
-@app.get("/ui/usuarios/exportar")
+@router.get("/ui/usuarios/exportar")
 def ui_usuarios_exportar(session: SessionDep, _: UIAdmin) -> Response:
     usuarios = usuario.list_all(session)
     return _csv_response(
@@ -114,14 +115,14 @@ def ui_usuarios_exportar(session: SessionDep, _: UIAdmin) -> Response:
     )
 
 
-@app.get("/ui/usuarios/novo")
+@router.get("/ui/usuarios/novo")
 def ui_usuario_novo(request: Request, session: SessionDep, _: UIAdmin) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "_form_usuario.html", {"perfis": perfil.list_all(session)}
     )
 
 
-@app.post("/ui/usuarios")
+@router.post("/ui/usuarios")
 def ui_usuario_criar(
     request: Request,
     session: SessionDep,
@@ -161,7 +162,7 @@ def ui_usuario_criar(
     return _usuarios_response(request, session, user, "_usuarios_ok.html", success=True)
 
 
-@app.post("/ui/usuarios/{user_id}/excluir")
+@router.post("/ui/usuarios/{user_id}/excluir")
 def ui_usuario_excluir(
     user_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -186,7 +187,7 @@ def ui_usuario_excluir(
     )
 
 
-@app.get("/ui/usuarios/{user_id}/senha")
+@router.get("/ui/usuarios/{user_id}/senha")
 def ui_usuario_senha_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -194,7 +195,7 @@ def ui_usuario_senha_form(
     return templates.TemplateResponse(request, "_form_senha.html", {"usuario": obj})
 
 
-@app.post("/ui/usuarios/{user_id}/senha")
+@router.post("/ui/usuarios/{user_id}/senha")
 def ui_usuario_senha_alterar(
     user_id: int,
     request: Request,
@@ -217,7 +218,7 @@ def ui_usuario_senha_alterar(
     )
 
 
-@app.get("/ui/usuarios/{user_id}/perfil")
+@router.get("/ui/usuarios/{user_id}/perfil")
 def ui_usuario_perfil_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -229,7 +230,7 @@ def ui_usuario_perfil_form(
     )
 
 
-@app.post("/ui/usuarios/{user_id}/perfil")
+@router.post("/ui/usuarios/{user_id}/perfil")
 def ui_usuario_perfil_alterar(
     user_id: int,
     request: Request,
@@ -255,7 +256,7 @@ def ui_usuario_perfil_alterar(
     )
 
 
-@app.get("/ui/usuarios/{user_id}/editar")
+@router.get("/ui/usuarios/{user_id}/editar")
 def ui_usuario_editar_form(
     user_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -267,7 +268,7 @@ def ui_usuario_editar_form(
     )
 
 
-@app.post("/ui/usuarios/{user_id}/editar")
+@router.post("/ui/usuarios/{user_id}/editar")
 def ui_usuario_editar(
     user_id: int,
     request: Request,

@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import Depends, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from markupsafe import Markup
 from sqlalchemy.orm import Session
@@ -33,12 +33,13 @@ from xtreme_system.api.routes.ui_routes.attachment_routes import (
 from xtreme_system.api.routes.ui_routes.upload_paths import (
     uploads_cliente_dir,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.usuario import core as usuario
 from xtreme_system.venda import core as venda
+
+router = APIRouter()
 
 
 def _table_cell(
@@ -140,7 +141,7 @@ def _veiculos_cliente_modal(
 
 
 register_attachment_routes(
-    app,
+    router,
     AttachmentRouteConfig(
         name="cliente_documentos",
         path="/ui/clientes/{cliente_id}/documentos",
@@ -166,12 +167,12 @@ register_attachment_routes(
 )
 
 
-@app.get("/ui/clientes")
+@router.get("/ui/clientes")
 def ui_clientes_redirect(_: UIUser) -> RedirectResponse:
     return RedirectResponse("/ui/clientes/todos", status_code=303)
 
 
-@app.get("/ui/clientes/todos/{cliente_id}/veiculos")
+@router.get("/ui/clientes/todos/{cliente_id}/veiculos")
 def ui_cliente_veiculos(
     request: Request,
     session: SessionDep,
@@ -194,7 +195,7 @@ def _register_clientes_page(
     csv_filename: str,
 ) -> None:
     register_crud_ui_routes(
-        app,
+        router,
         templates,
         cliente,
         prefix,
