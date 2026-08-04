@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import validation_error_detail
 from xtreme_system.veiculo import core as veiculo
 
 
@@ -36,7 +37,7 @@ def resolver_veiculo_inline(
                 "modelo": str(form.get(f"{prefix}modelo") or "").strip(),
                 "marca": str(form.get(f"{prefix}marca") or "").strip() or None,
                 "cor": str(form.get(f"{prefix}cor") or "").strip(),
-                "ano": int(form.get(f"{prefix}ano") or 0),
+                "ano": form.get(f"{prefix}ano") or 0,
                 "km": str(form.get(f"{prefix}km") or "").strip() or None,
                 "chassi": str(form.get(f"{prefix}chassi") or "").strip() or None,
                 "renavam": str(form.get(f"{prefix}renavam") or "").strip() or None,
@@ -45,9 +46,9 @@ def resolver_veiculo_inline(
                     form.get(f"{prefix}proprietario_registrado") or ""
                 ).strip()
                 or None,
-                "investidor_id": int(form.get(f"{prefix}investidor_id") or 0),
+                "investidor_id": form.get(f"{prefix}investidor_id") or 0,
             }
         )
-    except (ValidationError, ValueError):
-        return None, None, f"Dados {error_label} inválidos"
+    except ValidationError as exc:
+        return None, None, validation_error_detail(exc)
     return None, novo_veiculo_data, None

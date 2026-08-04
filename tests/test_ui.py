@@ -25,6 +25,9 @@ from xtreme_system.api.routes.ui_routes import vendas as vendas_ui
 from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
 from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
+from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
+    resolver_veiculo_inline,
+)
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
@@ -2208,6 +2211,35 @@ def test_resolver_cliente_compartilhado_cobre_ramos_principais() -> None:
         assert novo_cliente_data.documento == "10987654321"
         assert novo_cliente_data.email == "novo@example.com"
         assert erro is None
+
+        _, _, erro = resolver_cliente(
+            session,
+            {
+                "cli_nome": "Cliente Inválido",
+                "cli_documento": "10987654321",
+                "cli_tipo": "pessoa_fisica",
+                "cli_email": "email-invalido",
+            },
+        )
+        assert erro == "E-mail: informe um valor válido."
+
+        _, _, erro = resolver_veiculo_inline(
+            session,
+            {
+                "veic_placa": "ABC1234",
+                "veic_tipo": "carro",
+                "veic_modelo": "Onix",
+                "veic_cor": "Prata",
+                "veic_ano": "ano-invalido",
+                "veic_investidor_id": "1",
+            },
+            prefix="veic_",
+            tipo_entrada="compra",
+            preco="50000",
+            required=True,
+            error_label="do veículo",
+        )
+        assert erro == "Ano: informe um número inteiro válido."
     engine.dispose()
 
 
