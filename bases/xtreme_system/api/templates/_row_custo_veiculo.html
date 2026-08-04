@@ -15,7 +15,7 @@
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/custos-veiculos/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar custo {{ c.id }}">{{ ui.icon("edit") }}</button>
       {% endif %}
       {% if pode_excluir %}
-      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/custos-veiculos/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir este custo?" aria-label="Excluir custo {{ c.id }}">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/custos-veiculos/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o custo de {{ c.veiculo.modelo }} ({{ c.veiculo.placa }}) — {{ c.descricao or c.categoria }}?" aria-label="Excluir custo {{ c.id }}">{{ ui.icon("trash") }}</button>
       {% endif %}
     </div>
   </td>
