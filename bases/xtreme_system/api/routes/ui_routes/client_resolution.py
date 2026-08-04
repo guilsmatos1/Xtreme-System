@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.crud_ui.responses import validation_error_detail
 from xtreme_system.cliente import core as cliente
 
 
@@ -47,6 +48,6 @@ def resolver_cliente(
                 "cep": str(form.get("cli_cep") or "").strip() or None,
             }
         )
-    except ValidationError:
-        return None, None, invalid_new_msg
+    except ValidationError as exc:
+        return None, None, validation_error_detail(exc) or invalid_new_msg
     return None, novo_cliente_data, None
