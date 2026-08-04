@@ -549,6 +549,36 @@ def test_ui_perfis_htmx_sucesso_dispara_toast_e_fecha_modal(client: TestClient) 
     )
 
 
+def test_ui_configuracoes_htmx_sucesso_dispara_toast(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/configuracoes/empresa",
+        headers={"HX-Request": "true"},
+        data={"nome": "Empresa atualizada"},
+    )
+
+    assert resp.status_code == 200
+    assert "htmx:toast" in resp.headers["HX-Trigger"]
+
+
+def test_ui_conta_htmx_sucesso_dispara_toast(client: TestClient) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/conta/senha",
+        headers={"HX-Request": "true"},
+        data={
+            "senha_atual": "senha",
+            "nova_senha": "nova123",
+            "confirmar_senha": "nova123",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert "htmx:toast" in resp.headers["HX-Trigger"]
+
+
 def test_ui_perfil_editar_rejeita_erro_de_validacao(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
