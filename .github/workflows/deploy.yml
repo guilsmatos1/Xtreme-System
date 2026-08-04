@@ -2,11 +2,11 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [master]
+    branches: [main]
 
 jobs:
   deploy:
@@ -31,8 +31,8 @@ jobs:
 
             echo "🔄 Pulling latest code..."
             git fetch origin
-            git checkout master
-            git reset --hard origin/master
+            git checkout main
+            git reset --hard origin/main
 
             echo "📦 Installing dependencies..."
             uv sync
