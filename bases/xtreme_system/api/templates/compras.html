@@ -22,8 +22,8 @@
 {% set search_colunas = [] %}
 {% if pode_ver_campo(user, 'compras', 'data_compra') %}{% set _ = search_colunas.append({"key": "data", "label": "Data/Hora"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'cliente') %}{% set _ = search_colunas.append({"key": "cliente", "label": "Nome do Cliente"}) %}{% endif %}
-{% if pode_ver_campo(user, 'compras', 'documento_cliente') %}{% set _ = search_colunas.append({"key": "documento", "label": "Documento do Cliente"}) %}{% endif %}
-{% if pode_ver_campo(user, 'compras', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "Estado"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'documento_cliente') %}{% set _ = search_colunas.append({"key": "documento", "label": "DOCUMENTO"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "STATUS"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'placa') %}{% set _ = search_colunas.append({"key": "placa", "label": "Placa"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'veiculo') %}{% set _ = search_colunas.append({"key": "modelo", "label": "Veículo"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'valor_compra') %}{% set _ = search_colunas.append({"key": "valor", "label": "Valor"}) %}{% endif %}
@@ -66,8 +66,8 @@
       <tr>
         {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th data-col="data" data-col-label="Data/Hora" aria-sort="{{ ui.sortable_aria("data", sort, order) }}">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'cliente') %}<th data-col="cliente" data-col-label="Nome do Cliente" aria-sort="{{ ui.sortable_aria("cliente", sort, order) }}">{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th data-col="documento" data-col-label="Documento do Cliente" aria-sort="{{ ui.sortable_aria("documento", sort, order) }}">{{ ui.sortable("documento", "Documento do Cliente", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'compras', 'status') %}<th data-col="status" data-col-label="Estado" aria-sort="{{ ui.sortable_aria("status", sort, order) }}">{{ ui.sortable("status", "Estado", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th data-col="documento" data-col-label="DOCUMENTO" aria-sort="{{ ui.sortable_aria("documento", sort, order) }}">{{ ui.sortable("documento", "DOCUMENTO", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+        {% if pode_ver_campo(user, 'compras', 'status') %}<th data-col="status" data-col-label="STATUS" aria-sort="{{ ui.sortable_aria("status", sort, order) }}">{{ ui.sortable("status", "STATUS", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'placa') %}<th data-col="placa" data-col-label="Placa" aria-sort="{{ ui.sortable_aria("placa", sort, order) }}">{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'veiculo') %}<th data-col="modelo" data-col-label="Veículo" aria-sort="{{ ui.sortable_aria("modelo", sort, order) }}">{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
         {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<th data-col="valor" data-col-label="Valor" aria-sort="{{ ui.sortable_aria("valor", sort, order) }}">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
