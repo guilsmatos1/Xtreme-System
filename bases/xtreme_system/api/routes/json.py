@@ -359,6 +359,7 @@ register_crud_routes(
     before_update=_validate_compra_update,
     after_create=sincronizar_caixa_compra,
     after_update=sincronizar_caixa_compra,
+    after_delete=sincronizar_caixa_compra,
     pagina="compras",
     actor_field="usuario_id",
 )
