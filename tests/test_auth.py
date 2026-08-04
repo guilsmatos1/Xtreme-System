@@ -25,9 +25,10 @@ def test_validate_senha_remove_espacos() -> None:
 
 
 def test_token_roundtrip() -> None:
-    token = auth.create_access_token("ana")
+    token = auth.create_access_token("ana", token_version=3)
     dados = auth.decode_token(token)
     assert dados.username == "ana"
+    assert dados.token_version == 3
 
 
 def test_token_nao_carrega_papel() -> None:
@@ -40,6 +41,7 @@ def test_token_nao_carrega_papel() -> None:
 
     assert payload["sub"] == "ana"
     assert "exp" in payload
+    assert payload["tv"] == 0
     assert "papel" not in payload
 
 

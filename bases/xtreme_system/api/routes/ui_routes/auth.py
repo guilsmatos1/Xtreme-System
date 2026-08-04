@@ -6,7 +6,7 @@ import structlog
 from fastapi import Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from xtreme_system.api.deps import SessionDep, templates
+from xtreme_system.api.deps import SessionDep, UIUser, templates
 from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.empresa import core as empresa
@@ -46,7 +46,7 @@ def ui_login(
             {"erro": "Usuário ou senha inválidos", "config_empresa": config_empresa},
             status_code=401,
         )
-    token = auth.create_access_token(user.username)
+    token = auth.create_access_token(user.username, user.token_version)
     logger.info("authentication_succeeded", username=user.username, channel="ui")
     resp = RedirectResponse("/ui/veiculos", status_code=303)
     resp.set_cookie(
@@ -61,7 +61,8 @@ def ui_login(
 
 
 @app.post("/ui/logout")
-def ui_logout() -> RedirectResponse:
+def ui_logout(session: SessionDep, user: UIUser) -> RedirectResponse:
+    usuario.invalidate_tokens(session, user)
     resp = RedirectResponse("/ui/login", status_code=303)
     resp.delete_cookie("access_token")
     return resp

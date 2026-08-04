@@ -128,6 +128,27 @@ def test_ui_login_seta_cookie_e_lista_veiculos(
     assert "Valor disponível" not in pagina.text
 
 
+def test_ui_logout_invalida_cookie_no_servidor(client: TestClient) -> None:
+    _login_admin(client)
+    cookie_antigo = client.cookies.get("access_token")
+
+    logout = client.post("/ui/logout", follow_redirects=False)
+
+    assert logout.status_code == 303
+    assert logout.headers["location"] == "/ui/login"
+    assert cookie_antigo is not None
+    session = next(app.dependency_overrides[get_session]())
+    admin = usuario.get_by_username(session, "admin")
+    assert admin is not None
+    assert admin.token_version == 1
+    stale_client = TestClient(app)
+    stale_client.cookies.set("access_token", cookie_antigo)
+    try:
+        assert stale_client.get("/ui/conta", follow_redirects=False).status_code == 303
+    finally:
+        stale_client.close()
+
+
 def test_ui_veiculo_preserva_erro_de_validacao_por_campo(client: TestClient) -> None:
     _login_admin(client)
 

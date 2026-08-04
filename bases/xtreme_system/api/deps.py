@@ -81,7 +81,7 @@ def get_current_user(
     except InvalidTokenError:
         raise credenciais_invalidas from None
     user = usuario.get_by_username(session, dados.username)
-    if user is None or not user.ativo:
+    if user is None or not user.ativo or dados.token_version != user.token_version:
         raise credenciais_invalidas
     return _bind_usuario(session, user)
 
@@ -105,6 +105,7 @@ _UI_UNMAPPED_AUTHORIZED_PATHS = (
     "/ui/configuracoes",
     "/ui/conta",
     "/ui/dashboard",
+    "/ui/logout",
     "/ui/perfis",
     "/ui/usuarios",
 )
@@ -141,7 +142,7 @@ def get_ui_user(
     except InvalidTokenError:
         raise NaoAutenticadoError from None
     user = usuario.get_by_username(session, dados.username)
-    if user is None or not user.ativo:
+    if user is None or not user.ativo or dados.token_version != user.token_version:
         raise NaoAutenticadoError
     pagina = perfil.pagina_da_rota(request.url.path)
     if (
