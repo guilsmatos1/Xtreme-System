@@ -43,6 +43,7 @@ packages = ["xtreme_system"]
 "../../components/xtreme_system/imagem_comprovante_compra" = "xtreme_system/imagem_comprovante_compra"
 "../../components/xtreme_system/documento_contrato_venda" = "xtreme_system/documento_contrato_venda"
 "../../components/xtreme_system/whatsapp" = "xtreme_system/whatsapp"
+"../../components/xtreme_system/rsd" = "xtreme_system/rsd"
 "../../components/xtreme_system/empresa" = "xtreme_system/empresa"
 "../../components/xtreme_system/imagem_veiculo" = "xtreme_system/imagem_veiculo"
 "../../components/xtreme_system/crud" = "xtreme_system/crud"

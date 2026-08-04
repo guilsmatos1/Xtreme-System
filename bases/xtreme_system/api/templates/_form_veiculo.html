@@ -49,6 +49,27 @@
             <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
           </label>{% endif %}
+          {% if pode_operacao(user, 'veiculos', 'editar') %}
+          <div class="field field--full rsd-actions">
+            <span class="field__label">RSD</span>
+            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-indicator="#rsd-indicator">
+                {{ ui.icon("refresh") }} Puxar dados
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-timeout="130000" hx-indicator="#rsd-indicator">
+                {{ ui.icon("search") }} Consulta unitária
+              </button>
+              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
+            </div>
+            <div id="rsd-status" class="rsd-status"></div>
+          </div>
+          {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem</span>
             <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
@@ -148,6 +169,27 @@
             <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase">
           </label>{% endif %}
+          {% if pode_operacao(user, 'veiculos', 'editar') %}
+          <div class="field field--full rsd-actions">
+            <span class="field__label">RSD</span>
+            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-indicator="#rsd-indicator">
+                {{ ui.icon("refresh") }} Puxar dados
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-timeout="130000" hx-indicator="#rsd-indicator">
+                {{ ui.icon("search") }} Consulta unitária
+              </button>
+              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
+            </div>
+            <div id="rsd-status" class="rsd-status"></div>
+          </div>
+          {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
             <span class="field__label">Modelo *</span>
             <input class="input" name="modelo" value="{{ dados.get('modelo', '') }}" required>

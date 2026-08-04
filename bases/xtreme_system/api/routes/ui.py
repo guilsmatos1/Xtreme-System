@@ -16,6 +16,7 @@ for _module_name in (
     "lancamentos",
     "perfis",
     "relatorios",
+    "rsd",
     "usuarios",
     "veiculos",
     "veiculos_cliente_vendedor",

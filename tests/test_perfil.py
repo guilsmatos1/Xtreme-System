@@ -255,6 +255,7 @@ def test_pagina_da_rota_extrai_apenas_paginas_conhecidas() -> None:
     assert perfil.pagina_da_rota("/ui/compras/1/comprovantes") == "compras"
     assert perfil.pagina_da_rota("/ui/custos-veiculos") == "custos-veiculos"
     assert perfil.pagina_da_rota("/ui/fechamentos-vendas/1") == "vendas"
+    assert perfil.pagina_da_rota("/ui/rsd/puxar-dados") == "veiculos"
     assert perfil.pagina_da_rota("/ui/usuarios") is None
     assert perfil.pagina_da_rota("/ui/dashboard") is None
     assert perfil.pagina_da_rota("/static/app.css") is None
