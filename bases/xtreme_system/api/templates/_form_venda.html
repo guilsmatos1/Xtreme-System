@@ -17,7 +17,7 @@
           {% if pode_ver_campo(user, 'vendas', 'km') %}
           <label class="field">
             <span class="field__label">KM</span>
-            <input class="input" name="km" type="number" min="0" value="{{ venda.km if venda.km is not none else '' }}">
+            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', venda.km if venda.km is not none else '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'status') %}
@@ -25,7 +25,7 @@
             <span class="field__label">Status *</span>
             <select class="select" name="status" required>
               {% for s in status %}
-              <option value="{{ s.value }}"{% if venda.status == s %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
+              <option value="{{ s.value }}"{% if dados.get('status', venda.status.value) == s.value %} selected{% endif %}>{{ s.value | replace("_", " ") | title }}</option>
               {% endfor %}
             </select>
           </label>
@@ -34,32 +34,32 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
-            <input class="input" name="valor_venda" data-testid="venda-edit-value" type="text" inputmode="decimal" value="{{ venda.valor_venda }}" required>
+            <input class="input" name="valor_venda" data-testid="venda-edit-value" type="text" inputmode="decimal" value="{{ dados.get('valor_venda', venda.valor_venda) }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}
           <label class="field">
             <span class="field__label">Entrada</span>
-            <input class="input" name="valor_entrada" type="text" inputmode="decimal" value="{{ venda.valor_entrada if venda.valor_entrada is not none else '' }}">
+            <input class="input" name="valor_entrada" type="text" inputmode="decimal" value="{{ dados.get('valor_entrada', venda.valor_entrada if venda.valor_entrada is not none else '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'debitos') %}
           <label class="field">
             <span class="field__label">Débitos do veículo</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ venda.debitos if venda.debitos is not none else '' }}">
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', venda.debitos if venda.debitos is not none else '') }}">
           </label>
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
           <label class="field">
             <span class="field__label">Forma de pagamento *</span>
-            <input class="input" name="forma_pagamento" value="{{ venda.forma_pagamento }}" required>
+            <input class="input" name="forma_pagamento" value="{{ dados.get('forma_pagamento', venda.forma_pagamento) }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
           <label class="field">
             <span class="field__label">Parcelas</span>
-            <input class="input" name="parcelas" type="number" min="1" value="{{ venda.parcelas }}">
+            <input class="input" name="parcelas" type="number" min="1" value="{{ dados.get('parcelas', venda.parcelas) }}">
           </label>
           {% endif %}
 
@@ -67,7 +67,7 @@
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
-              <input id="houve-troca" name="houve_troca" value="1" type="checkbox"{% if venda.veiculo_troca_id or dados.get('houve_troca') %} checked{% endif %}>
+              <input id="houve-troca" name="houve_troca" value="1" type="checkbox"{% if (dados.get('houve_troca') if 'houve_troca' in dados else venda.veiculo_troca_id) %} checked{% endif %}>
               Houve troca de veículo?
             </label>
           </label>
@@ -75,12 +75,12 @@
           {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
           <label class="field" data-troca>
             <span class="field__label">Veículo da troca</span>
-            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ venda.veiculo_troca_id if venda.veiculo_troca_id is not none else '' }}">
+            <input class="input" id="veiculo-troca-search" name="veiculo_troca_id" type="hidden" value="{{ dados.get('veiculo_troca_id', venda.veiculo_troca_id if venda.veiculo_troca_id is not none else '') }}">
             <input class="input" id="veiculo-troca-input" name="veiculo_troca_label" placeholder="Buscar por placa ou modelo" list="veiculos-troca-list"
                    value="{{ dados.get('veiculo_troca_label', venda.veiculo_troca.placa if venda and venda.veiculo_troca else '') }}"
                    data-reference-url="/ui/vendas/referencias/veiculos-troca"
                    data-reference-autoload
-                   data-selected-id="{{ venda.veiculo_troca_id if venda and venda.veiculo_troca_id is not none else dados.get('veiculo_troca_id', '') }}">
+                   data-selected-id="{{ dados.get('veiculo_troca_id', venda.veiculo_troca_id if venda and venda.veiculo_troca_id is not none else '') }}">
             <datalist id="veiculos-troca-list"></datalist>
             <span id="veiculo-troca-nao-encontrado" style="display:none"><button type="button" id="cadastrar-veiculo-troca" class="btn btn--ghost btn--sm">Cadastrar novo veículo</button></span>
           </label>
@@ -146,14 +146,14 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field" data-troca>
             <span class="field__label">Valor da diferença</span>
-            <input class="input" name="valor_diferenca" type="text" inputmode="decimal" value="{{ venda.valor_diferenca if venda.valor_diferenca is not none else '' }}">
+            <input class="input" name="valor_diferenca" type="text" inputmode="decimal" value="{{ dados.get('valor_diferenca', venda.valor_diferenca if venda.valor_diferenca is not none else '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
             <label>
-              <input name="pagamento_pendente" type="checkbox"{% if venda.pagamento_pendente %} checked{% endif %}>
+              <input name="pagamento_pendente" type="checkbox"{% if (dados.get('pagamento_pendente') if 'pagamento_pendente' in dados else venda.pagamento_pendente) %} checked{% endif %}>
               Faltou parte do pagamento?
             </label>
           </label>
@@ -161,20 +161,20 @@
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
           <label class="field">
             <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="text" inputmode="decimal" value="{{ venda.valor_pendente if venda.valor_pendente is not none else '' }}">
+            <input class="input" name="valor_pendente" type="text" inputmode="decimal" value="{{ dados.get('valor_pendente', venda.valor_pendente if venda.valor_pendente is not none else '') }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
           <label class="field field--full">
             <span class="field__label">Datas de pagamento</span>
-            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ venda.datas_pagamento if venda.datas_pagamento is not none else '' }}">
+            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', venda.datas_pagamento if venda.datas_pagamento is not none else '') }}">
           </label>
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
           <label class="field field--full">
             <span class="field__label">Observações</span>
-            <textarea class="input" name="observacoes" rows="4">{{ venda.observacoes or '' }}</textarea>
+            <textarea class="input" name="observacoes" rows="4">{{ dados.get('observacoes', venda.observacoes or '') }}</textarea>
           </label>
           {% endif %}
         </div>

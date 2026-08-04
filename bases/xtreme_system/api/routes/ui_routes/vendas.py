@@ -466,6 +466,7 @@ async def _atualizar_venda(
 ) -> HTMLResponse:
     obj = found(venda.get(session, item_id), "Venda")
     form = await request.form()
+    dados_form = dict(form)
     resultado = preparar_venda(session, form, user, obj=obj)
     if isinstance(resultado, VendaErro):
         return _resposta_erro_preparacao_venda(
@@ -493,6 +494,7 @@ async def _atualizar_venda(
                 item=obj,
                 erro=write_conflict_detail("Venda"),
                 user=user,
+                dados=dados_form,
             ),
         )
     return _ok_venda(request, session, user, limit=limit, offset=offset)

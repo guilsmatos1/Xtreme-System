@@ -1245,6 +1245,109 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_atualizar_venda_preserva_dados_submetidos_em_erro(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = _criar_cliente(client, headers, "Cliente Venda Erro", "98765432101")
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    criada = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+        },
+    )
+    assert criada.status_code == 200
+    venda_id = client.get("/vendas", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        f"/ui/vendas/{venda_id}",
+        data={
+            "km": "12345",
+            "valor_venda": "valor inválido",
+            "valor_entrada": "15000.00",
+            "debitos": "250.00",
+            "forma_pagamento": "pix",
+            "parcelas": "12",
+            "status": "aprovado",
+            "valor_diferenca": "500.00",
+            "pagamento_pendente": "1",
+            "valor_pendente": "100.00",
+            "datas_pagamento": "10/08, 10/09",
+            "observacoes": "observações editadas",
+        },
+    )
+
+    assert resp.status_code == 400
+    assert 'name="valor_venda"' in resp.text
+    assert 'value="valor inválido"' in resp.text
+    assert 'value="15000.00"' in resp.text
+    assert 'value="pix"' in resp.text
+    assert 'value="12"' in resp.text
+    assert 'value="aprovado" selected' in resp.text
+    assert 'value="100.00"' in resp.text
+    assert 'value="10/08, 10/09"' in resp.text
+    assert "observações editadas" in resp.text
+
+
+def test_ui_atualizar_venda_preserva_dados_submetidos_em_conflito(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = _criar_cliente(
+        client, headers, "Cliente Venda Conflito", "98765432102"
+    )
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    criada = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "financiamento",
+            "parcelas": "36",
+            "status": "pendente",
+        },
+    )
+    assert criada.status_code == 200
+    venda_id = client.get("/vendas", headers=headers).json()[0]["id"]
+    next(app.dependency_overrides[get_session]()).commit()
+
+    def falhar_ao_atualizar(
+        _session: Session,
+        _obj: venda.Venda,
+        _data: venda.VendaUpdate,
+        _actor_id: int | None = None,
+    ) -> venda.Venda:
+        raise IntegrityError("UPDATE", {}, RuntimeError("venda duplicada"))
+
+    monkeypatch.setattr(venda, "update", falhar_ao_atualizar)
+    resp = client.post(
+        f"/ui/vendas/{venda_id}",
+        data={
+            "valor_venda": "99000.00",
+            "forma_pagamento": "pix",
+            "parcelas": "2",
+            "status": "aprovado",
+        },
+    )
+
+    assert resp.status_code == 409
+    assert 'value="99000.00"' in resp.text
+    assert 'value="pix"' in resp.text
+    assert 'value="2"' in resp.text
+    assert 'value="aprovado" selected' in resp.text
+
+
 def test_ctx_form_venda_carrega_clientes_para_o_select_e_nao_veiculos(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
