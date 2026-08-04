@@ -134,7 +134,27 @@ def test_ui_veiculo_preserva_erro_de_validacao_por_campo(client: TestClient) -> 
     resp = client.post("/ui/veiculos/1", data={"km": "-1"})
 
     assert resp.status_code == 400
-    assert "km: Input should be greater than or equal to 0" in resp.text
+    assert "Quilometragem: deve ser maior ou igual a zero." in resp.text
+    assert "km: Input should" not in resp.text
+
+
+def test_ui_veiculo_renderiza_erros_de_validacao_em_linhas_separadas(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+
+    resp = client.post(
+        "/ui/veiculos/1",
+        data={"km": "-1", "preco": "nao-e-um-numero"},
+    )
+
+    assert resp.status_code == 400
+    assert "Quilometragem: deve ser maior ou igual a zero." in resp.text
+    assert "Preço anunciado: informe um valor numérico válido." in resp.text
+    assert (
+        "Quilometragem: deve ser maior ou igual a zero.<br>"
+        "Preço anunciado: informe um valor numérico válido."
+    ) in resp.text
 
 
 def test_ui_ordenacao_de_veiculos_usa_htmx(client: TestClient) -> None:

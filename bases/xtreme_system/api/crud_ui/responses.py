@@ -21,12 +21,98 @@ _HTMX_SUCCESS_EVENTS = {
     "htmx:close-modal": {},
 }
 
+_LABELS = {
+    "cliente_id": "Cliente",
+    "veiculo_id": "Veículo",
+    "vendedor_id": "Vendedor",
+    "data_venda": "Data da venda",
+    "valor_venda": "Valor da venda",
+    "valor_entrada": "Entrada",
+    "debitos": "Débitos do veículo",
+    "km": "Quilometragem",
+    "forma_pagamento": "Forma de pagamento",
+    "parcelas": "Parcelas",
+    "status": "Estado",
+    "observacoes": "Observações",
+    "veiculo_troca_id": "Veículo da troca",
+    "valor_diferenca": "Valor da diferença",
+    "pagamento_pendente": "Pagamento pendente",
+    "valor_pendente": "Valor pendente",
+    "datas_pagamento": "Datas de pagamento",
+    "veic_troca_tipo": "Tipo",
+    "veic_troca_placa": "Placa",
+    "veic_troca_modelo": "Modelo",
+    "veic_troca_marca": "Marca",
+    "veic_troca_cor": "Cor",
+    "veic_troca_ano": "Ano",
+    "veic_troca_km": "Quilometragem",
+    "veic_troca_chassi": "Chassi",
+    "veic_troca_renavam": "RENAVAM",
+    "veic_troca_proprietario_registrado": "Proprietário Registrado",
+    "veic_troca_preco": "Valor de avaliação",
+    "veic_troca_investidor_id": "Investidor",
+    "data_compra": "Data da compra",
+    "valor_compra": "Valor da compra",
+    "tipo": "Tipo",
+    "modelo": "Modelo",
+    "marca": "Marca",
+    "cor": "Cor",
+    "ano": "Ano",
+    "placa": "Placa",
+    "chassi": "Chassi",
+    "renavam": "RENAVAM",
+    "preco": "Preço anunciado",
+    "procuracao": "Procurador",
+    "proprietario_registrado": "Proprietário Registrado",
+    "tipo_entrada": "Tipo de entrada",
+    "revisao": "Revisão",
+    "investidor_id": "Investidor",
+    "nome": "Nome",
+    "paginas": "Páginas com acesso",
+    "restricoes": "Restrições",
+    "valor": "Valor",
+    "descricao": "Descrição",
+}
+
+_MSGS = {
+    "missing": "preencha este campo",
+    "none_required": "preencha este campo",
+    "decimal_parsing": "informe um valor numérico válido",
+    "decimal_type": "informe um valor numérico válido",
+    "float_parsing": "informe um número válido",
+    "float_type": "informe um número válido",
+    "int_parsing": "informe um número inteiro válido",
+    "int_type": "informe um número inteiro válido",
+    "greater_than": "deve ser maior que zero",
+    "greater_than_equal": "deve ser maior ou igual a zero",
+    "less_than": "deve ser menor que o limite permitido",
+    "less_than_equal": "deve ser menor ou igual ao limite permitido",
+    "string_type": "informe um texto válido",
+    "bool_parsing": "selecione uma opção válida",
+    "bool_type": "selecione uma opção válida",
+    "date_parsing": "informe uma data válida",
+    "date_from_datetime_parsing": "informe uma data válida",
+    "enum": "selecione uma opção válida",
+    "value_error": "informe um valor válido",
+}
+
 
 def validation_error_detail(exc: ValidationError) -> str:
-    """Format Pydantic errors without discarding the field that failed."""
-    return "; ".join(
-        f"{'.'.join(map(str, error['loc']))}: {error['msg']}" for error in exc.errors()
-    )
+    """Format Pydantic errors as localized, user-facing messages."""
+    messages = []
+    for error in exc.errors():
+        field = next(
+            (
+                part
+                for part in reversed(error.get("loc", ()))
+                if isinstance(part, str) and part in _LABELS
+            ),
+            None,
+        )
+        label = _LABELS[field] if field is not None else "Campo informado"
+        message = _MSGS.get(error.get("type"), "informe um valor válido")
+        messages.append(f"{label}: {message}.")
+    return "\n".join(messages)
 
 
 def success_response(
