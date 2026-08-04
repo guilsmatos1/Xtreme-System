@@ -409,8 +409,10 @@ async def _atualizar_veiculo(
 ) -> HTMLResponse:
     obj = found(veiculo.get(session, item_id), "Veículo")
     form = await request.form()
-    dados_form = dict(form)
+    dados_form: dict[str, Any] = dict(form)
     dados_form = perfil.campos_form_visiveis(user, "veiculos", dados_form)
+    if perfil.pode_ver_campo(user, "veiculos", "revisao"):
+        dados_form["revisao"] = dados_form.get("revisao") == "true"
 
     try:
         data = veiculo.VeiculoUpdate.model_validate(dados_form)

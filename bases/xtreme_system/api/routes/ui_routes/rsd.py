@@ -269,7 +269,7 @@ def ui_rsd_dossie_pdf(
     )
 
 
-# ---- Histórico de consultas RSD (admin-only, read-only) ----
+# ---- Histórico de consultas (admin-only, read-only) ----
 
 LIMIT_MAX = 200
 
@@ -309,9 +309,10 @@ def _nomes_usuarios(
 
 
 def _filtros_qs(f: FiltroRsdConsultaPagina) -> dict[str, Any]:
+    data_de, data_ate = f.periodo
     filtros: dict[str, Any] = {
-        "data_de": f.data_de.isoformat(),
-        "data_ate": f.data_ate.isoformat(),
+        "data_de": data_de.isoformat(),
+        "data_ate": data_ate.isoformat(),
     }
     if f.tipo is not None:
         filtros["tipo"] = f.tipo.value
@@ -374,9 +375,7 @@ def ui_rsd_consultas(
 ) -> HTMLResponse:
     ctx = _ctx_consultas(session, user, filtros)
     if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(
-            request, "_rsd_consultas_resultado.html", ctx
-        )
+        return templates.TemplateResponse(request, "_rsd_consultas_resultado.html", ctx)
     return templates.TemplateResponse(request, "rsd_consultas.html", ctx)
 
 

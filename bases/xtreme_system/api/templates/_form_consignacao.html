@@ -49,7 +49,7 @@
 
           {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}
           <label class="field">
-            <span class="field__label">Valor de venda *</span>
+            <span class="field__label">Preço de Venda *</span>
             <input class="input" name="valor_venda" data-testid="consignacao-edit-value" type="text" inputmode="decimal" value="{{ consignacao.valor_venda }}" required>
           </label>
           {% endif %}
@@ -90,6 +90,7 @@
           </div>
           {% endfor %}
         </div>
+        <hr class="form-grid__divider">
 
         {# Step 1: Proprietário #}
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
@@ -125,9 +126,18 @@
             <span class="field__label">Email</span>
             <input class="input" name="cli_email" data-testid="consignacao-wizard-owner-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
+          <hr class="form-grid__divider" x-show="!clienteExistente">
           <label x-show="!clienteExistente" class="field field--full">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Endereço</span>
             <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Complemento</span>
+            <input class="input" name="cli_complemento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_complemento', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
@@ -137,30 +147,27 @@
             <span class="field__label">Estado</span>
             <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
-          </label>
           {% endif %}
         </fieldset>
 
         {# Step 2: Veículo #}
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}
+          <label class="field field--plate">
+            <span class="field__label">Placa *</span>
+            <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
+          </label>
+          {{ ui.rsd_actions("vei_", "rsd-status-consignacao", true) }}
+          <label class="field field--full">
+            <span class="field__label">Modelo *</span>
+            <input class="input" name="vei_modelo" data-testid="consignacao-wizard-model" value="{{ dados.get('vei_modelo', '') }}" required>
+          </label>
           <label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="vei_tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | title }}</option>{% endfor %}
+              <option value="">Selecione</option>
+              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
-          <label class="field">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required>
-          </label>
-          {{ ui.rsd_actions("vei_", "rsd-status-consignacao") }}
-          <label class="field">
-            <span class="field__label">Modelo *</span>
-            <input class="input" name="vei_modelo" data-testid="consignacao-wizard-model" value="{{ dados.get('vei_modelo', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Marca</span>
@@ -183,7 +190,7 @@
             <input class="input" name="vei_renavam" value="{{ dados.get('vei_renavam', '') }}">
           </label>
           <label class="field field--full">
-            <span class="field__label">Proprietário registrado</span>
+            <span class="field__label">Proprietário Registrado</span>
             <input class="input" name="vei_proprietario_registrado" value="{{ dados.get('vei_proprietario_registrado', '') }}">
           </label>
           <label class="field">
@@ -208,12 +215,12 @@
           {% if pode_ver_campo(user, 'consignacoes', 'data_vencimento') %}
           <label class="field">
             <span class="field__label">Data de vencimento</span>
-            <input class="input" name="data_vencimento" type="date" value="{{ dados.get('data_vencimento', '') }}">
+            <input class="input" name="data_vencimento" type="date" value="{{ dados.get('data_vencimento', data_vencimento_padrao) }}">
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}
           <label class="field">
-            <span class="field__label">Valor de venda *</span>
+            <span class="field__label">Preço de Venda *</span>
             <input class="input" name="valor_venda" data-testid="consignacao-wizard-value" type="text" inputmode="decimal" value="{{ dados.get('valor_venda', '') }}" required>
           </label>
           {% endif %}
@@ -230,11 +237,12 @@
           <label class="field">
             <span class="field__label">Investidor *</span>
             <select class="select" name="vei_investidor_id" required>
+              <option value="">Selecione</option>
               {% for inv in investidores %}<option value="{{ inv.id }}"{% if dados.get('vei_investidor_id')|string == inv.id|string or (not dados.get('vei_investidor_id') and investidor_padrao_id == inv.id) %} selected{% endif %}>{{ inv.nome }}</option>{% endfor %}
             </select>
           </label>
           <label class="field">
-            <span class="field__label">KM</span>
+            <span class="field__label">Quilometragem</span>
             <input class="input" name="vei_km" type="number" value="{{ dados.get('vei_km', '') }}">
           </label>
           {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}
@@ -246,12 +254,16 @@
         </fieldset>
 
         {# Step 5: Contrato #}
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 5 %} is-active{% endif %}" data-step="5" :class="{ 'is-active': step === 5 }">
-          <label class="field field--full">
-            <span class="field__label">Contrato de consignação</span>
-            <input class="input" name="contratos_consignacao" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple>
-            <span class="field__hint">PDF, JPG, PNG ou WEBP (opcional)</span>
-          </label>
+        <fieldset class="wizard-step{% if dados.get('wizard_step', 1)|int == 5 %} is-active{% endif %}" data-step="5" :class="{ 'is-active': step === 5 }">
+          <div class="mmgr__upload">
+            <label class="mmgr__drop">
+              <input type="file" data-testid="consignacao-wizard-contract" name="contratos_consignacao" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple
+                     onchange="this.parentElement.querySelector('.mmgr__drop-text').textContent = this.files.length ? this.files.length + ' arquivo(s) selecionado(s)' : 'Arraste o contrato aqui ou clique para selecionar'">
+              <span class="mmgr__drop-icon">{{ ui.icon("file") }}</span>
+              <span class="mmgr__drop-text">Arraste o contrato aqui ou clique para selecionar</span>
+              <span class="mmgr__drop-hint">PDF, JPG, PNG ou WEBP (opcional)</span>
+            </label>
+          </div>
         </fieldset>
         {% endif %}
       </div>

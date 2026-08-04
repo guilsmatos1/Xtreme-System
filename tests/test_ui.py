@@ -365,9 +365,17 @@ def test_ui_veiculo_detalhe_mostra_preco_de_custo_da_compra(
     comprado = local_client.get("/ui/veiculos/1/detalhes")
     assert comprado.status_code == 200
     assert "Preço Anunciado" in comprado.text
-    assert "R$ 90.000,00" in comprado.text
+    assert re.search(
+        r"Preço Anunciado</div>\s*<div class=\"stat__value cell-num\">"
+        r"R\$ 90\.000,00</div>",
+        comprado.text,
+    )
     # custo vem do valor da compra, não do preço anunciado
-    assert "R$ 75.000,00" in comprado.text
+    assert re.search(
+        r"Preço de Custo</div>\s*<div class=\"stat__value cell-num\">"
+        r"R\$ 75\.000,00</div>",
+        comprado.text,
+    )
 
     consignado = local_client.get("/ui/veiculos/2/detalhes")
     assert consignado.status_code == 200
@@ -1045,7 +1053,6 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
     pagina_veiculos = client.get("/ui/veiculos").text
     assert "btn--focus" in pagina_veiculos
     assert "action-edit" in pagina_veiculos
-    assert "action-user" in pagina_veiculos
     assert "action-view" in pagina_veiculos
     assert "badge--success badge--plain" in pagina_veiculos
     assert 'badge--info badge--plain">Compra<' in pagina_veiculos

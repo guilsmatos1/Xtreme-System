@@ -228,23 +228,17 @@
 <input type="hidden" name="rsd_prefix" value="{{ prefix }}">
 <input type="hidden" name="rsd_status_id" value="{{ status_id }}">
 <div class="field{% if not inline %} field--full{% endif %} rsd-actions{% if inline %} rsd-actions--inline{% endif %}">
-  <span class="field__label{% if inline %} sr-only{% endif %}">RSD</span>
+  <span class="field__label sr-only">RSD</span>
+  <div id="{{ status_id }}" class="rsd-status" aria-live="polite"></div>
   <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
-    <button type="button" class="btn btn--ghost btn--sm"
+    <button type="button" class="btn btn--info"
             hx-post="/ui/rsd/puxar-dados" hx-include="closest form"
             hx-target="#{{ status_id }}" hx-swap="outerHTML"
             hx-indicator="#{{ status_id }}-indicator">
       {{ icon("refresh") }} Puxar dados
     </button>
-    <button type="button" class="btn btn--ghost btn--sm"
-            hx-post="/ui/rsd/consulta-unitaria" hx-include="closest form"
-            hx-target="#{{ status_id }}" hx-swap="outerHTML"
-            hx-indicator="#{{ status_id }}-indicator">
-      {{ icon("search") }} Consulta unitária
-    </button>
     <span id="{{ status_id }}-indicator" class="htmx-indicator muted">Consultando…</span>
   </div>
-  <div id="{{ status_id }}" class="rsd-status"></div>
 </div>
 {%- endmacro %}
 

@@ -1,14 +1,16 @@
 """Helpers for test database bootstrap."""
 
 import os
+import tempfile
+from pathlib import Path
 from urllib.parse import quote
 
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import Engine, create_engine, event, text
 from sqlalchemy.engine import make_url
-from sqlalchemy.pool import StaticPool
 
+from xtreme_system.database.connection import clear_engine_cache
 from xtreme_system.database.core import Base, get_settings
 from xtreme_system.fechamento_venda import core as _fechamento_venda  # noqa: F401
 
@@ -16,6 +18,7 @@ from xtreme_system.fechamento_venda import core as _fechamento_venda  # noqa: F4
 # necessário uma vez por processo de teste; chamadas seguintes apenas
 # truncam as tabelas, que é ordens de magnitude mais rápido.
 _migrated_urls: set[str] = set()
+_sqlite_test_database_urls: dict[str, str] = {}
 
 
 def _worker_schema() -> str:
@@ -61,15 +64,30 @@ def create_test_engine() -> Engine:
         msg = "TEST_DATABASE_URL is required unless XTREME_ALLOW_SQLITE_TEST_DB=1"
         raise RuntimeError(msg)
 
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "single")
+    database_key = f"{os.getpid()}-{worker_id}"
+    sqlite_test_database_url = _sqlite_test_database_urls.get(database_key)
+    if sqlite_test_database_url is None:
+        database_path = (
+            Path(tempfile.gettempdir())
+            / f"xtreme-system-test-{os.getpid()}-{worker_id}.sqlite3"
+        )
+        database_path.unlink(missing_ok=True)
+        sqlite_test_database_url = f"sqlite:///{database_path}"
+        _sqlite_test_database_urls[database_key] = sqlite_test_database_url
+        os.environ["DATABASE_URL"] = sqlite_test_database_url
+        get_settings.cache_clear()
+        clear_engine_cache()
+
     engine = create_engine(
-        "sqlite://",
+        sqlite_test_database_url,
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
         future=True,
     )
     event.listen(
         engine, "connect", lambda conn, _: conn.execute("PRAGMA foreign_keys=ON")
     )
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     return engine
 

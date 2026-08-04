@@ -404,15 +404,45 @@
         // Só valida o passo visível: os demais têm campos required que ainda
         // não foram preenchidos, e o submit nativo do browser ignora campos
         // com display:none, então validar tudo travaria o avanço.
+        //
+        // Campos ocultos por x-show (display:none no pai) são pulados:
+        // offsetParent é null quando o elemento ou um ancestral tem
+        // display:none — não confundir com type=hidden, que também tem
+        // offsetParent null mas já é ignorado pelo checkValidity nativo.
+        //
+        // Inputs de referência/autocomplete (data-reference-url) usam um
+        // hidden companion para o ID real. O campo visível pode passar no
+        // checkValidity (texto não vazio), mas o hidden fica vazio se o
+        // usuário não selecionou um item da lista.
         validStep: function (n) {
           var passo = this.$el.querySelector('.wizard-step[data-step="' + n + '"]');
           if (!passo) return true;
           var controls = passo.querySelectorAll("input, select, textarea");
           for (var i = 0; i < controls.length; i++) {
-            if (controls[i].disabled) continue;
-            if (!controls[i].checkValidity()) {
-              controls[i].reportValidity();
+            var ctrl = controls[i];
+            if (ctrl.disabled) continue;
+            // Pula campos ocultos por x-show / display:none (mas não
+            // type=hidden, que sempre tem offsetParent null).
+            if (ctrl.type !== "hidden" && !ctrl.offsetParent) continue;
+            if (!ctrl.checkValidity()) {
+              ctrl.reportValidity();
               return false;
+            }
+            // Autocomplete/referência: valida que o hidden companion
+            // (ID real) foi preenchido ao selecionar da lista.
+            if (
+              ctrl.hasAttribute("data-reference-url") &&
+              ctrl.required
+            ) {
+              var parent = ctrl.parentElement;
+              var hidden =
+                parent && parent.querySelector('input[type="hidden"]');
+              if (hidden && !hidden.value) {
+                ctrl.setCustomValidity("Selecione uma opção da lista.");
+                ctrl.reportValidity();
+                ctrl.setCustomValidity("");
+                return false;
+              }
             }
           }
           return true;

@@ -15,74 +15,6 @@
 
         {% if veiculo %}
         <div class="form-grid">
-          {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
-            <span class="field__label">Tipo de Entrada *</span>
-            <select class="select" name="tipo_entrada" required>
-              {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if veiculo.tipo_entrada == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
-            <span class="field__label">Modelo *</span>
-            <input class="input" name="modelo" value="{{ veiculo.modelo }}" required autofocus>
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'marca') %}<label class="field">
-            <span class="field__label">Marca</span>
-            <input class="input" name="marca" value="{{ veiculo.marca or '' }}">
-          </label>{% endif %}
-
-          <label class="field">
-            <span class="field__label">Cor *</span>
-            <input class="input" name="cor" value="{{ veiculo.cor }}" required>
-          </label>
-          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
-            <span class="field__label">Ano *</span>
-            <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
-          </label>{% endif %}
-
-          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
-          </label>{% endif %}
-          {% if pode_operacao(user, 'veiculos', 'editar') %}
-          {{ ui.rsd_actions() }}
-          {% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
-            <span class="field__label">Quilometragem</span>
-            <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
-          </label>{% endif %}
-
-          {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<label class="field">
-            <span class="field__label">Chassi</span>
-            <input class="input" name="chassi" value="{{ veiculo.chassi or '' }}">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<label class="field">
-            <span class="field__label">RENAVAM</span>
-            <input class="input" name="renavam" value="{{ veiculo.renavam or '' }}">
-          </label>{% endif %}
-
-          {% if pode_ver_campo(user, 'veiculos', 'preco') %}
-          <label class="field">
-            <span class="field__label">Preço Anunciado (R$) *</span>
-            <input class="input" name="preco" data-testid="veiculo-edit-preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
-          </label>
-          {% endif %}
-
-          {% if pode_ver_campo(user, 'veiculos', 'revisao') %}
-          <label class="field">
-            <span class="field__label">Revisão *</span>
-            <select class="select" name="revisao" required>
-              <option value="true"{% if veiculo.revisao %} selected{% endif %}>Sim</option>
-              <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
-            </select>
-          </label>
-          {% endif %}
-
           {% if pode_ver_campo(user, 'veiculos', 'status') %}
           <label class="field">
             <span class="field__label">Estado *</span>
@@ -93,19 +25,49 @@
           </label>
           {% endif %}
 
-          {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
-          {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
-          <label class="field">
-            <span class="field__label">Débito (R$)</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
-          </label>
+          <hr class="form-grid__divider">
+
+          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
+            <span class="field__label">Placa *</span>
+            <input class="input" name="placa" value="{{ veiculo.placa }}" required autofocus style="text-transform:uppercase">
+          </label>{% endif %}
+          {% if pode_operacao(user, 'veiculos', 'editar') %}
+          {{ ui.rsd_actions(inline=True) }}
           {% endif %}
 
-          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
-            <span class="field__label">Procurador</span>
-            <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
+          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field">
+            <span class="field__label">Modelo *</span>
+            <input class="input" name="modelo" value="{{ veiculo.modelo }}" required>
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
+            <span class="field__label">Tipo *</span>
+            <select class="select" name="tipo" required>
+              {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
           </label>{% endif %}
 
+          {% if pode_ver_campo(user, 'veiculos', 'marca') %}<label class="field">
+            <span class="field__label">Marca</span>
+            <input class="input" name="marca" value="{{ veiculo.marca or '' }}">
+          </label>{% endif %}
+          <label class="field">
+            <span class="field__label">Cor *</span>
+            <input class="input" name="cor" value="{{ veiculo.cor }}" required>
+          </label>
+
+          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
+            <span class="field__label">Ano *</span>
+            <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<label class="field">
+            <span class="field__label">Chassi</span>
+            <input class="input" name="chassi" value="{{ veiculo.chassi or '' }}">
+          </label>{% endif %}
+
+          {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<label class="field">
+            <span class="field__label">RENAVAM</span>
+            <input class="input" name="renavam" value="{{ veiculo.renavam or '' }}">
+          </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<label class="field">
             <span class="field__label">Proprietário Registrado</span>
             <input class="input" name="proprietario_registrado" value="{{ veiculo.proprietario_registrado or '' }}">
@@ -117,6 +79,19 @@
           {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<label class="field">
             <span class="field__label">UF do Proprietário</span>
             <input class="input" name="proprietario_uf" value="{{ veiculo.proprietario_uf or '' }}" maxlength="2" style="text-transform:uppercase">
+          </label>{% endif %}
+
+          <hr class="form-grid__divider">
+
+          {% if pode_ver_campo(user, 'veiculos', 'preco') %}
+          <label class="field">
+            <span class="field__label">Preço Anunciado (R$) *</span>
+            <input class="input" name="preco" data-testid="veiculo-edit-preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
+            <span class="field__label">Quilometragem</span>
+            <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
           </label>{% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
@@ -131,6 +106,27 @@
             <datalist id="investidores-list"></datalist>
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
+            <span class="field__label">Procurador</span>
+            <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
+          </label>{% endif %}
+
+          {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
+          {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
+          <label class="field">
+            <span class="field__label">Débitos (R$)</span>
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'revisao') %}
+          <label class="field">
+            <span class="field__label">Revisão</span>
+            <select class="select" name="revisao">
+              <option value="true"{% if veiculo.revisao %} selected{% endif %}>Sim</option>
+              <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
+            </select>
+          </label>
+          {% endif %}
 
         </div>
         {% else %}
@@ -141,12 +137,14 @@
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required autofocus>
+              <option value="">Selecione</option>
               {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<label class="field">
             <span class="field__label">Tipo de Entrada *</span>
             <select class="select" name="tipo_entrada" required>
+              <option value="">Selecione</option>
               {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if dados.get('tipo_entrada') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
@@ -201,57 +199,60 @@
           </label>
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }" x-data="{ clienteExistente: '{{ dados.get('cliente_vendedor_id', '') }}' }">
           <label class="field field--full">
             <span class="field__label">Cliente vendedor</span>
             <input class="input" id="cliente-vendedor-input" name="cliente_vendedor_label"
                    list="clientes-vendedor-list" placeholder="Buscar por nome ou documento"
                    value="{{ dados.get('cliente_vendedor_label', '') }}"
                    data-reference-url="/ui/veiculos/referencias/clientes"
-                   data-selected-id="{{ dados.get('cliente_vendedor_id', '') }}">
+                   data-selected-id="{{ dados.get('cliente_vendedor_id', '') }}"
+                   @input="clienteExistente = ''"
+                   @referencechange="clienteExistente = $refs.clienteVendedorId.value">
             <input id="cliente-vendedor-search" name="cliente_vendedor_id" type="hidden"
+                   x-ref="clienteVendedorId"
                    value="{{ dados.get('cliente_vendedor_id', '') }}">
             <datalist id="clientes-vendedor-list"></datalist>
             <small class="field__hint">Deixe vazio para cadastrar um novo cliente.</small>
           </label>
 
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
+            <input class="input" name="cli_nome" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">CPF *</span>
-            <input class="input" name="cli_documento" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
-            <select class="select" name="cli_tipo" data-novo-cliente>
+            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente">
               {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone</span>
-            <input class="input" name="cli_telefone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}">
+            <input class="input" name="cli_telefone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
+            <input class="input" name="cli_email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Endereço</span>
-            <input class="input" name="cli_endereco" data-novo-cliente value="{{ dados.get('cli_endereco', '') }}">
+            <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
-            <input class="input" name="cli_cidade" data-novo-cliente value="{{ dados.get('cli_cidade', '') }}">
+            <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Estado</span>
-            <input class="input" name="cli_estado" data-novo-cliente value="{{ dados.get('cli_estado', '') }}">
+            <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
           </label>
           <label class="field field--full">
             <span class="field__label">Documentos do cliente</span>

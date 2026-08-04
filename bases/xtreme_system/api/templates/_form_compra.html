@@ -84,6 +84,7 @@
           </div>
           {% endfor %}
         </div>
+        <hr class="form-grid__divider">
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
           {% if pode_ver_campo(user, 'compras', 'cliente') %}
@@ -118,6 +119,7 @@
             <span class="field__label">Email</span>
             <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
+          <hr class="form-grid__divider" x-show="!clienteExistente">
           <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">CEP</span>
             <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
@@ -148,27 +150,28 @@
             <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
           </label>
           {{ ui.rsd_actions("vei_", "rsd-status-compra", true) }}
-          <label class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="vei_tipo" data-novo-veiculo required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>
           <label class="field field--full">
             <span class="field__label">Modelo *</span>
             <input class="input" name="vei_modelo" data-testid="compra-wizard-vehicle-model" data-novo-veiculo value="{{ dados.get('vei_modelo', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Tipo *</span>
+            <select class="select" name="vei_tipo" data-novo-veiculo required>
+              <option value="">Selecione</option>
+              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+            </select>
           </label>
           <label class="field">
             <span class="field__label">Marca</span>
             <input class="input" name="vei_marca" data-novo-veiculo value="{{ dados.get('vei_marca', '') }}">
           </label>
           <label class="field">
-            <span class="field__label">Ano *</span>
-            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
-          </label>
-          <label class="field">
             <span class="field__label">Cor *</span>
             <input class="input" name="vei_cor" data-testid="compra-wizard-vehicle-color" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Ano *</span>
+            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Chassi</span>

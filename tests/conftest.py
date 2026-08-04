@@ -105,6 +105,7 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         def override() -> Iterator[Session]:
             yield session
             if invoke_post_commit:
+                session.commit()
                 run_post_commit_callbacks(session)
                 _aguardar_contratos_background()
 

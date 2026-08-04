@@ -69,6 +69,7 @@ def _decriptar_senha(valor: str) -> str:
         # funcionando até a próxima atualização de config recodificar.
         return valor
 
+
 _CONFIG_ID = 1
 _DEFAULT_BASE_URL = "https://lojas.rsdsistema.com.br"
 _LOGIN_PATH = "/accounts/login/"
@@ -95,7 +96,7 @@ class RsdAuthError(RsdError):
 
 
 class RsdTimeoutError(RsdError):
-    """Consulta unitária excedeu o tempo de espera."""
+    """Uma chamada ao portal RSD excedeu o tempo de espera."""
 
 
 class RsdConsultaError(RsdError):
@@ -360,7 +361,7 @@ def listar_consultas(
     limit: int = 50,
     offset: int = 0,
 ) -> list[RsdConsulta]:
-    """Lista consultas RSD ordenadas da mais recente para a mais antiga."""
+    """Lista consultas ordenadas da mais recente para a mais antiga."""
     placa_norm = _normalizar_placa(placa) if placa else None
     stmt = select(RsdConsulta).order_by(
         RsdConsulta.criado_em.desc(), RsdConsulta.id.desc()
@@ -388,7 +389,7 @@ def count_consultas(
     data_de: date | None = None,
     data_ate: date | None = None,
 ) -> int:
-    """Conta consultas RSD com os mesmos filtros de `listar_consultas`."""
+    """Conta consultas com os mesmos filtros de `listar_consultas`."""
     placa_norm = _normalizar_placa(placa) if placa else None
     stmt = select(func.count()).select_from(RsdConsulta)
     stmt = _filtros_consulta(
@@ -517,25 +518,29 @@ class RsdClient:
     def testar_conexao(self) -> None:
         self.login()
 
+    def _post_puxar_dados(self, placa: str, headers: dict[str, str]) -> httpx.Response:
+        try:
+            return self._http().post(
+                self._url(_PUXAR_DADOS_PATH),
+                data={"placa": placa},
+                headers=headers,
+            )
+        except httpx.TimeoutException as exc:
+            raise RsdTimeoutError(
+                "O portal RSD não respondeu a tempo ao puxar os dados. Tente novamente."
+            ) from exc
+
     def puxar_dados(self, placa: str) -> PuxarDadosResult:
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa para puxar dados.")
         headers = self._csrf_headers("/atpv/nova/")
-        resp = self._http().post(
-            self._url(_PUXAR_DADOS_PATH),
-            data={"placa": placa_norm},
-            headers=headers,
-        )
+        resp = self._post_puxar_dados(placa_norm, headers)
         if resp.status_code in _SESSION_EXPIRED_STATUS_CODES:
             # Sessão expirou — reloga uma vez
             self.login()
             headers = self._csrf_headers("/atpv/nova/")
-            resp = self._http().post(
-                self._url(_PUXAR_DADOS_PATH),
-                data={"placa": placa_norm},
-                headers=headers,
-            )
+            resp = self._post_puxar_dados(placa_norm, headers)
         if resp.status_code >= 400:
             raise RsdConsultaError(_msg_http(resp, "Falha ao puxar dados no RSD."))
         try:

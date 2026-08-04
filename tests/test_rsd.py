@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -264,6 +265,30 @@ def test_puxar_dados_erro_do_portal(rsd_client: rsd.RsdClient) -> None:
             rsd_client.puxar_dados("FAIL1")
 
 
+def test_puxar_dados_timeout_vira_erro_da_integracao() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            raise httpx.ReadTimeout("portal sem resposta", request=request)
+        return _handler(request)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdTimeoutError, match="não respondeu a tempo"):
+            client.puxar_dados("TCM9G85")
+
+
 def test_client_from_config_exige_credenciais(db_session: Session) -> None:
     config = rsd.get_config(db_session)
     with pytest.raises(rsd.RsdNotConfiguredError):
@@ -359,6 +384,31 @@ def test_ui_puxar_dados_com_mock(
     assert "Dados carregados" in resp.text
     assert "ONIX 10MT LT2" in resp.text
     assert "CHEV/ONIX 10MT LT2" not in resp.text
+
+
+def test_ui_puxar_dados_timeout_retorna_feedback_htmx(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class _TimeoutClient:
+        def __enter__(self) -> _TimeoutClient:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def puxar_dados(self, _placa: str) -> rsd.PuxarDadosResult:
+            raise rsd.RsdTimeoutError(
+                "O portal RSD não respondeu a tempo ao puxar os dados. Tente novamente."
+            )
+
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    monkeypatch.setattr(rsd, "client_from_config", lambda _config: _TimeoutClient())
+
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
+
+    assert resp.status_code == 400
+    assert "não respondeu a tempo" in resp.text
 
 
 def test_ui_puxar_dados_com_prefixo_de_wizard(
@@ -459,7 +509,7 @@ def test_atualizar_consulta_dossie_marca_terminal(db_session: Session) -> None: 
 def test_ui_puxar_dados_registra_consulta_sucesso(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    chamadas: list[dict[str, object]] = []
+    chamadas: list[dict[str, Any]] = []
     monkeypatch.setattr(
         rsd, "registrar_consulta", lambda **kwargs: chamadas.append(kwargs)
     )
@@ -481,7 +531,7 @@ def test_ui_puxar_dados_registra_consulta_sucesso(
 def test_ui_puxar_dados_registra_consulta_erro(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    chamadas: list[dict[str, object]] = []
+    chamadas: list[dict[str, Any]] = []
     monkeypatch.setattr(
         rsd, "registrar_consulta", lambda **kwargs: chamadas.append(kwargs)
     )
@@ -571,9 +621,7 @@ def _seed_consultas(session: Session) -> int:
     """Cria um usuário e três consultas variando tipo/placa/sucesso/usuario.
 
     Devolve o id do usuário criado."""
-    op = usuario.Usuario(
-        username="rsd-hist", senha_hash="x", papel=usuario.Papel.admin
-    )
+    op = usuario.Usuario(username="rsd-hist", senha_hash="x", papel=usuario.Papel.admin)
     session.add(op)
     session.commit()
 
@@ -644,9 +692,12 @@ def test_count_consultas_bate_com_listagem_sem_paginacao(
 ) -> None:
     _seed_consultas(db_session)
 
-    kwargs = {"tipo": rsd.TipoConsultaRsd.unitaria, "sucesso": True}
-    total = rsd.count_consultas(db_session, **kwargs)
-    rows = rsd.listar_consultas(db_session, **kwargs, limit=1000)
+    total = rsd.count_consultas(
+        db_session, tipo=rsd.TipoConsultaRsd.unitaria, sucesso=True
+    )
+    rows = rsd.listar_consultas(
+        db_session, tipo=rsd.TipoConsultaRsd.unitaria, sucesso=True, limit=1000
+    )
 
     assert total == len(rows) == 1
 
@@ -709,7 +760,7 @@ def test_ui_rsd_consultas_admin_retorna_200(historico_client: TestClient) -> Non
     _login_ui(historico_client)
     resp = historico_client.get("/ui/rsd/consultas")
     assert resp.status_code == 200
-    assert "Consultas RSD" in resp.text
+    assert "Consultas" in resp.text
     assert "TCM9G85" in resp.text
     assert "ABC1D23" in resp.text
 
@@ -745,4 +796,3 @@ def test_ui_rsd_consultas_detalhe_contem_payload(
     assert resp.status_code == 200
     assert "Payload do portal" in resp.text
     assert "Campos aplicados" in resp.text
-

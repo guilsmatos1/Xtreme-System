@@ -98,9 +98,11 @@ def _investidor_padrao_id(investidores: list[investidor.Investidor]) -> int | No
 
 def _ctx_form_consignacao(session: Session) -> dict[str, Any]:
     investidores = investidor.list_all(session)
+    hoje = datetime.now(UTC).date()
     return {
         "clientes": cliente.list_all(session),
-        "data_atual": datetime.now(UTC).date().isoformat(),
+        "data_atual": hoje.isoformat(),
+        "data_vencimento_padrao": hoje.replace(year=hoje.year + 1).isoformat(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos": list(veiculo.TipoVeiculo),
         "investidores": investidores,

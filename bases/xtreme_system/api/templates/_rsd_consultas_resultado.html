@@ -8,7 +8,7 @@
 {% set sucesso_pagina = registros | selectattr('sucesso') | list | length %}
 {% set pct_sucesso = ((sucesso_pagina / (registros | length) * 100) | round) if registros else 0 %}
 
-<section class="stats" aria-label="Resumo das consultas RSD">
+<section class="stats" aria-label="Resumo das consultas">
   <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("search") }} Consultas filtradas</div>
     <div class="stat__value cell-num">{{ total }}</div>
@@ -78,7 +78,7 @@
       </tr>
       {% else %}
       <tr class="empty-row"><td colspan="9">
-        {% call ui.empty("search", "Nenhuma consulta", "Ainda não há consultas RSD para os filtros selecionados.") %}{% endcall %}
+        {% call ui.empty("search", "Nenhuma consulta", "Ainda não há consultas para os filtros selecionados.") %}{% endcall %}
       </td></tr>
       {% endfor %}
     </tbody>
