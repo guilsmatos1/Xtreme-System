@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 
 from xtreme_system.api.deps import require_operacao
 from xtreme_system.api.routes.ui_routes.attachment_routes import (
@@ -13,10 +13,11 @@ from xtreme_system.api.routes.ui_routes.attachment_routes import (
 from xtreme_system.api.routes.ui_routes.upload_paths import (
     _uploads_procuracao_dir,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.documento_procuracao import core as documento_procuracao
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
+
+router = APIRouter()
 
 _AbrirProcuracaoDep = Annotated[
     usuario.Usuario, Depends(require_operacao("veiculos", "abrir_procuracao"))
@@ -38,7 +39,7 @@ def _get_uploads_procuracao_dir(item_id: int) -> Any:
 
 
 register_attachment_routes(
-    app,
+    router,
     AttachmentRouteConfig(
         name="veiculo_procuracao",
         path="/ui/veiculos/{veiculo_id}/procuracao",

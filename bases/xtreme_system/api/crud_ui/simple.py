@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import FastAPI, Request, Response
+from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
@@ -20,7 +20,7 @@ from xtreme_system.usuario import core as usuario
 
 
 def register_ui_simples(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     templates: Jinja2Templates,
     ui_prefix: str,
     titulo: str,

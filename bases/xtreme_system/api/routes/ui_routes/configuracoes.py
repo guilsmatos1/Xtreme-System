@@ -8,7 +8,7 @@ from typing import Annotated
 from uuid import uuid4
 
 import structlog
-from fastapi import BackgroundTasks, File, Form, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from sqlalchemy.orm import Session
@@ -24,7 +24,6 @@ from xtreme_system.api.routes.ui_routes.upload_paths import (
 from xtreme_system.api.routes.ui_routes.upload_validation import (
     validar_uploads,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.database.core import (
     DatabaseRestoreInProgressError,
     database_traffic_lock,
@@ -37,10 +36,12 @@ from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
 
+router = APIRouter()
+
 logger = structlog.get_logger(__name__)
 
 
-@app.get("/ui/configuracoes")
+@router.get("/ui/configuracoes")
 def ui_configuracoes(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -55,7 +56,7 @@ def ui_configuracoes(
     )
 
 
-@app.post("/ui/configuracoes")
+@router.post("/ui/configuracoes")
 def ui_configuracoes_salvar(
     request: Request,
     session: SessionDep,
@@ -89,7 +90,7 @@ def ui_configuracoes_salvar(
     )
 
 
-@app.post("/ui/configuracoes/empresa")
+@router.post("/ui/configuracoes/empresa")
 def ui_configuracoes_empresa_salvar(
     request: Request,
     session: SessionDep,
@@ -157,7 +158,7 @@ def _pagina_empresa(
     )
 
 
-@app.post("/ui/configuracoes/empresa/logo")
+@router.post("/ui/configuracoes/empresa/logo")
 def ui_configuracoes_empresa_logo_enviar(
     request: Request,
     session: SessionDep,
@@ -209,7 +210,7 @@ def ui_configuracoes_empresa_logo_enviar(
     )
 
 
-@app.post("/ui/configuracoes/empresa/logo/excluir")
+@router.post("/ui/configuracoes/empresa/logo/excluir")
 def ui_configuracoes_empresa_logo_excluir(
     request: Request,
     session: SessionDep,
@@ -225,7 +226,7 @@ def ui_configuracoes_empresa_logo_excluir(
     )
 
 
-@app.post("/ui/configuracoes/exportar")
+@router.post("/ui/configuracoes/exportar")
 def ui_configuracoes_exportar(
     request: Request,
     session: SessionDep,
@@ -262,7 +263,7 @@ def ui_configuracoes_exportar(
     )
 
 
-@app.post("/ui/configuracoes/importar")
+@router.post("/ui/configuracoes/importar")
 async def ui_configuracoes_importar(
     request: Request,
     session: SessionDep,

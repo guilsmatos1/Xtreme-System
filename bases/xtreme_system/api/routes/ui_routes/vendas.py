@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 import structlog
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.engine import Connection, Engine
@@ -48,7 +48,6 @@ from xtreme_system.api.routes.ui_routes.venda_write import (
 from xtreme_system.api.routes.ui_routes.venda_write import (
     parse_venda_form as _parse_venda_form,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
 from xtreme_system.database.core import register_post_commit
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
@@ -63,6 +62,7 @@ from xtreme_system.whatsapp import core as whatsapp
 from xtreme_system.workflow.core import recompute_vehicle_status_on_delete
 
 logger = structlog.get_logger(__name__)
+router = APIRouter()
 
 _CONTRATO_EXECUTOR = ThreadPoolExecutor(
     max_workers=2,
@@ -128,7 +128,7 @@ def _ctx_lista_vendas(session: Session, _vendas: list[Any]) -> dict[str, Any]:
 
 
 register_crud_ui_routes(
-    app,
+    router,
     templates,
     venda,
     "/ui/vendas",
@@ -304,7 +304,7 @@ register_crud_ui_routes(
 
 
 register_reference_lookup_routes(
-    app,
+    router,
     "/ui/vendas/referencias",
     pagina="vendas",
     references={
@@ -469,7 +469,7 @@ def _resposta_erro_preparacao_venda(
     )
 
 
-@app.post("/ui/vendas")
+@router.post("/ui/vendas")
 async def _criar_venda(
     request: Request,
     session: SessionDep,
@@ -510,7 +510,7 @@ async def _criar_venda(
     return _ok_venda(request, session, user, limit=limit, offset=offset)
 
 
-@app.post("/ui/vendas/{item_id}")
+@router.post("/ui/vendas/{item_id}")
 async def _atualizar_venda(
     item_id: int,
     request: Request,
@@ -564,7 +564,7 @@ def _criar_venda_com_hooks(
     return obj
 
 
-@app.get("/ui/vendas/{item_id}/contrato")
+@router.get("/ui/vendas/{item_id}/contrato")
 def _baixar_contrato_venda(
     item_id: int, session: SessionDep, _: _BaixarContratoVendaDep
 ) -> RedirectResponse:
@@ -576,7 +576,7 @@ def _baixar_contrato_venda(
     return RedirectResponse(documento.url)
 
 
-@app.post("/ui/vendas/{item_id}/contrato/regerar")
+@router.post("/ui/vendas/{item_id}/contrato/regerar")
 def _regerar_contrato_venda(
     item_id: int, session: SessionDep, user: _EditarVendaDep
 ) -> RedirectResponse:
@@ -596,7 +596,7 @@ _FecharVendaDep = Annotated[
 ]
 
 
-@app.get("/ui/vendas/{item_id}/fechamento")
+@router.get("/ui/vendas/{item_id}/fechamento")
 def _form_fechamento_venda(
     item_id: int, request: Request, session: SessionDep, user: _FecharVendaDep
 ) -> HTMLResponse:
@@ -615,7 +615,7 @@ def _form_fechamento_venda(
     )
 
 
-@app.post("/ui/vendas/{item_id}/fechamento")
+@router.post("/ui/vendas/{item_id}/fechamento")
 async def _confirmar_fechamento_venda(
     item_id: int,
     request: Request,
@@ -670,7 +670,7 @@ async def _confirmar_fechamento_venda(
     )
 
 
-@app.get("/ui/fechamentos-vendas/{fechamento_id}")
+@router.get("/ui/fechamentos-vendas/{fechamento_id}")
 def _detalhe_fechamento_venda(
     fechamento_id: int,
     request: Request,

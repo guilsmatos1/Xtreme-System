@@ -4,17 +4,18 @@ from datetime import UTC, date, datetime
 from typing import Annotated, Any
 from urllib.parse import urlencode
 
-from fastapi import HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import csv_response as _csv_response
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
 from xtreme_system.api.routes.ui_routes.filters import IdFiltro, PeriodoFiltro
-from xtreme_system.api.setup import app
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
+
+router = APIRouter()
 
 # ---- DRE por período (admin-only, a partir de fechamento_venda) ----
 
@@ -96,7 +97,7 @@ def _ctx_dre_erro(
     }
 
 
-@app.get("/ui/relatorios/dre")
+@router.get("/ui/relatorios/dre")
 def ui_relatorio_dre(
     request: Request,
     session: SessionDep,
@@ -118,7 +119,7 @@ def ui_relatorio_dre(
     return templates.TemplateResponse(request, "relatorios_dre.html", ctx)
 
 
-@app.get("/ui/relatorios/dre/exportar")
+@router.get("/ui/relatorios/dre/exportar")
 def ui_relatorio_dre_exportar(
     session: SessionDep,
     _: UIAdmin,

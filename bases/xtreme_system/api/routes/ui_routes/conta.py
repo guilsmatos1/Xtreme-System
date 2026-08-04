@@ -2,23 +2,24 @@
 
 from typing import Annotated
 
-from fastapi import Form, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
 from xtreme_system.api.deps import SessionDep, UIUser, templates
-from xtreme_system.api.setup import app
 from xtreme_system.auth import core as auth
 from xtreme_system.usuario import core as usuario
+
+router = APIRouter()
 
 # ---- Conta (autoatendimento, qualquer usuário autenticado) ----
 
 
-@app.get("/ui/conta")
+@router.get("/ui/conta")
 def ui_conta(request: Request, user: UIUser) -> HTMLResponse:
     return templates.TemplateResponse(request, "conta.html", {"user": user})
 
 
-@app.post("/ui/conta/senha")
+@router.post("/ui/conta/senha")
 def ui_conta_senha_alterar(
     request: Request,
     session: SessionDep,

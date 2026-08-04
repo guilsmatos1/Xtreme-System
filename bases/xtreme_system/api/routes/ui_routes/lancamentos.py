@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -21,7 +21,6 @@ from xtreme_system.api.deps import (
     found,
     templates,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -35,6 +34,8 @@ _LANCAMENTO_SORT_FIELDS: dict[str, str] = {
 }
 
 _LANCAMENTO_AUTOMATICO_ERRO = "Lançamento automático não pode ser alterado manualmente"
+
+router = APIRouter()
 
 
 def _ctx_lancamentos(
@@ -121,7 +122,7 @@ def _erro_lancamento(
     )
 
 
-@app.get("/ui/investidores/{investidor_id}/lancamentos")
+@router.get("/ui/investidores/{investidor_id}/lancamentos")
 def ui_investidor_lancamentos(
     investidor_id: int,
     request: Request,
@@ -156,7 +157,7 @@ def ui_investidor_lancamentos(
     )
 
 
-@app.get("/ui/investidores/{investidor_id}/lancamentos/exportar")
+@router.get("/ui/investidores/{investidor_id}/lancamentos/exportar")
 def ui_investidor_lancamentos_exportar(
     investidor_id: int, session: SessionDep, _: UIUser
 ) -> Response:
@@ -177,7 +178,7 @@ def ui_investidor_lancamentos_exportar(
     )
 
 
-@app.get("/ui/investidores/{investidor_id}/lancamentos/novo")
+@router.get("/ui/investidores/{investidor_id}/lancamentos/novo")
 def ui_lancamento_novo(
     investidor_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:
@@ -193,7 +194,7 @@ def ui_lancamento_novo(
     )
 
 
-@app.get("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/editar")
+@router.get("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/editar")
 def ui_lancamento_editar(
     investidor_id: int,
     lancamento_id: int,
@@ -215,7 +216,7 @@ def ui_lancamento_editar(
     )
 
 
-@app.post("/ui/investidores/{investidor_id}/lancamentos")
+@router.post("/ui/investidores/{investidor_id}/lancamentos")
 async def ui_lancamento_criar(
     investidor_id: int, request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
@@ -232,7 +233,7 @@ async def ui_lancamento_criar(
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
-@app.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}")
+@router.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}")
 async def ui_lancamento_atualizar(
     investidor_id: int,
     lancamento_id: int,
@@ -253,7 +254,7 @@ async def ui_lancamento_atualizar(
     return _ok_lancamentos(request, session, user, investidor_id)
 
 
-@app.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/excluir")
+@router.post("/ui/investidores/{investidor_id}/lancamentos/{lancamento_id}/excluir")
 def ui_lancamento_excluir(
     investidor_id: int,
     lancamento_id: int,

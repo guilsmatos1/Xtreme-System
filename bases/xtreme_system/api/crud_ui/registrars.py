@@ -1,7 +1,16 @@
 from collections.abc import Mapping
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -73,7 +82,7 @@ _MISSING_EXPORT_CONFIG = "A exportação exige columns ou csv_headers/csv_row"
 
 # pylint: disable=too-many-branches
 def register_crud_ui_routes(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
@@ -211,7 +220,7 @@ def register_crud_ui_routes(
 
 
 def register_reference_lookup_routes(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     prefix: str,
     *,
     pagina: str,
@@ -261,7 +270,7 @@ def register_reference_lookup_routes(
 
 
 def register_list_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
@@ -324,7 +333,7 @@ def register_list_route(
 
 
 def register_export_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
     *,
@@ -368,7 +377,7 @@ def register_export_route(
 
 
 def register_new_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     form: FormSpec,
     prefix: str,
     *,
@@ -396,7 +405,7 @@ def register_new_route(
 
 
 def register_edit_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
@@ -425,7 +434,7 @@ def register_edit_route(
 
 
 def register_create_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
@@ -508,7 +517,7 @@ def register_create_route(
 
 
 def register_update_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     form: FormSpec,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,
@@ -618,7 +627,7 @@ def _update_with_before_hook(
 
 
 def register_delete_route(
-    app: FastAPI,
+    app: FastAPI | APIRouter,
     templates: Jinja2Templates,
     module: CrudModule[EntityT, CreateSchemaT, UpdateSchemaT],
     prefix: str,

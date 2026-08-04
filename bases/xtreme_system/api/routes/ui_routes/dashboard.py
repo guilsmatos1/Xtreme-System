@@ -4,18 +4,19 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 
-from fastapi import Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import SessionDep, UIAdmin, templates
-from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import analytics as venda_analytics
 from xtreme_system.venda import core as venda
+
+router = APIRouter()
 
 # ---- Dashboard (KPIs, admin-only) ----
 
@@ -180,7 +181,7 @@ def _ctx_dashboard(session: Session, mes: str | None = None) -> dict[str, Any]:
     }
 
 
-@app.get("/ui/dashboard")
+@router.get("/ui/dashboard")
 def ui_dashboard(
     request: Request, session: SessionDep, user: UIAdmin, mes: str | None = None
 ) -> HTMLResponse:

@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy import func, select
@@ -45,7 +45,6 @@ from xtreme_system.api.deps import (
 from xtreme_system.api.routes.ui_routes.uploads import (
     pending_upload_paths,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -56,6 +55,8 @@ from xtreme_system.perfil import core as perfil
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.workflow.core import validate_veiculo_fks
+
+router = APIRouter()
 
 
 def _ctx_form_veiculo(
@@ -158,7 +159,7 @@ _VEICULOS_LISTING = ListingSpec(
 
 
 register_crud_ui_routes(
-    app,
+    router,
     templates,
     veiculo,
     "/ui/veiculos",
@@ -248,7 +249,7 @@ register_crud_ui_routes(
 
 
 register_reference_lookup_routes(
-    app,
+    router,
     "/ui/veiculos/referencias",
     pagina="veiculos",
     references={
@@ -273,7 +274,7 @@ _ExcluirDep = Annotated[
 ]
 
 
-@app.get("/ui/veiculos/{item_id}/editar")
+@router.get("/ui/veiculos/{item_id}/editar")
 def _editar_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:
@@ -285,7 +286,7 @@ def _editar_veiculo(
     )
 
 
-@app.get("/ui/veiculos/{item_id}/detalhes")
+@router.get("/ui/veiculos/{item_id}/detalhes")
 def _detalhe_veiculo(
     item_id: int,
     request: Request,
@@ -315,7 +316,7 @@ def _detalhe_veiculo(
     )
 
 
-@app.post("/ui/veiculos/{item_id}/excluir")
+@router.post("/ui/veiculos/{item_id}/excluir")
 def _excluir_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
 ) -> HTMLResponse:
@@ -402,7 +403,7 @@ def _erro_veiculo(
     )
 
 
-@app.post("/ui/veiculos/{item_id}")
+@router.post("/ui/veiculos/{item_id}")
 async def _atualizar_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _EditarDep
 ) -> HTMLResponse:

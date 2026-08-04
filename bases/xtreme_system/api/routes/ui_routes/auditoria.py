@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any, cast
 from urllib.parse import urlencode
 
-from fastapi import Query, Request, Response
+from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
@@ -18,9 +18,10 @@ from xtreme_system.api.routes.ui_routes.filters import (
     TextoFiltro,
     vazio_para_none,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.usuario import core as usuario
+
+router = APIRouter()
 
 # ---- Auditoria (consulta, admin-only) ----
 
@@ -124,7 +125,7 @@ def _ctx_auditoria(
     }
 
 
-@app.get("/ui/auditoria")
+@router.get("/ui/auditoria")
 def ui_auditoria(
     request: Request,
     session: SessionDep,
@@ -137,7 +138,7 @@ def ui_auditoria(
     return templates.TemplateResponse(request, "auditoria.html", ctx)
 
 
-@app.get("/ui/auditoria/exportar")
+@router.get("/ui/auditoria/exportar")
 def ui_auditoria_exportar(
     session: SessionDep,
     _: UIAdmin,
@@ -169,7 +170,7 @@ def _pretty(dados: dict[str, Any] | None) -> str | None:
     return json.dumps(dados, indent=2, ensure_ascii=False, default=str)
 
 
-@app.get("/ui/auditoria/{registro_id}/detalhe")
+@router.get("/ui/auditoria/{registro_id}/detalhe")
 def ui_auditoria_detalhe(
     registro_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:

@@ -4,7 +4,7 @@ from datetime import date
 from typing import Annotated, Any
 
 import structlog
-from fastapi import Depends, Form, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
@@ -18,7 +18,6 @@ from xtreme_system.api.route_factories import (
     json_visible,
     register_crud_routes,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.auditoria import core as auditoria
 from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
@@ -41,13 +40,15 @@ from xtreme_system.workflow.core import (
     validate_venda_update,
 )
 
+router = APIRouter()
+
 AUDITORIA_LIMIT_MAX = 200
 logger = structlog.get_logger(__name__)
 
 # ---- Health check (sem auth) ----
 
 
-@app.get("/health")
+@router.get("/health")
 def health() -> JSONResponse:
     try:
         with get_engine().connect() as connection:
@@ -77,7 +78,7 @@ def health() -> JSONResponse:
 # ---- Autenticação ----
 
 
-@app.post("/login", response_model=auth.Token)
+@router.post("/login", response_model=auth.Token)
 def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: SessionDep,
@@ -94,7 +95,7 @@ def login(
     return auth.Token(access_token=token)
 
 
-@app.post("/usuarios", response_model=usuario.UsuarioRead, status_code=201)
+@router.post("/usuarios", response_model=usuario.UsuarioRead, status_code=201)
 def criar_usuario(
     data: usuario.UsuarioCreate, session: SessionDep, admin: AdminUser
 ) -> usuario.Usuario:
@@ -104,7 +105,7 @@ def criar_usuario(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.get("/usuarios", response_model=list[usuario.UsuarioRead])
+@router.get("/usuarios", response_model=list[usuario.UsuarioRead])
 def listar_usuarios(
     session: SessionDep,
     _: AdminUser,
@@ -114,7 +115,7 @@ def listar_usuarios(
     return usuario.list_all(session, limit=limit, offset=offset)
 
 
-@app.delete("/usuarios/{user_id}", status_code=204)
+@router.delete("/usuarios/{user_id}", status_code=204)
 def deletar_usuario(
     user_id: int, session: SessionDep, current: CurrentUser, _: AdminUser
 ) -> None:
@@ -124,7 +125,7 @@ def deletar_usuario(
     usuario.delete(session, obj, current.id)
 
 
-@app.post("/usuarios/{user_id}/senha", status_code=204)
+@router.post("/usuarios/{user_id}/senha", status_code=204)
 def trocar_senha_usuario(
     user_id: int,
     session: SessionDep,
@@ -141,7 +142,7 @@ def trocar_senha_usuario(
 # ---- Investidores ----
 
 register_crud_routes(
-    app,
+    router,
     investidor,
     "/investidores",
     "Investidor",
@@ -154,7 +155,7 @@ register_crud_routes(
 # ---- Veículos ----
 
 register_crud_routes(
-    app,
+    router,
     veiculo,
     "/veiculos",
     "Veículo",
@@ -188,7 +189,7 @@ def _guard_lancamento_veiculo(_session: Session, obj: Any, _data: Any = None) ->
 
 
 register_crud_routes(
-    app,
+    router,
     caixa,
     "/lancamentos-caixa",
     "Lançamento de caixa",
@@ -244,7 +245,7 @@ def _fechamento_json(
     )
 
 
-@app.get(
+@router.get(
     "/vendas/{venda_id}/fechamento/preview",
 )
 def preview_fechamento_venda(
@@ -255,7 +256,7 @@ def preview_fechamento_venda(
     return _fechamento_preview_json(fechamento_venda.preview(session, venda_obj), user)
 
 
-@app.post(
+@router.post(
     "/vendas/{venda_id}/fechamento",
     response_model=fechamento_venda.FechamentoVendaRead,
     status_code=201,
@@ -273,7 +274,7 @@ def confirmar_fechamento_venda(
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@app.get(
+@router.get(
     "/fechamentos-vendas",
 )
 def listar_fechamentos_vendas(
@@ -290,7 +291,7 @@ def listar_fechamentos_vendas(
     return [_fechamento_json(obj, user) for obj in fechamentos]
 
 
-@app.get(
+@router.get(
     "/fechamentos-vendas/{fechamento_id}",
 )
 def obter_fechamento_venda(
@@ -305,7 +306,7 @@ def obter_fechamento_venda(
 # ---- Clientes ----
 
 register_crud_routes(
-    app,
+    router,
     cliente,
     "/clientes",
     "Cliente",
@@ -320,7 +321,7 @@ register_crud_routes(
 
 
 register_crud_routes(
-    app,
+    router,
     venda,
     "/vendas",
     "Venda",
@@ -348,7 +349,7 @@ def _validate_compra_update(session: Session, _obj: Any, data: Any) -> None:
 
 
 register_crud_routes(
-    app,
+    router,
     compra,
     "/compras",
     "Compra",
@@ -368,7 +369,7 @@ register_crud_routes(
 # ---- Auditoria (somente leitura, admin) ----
 
 
-@app.get("/auditoria", response_model=list[auditoria.AuditoriaRead])
+@router.get("/auditoria", response_model=list[auditoria.AuditoriaRead])
 def listar_auditoria(
     session: SessionDep,
     _: AdminUser,

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 from uuid import uuid4
 
-from fastapi import Depends, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -57,7 +57,6 @@ from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
 from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
     resolver_veiculo_inline,
 )
-from xtreme_system.api.setup import app
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
@@ -70,6 +69,8 @@ from xtreme_system.workflow.core import (
     sincronizar_caixa_compra,
     validate_cliente_veiculo_fks,
 )
+
+router = APIRouter()
 
 _EditarCompraDep = Annotated[
     usuario.Usuario, Depends(require_operacao("compras", "editar"))
@@ -176,7 +177,7 @@ def _comprovantes_context(
 
 
 register_attachment_routes(
-    app,
+    router,
     AttachmentRouteConfig(
         name="compra_comprovantes",
         path="/ui/compras/{compra_id}/comprovantes",
@@ -283,7 +284,7 @@ def _ok_compra(
     )
 
 
-@app.post("/ui/compras")
+@router.post("/ui/compras")
 async def _criar_compra(  # noqa: PLR0911
     request: Request,
     session: SessionDep,
@@ -426,7 +427,7 @@ async def _criar_compra(  # noqa: PLR0911
 
 
 register_crud_ui_routes(
-    app,
+    router,
     templates,
     compra,
     "/ui/compras",

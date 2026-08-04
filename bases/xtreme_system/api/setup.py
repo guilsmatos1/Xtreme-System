@@ -11,7 +11,7 @@ from html import escape
 from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from fastapi import FastAPI, HTTPException, Request, status
@@ -35,6 +35,8 @@ from xtreme_system.api.deps import (
     SessionDep,
     UIUser,
 )
+from xtreme_system.api.routes import json as json_routes
+from xtreme_system.api.routes import ui as ui_routes
 from xtreme_system.auth import core as auth
 from xtreme_system.database.core import (
     DatabaseRestoreInProgressError,
@@ -173,21 +175,12 @@ def _docs_url() -> str | None:
     return "/docs"
 
 
-app = FastAPI(title="Xtreme Motors", docs_url=_docs_url())
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins(),
-    allow_methods=_CORS_ALLOWED_METHODS,
-    allow_headers=_CORS_ALLOWED_HEADERS,
-)
-
 _HTMX_SUCCESS_EVENTS = {
     "htmx:toast": {"message": "Alterações salvas com sucesso.", "variant": "success"},
     "htmx:close-modal": {},
 }
 
 
-@app.middleware("http")
 async def _htmx_write_feedback(
     request: Request,
     call_next: Callable[[Request], Any],
@@ -211,7 +204,6 @@ async def _htmx_write_feedback(
     return response
 
 
-@app.on_event("startup")
 def _warn_proxy_headers_without_trusted_proxies() -> None:
     if os.environ.get("FORWARDED_ALLOW_IPS") and not os.environ.get(
         "TRUSTED_PROXY_IPS"
@@ -225,7 +217,6 @@ def _warn_proxy_headers_without_trusted_proxies() -> None:
         )
 
 
-@app.middleware("http")
 async def _database_session(
     request: Request,
     call_next: Callable[[Request], Any],
@@ -242,7 +233,6 @@ async def _database_session(
     return response
 
 
-@app.middleware("http")
 async def _database_restore_guard(
     request: Request,
     call_next: Callable[[Request], Any],
@@ -260,7 +250,6 @@ async def _database_restore_guard(
         )
 
 
-@app.middleware("http")
 async def _request_context(
     request: Request,
     call_next: Callable[[Request], Any],
@@ -294,7 +283,6 @@ async def _request_context(
         structlog.contextvars.clear_contextvars()
 
 
-@app.middleware("http")
 async def _limite_request_size(
     request: Request, call_next: Callable[[Request], Any]
 ) -> Any:
@@ -351,14 +339,17 @@ def _rate_limit_bucket(request: Request, client_ip: str) -> str:
     return f"ip:{client_ip}"
 
 
-@app.middleware("http")
-async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> Any:
+async def _rate_limit(
+    request: Request,
+    call_next: Callable[[Request], Any],
+    configured_store: RateLimiterStore | None = None,
+) -> Any:
     path = request.url.path
     if path.startswith("/static/") or path in _ROTAS_ISENTAS_RATE_LIMIT:
         return await call_next(request)
 
     client_ip = _client_ip(request)
-    store = _get_rate_limit_store()
+    store = configured_store or _get_rate_limit_store()
 
     if request.method == "POST" and path.endswith("/login"):
         allowed, retry_after = await run_in_threadpool(
@@ -388,7 +379,6 @@ async def _rate_limit(request: Request, call_next: Callable[[Request], Any]) -> 
 _ui_dir = Path(__file__).parent
 
 
-@app.get("/static/uploads/{path:path}")
 def uploads_autenticados(path: str, session: SessionDep, user: UIUser) -> FileResponse:
     uploads_root = (_ui_dir / "static" / "uploads").resolve()
     file_path = (uploads_root / path).resolve()
@@ -399,23 +389,18 @@ def uploads_autenticados(path: str, session: SessionDep, user: UIUser) -> FileRe
     return FileResponse(file_path)
 
 
-app.mount("/static", StaticFiles(directory=_ui_dir / "static"), name="static")
-
-
-@app.get("/")
 def raiz() -> RedirectResponse:
     return RedirectResponse("/ui/dashboard")
 
 
-@app.exception_handler(NaoAutenticadoError)
-def _handle_nao_autenticado(request: Request, _exc: NaoAutenticadoError) -> Response:
+def _handle_nao_autenticado(request: Request, _exc: Exception) -> Response:
     if request.headers.get("HX-Request"):
         return Response(status_code=204, headers={"HX-Redirect": "/ui/login"})
     return RedirectResponse("/ui/login", status_code=303)
 
 
-@app.exception_handler(HTTPException)
-def _handle_http_exception(request: Request, exc: HTTPException) -> Response:
+def _handle_http_exception(request: Request, exc: Exception) -> Response:
+    exc = cast(HTTPException, exc)
     if request.url.path.startswith("/ui/"):
         return HTMLResponse(
             escape(str(exc.detail)),
@@ -429,20 +414,64 @@ def _handle_http_exception(request: Request, exc: HTTPException) -> Response:
     )
 
 
-@app.exception_handler(NaoAdminError)
-def _handle_nao_admin(_request: Request, _exc: NaoAdminError) -> HTMLResponse:
+def _handle_nao_admin(_request: Request, _exc: Exception) -> HTMLResponse:
     return HTMLResponse("<p>Requer papel admin</p>", status_code=403)
 
 
-@app.exception_handler(NaoAutorizadoError)
-def _handle_nao_autorizado(_request: Request, _exc: NaoAutorizadoError) -> HTMLResponse:
+def _handle_nao_autorizado(_request: Request, _exc: Exception) -> HTMLResponse:
     return HTMLResponse(
         "<p>Seu perfil não tem acesso a esta página.</p>", status_code=403
     )
 
 
-@app.exception_handler(Exception)
 def _handle_erro_interno(request: Request, _exc: Exception) -> Response:
     if request.url.path.startswith("/ui/"):
         return HTMLResponse("<p>Erro interno. Contate suporte.</p>", status_code=500)
     return JSONResponse({"detail": "Erro interno do servidor"}, status_code=500)
+
+
+def create_app(
+    *,
+    cors_origins: list[str] | None = None,
+    rate_limit_store: RateLimiterStore | None = None,
+) -> FastAPI:
+    application = FastAPI(title="Xtreme Motors", docs_url=_docs_url())
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins() if cors_origins is None else cors_origins,
+        allow_methods=_CORS_ALLOWED_METHODS,
+        allow_headers=_CORS_ALLOWED_HEADERS,
+    )
+    application.middleware("http")(_htmx_write_feedback)
+    application.router.on_startup.append(_warn_proxy_headers_without_trusted_proxies)
+    application.middleware("http")(_database_session)
+    application.middleware("http")(_database_restore_guard)
+    application.middleware("http")(_request_context)
+    application.middleware("http")(_limite_request_size)
+
+    async def _app_rate_limit(
+        request: Request, call_next: Callable[[Request], Any]
+    ) -> Any:
+        return await _rate_limit(request, call_next, rate_limit_store)
+
+    application.middleware("http")(_app_rate_limit)
+    application.add_api_route(
+        "/static/uploads/{path:path}", uploads_autenticados, methods=["GET"]
+    )
+    application.mount(
+        "/static", StaticFiles(directory=_ui_dir / "static"), name="static"
+    )
+    application.add_api_route("/", raiz, methods=["GET"])
+    application.add_exception_handler(NaoAutenticadoError, _handle_nao_autenticado)
+    application.add_exception_handler(HTTPException, _handle_http_exception)
+    application.add_exception_handler(NaoAdminError, _handle_nao_admin)
+    application.add_exception_handler(NaoAutorizadoError, _handle_nao_autorizado)
+    application.add_exception_handler(Exception, _handle_erro_interno)
+
+    application.include_router(json_routes.router)
+    for router in ui_routes.routers:
+        application.include_router(router)
+    return application
+
+
+app = create_app()
