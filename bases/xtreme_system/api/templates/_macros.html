@@ -147,7 +147,7 @@
 {%- endmacro %}
 
 {% macro alert(msg, variant="danger") -%}
-<div class="alert{% if variant == "success" %} alert--success{% endif %}" role="alert">{{ icon("check" if variant == "success" else "alert-triangle") }}<span>{{ msg }}</span></div>
+<div class="alert{% if variant == "success" %} alert--success{% endif %}" role="alert">{{ icon("check" if variant == "success" else "alert-triangle") }}<span>{% for line in msg.split("\n") %}{% if not loop.first %}<br>{% endif %}{{ line }}{% endfor %}</span></div>
 {%- endmacro %}
 
 {% macro moeda(valor) -%}
