@@ -1720,6 +1720,77 @@ def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
     assert client.get("/vendas", headers=headers).json() == []
 
 
+def test_ui_criar_venda_rollback_cliente_novo_se_troca_entrar_em_conflito() -> None:
+    engine = create_test_engine()
+    with Session(engine) as session:
+        u = usuario.Usuario(username="seed", senha_hash="x", papel=usuario.Papel.admin)
+        session.add(u)
+        session.flush()
+        session.info["usuario_id"] = u.id
+        usuario.create(
+            session,
+            usuario.UsuarioCreate(
+                username="admin", senha="senha", papel=usuario.Papel.admin
+            ),
+        )
+        _seed_investidor_e_veiculo(session)
+        session.commit()
+
+        def override() -> Iterator[Session]:
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
+        app.dependency_overrides[get_session] = override
+        try:
+            with TestClient(app) as test_client:
+                _login_admin(test_client)
+                headers = _admin_headers(test_client)
+                inv_id = test_client.get("/investidores", headers=headers).json()[0][
+                    "id"
+                ]
+                veiculo_id = test_client.get("/veiculos", headers=headers).json()[0][
+                    "id"
+                ]
+                documento = "99988877766"
+
+                resp = test_client.post(
+                    "/ui/vendas",
+                    data={
+                        "cli_nome": "Cliente Rollback",
+                        "cli_documento": documento,
+                        "cli_tipo": "pessoa_fisica",
+                        "veiculo_id": str(veiculo_id),
+                        "data_venda": "2026-07-09",
+                        "valor_venda": "85000.00",
+                        "forma_pagamento": "a_vista",
+                        "parcelas": "1",
+                        "status": "pendente",
+                        "houve_troca": "1",
+                        "veiculo_troca_novo": "1",
+                        "veiculo_troca_label": "ABC1234",
+                        "veic_troca_tipo": "carro",
+                        "veic_troca_placa": "ABC1234",
+                        "veic_troca_modelo": "Onix",
+                        "veic_troca_cor": "Prata",
+                        "veic_troca_ano": "2024",
+                        "veic_troca_km": "60000",
+                        "veic_troca_preco": "30000.00",
+                        "veic_troca_investidor_id": str(inv_id),
+                    },
+                )
+        finally:
+            app.dependency_overrides.clear()
+
+        assert resp.status_code == 400
+        assert "Placa já cadastrada" in resp.text
+        assert cliente.get_by_documento(session, documento) is None
+    engine.dispose()
+
+
 def test_ui_criar_venda_respeita_limit_da_listagem(client: TestClient) -> None:
     _login_admin(client)
     headers = _admin_headers(client)
