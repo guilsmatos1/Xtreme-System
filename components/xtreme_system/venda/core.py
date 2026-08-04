@@ -235,7 +235,9 @@ class VendaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    cliente_id: int
     cliente: ClienteRead
+    veiculo_id: int
     veiculo: VeiculoRead
     veiculo_troca: VeiculoRead | None
     vendedor: UsuarioRead | None

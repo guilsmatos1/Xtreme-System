@@ -216,6 +216,8 @@ class VeiculoRead(BaseModel):
     status: StatusVeiculo
     tipo_entrada: TipoEntrada
     revisao: bool
+    criado_em: datetime
+    investidor_id: int
     investidor: InvestidorRead
 
 

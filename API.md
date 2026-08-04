@@ -202,6 +202,14 @@ Response: Array of resource objects
 page for non-admin users. Field restrictions configured in the user's profile
 are also applied to JSON responses by omitting hidden fields.
 
+The primary relation fields in `veiculos`, `compras`, and `vendas` include both
+the embedded relation object and its scalar foreign key (`investidor_id` for
+vehicles and `cliente_id`/`veiculo_id` for purchases and sales).
+`VeiculoRead` also exposes `criado_em`. The `lancamentos-caixa` response
+remains intentionally flat and uses `investidor_id`, `veiculo_id`, and
+`fechamento_venda_id`; embedding those relations is reserved for a versioned
+API change.
+
 #### Get Single Resource
 
 **Endpoint**: `GET /{resource}/{item_id}`
