@@ -61,8 +61,13 @@ def ui_login(
 
 
 @app.post("/ui/logout")
-def ui_logout(session: SessionDep, user: UIUser) -> RedirectResponse:
+def ui_logout(request: Request, session: SessionDep, user: UIUser) -> RedirectResponse:
     usuario.invalidate_tokens(session, user)
     resp = RedirectResponse("/ui/login", status_code=303)
-    resp.delete_cookie("access_token")
+    resp.delete_cookie(
+        "access_token",
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
     return resp
