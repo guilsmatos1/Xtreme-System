@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 
 import httpx
@@ -643,7 +644,7 @@ def test_count_consultas_bate_com_listagem_sem_paginacao(
 ) -> None:
     _seed_consultas(db_session)
 
-    kwargs = dict(tipo=rsd.TipoConsultaRsd.unitaria, sucesso=True)
+    kwargs = {"tipo": rsd.TipoConsultaRsd.unitaria, "sucesso": True}
     total = rsd.count_consultas(db_session, **kwargs)
     rows = rsd.listar_consultas(db_session, **kwargs, limit=1000)
 
@@ -736,8 +737,6 @@ def test_ui_rsd_consultas_detalhe_contem_payload(
     assert listagem.status_code == 200
 
     # Pega o id da primeira linha de detalhe disponível
-    import re
-
     match = re.search(r"/ui/rsd/consultas/(\d+)/detalhe", listagem.text)
     assert match is not None
     consulta_id = int(match.group(1))

@@ -12,7 +12,8 @@ import hashlib
 import re
 import time
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time as dtime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from datetime import time as dtime
 from enum import StrEnum
 from functools import lru_cache
 from typing import Any
