@@ -53,7 +53,7 @@
           <label class="field">
             <span class="field__label">{{ investidor.nome }}</span>
             <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
-            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00" required>
+            <input class="input" name="percentual" type="text" inputmode="decimal" min="0" max="100" step="0.01" placeholder="0,00" required>
           </label>
           {% endfor %}
           <p id="rateio-total" role="status" aria-live="polite">Total: 0,00% — deve somar 100%</p>
@@ -73,7 +73,7 @@
           if (!fields.length || !total) return;
           function updateTotal() {
             var sum = 0;
-            fields.forEach(function (field) { sum += Number(field.value) || 0; });
+            fields.forEach(function (field) { sum += Number(field.value.replace(",", ".")) || 0; });
             var valid = Math.round(sum * 100) === 10000;
             total.textContent = "Total: " + sum.toFixed(2).replace(".", ",") + (valid ? "% ✓" : "% — deve somar 100%");
             total.style.color = valid ? "var(--success)" : "var(--danger)";

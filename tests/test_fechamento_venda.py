@@ -470,7 +470,7 @@ def test_ui_modal_fechamento_e_estado_fechada(client: TestClient) -> None:
 
     fechado = client.post(
         f"/ui/vendas/{venda_id}/fechamento",
-        data={"investidor_id": str(inv_ana), "percentual": "100"},
+        data={"investidor_id": str(inv_ana), "percentual": "100,00"},
     )
     assert fechado.status_code == 200
     assert "Fechada" in fechado.text

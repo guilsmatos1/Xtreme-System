@@ -317,7 +317,7 @@ def test_modal_venda_fechamento_confirma_rateio(
     expect(dialog).to_be_visible()
     expect(dialog).to_contain_text("Fechamento da venda")
 
-    dialog.locator('input[name="percentual"]').fill("100")
+    dialog.locator('input[name="percentual"]').fill("100,00")
     confirmar = dialog.get_by_role("button", name="Confirmar fechamento")
     expect(confirmar).to_be_enabled()
     confirmar.click()

@@ -572,7 +572,10 @@ async def _confirmar_fechamento_venda(
     investidores = form.getlist("investidor_id")
     percentuais = form.getlist("percentual")
     participacoes = [
-        {"investidor_id": investidor_id, "percentual": percentual}
+        {
+            "investidor_id": investidor_id,
+            "percentual": str(percentual).strip().replace(",", "."),
+        }
         for investidor_id, percentual in zip(investidores, percentuais, strict=False)
         if str(percentual).strip()
     ]
