@@ -1,7 +1,7 @@
 {% import "_macros.html" as ui %}
 <tr id="venda-{{ v.id }}">
   {% set fechamento_id = fechamentos_by_venda.get(v.id) if fechamentos_by_venda is defined else none %}
-  {% if pode_ver_campo(user, 'vendas', 'data_venda') %}<td data-col="data">{{ v.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'data_venda') %}<td data-col="data">{{ v.criado_em.isoformat() }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'cliente') %}<td class="cell-strong" data-col="cliente">{{ v.cliente.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'veiculo') %}<td data-col="veiculo">{{ v.veiculo.modelo }} / {{ v.veiculo.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'vendedor') %}<td data-col="vendedor">{{ (v.vendedor.nome or v.vendedor.username) if v.vendedor else "-" }}</td>{% endif %}
