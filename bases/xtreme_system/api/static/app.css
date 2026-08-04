@@ -337,7 +337,8 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
   transition: box-shadow .15s, transform .15s;
 }
 .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.card--pad { padding: var(--s-4); }
+.card--pad { padding: var(--s-5); }
+.card--pad > h2 { display: flex; align-items: center; gap: var(--s-2); font-size: 1rem; margin-bottom: var(--s-5); color: var(--text); }
 .panel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); align-items: stretch; margin-bottom: var(--s-4); }
 .toolbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -499,10 +500,10 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .stepper__item.is-active .stepper__label { color: var(--text); }
 .stepper__item.is-done .stepper__num { border-color: var(--accent); background: var(--accent); color: var(--accent-contrast); }
 .stepper__item.is-done .stepper__label { color: var(--text-secondary); }
-.details-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin: 0; }
+.details-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); margin: 0; }
 .details-list div { min-width: 0; }
 .details-list dt { font-size: .86rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
-.details-list dd { margin: 2px 0 0; color: var(--text); overflow-wrap: anywhere; }
+.details-list dd { margin: 4px 0 0; color: var(--text); overflow-wrap: anywhere; font-size: .95rem; }
 .modal-section { display: flex; flex-direction: column; gap: var(--s-2); }
 .modal-section h4 { font-size: .88rem; }
 
@@ -789,7 +790,6 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   .page-head .btn { align-self: flex-start; }
   .stats { grid-template-columns: 1fr 1fr; }
   .form-grid { grid-template-columns: 1fr; }
-  .details-list { grid-template-columns: 1fr; }
   .panel-grid { grid-template-columns: 1fr; }
   .settings-layout { grid-template-columns: 1fr; }
   .settings-tabs { gap: var(--s-3); }

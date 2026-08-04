@@ -58,7 +58,7 @@
 
 <div class="panel-grid">
   <section class="card card--pad">
-    <h2 style="margin-bottom:var(--s-4)">Identificação</h2>
+    <h2>{{ ui.icon("tag") }} Identificação</h2>
     <dl class="details-list">
       {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<div><dt>Tipo</dt><dd>{{ veiculo.tipo.value | capitalize }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<div><dt>Tipo de Entrada</dt><dd>{{ veiculo.tipo_entrada.value | capitalize }}</dd></div>{% endif %}
@@ -70,7 +70,7 @@
   </section>
 
   <section class="card card--pad">
-    <h2 style="margin-bottom:var(--s-4)">Documentação</h2>
+    <h2>{{ ui.icon("file") }} Documentação</h2>
     <dl class="details-list">
       {% if pode_ver_campo(user, 'veiculos', 'placa') %}<div><dt>Placa</dt><dd>{{ veiculo.placa }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<div><dt>Chassi</dt><dd>{{ veiculo.chassi or "-" }}</dd></div>{% endif %}
@@ -81,7 +81,7 @@
   </section>
 
   <section class="card card--pad">
-    <h2 style="margin-bottom:var(--s-4)">Estoque</h2>
+    <h2>{{ ui.icon("package") }} Estoque</h2>
     <dl class="details-list">
       {% if pode_ver_campo(user, 'veiculos', 'km') %}<div><dt>Quilometragem</dt><dd>{{ "{:,}".format(veiculo.km) | replace(",", ".") if veiculo.km is not none else "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<div><dt>Revisão</dt><dd>{{ "Sim" if veiculo.revisao else "Não" }}</dd></div>{% endif %}
@@ -91,7 +91,7 @@
 
   {% if pode_cliente_vendedor %}
   <section class="card card--pad">
-    <h2 style="margin-bottom:var(--s-4)">Comprado de</h2>
+    <h2>{{ ui.icon("user") }} Comprado de</h2>
     {% if compra_atual %}
     <dl class="details-list">
       <div><dt>Nome</dt><dd>{{ compra_atual.cliente.nome }}</dd></div>
