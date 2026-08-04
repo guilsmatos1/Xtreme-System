@@ -1,19 +1,18 @@
 """Preparation pipeline for venda UI writes."""
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException
 from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_ui.responses import validation_error_detail
 from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
 from xtreme_system.api.routes.ui_routes.nested_writes import (
-    rollback_se_criou_aninhados,
+    NestedWrites,
+    criar_aninhado_ou_resposta_conflito,
 )
 from xtreme_system.api.routes.ui_routes.vehicle_resolution import (
     resolver_veiculo_inline,
@@ -24,20 +23,6 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.workflow.core import validate_venda_create, validate_venda_update
-
-
-@dataclass
-class NestedWrites:
-    """Track nested rows created during one venda preparation attempt."""
-
-    pending: list[object] = field(default_factory=list)
-
-    def add(self, data: object | None) -> None:
-        if data is not None:
-            self.pending.append(data)
-
-    def rollback(self, session: Session) -> None:
-        rollback_se_criou_aninhados(session, *self.pending)
 
 
 @dataclass(frozen=True)
@@ -103,23 +88,6 @@ def resolver_veiculo_troca(
     )
 
 
-def _create_nested[EntityT, CreateDataT](
-    session: Session,
-    data: CreateDataT | None,
-    create_fn: Callable[[Session, CreateDataT, int | None], EntityT],
-    actor_id: int,
-    nested_writes: NestedWrites,
-) -> tuple[EntityT | None, bool]:
-    if data is None:
-        return None, False
-    nested_writes.add(data)
-    try:
-        return create_fn(session, data, actor_id), False
-    except IntegrityError:
-        nested_writes.rollback(session)
-        return None, True
-
-
 def _validation_message(exc: ValidationError | HTTPException) -> str:
     return (
         str(exc.detail)
@@ -144,12 +112,12 @@ def _preparar_cliente(
                 mensagem="Informe os dados do cliente", dados=dados_form
             )
         return cliente_obj, None
-    cliente_obj, conflito = _create_nested(
+    cliente_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
         novo_cliente_data,
         cliente.create,
         user.id,
-        nested_writes,
+        nested_writes=nested_writes,
     )
     if conflito:
         return None, VendaErro(conflito="Cliente", dados=dados_form)
@@ -169,12 +137,12 @@ def _preparar_veiculo_troca(
     if erro:
         nested_writes.rollback(session)
         return None, VendaErro(mensagem=erro, dados=dados_form)
-    novo_veiculo_troca_obj, conflito = _create_nested(
+    novo_veiculo_troca_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
         novo_veiculo_troca_data,
         veiculo.create,
         user.id,
-        nested_writes,
+        nested_writes=nested_writes,
     )
     if conflito:
         return None, VendaErro(conflito="Veículo da troca", dados=dados_form)

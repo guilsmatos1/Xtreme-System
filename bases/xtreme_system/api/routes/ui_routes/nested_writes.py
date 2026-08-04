@@ -1,15 +1,27 @@
 """Helpers for nested entities created by UI form handlers."""
 
 from collections.abc import Callable
+from dataclasses import dataclass, field
 
 import structlog
-from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_ui.responses import rollback_integrity_error_response
-
 logger = structlog.get_logger(__name__)
+
+
+@dataclass
+class NestedWrites:
+    """Track nested rows created during one form preparation attempt."""
+
+    pending: list[object] = field(default_factory=list)
+
+    def add(self, data: object | None) -> None:
+        if data is not None:
+            self.pending.append(data)
+
+    def rollback(self, session: Session) -> None:
+        rollback_se_criou_aninhados(session, *self.pending)
 
 
 def criar_aninhado_ou_resposta_conflito[EntityT, CreateDataT](
@@ -17,14 +29,17 @@ def criar_aninhado_ou_resposta_conflito[EntityT, CreateDataT](
     data: CreateDataT | None,
     create_fn: Callable[[Session, CreateDataT, int | None], EntityT],
     actor_id: int | None,
-    build_conflict_response: Callable[[], HTMLResponse],
-) -> tuple[EntityT | None, HTMLResponse | None]:
+    nested_writes: NestedWrites | None = None,
+) -> tuple[EntityT | None, bool]:
     if data is None:
-        return None, None
+        return None, False
+    nested_writes = nested_writes or NestedWrites()
+    nested_writes.add(data)
     try:
-        return create_fn(session, data, actor_id), None
+        return create_fn(session, data, actor_id), False
     except IntegrityError:
-        return None, rollback_integrity_error_response(session, build_conflict_response)
+        nested_writes.rollback(session)
+        return None, True
 
 
 def rollback_se_criou_aninhados(

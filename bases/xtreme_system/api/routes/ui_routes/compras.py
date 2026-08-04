@@ -319,12 +319,14 @@ async def _criar_compra(  # noqa: PLR0911
     if erro:
         return _erro_compra(request, session, user, erro, dados_form)
 
-    novo_cliente_obj, response = criar_aninhado_ou_resposta_conflito(
+    novo_cliente_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
         novo_cliente_data,
         cliente.create,
         user.id,
-        lambda: conflict_form_response(
+    )
+    if conflito:
+        return conflict_form_response(
             templates,
             request,
             "_form_compra.html",
@@ -334,19 +336,18 @@ async def _criar_compra(  # noqa: PLR0911
             erro=write_conflict_detail("Cliente"),
             user=user,
             dados=dados_form,
-        ),
-    )
-    if response is not None:
-        return response
+        )
     if novo_cliente_obj is not None:
         cliente_obj = novo_cliente_obj
 
-    novo_veiculo_obj, response = criar_aninhado_ou_resposta_conflito(
+    novo_veiculo_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
         novo_veiculo_data,
         veiculo.create,
         user.id,
-        lambda: conflict_form_response(
+    )
+    if conflito:
+        return conflict_form_response(
             templates,
             request,
             "_form_compra.html",
@@ -356,10 +357,7 @@ async def _criar_compra(  # noqa: PLR0911
             erro=write_conflict_detail("Veículo"),
             user=user,
             dados=dados_form,
-        ),
-    )
-    if response is not None:
-        return response
+        )
     if novo_veiculo_obj is not None:
         veiculo_obj = novo_veiculo_obj
 
