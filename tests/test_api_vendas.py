@@ -75,6 +75,8 @@ def _seed(client: TestClient, headers: dict[str, str]) -> tuple[int, int]:
         headers=headers,
     )
     assert vei.status_code == 201
+    assert vei.json()["investidor_id"] == inv_id
+    assert vei.json()["criado_em"]
     veiculo_id = vei.json()["id"]
     return cliente_id, veiculo_id
 
@@ -128,6 +130,8 @@ def test_admin_cria_venda(client: TestClient) -> None:
     data = resp.json()
     assert data["valor_venda"] == "40000.00"
     assert data["status"] == "pendente"
+    assert data["cliente_id"] == cliente_id
+    assert data["veiculo_id"] == veiculo_id
     assert data["cliente"]["nome"] == "João Silva"
     assert data["veiculo"]["modelo"] == "Gol"
     assert data["vendedor"]["username"] == "admin"
