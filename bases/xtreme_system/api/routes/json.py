@@ -88,7 +88,7 @@ def login(
     ):
         logger.warning("authentication_failed", username=form.username, channel="api")
         raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
-    token = auth.create_access_token(user.username)
+    token = auth.create_access_token(user.username, user.token_version)
     logger.info("authentication_succeeded", username=user.username, channel="api")
     return auth.Token(access_token=token)
 

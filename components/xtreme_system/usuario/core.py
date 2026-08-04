@@ -51,6 +51,7 @@ class Usuario(Base):
     senha_hash: Mapped[str]
     papel: Mapped[Papel] = mapped_column(default=Papel.funcionario)
     ativo: Mapped[bool] = mapped_column(default=True)
+    token_version: Mapped[int] = mapped_column(default=0, server_default="0")
     perfil_id: Mapped[int | None] = mapped_column(ForeignKey("perfil.id"), index=True)
     perfil: Mapped["Perfil | None"] = relationship()
 
@@ -189,7 +190,9 @@ def change_password(
     nova_senha = validate_senha(nova_senha)
     antes = snapshot(obj)
     obj.senha_hash = hash_password(nova_senha)
+    obj.token_version = Usuario.token_version + 1
     session.flush()
+    session.refresh(obj)
     auditar(
         session,
         actor_id=actor_id,
@@ -200,6 +203,12 @@ def change_password(
         dados_depois=snapshot(obj),
     )
     crud.flush(session)
+
+
+def invalidate_tokens(session: Session, obj: Usuario) -> None:
+    obj.token_version = Usuario.token_version + 1
+    crud.flush(session)
+    session.refresh(obj)
 
 
 def set_perfil(

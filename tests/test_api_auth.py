@@ -359,6 +359,25 @@ def test_admin_pode_trocar_senha_de_outro(client: TestClient) -> None:
     assert resp2.status_code == 200
 
 
+def test_trocar_senha_invalida_token_anterior(client: TestClient) -> None:
+    token = _token(client, "vendedor")
+    headers = {"Authorization": f"Bearer {token}"}
+    admin_headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
+    usuarios = client.get("/usuarios", headers=admin_headers).json()
+    vendedor_id = next(
+        item["id"] for item in usuarios if item["username"] == "vendedor"
+    )
+
+    troca = client.post(
+        f"/usuarios/{vendedor_id}/senha",
+        data={"nova_senha": "nova123"},
+        headers=admin_headers,
+    )
+
+    assert troca.status_code == 204
+    assert client.get("/investidores", headers=headers).status_code == 401
+
+
 def test_admin_nao_troca_para_senha_vazia_ou_fraca(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {_token(client, 'admin')}"}
     vendedor = client.post(
