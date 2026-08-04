@@ -149,6 +149,26 @@ def test_ui_logout_invalida_cookie_no_servidor(client: TestClient) -> None:
         stale_client.close()
 
 
+def test_ui_logout_apaga_cookie_secure_com_os_mesmos_atributos(
+    make_client: Callable[..., TestClient],
+) -> None:
+    client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        client_kwargs={"base_url": "https://testserver"},
+    )
+    _login_admin(client)
+
+    logout = client.post("/ui/logout", follow_redirects=False)
+
+    assert logout.status_code == 303
+    set_cookie = logout.headers["set-cookie"]
+    assert 'access_token=""' in set_cookie
+    assert "Path=/" in set_cookie
+    assert "SameSite=lax" in set_cookie
+    assert "Secure" in set_cookie
+    assert "HttpOnly" in set_cookie
+
+
 def test_ui_veiculo_preserva_erro_de_validacao_por_campo(client: TestClient) -> None:
     _login_admin(client)
 
