@@ -287,10 +287,10 @@ def criar_veiculo_e_compra(
     cliente_id: int,
     actor_id: int | None = None,
 ) -> veiculo.Veiculo:
-    """Cria veiculo + lancamento no caixa + compra, como as rotas fazem."""
+    """Cria veiculo + compra + lancamento no caixa, nesta ordem."""
     veiculo_obj = _criar_veiculo(session, linha, investidor_id, actor_id)
-    caixa.criar_lancamento_veiculo(session, veiculo_obj, actor_id)
     _criar_compra(session, veiculo_obj, cliente_id, actor_id)
+    caixa.criar_lancamento_veiculo(session, veiculo_obj, actor_id)
     return veiculo_obj
 
 

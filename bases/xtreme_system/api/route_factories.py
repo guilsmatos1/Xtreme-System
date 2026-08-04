@@ -107,6 +107,7 @@ def register_crud_routes(
     before_delete: BeforeDeleteHook[EntityT] | None = None,
     after_create: AfterWriteHook[EntityT] | None = None,
     after_update: AfterWriteHook[EntityT] | None = None,
+    after_delete: AfterWriteHook[EntityT] | None = None,
     handle_delete_error: bool = True,
     pagina: str | None = None,
     campos_protegidos: tuple[str, ...] = (),
@@ -225,9 +226,13 @@ def register_crud_routes(
         if handle_delete_error:
             try:
                 module.delete(session, obj, actor_id)
+                if after_delete:
+                    after_delete(session, obj, actor_id)
             except IntegrityError:
                 raise HTTPException(
                     status_code=409, detail=delete_conflict_detail(label)
                 ) from None
         else:
             module.delete(session, obj, actor_id)
+            if after_delete:
+                after_delete(session, obj, actor_id)

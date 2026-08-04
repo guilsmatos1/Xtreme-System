@@ -166,6 +166,10 @@ def test_admin_crud_compras(client: TestClient) -> None:
     assert create_resp.json()["veiculo"]["modelo"] == "Gol"
     assert create_resp.json()["usuario"]["username"] == "admin"
 
+    lancamentos_resp = client.get("/lancamentos-caixa", headers=headers)
+    assert lancamentos_resp.status_code == 200
+    assert lancamentos_resp.json()[0]["valor"] == "35000.00"
+
     list_resp = client.get("/compras", headers=headers)
     assert list_resp.status_code == 200
     assert len(list_resp.json()) == 1
@@ -188,6 +192,10 @@ def test_admin_crud_compras(client: TestClient) -> None:
 
     missing_resp = client.get(f"/compras/{compra_id}", headers=headers)
     assert missing_resp.status_code == 404
+
+    lancamentos_resp = client.get("/lancamentos-caixa", headers=headers)
+    assert lancamentos_resp.status_code == 200
+    assert lancamentos_resp.json()[0]["valor"] == "0.00"
 
 
 def test_compra_rejeita_valor_e_debitos_negativos(client: TestClient) -> None:
