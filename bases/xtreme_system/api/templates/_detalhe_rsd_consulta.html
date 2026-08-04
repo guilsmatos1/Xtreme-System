@@ -1,0 +1,79 @@
+{% import "_macros.html" as ui %}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="rsd-consulta-detalhe-title"
+     onclick="if(event.target===this)this.remove()">
+  <div class="modal__panel" style="max-width:720px">
+    <div class="modal__head">
+      <h2 id="rsd-consulta-detalhe-title">Consulta #{{ reg.id }}</h2>
+      <button class="btn btn--ghost btn--sm" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      <dl class="details-list" style="margin-bottom:var(--s-4)">
+        <div>
+          <dt>Data</dt>
+          <dd>{{ reg.criado_em.strftime('%d/%m/%Y %H:%M:%S') if reg.criado_em else '-' }}</dd>
+        </div>
+        <div>
+          <dt>Usuário</dt>
+          <dd>{{ usuario_username or '—' }}</dd>
+        </div>
+        <div>
+          <dt>Tipo</dt>
+          <dd>
+            {% if reg.tipo.value == 'puxar_dados' %}Puxar dados{% else %}Consulta unitária{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Placa</dt>
+          <dd>{{ reg.placa }}</dd>
+        </div>
+        <div>
+          <dt>Veículo</dt>
+          <dd>{{ reg.veiculo_id if reg.veiculo_id is not none else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Dossiê</dt>
+          <dd>
+            {{ reg.dossie_id if reg.dossie_id is not none else '—' }}
+            {% if reg.dossie_id is not none %}
+              <a class="btn btn--ghost btn--sm" href="/ui/rsd/dossie/{{ reg.dossie_id }}/pdf"
+                 style="margin-left:var(--s-2)">{{ ui.icon("download") }} PDF</a>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Status dossiê</dt>
+          <dd>{{ reg.status_dossie or '—' }}</dd>
+        </div>
+        <div>
+          <dt>Duração</dt>
+          <dd>{{ (reg.duracao_ms ~ ' ms') if reg.duracao_ms is not none else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Resultado</dt>
+          <dd>
+            {% if reg.sucesso %}
+            <span class="badge badge--success">Sucesso</span>
+            {% else %}
+            <span class="badge badge--danger">Erro</span>
+            {% if reg.erro %}<span class="page-head__subtitle" style="margin-left:var(--s-2)">{{ reg.erro }}</span>{% endif %}
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)">
+        <div class="modal-section">
+          <h4>Payload do portal</h4>
+          {% if payload_json %}
+          <pre style="max-height:320px;overflow:auto;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ payload_json }}</pre>
+          {% else %}<span class="page-head__subtitle">—</span>{% endif %}
+        </div>
+        <div class="modal-section">
+          <h4>Campos aplicados</h4>
+          {% if campos_aplicados_json %}
+          <pre style="max-height:320px;overflow:auto;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ campos_aplicados_json }}</pre>
+          {% else %}<span class="page-head__subtitle">—</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

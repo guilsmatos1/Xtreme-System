@@ -1,0 +1,105 @@
+{% import "_macros.html" as ui %}
+<div id="rsd-consultas-resultado">
+{% set proximo_offset = offset + limit %}
+{% set offset_ant = offset - limit if offset - limit > 0 else 0 %}
+{% set tem_anterior = offset > 0 %}
+{% set tem_proximo = proximo_offset < total %}
+{% set sep = '&' if filtros_qs else '' %}
+{% set sucesso_pagina = registros | selectattr('sucesso') | list | length %}
+{% set pct_sucesso = ((sucesso_pagina / (registros | length) * 100) | round) if registros else 0 %}
+
+<section class="stats" aria-label="Resumo das consultas RSD">
+  <article class="card stat stat--accent">
+    <div class="stat__label">{{ ui.icon("search") }} Consultas filtradas</div>
+    <div class="stat__value cell-num">{{ total }}</div>
+    <div class="stat__hint">de acordo com os filtros atuais</div>
+  </article>
+  <article class="card stat stat--info">
+    <div class="stat__label">{{ ui.icon("inbox") }} Nesta página</div>
+    <div class="stat__value cell-num">{{ registros | length }}</div>
+    <div class="stat__hint">exibidas abaixo</div>
+  </article>
+  <article class="card stat stat--success">
+    <div class="stat__label">{{ ui.icon("check") }} Sucesso nesta página</div>
+    <div class="stat__value cell-num">{{ pct_sucesso }}%</div>
+    <div class="stat__hint">{{ sucesso_pagina }} de {{ registros | length }} consultas</div>
+  </article>
+</section>
+
+<div class="table-wrap">
+  <table data-table="rsd_consultas">
+    <thead><tr>
+      <th style="width:1%" data-col="id" data-col-label="ID">ID</th>
+      <th data-col="data" data-col-label="Data">Data</th>
+      <th data-col="tipo" data-col-label="Tipo">Tipo</th>
+      <th data-col="placa" data-col-label="Placa">Placa</th>
+      <th data-col="usuario" data-col-label="Usuário">Usuário</th>
+      <th data-col="status" data-col-label="Status">Status</th>
+      <th data-col="dossie" data-col-label="Dossiê">Dossiê</th>
+      <th data-col="duracao" data-col-label="Duração">Duração</th>
+      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
+    </tr></thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td class="cell-mono" data-col="id">{{ r.id }}</td>
+        <td class="cell-mono" data-col="data">{{ r.criado_em.strftime('%d/%m/%Y %H:%M') if r.criado_em else '-' }}</td>
+        <td data-col="tipo">
+          {% if r.tipo.value == 'puxar_dados' %}
+          <span class="badge badge--plain badge--accent">Puxar dados</span>
+          {% else %}
+          <span class="badge badge--plain badge--info">Unitária</span>
+          {% endif %}
+        </td>
+        <td class="cell-strong cell-mono" data-col="placa">{{ r.placa }}</td>
+        <td data-col="usuario">{{ nomes_usuarios.get(r.usuario_id, '—') if r.usuario_id else '—' }}</td>
+        <td data-col="status">
+          {% if r.sucesso %}
+          <span class="badge badge--success badge--plain">OK</span>
+          {% else %}
+          <span class="badge badge--danger badge--plain" title="{{ r.erro or '' }}">Erro</span>
+          {% endif %}
+        </td>
+        <td class="cell-mono" data-col="dossie">{{ r.dossie_id if r.dossie_id is not none else '—' }}</td>
+        <td class="cell-mono" data-col="duracao">{{ (r.duracao_ms ~ ' ms') if r.duracao_ms is not none else '—' }}</td>
+        <td class="col-actions" data-col="acoes" data-col-fixed>
+          <button class="btn btn--ghost btn--sm"
+                  hx-get="/ui/rsd/consultas/{{ r.id }}/detalhe" hx-target="#modal" hx-swap="innerHTML"
+                  title="Ver detalhes" aria-label="Ver detalhes da consulta {{ r.id }}">
+            {{ ui.icon("file") }}
+          </button>
+          {% if r.dossie_id is not none %}
+          <a class="btn btn--ghost btn--sm" href="/ui/rsd/dossie/{{ r.dossie_id }}/pdf"
+             title="Baixar PDF do dossiê" aria-label="Baixar PDF do dossiê {{ r.dossie_id }}">
+            {{ ui.icon("download") }}
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="9">
+        {% call ui.empty("search", "Nenhuma consulta", "Ainda não há consultas RSD para os filtros selecionados.") %}{% endcall %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="toolbar" style="margin-top:var(--s-4)">
+  <span class="page-head__subtitle">
+    {% if total %}
+      Mostrando {{ offset + 1 }}–{{ [proximo_offset, total] | min }} de {{ total }}
+    {% else %}
+      Sem registros
+    {% endif %}
+  </span>
+  <div style="display:flex;gap:var(--s-2)">
+    <button class="btn btn--ghost" {{ '' if tem_anterior else 'disabled' }}
+            hx-get="/ui/rsd/consultas?{{ filtros_qs }}{{ sep }}offset={{ offset_ant }}&limit={{ limit }}"
+            hx-target="#rsd-consultas-resultado">Anterior</button>
+    <button class="btn btn--ghost" {{ '' if tem_proximo else 'disabled' }}
+            hx-get="/ui/rsd/consultas?{{ filtros_qs }}{{ sep }}offset={{ proximo_offset }}&limit={{ limit }}"
+            hx-target="#rsd-consultas-resultado">Próxima</button>
+  </div>
+</div>
+</div>

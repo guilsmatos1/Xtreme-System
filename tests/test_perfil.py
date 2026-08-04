@@ -154,6 +154,8 @@ def test_campos_protegidos_de_veiculos_tem_mapa_de_form() -> None:
         "investidor": "investidor_id",
         "procuracao": "procuracao",
         "proprietario_registrado": "proprietario_registrado",
+        "proprietario_documento": "proprietario_documento",
+        "proprietario_uf": "proprietario_uf",
         "revisao": "revisao",
         "debitos": "debitos",
     }

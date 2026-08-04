@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block titulo %}Consultas RSD{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>Consultas RSD</h1>
+    <p class="page-head__subtitle">Histórico de chamadas ao portal RSD</p>
+  </div>
+</div>
+
+<section class="card card--pad" style="margin-bottom:var(--s-4)">
+  <form class="form-grid"
+        hx-get="/ui/rsd/consultas" hx-target="#rsd-consultas-resultado" hx-swap="outerHTML"
+        hx-trigger="submit, change" hx-include="this" data-omit-empty-params>
+    <label class="field">
+      <span class="field__label">De</span>
+      <input class="input" type="date" name="data_de" value="{{ f_data_de or '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Até</span>
+      <input class="input" type="date" name="data_ate" value="{{ f_data_ate or '' }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Tipo</span>
+      <select class="select" name="tipo">
+        <option value="">Todos</option>
+        <option value="puxar_dados" {{ 'selected' if f_tipo and f_tipo.value == 'puxar_dados' }}>Puxar dados</option>
+        <option value="unitaria" {{ 'selected' if f_tipo and f_tipo.value == 'unitaria' }}>Consulta unitária</option>
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Placa</span>
+      <input class="input" type="text" name="placa" value="{{ f_placa or '' }}" maxlength="100">
+    </label>
+    <label class="field">
+      <span class="field__label">Usuário</span>
+      <select class="select" name="usuario_id">
+        <option value="">Todos</option>
+        {% for u in usuarios %}
+        <option value="{{ u.id }}" {{ 'selected' if f_usuario_id == u.id }}>{{ u.username }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">Status</span>
+      <select class="select" name="sucesso">
+        <option value="">Todos</option>
+        <option value="true" {{ 'selected' if f_sucesso is sameas true }}>Sucesso</option>
+        <option value="false" {{ 'selected' if f_sucesso is sameas false }}>Erro</option>
+      </select>
+    </label>
+    <div class="field" style="justify-content:flex-end;flex-direction:row;gap:var(--s-2)">
+      <button class="btn btn--primary" type="submit">{{ ui.icon("search") }} Filtrar</button>
+      <a class="btn btn--ghost" href="/ui/rsd/consultas">Limpar</a>
+    </div>
+  </form>
+</section>
+
+{% include "_rsd_consultas_resultado.html" %}
+{% include "_modal_colunas.html" %}
+{% endblock %}

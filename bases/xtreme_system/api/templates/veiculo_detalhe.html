@@ -77,6 +77,8 @@
       {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<div><dt>RENAVAM</dt><dd>{{ veiculo.renavam or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<div><dt>Procurador</dt><dd>{{ veiculo.procuracao or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<div><dt>Proprietário Registrado</dt><dd>{{ veiculo.proprietario_registrado or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<div><dt>Documento do Proprietário</dt><dd>{{ veiculo.proprietario_documento or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<div><dt>UF do Proprietário</dt><dd>{{ veiculo.proprietario_uf or "-" }}</dd></div>{% endif %}
     </dl>
   </section>
 

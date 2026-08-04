@@ -186,6 +186,14 @@
             <span class="field__label">Proprietário registrado</span>
             <input class="input" name="vei_proprietario_registrado" value="{{ dados.get('vei_proprietario_registrado', '') }}">
           </label>
+          <label class="field">
+            <span class="field__label">Documento do Proprietário</span>
+            <input class="input" name="vei_proprietario_documento" value="{{ dados.get('vei_proprietario_documento', '') }}">
+          </label>
+          <label class="field">
+            <span class="field__label">UF do Proprietário</span>
+            <input class="input" name="vei_proprietario_uf" value="{{ dados.get('vei_proprietario_uf', '') }}" maxlength="2" style="text-transform:uppercase">
+          </label>
           {% endif %}
         </fieldset>
 

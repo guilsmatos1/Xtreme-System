@@ -110,6 +110,14 @@
             <span class="field__label">Proprietário Registrado</span>
             <input class="input" name="proprietario_registrado" value="{{ veiculo.proprietario_registrado or '' }}">
           </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<label class="field">
+            <span class="field__label">Documento do Proprietário</span>
+            <input class="input" name="proprietario_documento" value="{{ veiculo.proprietario_documento or '' }}">
+          </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<label class="field">
+            <span class="field__label">UF do Proprietário</span>
+            <input class="input" name="proprietario_uf" value="{{ veiculo.proprietario_uf or '' }}" maxlength="2" style="text-transform:uppercase">
+          </label>{% endif %}
 
           {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
           <label class="field">

@@ -1,6 +1,10 @@
 {% import "_macros.html" as ui %}
 {% set status_id = status_id or "rsd-status" %}
-<div id="{{ status_id }}" class="rsd-status">
+<div id="{{ status_id }}" class="rsd-status"
+     {% if unitaria and not unitaria.is_terminal %}
+     hx-get="/ui/rsd/dossie/{{ unitaria.dossie_id }}/status?rsd_status_id={{ status_id }}"
+     hx-trigger="every 3s" hx-swap="outerHTML"
+     {% endif %}>
   {% if erro %}{{ ui.alert(erro) }}{% endif %}
   {% if sucesso and not erro %}
   {{ ui.alert(sucesso) }}
@@ -8,11 +12,14 @@
   <div class="rsd-status__actions">
     <span class="muted">Dossiê #{{ unitaria.dossie_id }}
       {% if unitaria.status_display %} — {{ unitaria.status_display }}{% endif %}
+      {% if not unitaria.is_terminal %} — aguardando…{% endif %}
     </span>
+    {% if unitaria.is_terminal %}
     <a class="btn btn--ghost btn--sm" href="/ui/rsd/dossie/{{ unitaria.dossie_id }}/pdf"
        target="_blank" rel="noopener">
       {{ ui.icon("download") }} Baixar PDF
     </a>
+    {% endif %}
   </div>
   {% endif %}
   {% endif %}

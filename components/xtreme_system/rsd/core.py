@@ -7,22 +7,66 @@ puxar dados usa POST /atpv/puxar-dados/ (JSON).
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import re
 import time
 from dataclasses import dataclass
+from datetime import UTC, date, datetime, time as dtime, timedelta
+from enum import StrEnum
+from functools import lru_cache
 from typing import Any
 from urllib.parse import urljoin
 
 import httpx
 import structlog
+from cryptography.fernet import Fernet, InvalidToken
 from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.auditoria.core import auditar, snapshot
 from xtreme_system.crud import core as crud
-from xtreme_system.database.core import Base
+from xtreme_system.database.core import Base, SessionLocal
 
 logger = structlog.get_logger(__name__)
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    rsd_encryption_key: str
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+@lru_cache
+def _get_fernet() -> Fernet:
+    # Chave arbitrária -> chave Fernet válida (32 bytes url-safe base64), para
+    # não exigir que RSD_ENCRYPTION_KEY já venha nesse formato específico.
+    digest = hashlib.sha256(get_settings().rsd_encryption_key.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def _encriptar_senha(senha: str) -> str:
+    if not senha:
+        return ""
+    return _get_fernet().encrypt(senha.encode("utf-8")).decode("ascii")
+
+
+def _decriptar_senha(valor: str) -> str:
+    if not valor:
+        return ""
+    try:
+        return _get_fernet().decrypt(valor.encode("ascii")).decode("utf-8")
+    except InvalidToken:
+        # Valor gravado em texto plano antes desta feature — mantém
+        # funcionando até a próxima atualização de config recodificar.
+        return valor
 
 _CONFIG_ID = 1
 _DEFAULT_BASE_URL = "https://lojas.rsdsistema.com.br"
@@ -74,6 +118,36 @@ class RsdConfigUpdate(BaseModel):
     base_url: str = _DEFAULT_BASE_URL
 
 
+class TipoConsultaRsd(StrEnum):
+    puxar_dados = "puxar_dados"
+    unitaria = "unitaria"
+
+
+class RsdConsulta(Base):
+    """Registro de auditoria de cada chamada ao portal RSD, com o payload bruto."""
+
+    __tablename__ = "rsd_consulta"
+    __table_args__ = (Index("ix_rsd_consulta_placa_criado_em", "placa", "criado_em"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tipo: Mapped[TipoConsultaRsd]
+    placa: Mapped[str] = mapped_column(index=True)
+    veiculo_id: Mapped[int | None] = mapped_column(
+        ForeignKey("veiculo.id", ondelete="SET NULL"), index=True
+    )
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuario.id", ondelete="SET NULL"), index=True
+    )
+    payload: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    campos_aplicados: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    sucesso: Mapped[bool] = mapped_column(default=True)
+    erro: Mapped[str | None]
+    dossie_id: Mapped[int | None] = mapped_column(index=True)
+    status_dossie: Mapped[str | None]
+    duracao_ms: Mapped[int | None]
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class PuxarDadosResult(BaseModel):
     placa: str = ""
     renavam: str | None = None
@@ -97,6 +171,7 @@ class UnitariaResult(BaseModel):
     error: str | None = None
     portais: list[dict[str, Any]] = Field(default_factory=list)
     has_consolidado: bool = False
+    is_terminal: bool = True
 
 
 def get_config(session: Session) -> RsdConfig:
@@ -120,7 +195,7 @@ def atualizar_config(
     antes = snapshot(config)
     config.email = data.email.strip()
     if data.senha:
-        config.senha = data.senha
+        config.senha = _encriptar_senha(data.senha)
     base = (data.base_url or _DEFAULT_BASE_URL).strip().rstrip("/")
     config.base_url = base or _DEFAULT_BASE_URL
     session.flush()
@@ -144,8 +219,191 @@ def client_from_config(config: RsdConfig) -> RsdClient:
     return RsdClient(
         base_url=config.base_url or _DEFAULT_BASE_URL,
         email=config.email,
-        senha=config.senha,
+        senha=_decriptar_senha(config.senha),
     )
+
+
+_PAYLOAD_CREDENCIAL_KEYS = {"senha", "password", "email"}
+
+
+def _sanitizar_payload(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if payload is None:
+        return None
+    return {
+        key: value
+        for key, value in payload.items()
+        if key.lower() not in _PAYLOAD_CREDENCIAL_KEYS
+    }
+
+
+def registrar_consulta(
+    *,
+    tipo: TipoConsultaRsd,
+    placa: str,
+    veiculo_id: int | None = None,
+    usuario_id: int | None = None,
+    payload: dict[str, Any] | None = None,
+    campos_aplicados: dict[str, Any] | None = None,
+    sucesso: bool,
+    erro: str | None = None,
+    dossie_id: int | None = None,
+    status_dossie: str | None = None,
+    duracao_ms: int | None = None,
+) -> None:
+    """Grava uma chamada ao portal RSD em sessão própria.
+
+    As rotas de RSD chamam `detach_request_session` antes da chamada externa
+    (ver docs/agents/transactions-rollbacks.md), então quando o resultado do
+    portal chega a sessão do request já foi encerrada — não há sessão viva
+    para gravar. Falha ao registrar é logada e não derruba a resposta ao
+    usuário.
+    """
+    session = SessionLocal()
+    try:
+        session.add(
+            RsdConsulta(
+                tipo=tipo,
+                placa=_normalizar_placa(placa),
+                veiculo_id=veiculo_id,
+                usuario_id=usuario_id,
+                payload=_sanitizar_payload(payload),
+                campos_aplicados=campos_aplicados,
+                sucesso=sucesso,
+                erro=erro,
+                dossie_id=dossie_id,
+                status_dossie=status_dossie,
+                duracao_ms=duracao_ms,
+            )
+        )
+        session.commit()
+    except Exception:
+        session.rollback()
+        logger.exception("rsd_consulta_registro_falhou", tipo=tipo, placa=placa)
+    finally:
+        session.close()
+
+
+def atualizar_consulta_dossie(
+    *,
+    dossie_id: int,
+    payload: dict[str, Any] | None,
+    status_dossie: str | None,
+    sucesso: bool,
+    erro: str | None = None,
+) -> None:
+    """Atualiza a linha de `rsd_consulta` já criada por `iniciar_unitaria`.
+
+    Chamada quando o poll do lado do cliente encontra um status terminal — a
+    consulta unitária em si continua sendo uma linha por dossiê, não uma por
+    checagem de status.
+    """
+    session = SessionLocal()
+    try:
+        registro = (
+            session.query(RsdConsulta)
+            .filter_by(dossie_id=dossie_id)
+            .order_by(RsdConsulta.id.desc())
+            .first()
+        )
+        if registro is None:
+            return
+        registro.payload = _sanitizar_payload(payload)
+        registro.status_dossie = status_dossie
+        registro.sucesso = sucesso
+        registro.erro = erro
+        session.commit()
+    except Exception:
+        session.rollback()
+        logger.exception("rsd_consulta_atualizacao_falhou", dossie_id=dossie_id)
+    finally:
+        session.close()
+
+
+def _filtros_consulta(
+    stmt: Any,
+    *,
+    tipo: TipoConsultaRsd | None,
+    placa: str | None,
+    usuario_id: int | None,
+    sucesso: bool | None,
+    data_de: date | None,
+    data_ate: date | None,
+) -> Any:
+    if tipo is not None:
+        stmt = stmt.where(RsdConsulta.tipo == tipo)
+    if placa:
+        stmt = stmt.where(RsdConsulta.placa == placa)
+    if usuario_id is not None:
+        stmt = stmt.where(RsdConsulta.usuario_id == usuario_id)
+    if sucesso is not None:
+        stmt = stmt.where(RsdConsulta.sucesso == sucesso)
+    if data_de is not None:
+        stmt = stmt.where(
+            RsdConsulta.criado_em >= datetime.combine(data_de, dtime.min, tzinfo=UTC)
+        )
+    if data_ate is not None:
+        fim = datetime.combine(data_ate, dtime.min, tzinfo=UTC) + timedelta(days=1)
+        stmt = stmt.where(RsdConsulta.criado_em < fim)
+    return stmt
+
+
+def listar_consultas(
+    session: Session,
+    *,
+    tipo: TipoConsultaRsd | None = None,
+    placa: str | None = None,
+    usuario_id: int | None = None,
+    sucesso: bool | None = None,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[RsdConsulta]:
+    """Lista consultas RSD ordenadas da mais recente para a mais antiga."""
+    placa_norm = _normalizar_placa(placa) if placa else None
+    stmt = select(RsdConsulta).order_by(
+        RsdConsulta.criado_em.desc(), RsdConsulta.id.desc()
+    )
+    stmt = _filtros_consulta(
+        stmt,
+        tipo=tipo,
+        placa=placa_norm,
+        usuario_id=usuario_id,
+        sucesso=sucesso,
+        data_de=data_de,
+        data_ate=data_ate,
+    )
+    stmt = stmt.limit(limit).offset(offset)
+    return list(session.scalars(stmt))
+
+
+def count_consultas(
+    session: Session,
+    *,
+    tipo: TipoConsultaRsd | None = None,
+    placa: str | None = None,
+    usuario_id: int | None = None,
+    sucesso: bool | None = None,
+    data_de: date | None = None,
+    data_ate: date | None = None,
+) -> int:
+    """Conta consultas RSD com os mesmos filtros de `listar_consultas`."""
+    placa_norm = _normalizar_placa(placa) if placa else None
+    stmt = select(func.count()).select_from(RsdConsulta)
+    stmt = _filtros_consulta(
+        stmt,
+        tipo=tipo,
+        placa=placa_norm,
+        usuario_id=usuario_id,
+        sucesso=sucesso,
+        data_de=data_de,
+        data_ate=data_ate,
+    )
+    return int(session.scalar(stmt) or 0)
+
+
+def get_consulta(session: Session, consulta_id: int) -> RsdConsulta | None:
+    return session.get(RsdConsulta, consulta_id)
 
 
 @dataclass
@@ -293,9 +551,8 @@ class RsdClient:
             )
         return result
 
-    def consultar_unitaria_be(
-        self, placa: str, *, poll_timeout_s: float = _POLL_TIMEOUT_S
-    ) -> UnitariaResult:
+    def iniciar_unitaria(self, placa: str) -> int:
+        """Abre um dossiê no portal e devolve o `dossie_id`, sem aguardar conclusão."""
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa ou chassi para consultar.")
@@ -331,7 +588,13 @@ class RsdClient:
             raise RsdConsultaError(
                 f"Redirect inesperado da consulta unitária: {location or '(vazio)'}"
             )
-        dossie_id = int(match.group(1))
+        return int(match.group(1))
+
+    def consultar_unitaria_be(
+        self, placa: str, *, poll_timeout_s: float = _POLL_TIMEOUT_S
+    ) -> UnitariaResult:
+        """Inicia e aguarda a consulta até um status terminal (uso síncrono/CLI)."""
+        dossie_id = self.iniciar_unitaria(placa)
         status_payload = self._poll_status(dossie_id, timeout_s=poll_timeout_s)
         return UnitariaResult(
             dossie_id=dossie_id,
@@ -340,34 +603,58 @@ class RsdClient:
             error=status_payload.get("error"),
             portais=list(status_payload.get("portais") or []),
             has_consolidado=bool(status_payload.get("has_consolidado")),
+            is_terminal=True,
         )
+
+    def status_unitaria(self, dossie_id: int) -> UnitariaResult:
+        """Uma única checagem de status, para poll do lado do cliente via htmx."""
+        self.ensure_login()
+        payload = self._fetch_status_once(dossie_id)
+        terminal = bool(payload.get("is_terminal")) or payload.get("status") in {
+            "done",
+            "error",
+            "aborted_by_user",
+        }
+        return UnitariaResult(
+            dossie_id=dossie_id,
+            status=str(payload.get("status") or ""),
+            status_display=payload.get("status_display"),
+            error=payload.get("error"),
+            portais=list(payload.get("portais") or []),
+            has_consolidado=bool(payload.get("has_consolidado")),
+            is_terminal=terminal,
+        )
+
+    def _fetch_status_once(self, dossie_id: int) -> dict[str, Any]:
+        status_url = self._url(f"/dossie/{dossie_id}/status/")
+        resp = self._http().get(status_url, headers={"Accept": "application/json"})
+        if resp.status_code >= 400:
+            raise RsdConsultaError(
+                _msg_http(resp, f"Falha ao consultar status do dossiê {dossie_id}.")
+            )
+        try:
+            payload: dict[str, Any] = resp.json()
+        except ValueError as exc:
+            raise RsdConsultaError("Status do dossiê não é JSON.") from exc
+        if payload.get("status") == "error" and payload.get("error"):
+            raise RsdConsultaError(str(payload["error"]))
+        if payload.get("needs_captcha"):
+            raise RsdConsultaError(
+                "Consulta exige captcha no portal RSD — conclua manualmente."
+            )
+        return payload
 
     def _poll_status(self, dossie_id: int, *, timeout_s: float) -> dict[str, Any]:
         deadline = time.monotonic() + timeout_s
-        status_url = self._url(f"/dossie/{dossie_id}/status/")
         last: dict[str, Any] = {}
         while time.monotonic() < deadline:
-            resp = self._http().get(status_url, headers={"Accept": "application/json"})
-            if resp.status_code >= 400:
-                raise RsdConsultaError(
-                    _msg_http(resp, f"Falha ao consultar status do dossiê {dossie_id}.")
-                )
-            try:
-                last = resp.json()
-            except ValueError as exc:
-                raise RsdConsultaError("Status do dossiê não é JSON.") from exc
+            last = self._fetch_status_once(dossie_id)
             if last.get("is_terminal") or last.get("status") in {
                 "done",
                 "error",
                 "aborted_by_user",
             }:
-                if last.get("status") == "error" and last.get("error"):
-                    raise RsdConsultaError(str(last["error"]))
                 return last
-            if last.get("needs_captcha"):
-                raise RsdConsultaError(
-                    "Consulta exige captcha no portal RSD — conclua manualmente."
-                )
             time.sleep(_POLL_INTERVAL_S)
         raise RsdTimeoutError(
             f"Consulta do dossiê {dossie_id} excedeu {int(timeout_s)}s."
@@ -409,6 +696,10 @@ def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[st
         out[f"{prefix}renavam"] = dados.renavam
     if dados.nome_proprietario:
         out[f"{prefix}proprietario_registrado"] = dados.nome_proprietario
+    if dados.cpf_cnpj:
+        out[f"{prefix}proprietario_documento"] = dados.cpf_cnpj
+    if dados.uf:
+        out[f"{prefix}proprietario_uf"] = dados.uf
     if dados.placa:
         out[f"{prefix}placa"] = dados.placa
     return out

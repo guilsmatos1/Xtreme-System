@@ -2,14 +2,14 @@
 
 - **Generated:** 2026-08-04T12:51:23-03:00
 - **Total:** 11
-- **Status atual:** 7 concluídas, 4 pendentes
+- **Status atual:** 11 concluídas, 0 pendentes
 - **Última atualização:** 2026-08-04
 
 ## Status das tasks
 
-- **Concluídas:** imp-20260804-001, imp-20260804-002, imp-20260804-003, imp-20260804-004, imp-20260804-008, imp-20260804-009 e imp-20260804-010.
-- **Pendentes:** imp-20260804-005, imp-20260804-006, imp-20260804-007 e imp-20260804-011.
-- **Validação:** 159 testes passaram e o Ruff passou nos arquivos Python alterados.
+- **Concluídas:** imp-20260804-001, imp-20260804-002, imp-20260804-003, imp-20260804-004, imp-20260804-005, imp-20260804-006, imp-20260804-007, imp-20260804-008, imp-20260804-009, imp-20260804-010 e imp-20260804-011.
+- **Pendentes:** nenhuma.
+- **Validação:** 523 testes passaram contra Postgres (`TEST_DATABASE_URL`), incluindo a checagem de drift `test_alembic_head_matches_sqlalchemy_metadata`; Ruff e mypy (strict) passaram em todos os arquivos alterados. Um teste falhou tanto antes quanto depois desta mudança (`test_venda_regerar_contrato.py::test_regerar_contrato_cria_novo_arquivo_com_layout_atual`, pré-existente, não relacionado ao RSD).
 
 ## imp-20260804-001 — Marca fica duplicada dentro de `modelo` ao puxar dados do RSD
 
@@ -306,7 +306,7 @@ wizards, remover os botões inertes.
 - **Category:** Architecture and design
 - **Estimated effort:** Medium
 - **Priority:** medium
-- **Status:** pendente
+- **Status:** concluída
 - **Risk level:** medium
 - **Tags:** rsd, modelagem, proprietario, contrato
 - **Files affected:** `components/xtreme_system/rsd/core.py`, `components/xtreme_system/veiculo/core.py`
@@ -369,7 +369,7 @@ Decidir a modelagem antes de mapear: adicionar `proprietario_documento` (e possi
 - **Category:** Performance
 - **Estimated effort:** High
 - **Priority:** medium
-- **Status:** pendente
+- **Status:** concluída
 - **Risk level:** medium
 - **Tags:** rsd, performance, threadpool, timeout
 - **Files affected:** `components/xtreme_system/rsd/core.py`, `bases/xtreme_system/api/routes/ui_routes/rsd.py`, `bases/xtreme_system/api/templates/_form_veiculo.html`
@@ -433,7 +433,7 @@ chamada de status. Isso também elimina o timeout de 130 s no front.
 - **Category:** Architecture and design
 - **Estimated effort:** Medium
 - **Priority:** high
-- **Status:** pendente
+- **Status:** concluída
 - **Risk level:** medium
 - **Tags:** rsd, auditoria, persistencia, custo, schema
 - **Files affected:** `components/xtreme_system/rsd/core.py`, `bases/xtreme_system/api/routes/ui_routes/rsd.py`, `alembic/versions/`
@@ -788,7 +788,7 @@ ocorrências (ou na macro proposta em imp-20260804-009).
 - **Category:** Security
 - **Estimated effort:** Medium
 - **Priority:** medium
-- **Status:** pendente
+- **Status:** concluída
 - **Risk level:** medium
 - **Tags:** rsd, security, credenciais
 - **Files affected:** `components/xtreme_system/rsd/core.py`

@@ -74,6 +74,8 @@ _LABELS = {
     "preco": "Preço anunciado",
     "procuracao": "Procurador",
     "proprietario_registrado": "Proprietário Registrado",
+    "proprietario_documento": "Documento do Proprietário",
+    "proprietario_uf": "UF do Proprietário",
     "revisao": "Revisão",
     "investidor_id": "Investidor",
     "nome": "Nome",

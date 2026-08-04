@@ -103,6 +103,8 @@ class Veiculo(Base):
     preco: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     procuracao: Mapped[str | None]
     proprietario_registrado: Mapped[str | None]
+    proprietario_documento: Mapped[str | None]
+    proprietario_uf: Mapped[str | None]
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
     tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)
     revisao: Mapped[bool] = mapped_column(default=False)
@@ -136,6 +138,8 @@ class VeiculoCreate(BaseModel):
     preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
     proprietario_registrado: str | None = None
+    proprietario_documento: str | None = None
+    proprietario_uf: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
     tipo_entrada: TipoEntrada = TipoEntrada.compra
     revisao: bool = False
@@ -173,6 +177,8 @@ class VeiculoUpdate(BaseModel):
     preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
     proprietario_registrado: str | None = None
+    proprietario_documento: str | None = None
+    proprietario_uf: str | None = None
     status: StatusVeiculo | None = None
     tipo_entrada: TipoEntrada | None = None
     revisao: bool | None = None
@@ -213,6 +219,8 @@ class VeiculoRead(BaseModel):
     preco: Decimal | None
     procuracao: str | None
     proprietario_registrado: str | None
+    proprietario_documento: str | None
+    proprietario_uf: str | None
     status: StatusVeiculo
     tipo_entrada: TipoEntrada
     revisao: bool
