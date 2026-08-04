@@ -21,6 +21,7 @@ from xtreme_system.api.deps import NaoAutorizadoError, get_ui_user
 from xtreme_system.api.routes.ui_routes import compras as compras_ui
 from xtreme_system.api.routes.ui_routes import dashboard as dashboard_ui
 from xtreme_system.api.routes.ui_routes import veiculos_imagens as veiculos_imagens_ui
+from xtreme_system.api.routes.ui_routes import vendas as vendas_ui
 from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
 from xtreme_system.api.routes.ui_routes.upload_validation import validar_uploads
 from xtreme_system.api.routes.ui_routes.uploads import salvar_arquivos
@@ -3567,6 +3568,7 @@ def _client_with_contract_write_failure() -> Iterator[tuple[TestClient, Session]
             try:
                 yield session
                 session.commit()
+                invoke_post_commit(session)
             except Exception:
                 session.rollback()
                 raise
@@ -3670,18 +3672,20 @@ def test_ui_vendas_nao_grava_contrato_se_commit_final_falhar(
     assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
 
 
-def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
+def test_ui_vendas_persiste_contrato_apos_commit(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
         "xtreme_system.api.routes.ui_routes.vendas.uploads_contrato_venda_dir",
         lambda _id: tmp_path,
     )
+    submits: list[tuple[Callable[..., None], tuple[Any, ...]]] = []
 
-    def fail_write_bytes(_self: Path, _data: bytes) -> int:
-        raise OSError("disco cheio")
+    class _Executor:
+        def submit(self, fn: Callable[..., None], *args: Any) -> None:
+            submits.append((fn, args))
 
-    monkeypatch.setattr(Path, "write_bytes", fail_write_bytes)
+    monkeypatch.setattr(vendas_ui, "_CONTRATO_EXECUTOR", _Executor())
 
     with _client_with_contract_write_failure() as (client, session):
         _login_admin(client)
@@ -3703,8 +3707,58 @@ def test_ui_vendas_aborta_se_gravacao_do_contrato_falhar(
             },
         )
 
-        assert resp.status_code == 500
-        assert venda.list_all(session) == []
+        assert resp.status_code == 200
+        assert len(submits) == 1
+        assert documento_contrato_venda.list_all(session) == []
+        assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+        submits[0][0](*submits[0][1])
+
+        assert len(documento_contrato_venda.list_all(session)) == 1
+        assert [path for path in tmp_path.rglob("*") if path.is_file()]
+
+
+def test_ui_vendas_nao_aborta_se_gravacao_do_contrato_falhar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        "xtreme_system.api.routes.ui_routes.vendas.uploads_contrato_venda_dir",
+        lambda _id: tmp_path,
+    )
+
+    def fail_write_bytes(_self: Path, _data: bytes) -> int:
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(Path, "write_bytes", fail_write_bytes)
+
+    class _Executor:
+        def submit(self, fn: Callable[..., None], *args: Any) -> None:
+            fn(*args)
+
+    monkeypatch.setattr(vendas_ui, "_CONTRATO_EXECUTOR", _Executor())
+
+    with _client_with_contract_write_failure() as (client, session):
+        _login_admin(client)
+        headers = _admin_headers(client)
+        cliente_id = _criar_cliente(client, headers, "Carlos Lima", "98765432100")
+        veiculo_id = veiculo.list_all(session)[0].id
+
+        resp = client.post(
+            "/ui/vendas",
+            data={
+                "cliente_id": str(cliente_id),
+                "veiculo_id": str(veiculo_id),
+                "data_venda": "2026-07-09",
+                "valor_venda": "85000.00",
+                "valor_entrada": "10000.00",
+                "forma_pagamento": "financiamento",
+                "parcelas": "36",
+                "status": "pendente",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert len(venda.list_all(session)) == 1
         assert documento_contrato_venda.list_all(session) == []
 
 
