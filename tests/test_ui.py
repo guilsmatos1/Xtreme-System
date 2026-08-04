@@ -90,6 +90,19 @@ def test_ui_veiculos_sem_cookie_redireciona_login() -> None:
         assert resp.headers["location"] == "/ui/login"
 
 
+def test_ui_veiculos_sem_cookie_redireciona_login_com_htmx() -> None:
+    with TestClient(app) as client:
+        resp = client.get(
+            "/ui/veiculos",
+            headers={"HX-Request": "true"},
+            follow_redirects=False,
+        )
+
+    assert resp.status_code == 204
+    assert resp.headers["HX-Redirect"] == "/ui/login"
+    assert "location" not in resp.headers
+
+
 def test_ui_configura_htmx_para_trocar_fragmentos_de_erro(client: TestClient) -> None:
     _login_admin(client)
     resp = client.get("/ui/veiculos")

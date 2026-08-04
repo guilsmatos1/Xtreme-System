@@ -408,9 +408,9 @@ def raiz() -> RedirectResponse:
 
 
 @app.exception_handler(NaoAutenticadoError)
-def _handle_nao_autenticado(
-    _request: Request, _exc: NaoAutenticadoError
-) -> RedirectResponse:
+def _handle_nao_autenticado(request: Request, _exc: NaoAutenticadoError) -> Response:
+    if request.headers.get("HX-Request"):
+        return Response(status_code=204, headers={"HX-Redirect": "/ui/login"})
     return RedirectResponse("/ui/login", status_code=303)
 
 
