@@ -1,3 +1,4 @@
+import threading
 from decimal import Decimal
 
 import pytest
@@ -8,6 +9,7 @@ from xtreme_system.investidor import core as investidor
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.venda import status_veiculo
+from xtreme_system.workflow.core import validate_veiculo_disponivel_para_venda
 
 
 def _seed_entities(
@@ -98,3 +100,73 @@ def test_recomputar_status_preserva_indisponivel(db_session: Session) -> None:
     status_veiculo.recomputar_status_veiculo_por_vendas(db_session, vehicle.id)
 
     assert vehicle.status is veiculo.StatusVeiculo.indisponivel
+
+
+def test_recomputar_status_bloqueia_criacao_de_venda_concorrente(
+    db_session: Session,
+) -> None:
+    engine = db_session.get_bind()
+    if engine.dialect.name != "postgresql":
+        pytest.skip("row-lock concurrency requires PostgreSQL")
+
+    customer, vehicle, _ = _seed_entities(db_session)
+    db_session.commit()
+
+    session_one = Session(bind=engine, autoflush=False, expire_on_commit=False)
+    sale_validated = threading.Event()
+    sale_started = threading.Event()
+    allow_sale = threading.Event()
+    errors: list[BaseException] = []
+
+    def create_concurrent_sale() -> None:
+        session_two = Session(bind=engine, autoflush=False, expire_on_commit=False)
+        try:
+            sale_started.set()
+            validate_veiculo_disponivel_para_venda(session_two, vehicle.id)
+            sale_validated.set()
+            if not allow_sale.wait(timeout=2):
+                errors.append(AssertionError("concurrent sale was not released"))
+                return
+            venda.create(
+                session_two,
+                venda.VendaCreate(
+                    cliente_id=customer.id,
+                    veiculo_id=vehicle.id,
+                    valor_venda=Decimal("40000.00"),
+                    forma_pagamento="a_vista",
+                    parcelas=1,
+                ),
+            )
+            session_two.commit()
+        except BaseException as exc:
+            errors.append(exc)
+            session_two.rollback()
+        finally:
+            session_two.close()
+
+    thread = threading.Thread(target=create_concurrent_sale)
+    try:
+        status_veiculo.recomputar_status_veiculo_por_vendas(session_one, vehicle.id)
+        thread.start()
+        assert sale_started.wait(timeout=1)
+        assert not sale_validated.wait(timeout=1)
+
+        session_one.commit()
+        allow_sale.set()
+        thread.join(timeout=2)
+    finally:
+        allow_sale.set()
+        if session_one.in_transaction():
+            session_one.rollback()
+        if thread.is_alive():
+            thread.join(timeout=2)
+        session_one.close()
+
+    assert not thread.is_alive()
+    if errors:
+        raise errors[0]
+
+    db_session.expire_all()
+    persisted_vehicle = db_session.get(veiculo.Veiculo, vehicle.id)
+    assert persisted_vehicle is not None
+    assert persisted_vehicle.status is veiculo.StatusVeiculo.reservado
