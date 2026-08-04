@@ -24,7 +24,7 @@ from xtreme_system.auth import core as auth
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
-from xtreme_system.database.connection import get_database_target
+from xtreme_system.database.connection import get_database_target, get_engine
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
@@ -48,9 +48,10 @@ logger = structlog.get_logger(__name__)
 
 
 @app.get("/health")
-def health(session: SessionDep) -> JSONResponse:
+def health() -> JSONResponse:
     try:
-        session.execute(text("SELECT 1"))
+        with get_engine().connect() as connection:
+            connection.execute(text("SELECT 1"))
     except SQLAlchemyError:
         logger.exception(
             "health_check_database_unavailable",

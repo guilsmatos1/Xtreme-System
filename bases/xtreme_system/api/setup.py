@@ -230,7 +230,7 @@ async def _database_session(
     request: Request,
     call_next: Callable[[Request], Any],
 ) -> Any:
-    if get_session in request.app.dependency_overrides:
+    if request.url.path == "/health" or get_session in request.app.dependency_overrides:
         return await call_next(request)
     bind_request_session(request)
     try:
