@@ -1,11 +1,14 @@
 """HTMX routes for vendas."""
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Annotated, Any
 from uuid import uuid4
 
+import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import ListingSpec, SortField
@@ -47,6 +50,7 @@ from xtreme_system.api.routes.ui_routes.venda_write import (
 )
 from xtreme_system.api.setup import app
 from xtreme_system.cliente import core as cliente
+from xtreme_system.database.core import register_post_commit
 from xtreme_system.documento_contrato_venda import core as documento_contrato_venda
 from xtreme_system.empresa import core as empresa
 from xtreme_system.fechamento_venda import core as fechamento_venda
@@ -57,6 +61,14 @@ from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
 from xtreme_system.whatsapp import core as whatsapp
 from xtreme_system.workflow.core import recompute_vehicle_status_on_delete
+
+logger = structlog.get_logger(__name__)
+
+_CONTRATO_EXECUTOR = ThreadPoolExecutor(
+    max_workers=2,
+    thread_name_prefix="venda-contract",
+)
+_CONTRATO_FUTURES: set[Future[None]] = set()
 
 # ---- Vendas (UI) ----
 
@@ -383,6 +395,49 @@ def _persistir_contrato_venda(
     )
 
 
+def _persistir_contrato_venda_em_background(
+    bind: Engine | Connection, venda_id: int, actor_id: int | None
+) -> None:
+    session = Session(bind=bind)
+    try:
+        obj = venda.get(session, venda_id)
+        if obj is None:
+            logger.warning("contract_sale_not_found", venda_id=venda_id)
+            return
+        _persistir_contrato_venda(session, obj, actor_id)
+        session.commit()
+    except Exception:
+        session.rollback()
+        logger.exception("contract_generation_failed", venda_id=venda_id)
+    finally:
+        session.close()
+
+
+def _aguardar_contratos_background() -> None:
+    for future in tuple(_CONTRATO_FUTURES):
+        future.result()
+
+
+def _agendar_persistencia_contrato_venda(
+    session: Session, obj: venda.Venda, actor_id: int | None
+) -> None:
+    bind = session.get_bind()
+    venda_id = obj.id
+
+    def _agendar() -> None:
+        future = _CONTRATO_EXECUTOR.submit(
+            _persistir_contrato_venda_em_background,
+            bind,
+            venda_id,
+            actor_id,
+        )
+        if isinstance(future, Future):
+            _CONTRATO_FUTURES.add(future)
+            future.add_done_callback(_CONTRATO_FUTURES.discard)
+
+    register_post_commit(session, _agendar)
+
+
 def _resposta_erro_preparacao_venda(
     request: Request,
     session: Session,
@@ -504,7 +559,7 @@ def _criar_venda_com_hooks(
     session: Session, data: venda.VendaCreate, actor_id: int | None
 ) -> venda.Venda:
     obj = venda.create(session, data, actor_id)
-    _persistir_contrato_venda(session, obj, actor_id)
+    _agendar_persistencia_contrato_venda(session, obj, actor_id)
     whatsapp.notificar_venda(session, obj)
     return obj
 

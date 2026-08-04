@@ -14,7 +14,9 @@ from xtreme_system.usuario import core as usuario
 
 @pytest.fixture
 def client(make_client: Callable[..., TestClient]) -> TestClient:
-    return make_client(usuarios=[("admin", usuario.Papel.admin)])
+    return make_client(
+        usuarios=[("admin", usuario.Papel.admin)], invoke_post_commit=True
+    )
 
 
 def _admin_headers(client: TestClient) -> dict[str, str]:
