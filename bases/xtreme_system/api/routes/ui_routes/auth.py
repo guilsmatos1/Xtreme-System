@@ -33,11 +33,10 @@ def ui_login(
     password: Annotated[str, Form()],
 ) -> Response:
     user = usuario.get_by_username(session, username)
-    if (
-        user is None
-        or not user.ativo
-        or not auth.verify_password(password, user.senha_hash)
-    ):
+    password_valid = auth.verify_password(
+        password, user.senha_hash if user and user.ativo else None
+    )
+    if user is None or not user.ativo or not password_valid:
         logger.warning("authentication_failed", username=username, channel="ui")
         config_empresa = empresa.get_config(session)
         return templates.TemplateResponse(

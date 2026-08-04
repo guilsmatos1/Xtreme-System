@@ -23,6 +23,9 @@ def get_settings() -> Settings:
 
 
 _hasher = PasswordHash.recommended()
+# Always run a password-hash verification, including when no matching user
+# exists, so username enumeration cannot use the fast database-only path.
+_DUMMY_PASSWORD_HASH = _hasher.hash("invalid-login-password")
 
 
 class Token(BaseModel):
@@ -39,8 +42,8 @@ def hash_password(senha: str) -> str:
     return _hasher.hash(senha)
 
 
-def verify_password(senha: str, senha_hash: str) -> bool:
-    return _hasher.verify(senha, senha_hash)
+def verify_password(senha: str, senha_hash: str | None) -> bool:
+    return _hasher.verify(senha, senha_hash or _DUMMY_PASSWORD_HASH)
 
 
 def create_access_token(username: str, token_version: int = 0) -> str:
