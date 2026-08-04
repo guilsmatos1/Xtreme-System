@@ -1,7 +1,4 @@
 {% import "_macros.html" as ui %}
-{% macro money(valor) -%}
-{{ ui.moeda(valor) }}
-{%- endmacro %}
 <div id="modal-content" class="modal" role="dialog" aria-modal="true">
   <div class="modal__panel">
     <div class="modal__head">
@@ -12,11 +9,11 @@
     {% if fechamento %}
     <div class="modal__body">
       <dl class="details-list">
-        <div><dt>Receita</dt><dd>{{ money(fechamento.receita) }}</dd></div>
-        <div><dt>Custo do veículo</dt><dd>{{ money(fechamento.custo_veiculo) }}</dd></div>
-        <div><dt>Custos operacionais</dt><dd>{{ money(fechamento.custos_operacionais) }}</dd></div>
-        {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ money(fechamento.debitos) }}</dd></div>{% endif %}
-        {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(fechamento.lucro_liquido) }}</dd></div>{% endif %}
+        <div><dt>Receita</dt><dd>{{ ui.moeda(fechamento.receita) }}</dd></div>
+        <div><dt>Custo do veículo</dt><dd>{{ ui.moeda(fechamento.custo_veiculo) }}</dd></div>
+        <div><dt>Custos operacionais</dt><dd>{{ ui.moeda(fechamento.custos_operacionais) }}</dd></div>
+        {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ ui.moeda(fechamento.debitos) }}</dd></div>{% endif %}
+        {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ ui.moeda(fechamento.lucro_liquido) }}</dd></div>{% endif %}
         <div><dt>Data</dt><dd>{{ fechamento.data_fechamento.isoformat() }}</dd></div>
       </dl>
       {% if fechamento.participacoes and pode_ver_campo(user, 'vendas', 'participacao') %}
@@ -25,7 +22,7 @@
         {% for p in fechamento.participacoes %}
         <div class="details-list">
           <div><dt>Investidor</dt><dd>{{ p.investidor.nome }}</dd></div>
-          <div><dt>Participação</dt><dd>{{ p.percentual }}% · {{ money(p.valor) }}</dd></div>
+          <div><dt>Participação</dt><dd>{{ p.percentual }}% · {{ ui.moeda(p.valor) }}</dd></div>
         </div>
         {% endfor %}
       </div>
@@ -38,11 +35,11 @@
     <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita.">
       <div class="modal__body">
         <dl class="details-list">
-          <div><dt>Receita</dt><dd>{{ money(preview.receita) }}</dd></div>
-          <div><dt>Custo do veículo</dt><dd>{{ money(preview.custo_veiculo) }}</dd></div>
-          <div><dt>Custos operacionais</dt><dd>{{ money(preview.custos_operacionais) }}</dd></div>
-          {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ money(preview.debitos) }}</dd></div>{% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ money(preview.lucro_liquido) }}</dd></div>{% endif %}
+          <div><dt>Receita</dt><dd>{{ ui.moeda(preview.receita) }}</dd></div>
+          <div><dt>Custo do veículo</dt><dd>{{ ui.moeda(preview.custo_veiculo) }}</dd></div>
+          <div><dt>Custos operacionais</dt><dd>{{ ui.moeda(preview.custos_operacionais) }}</dd></div>
+          {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ ui.moeda(preview.debitos) }}</dd></div>{% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ ui.moeda(preview.lucro_liquido) }}</dd></div>{% endif %}
         </dl>
         {% if not preview.elegivel %}
           {{ ui.alert(preview.motivo) }}
