@@ -1,0 +1,5 @@
+interface:
+  display_name: "Token Efficiency Loop"
+  short_description: "Analyze unanalyzed Codex sessions for token efficiency"
+policy:
+  allow_implicit_invocation: false

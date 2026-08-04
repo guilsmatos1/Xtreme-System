@@ -1,7 +1,7 @@
 ---
 name: loops--task-orchestration--skill-dispatcher
-description: >-
-    Dispatches a list of skill invocations to specific Orca agents (claude, codex, omp, pi, grok, ...), one job at a time, using Orca Orchestration to detect completion (`worker_done`/`escalation`) and closing each agent's terminal window once its job is done. Generic: which skills, which agents, and which worktrees come from a jobs JSON file, not from fixed defaults.
+description: Dispatch skill jobs to Orca agents one-at-a-time from a jobs JSON file.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--skill-dispatcher

@@ -18,6 +18,8 @@ metadata:
 Analyze exactly the session described by the JSON object in the skill arguments.
 Required keys are `session_id`, `issue`, `rollout`, and `report_path`.
 
+When exploring the codebase, read `CONTEXT.md` if it exists.
+
 ## Flow
 
 1. Validate that all four arguments are non-empty, `rollout` exists, and

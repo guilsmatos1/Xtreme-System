@@ -91,6 +91,14 @@ For every candidate opportunity, before it is allowed onto the list:
 
 Rank by impact ÷ effort, highest first.
 
+## Shared harness
+
+Follow [../references/analyze-harness.md](../references/analyze-harness.md) for ranking,
+graphify orientation (LOCAL side), reading budget, and issues-md handoff. This skill keeps
+its own REF/LOCAL comparison process and Domain details fields below.
+
+When exploring LOCAL, read `CONTEXT.md` if it exists.
+
 ## Reading Budget
 
 This skill sweeps two repos, so the discipline in

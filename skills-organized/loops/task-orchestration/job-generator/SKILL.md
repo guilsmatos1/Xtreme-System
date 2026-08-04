@@ -1,7 +1,7 @@
 ---
 name: loops--task-orchestration--job-generator
-description: >-
-    Generates JSON job files for the skill-dispatcher skill. Uses an agent-routing.json config to automatically assign the correct Orca agent (claude, codex, omp, etc.) to each skill based on prefix matching. Accepts skill names from the CLI or from a requests file, and produces a ready-to-run jobs JSON file.
+description: Generate skill-dispatcher jobs JSON from skill names and agent-routing config.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--job-generator

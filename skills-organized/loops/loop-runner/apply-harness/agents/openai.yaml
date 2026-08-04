@@ -1,0 +1,5 @@
+interface:
+  display_name: "Apply Harness"
+  short_description: "Apply consolidated harness-improvement ranking via Codex"
+policy:
+  allow_implicit_invocation: false

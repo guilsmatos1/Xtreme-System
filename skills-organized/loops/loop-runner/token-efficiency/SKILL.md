@@ -1,6 +1,7 @@
 ---
 name: loops--loop-runner--token-efficiency
-description: Discovers unanalyzed Codex worker sessions for xtreme-system and dispatches one isolated token-efficiency analysis agent per session, sequentially, through loops--task-orchestration--skill-dispatcher. Use for token retrospectives or to feed skill loops--state-management--consolidate-harness.
+description: Dispatch token-efficiency analysis for unanalyzed Codex sessions.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--loop-runner--token-efficiency

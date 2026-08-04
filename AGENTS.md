@@ -2,6 +2,7 @@
 
 Read these files according to the task, if necessary:
 
+- `CONTEXT.md` — domain glossary (ubiquitous language). Prefer these terms in code, tickets, and chat.
 - `README.md` — local setup, common commands, how to run, basic authentication, and product overview.
 - `ARCHITECTURE.md` — structural changes, flow between FastAPI/HTMX/Polylith components, authentication, middleware, and layer boundaries.
 - `API.md` — new or changed endpoints, payloads, status codes, HTTP authentication, and integration-facing contracts.

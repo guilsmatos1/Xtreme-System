@@ -22,6 +22,7 @@ This project has a knowledge graph at `graphify-out/`.
 
 ## 4. Context for Analysis
 
+- **Domain language**: read `CONTEXT.md` for ubiquitous language before writing findings or naming concepts.
 - **Transactions/rollbacks**: `bases/xtreme_system/api/crud_writes.py` (`safe_write`) and `components/xtreme_system/database/core.py` (`get_session`) centralize rollback logic. Find callers with `rg "session\.rollback\(\)" --include "*.py"`.
   - If a handler re-raises `IntegrityError` as `HTTPException`, `get_session` rolls back on its own — a redundant `session.rollback()` in that path is a finding worth flagging.
   - If a handler catches `IntegrityError` internally and returns directly without calling `session.rollback()`, that's a bug: the session is left dirty before `get_session` attempts its commit.

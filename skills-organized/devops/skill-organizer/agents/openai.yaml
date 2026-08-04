@@ -1,0 +1,5 @@
+interface:
+  display_name: "Skill Organizer"
+  short_description: "Sync and check organized skill tree status"
+policy:
+  allow_implicit_invocation: false

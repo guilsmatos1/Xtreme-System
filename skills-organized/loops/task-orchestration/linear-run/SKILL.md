@@ -1,7 +1,7 @@
 ---
 name: loops--task-orchestration--linear-run
-description: >-
-    Empties the Linear team's Todo and Backlog queue (issues are routed to either depending on priority) by processing issues one at a time in priority order, using the `process_issue.py run-queue` helper to create Orca worktrees, move Linear statuses, start interactive TUI `codex` workers, set the reasoning effort from `estimated_effort`, detect completion through Orca Orchestration, and report a final summary. Defaults to team `GUI` and repo `xtreme-system`.
+description: Drain Linear Todo/Backlog via Orca worktrees and Codex workers (team GUI).
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--linear-run

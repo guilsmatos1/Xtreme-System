@@ -1,6 +1,7 @@
 ---
 name: loops--loop-runner--apply-harness
-description: Applies the accumulated harness-improvement ranking maintained by skill loops--state-management--consolidate-harness. Selects issues with more than 3 mentions, refines proposals, applies them one at a time through a Codex subagent, reviews the result, records it in implementations.md, and removes it from the ranking. Use when asked to apply harness issues, implement the ranking, put consolidated suggestions into practice, or close the loop started by 0004.
+description: Apply ranked harness improvements (>3 mentions) one-at-a-time via Codex.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--loop-runner--apply-harness
