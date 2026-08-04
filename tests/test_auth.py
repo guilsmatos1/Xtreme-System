@@ -14,6 +14,21 @@ def test_hash_roundtrip() -> None:
     assert not auth.verify_password("errado", h)
 
 
+def test_verify_password_uses_dummy_hash_when_user_does_not_exist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hashes: list[str] = []
+
+    def verify(_senha: str, senha_hash: str) -> bool:
+        hashes.append(senha_hash)
+        return False
+
+    monkeypatch.setattr(auth._hasher, "verify", verify)  # noqa: SLF001
+
+    assert not auth.verify_password("errado", None)
+    assert hashes == [auth._DUMMY_PASSWORD_HASH]  # noqa: SLF001
+
+
 def test_validate_senha_rejeita_vazia_ou_fraca() -> None:
     for senha in ("", "   ", "x", "xy"):
         with pytest.raises(usuario.SenhaFracaError):

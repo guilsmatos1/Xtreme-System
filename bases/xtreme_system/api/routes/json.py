@@ -83,11 +83,10 @@ def login(
     session: SessionDep,
 ) -> auth.Token:
     user = usuario.get_by_username(session, form.username)
-    if (
-        user is None
-        or not user.ativo
-        or not auth.verify_password(form.password, user.senha_hash)
-    ):
+    password_valid = auth.verify_password(
+        form.password, user.senha_hash if user and user.ativo else None
+    )
+    if user is None or not user.ativo or not password_valid:
         logger.warning("authentication_failed", username=form.username, channel="api")
         raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
     token = auth.create_access_token(user.username, user.token_version)
