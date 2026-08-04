@@ -374,6 +374,7 @@ def test_endpoints_json_e_permissoes(client: TestClient) -> None:
             restricoes={
                 "vendas": {
                     "campos_ocultos": ["lucro", "debitos", "participacao"],
+                    "operacoes": [],
                 }
             },
         ),
@@ -381,6 +382,21 @@ def test_endpoints_json_e_permissoes(client: TestClient) -> None:
     func = usuario.get_by_username(session, "func")
     assert func is not None
     func.perfil = p
+    session.flush()
+
+    preview_sem_operacao = client.get(
+        f"/vendas/{venda_id}/fechamento/preview", headers=func_headers
+    )
+    assert preview_sem_operacao.status_code == 403
+    assert client.get("/fechamentos-vendas", headers=func_headers).status_code == 403
+    assert client.get("/fechamentos-vendas/1", headers=func_headers).status_code == 403
+
+    p.restricoes = {
+        "vendas": {
+            "campos_ocultos": ["lucro", "debitos", "participacao"],
+            "operacoes": ["ver_fechamento"],
+        }
+    }
     session.flush()
 
     preview = client.get(f"/vendas/{venda_id}/fechamento/preview", headers=func_headers)

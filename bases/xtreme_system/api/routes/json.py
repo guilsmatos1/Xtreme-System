@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.deps import AdminUser, CurrentUser, SessionDep, found
 from xtreme_system.api.route_factories import (
     JSON_LIST_LIMIT_MAX,
+    _require_json_operacao,
     json_visible,
     register_crud_routes,
 )
@@ -249,6 +250,7 @@ def _fechamento_json(
 def preview_fechamento_venda(
     venda_id: int, session: SessionDep, user: CurrentUser
 ) -> dict[str, Any]:
+    _require_json_operacao(user, "vendas", "ver_fechamento")
     venda_obj = found(venda.get(session, venda_id), "Venda")
     return _fechamento_preview_json(fechamento_venda.preview(session, venda_obj), user)
 
@@ -280,6 +282,7 @@ def listar_fechamentos_vendas(
     limit: Annotated[int, Query(ge=1, le=JSON_LIST_LIMIT_MAX)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[dict[str, Any]]:
+    _require_json_operacao(user, "vendas", "ver_fechamento")
     try:
         fechamentos = fechamento_venda.list_all(session, limit=limit, offset=offset)
     except fechamento_venda.FechamentoVendaError as exc:
@@ -293,6 +296,7 @@ def listar_fechamentos_vendas(
 def obter_fechamento_venda(
     fechamento_id: int, session: SessionDep, user: CurrentUser
 ) -> dict[str, Any]:
+    _require_json_operacao(user, "vendas", "ver_fechamento")
     return _fechamento_json(
         found(fechamento_venda.get(session, fechamento_id), "Fechamento"), user
     )
