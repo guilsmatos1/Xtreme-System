@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import Mock
 
 import pytest
@@ -16,7 +17,10 @@ from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda_core
 from xtreme_system.venda import status_veiculo
-from xtreme_system.workflow.core import validate_veiculo_disponivel_para_venda
+from xtreme_system.workflow.core import (
+    validate_veiculo_disponivel_para_venda,
+    validate_venda_update,
+)
 
 
 @pytest.fixture
@@ -665,6 +669,27 @@ def test_validacao_de_venda_bloqueia_linha_do_veiculo() -> None:
     session.get.return_value = SimpleNamespace(status=veiculo.StatusVeiculo.disponivel)
 
     validate_veiculo_disponivel_para_venda(session, 123)
+
+    session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
+
+
+def test_validacao_de_atualizacao_de_venda_bloqueia_veiculo_atual() -> None:
+    session = Mock(spec=Session)
+    session.get.return_value = SimpleNamespace(status=veiculo.StatusVeiculo.vendido)
+    venda_obj = cast(
+        venda_core.Venda,
+        SimpleNamespace(
+            veiculo_id=123,
+            valor_venda=40000,
+            valor_entrada=None,
+            pagamento_pendente=False,
+            valor_pendente=None,
+            datas_pagamento=None,
+        ),
+    )
+    data = venda_core.VendaUpdate.model_validate({"observacoes": "ajuste"})
+
+    validate_venda_update(session, venda_obj, data)
 
     session.get.assert_called_once_with(veiculo.Veiculo, 123, with_for_update=True)
 
