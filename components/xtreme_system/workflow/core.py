@@ -96,6 +96,8 @@ def validate_venda_update(
 ) -> None:
     validate_cliente_veiculo_fks(session, data)
     validate_valores_venda_update(obj, data)
+    if session.get(veiculo.Veiculo, obj.veiculo_id, with_for_update=True) is None:
+        raise HTTPException(status_code=400, detail="veiculo_id inexistente")
     if data.veiculo_id is not None and data.veiculo_id != obj.veiculo_id:
         validate_veiculo_disponivel_para_venda(session, data.veiculo_id)
 
