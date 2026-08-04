@@ -1441,6 +1441,45 @@ def test_ctx_form_venda_carrega_clientes_para_o_select_e_nao_veiculos(
     assert calls == [("clientes", None)]
 
 
+def test_ui_venda_wizard_oculta_todos_os_campos_do_cliente_sem_permissao(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={
+            "nome": "Venda sem cliente",
+            "paginas": "vendas",
+            "oculto__vendas__cliente": "on",
+            "op__vendas__cadastrar": "on",
+        },
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "venda_restrita",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "venda_restrita", "password": "abc"})
+
+    resp = client.get("/ui/vendas/novo")
+
+    assert resp.status_code == 200
+    assert 'id="cliente-select"' not in resp.text
+    assert 'name="cli_nome"' not in resp.text
+    assert 'name="cli_documento"' not in resp.text
+    assert 'name="cli_tipo"' not in resp.text
+    assert 'name="cli_telefone"' not in resp.text
+    assert 'name="cli_email"' not in resp.text
+    assert 'name="cli_endereco"' not in resp.text
+    assert 'name="cli_cidade"' not in resp.text
+    assert 'name="cli_estado"' not in resp.text
+    assert 'name="cli_cep"' not in resp.text
+
+
 def test_ctx_form_veiculo_nao_carrega_frota_nem_referencias(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
