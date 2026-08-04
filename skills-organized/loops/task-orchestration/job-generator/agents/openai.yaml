@@ -1,0 +1,5 @@
+interface:
+  display_name: "Job Generator"
+  short_description: "Generate skill-dispatcher jobs JSON from skill names"
+policy:
+  allow_implicit_invocation: false

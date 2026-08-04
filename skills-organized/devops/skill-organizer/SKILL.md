@@ -1,6 +1,7 @@
 ---
 name: devops--skill-organizer
-description: Run skill-organizer operations to synchronize, check status, and manage organized skill trees in the project.
+description: Sync and status-check organized skill trees (skills-organized → .agents/.claude).
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: skill-organizer

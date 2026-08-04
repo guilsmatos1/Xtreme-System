@@ -1,0 +1,33 @@
+{% import "_macros.html" as ui %}
+<tr id="consignacao-{{ c.id }}">
+  {% if pode_ver_campo(user, 'consignacoes', 'data_consignacao') %}<td data-col="data">{{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'proprietario') %}<td class="cell-strong" data-col="proprietario">{{ c.cliente.nome }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'documento_proprietario') %}<td data-col="documento">{{ c.cliente.documento | formatar_documento }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'status') %}<td data-col="status"><span class="badge badge--plain {% if c.status.value == 'vendida' %}badge--success{% elif c.status.value == 'cancelada' or c.status.value == 'devolvida' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'placa') %}<td data-col="placa">{{ c.veiculo.placa }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}<td data-col="modelo">{{ c.veiculo.modelo }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(c.valor_venda) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}<td class="cell-num" data-col="comissao">{{ c.comissao_percentual if c.comissao_percentual is not none else "-" }}{% if c.comissao_percentual is not none %}%{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'data_vencimento') %}<td data-col="vencimento">{{ c.data_vencimento.strftime('%d/%m/%Y') if c.data_vencimento else "-" }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'usuario') %}<td data-col="usuario">{{ (c.usuario.nome or c.usuario.username) if c.usuario else "-" }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}<td data-col="observacoes">{{ c.observacoes or "-" }}</td>{% endif %}
+  {% set pode_abrir_contrato = pode_operacao(user, 'consignacoes', 'abrir_contrato') %}
+  {% set pode_editar = pode_operacao(user, 'consignacoes', 'editar') %}
+  {% set pode_excluir = pode_operacao(user, 'consignacoes', 'excluir') %}
+  {% if pode_abrir_contrato or pode_editar or pode_excluir or c.veiculo %}
+  <td class="col-actions" data-col="acoes" data-col-fixed>
+    <div class="row-actions">
+      <a class="btn btn--ghost btn--sm btn--focus action-view" href="/ui/veiculos/{{ c.veiculo.id }}/detalhes" aria-label="Ver detalhes de {{ c.veiculo.modelo }}">{{ ui.icon("eye") }}</a>
+      {% if pode_editar %}
+      <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/consignacoes/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar consignação {{ c.id }}">{{ ui.icon("edit") }}</button>
+      {% endif %}
+      {% if pode_abrir_contrato %}
+      {% include "_action_consignacao_contratos.html" %}
+      {% endif %}
+      {% if pode_excluir %}
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/consignacoes/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta consignação?\n\nAtenção: O veículo {{ c.veiculo.modelo }} ({{ c.veiculo.placa }}) também será deletado." aria-label="Excluir consignação {{ c.id }}">{{ ui.icon("trash") }}</button>
+      {% endif %}
+    </div>
+  </td>
+  {% endif %}
+</tr>

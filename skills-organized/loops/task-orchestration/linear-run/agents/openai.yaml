@@ -1,0 +1,5 @@
+interface:
+  display_name: "Linear Run Queue"
+  short_description: "Empty the Linear Todo/Backlog queue with Orca worktrees"
+policy:
+  allow_implicit_invocation: false

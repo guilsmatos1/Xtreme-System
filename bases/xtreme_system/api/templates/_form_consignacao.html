@@ -1,0 +1,263 @@
+{% import "_macros.html" as ui %}
+{% set dados = dados or {} %}
+<div class="modal" x-on:click.self="fecharComConfirmacao()">
+  <div class="modal__panel{% if not consignacao %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mc-title">
+    <div class="modal__head">
+      <h3 id="mc-title">{{ 'Editar consignação' if consignacao else 'Nova consignação' }}</h3>
+      <button class="icon-btn" data-testid="consignacao-wizard-close" type="button" aria-label="Fechar"
+              x-on:click="fecharComConfirmacao()">{{ ui.icon("close") }}</button>
+    </div>
+    <form hx-post="/ui/consignacoes{% if consignacao %}/{{ consignacao.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
+          hx-encoding="multipart/form-data" enctype="multipart/form-data"
+          hx-sync="this:drop" hx-disabled-elt="find button[type='submit']"
+          {% if not consignacao %}id="form-nova-consignacao" x-data="wizard({{ dados.get('wizard_step', 1) }})"{% endif %}>
+      <div class="modal__body">
+        {% if erro %}{{ ui.alert(erro) }}{% endif %}
+
+        {% if consignacao %}
+        <div class="form-grid">
+          {% if pode_ver_campo(user, 'consignacoes', 'proprietario') %}
+          <div class="field">
+            <span class="field__label">Proprietário</span>
+            <div class="input">{{ consignacao.cliente.nome }}{% if consignacao.cliente.documento %} · {{ consignacao.cliente.documento }}{% endif %}</div>
+          </div>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}
+          <div class="field">
+            <span class="field__label">Veículo</span>
+            <div class="input">{{ consignacao.veiculo.placa }} · {{ consignacao.veiculo.modelo }}</div>
+          </div>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'data_consignacao') %}
+          <label class="field">
+            <span class="field__label">Data da consignação</span>
+            <input class="input" name="data_consignacao" type="date" value="{{ consignacao.data_consignacao.isoformat() if consignacao and consignacao.data_consignacao else '' }}" readonly>
+          </label>
+          {% endif %}
+
+          {% if pode_ver_campo(user, 'consignacoes', 'status') %}
+          <label class="field">
+            <span class="field__label">Estado</span>
+            <select class="select" name="status">
+              <option value="ativa"{% if consignacao and consignacao.status.value == "ativa" %} selected{% endif %}>Ativa</option>
+              <option value="vendida"{% if consignacao and consignacao.status.value == "vendida" %} selected{% endif %}>Vendida</option>
+              <option value="devolvida"{% if consignacao and consignacao.status.value == "devolvida" %} selected{% endif %}>Devolvida</option>
+              <option value="cancelada"{% if consignacao and consignacao.status.value == "cancelada" %} selected{% endif %}>Cancelada</option>
+            </select>
+          </label>
+          {% endif %}
+
+          {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}
+          <label class="field">
+            <span class="field__label">Valor de venda *</span>
+            <input class="input" name="valor_venda" data-testid="consignacao-edit-value" type="text" inputmode="decimal" value="{{ consignacao.valor_venda }}" required>
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}
+          <label class="field">
+            <span class="field__label">Comissão (%)</span>
+            <input class="input" name="comissao_percentual" type="text" inputmode="decimal" value="{{ consignacao.comissao_percentual if consignacao.comissao_percentual is not none else '' }}">
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'data_vencimento') %}
+          <label class="field">
+            <span class="field__label">Data de vencimento</span>
+            <input class="input" name="data_vencimento" type="date" value="{{ consignacao.data_vencimento.isoformat() if consignacao and consignacao.data_vencimento else '' }}">
+          </label>
+          {% endif %}
+
+          {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4">{{ consignacao.observacoes if consignacao.observacoes else '' }}</textarea>
+          </label>
+          {% endif %}
+        </div>
+        {% else %}
+        <input type="hidden" name="idempotency_key" value="{{ dados.get('idempotency_key', idempotency_key) }}">
+        <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        {% set passo_atual = dados.get('wizard_step', 1)|int %}
+        <div class="stepper">
+          {% for rotulo in ["Proprietário", "Veículo", "Valores", "Observações", "Contrato"] %}
+          {% if not loop.first %}
+          <div class="stepper__connector{% if passo_atual > loop.index - 1 %} is-done{% endif %}"
+               :class="{ 'is-done': step > {{ loop.index - 1 }} }"></div>
+          {% endif %}
+          <div class="stepper__item{% if passo_atual == loop.index %} is-active{% elif passo_atual > loop.index %} is-done{% endif %}"
+               :class="{ 'is-active': step === {{ loop.index }}, 'is-done': step > {{ loop.index }} }">
+            <span class="stepper__num">{{ loop.index }}</span>
+            <span class="stepper__label">{{ rotulo }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# Step 1: Proprietário #}
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
+          {% if pode_ver_campo(user, 'consignacoes', 'proprietario') %}
+          <label class="field field--full">
+            <span class="field__label">Proprietário</span>
+            <select class="select" id="proprietario-select" x-model="clienteExistente" data-testid="consignacao-wizard-owner-select" name="cliente_id" autofocus>
+              <option value="">➕ Cadastrar novo proprietário</option>
+              {% for c in clientes %}
+              <option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label x-show="!clienteExistente" class="field field--full">
+            <span class="field__label">Nome *</span>
+            <input class="input" name="cli_nome" data-testid="consignacao-wizard-owner-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Documento (CPF/CNPJ) *</span>
+            <input class="input" name="cli_documento" data-testid="consignacao-wizard-owner-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Tipo</span>
+            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente">
+              {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
+            </select>
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Telefone *</span>
+            <input class="input" name="cli_telefone" data-testid="consignacao-wizard-owner-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="cli_email" data-testid="consignacao-wizard-owner-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field field--full">
+            <span class="field__label">Endereço</span>
+            <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Cidade</span>
+            <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Estado</span>
+            <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+          </label>
+          {% endif %}
+        </fieldset>
+
+        {# Step 2: Veículo #}
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
+          {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}
+          <label class="field">
+            <span class="field__label">Tipo *</span>
+            <select class="select" name="vei_tipo" required>
+              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | title }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Placa *</span>
+            <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Modelo *</span>
+            <input class="input" name="vei_modelo" data-testid="consignacao-wizard-model" value="{{ dados.get('vei_modelo', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Marca</span>
+            <input class="input" name="vei_marca" value="{{ dados.get('vei_marca', '') }}">
+          </label>
+          <label class="field">
+            <span class="field__label">Cor *</span>
+            <input class="input" name="vei_cor" data-testid="consignacao-wizard-color" value="{{ dados.get('vei_cor', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Ano *</span>
+            <input class="input" name="vei_ano" type="number" data-testid="consignacao-wizard-year" value="{{ dados.get('vei_ano', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Chassi</span>
+            <input class="input" name="vei_chassi" value="{{ dados.get('vei_chassi', '') }}">
+          </label>
+          <label class="field">
+            <span class="field__label">RENAVAM</span>
+            <input class="input" name="vei_renavam" value="{{ dados.get('vei_renavam', '') }}">
+          </label>
+          <label class="field field--full">
+            <span class="field__label">Proprietário registrado</span>
+            <input class="input" name="vei_proprietario_registrado" value="{{ dados.get('vei_proprietario_registrado', '') }}">
+          </label>
+          {% endif %}
+        </fieldset>
+
+        {# Step 3: Valores #}
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
+          {% if pode_ver_campo(user, 'consignacoes', 'data_consignacao') %}
+          <label class="field">
+            <span class="field__label">Data da consignação</span>
+            <input class="input" name="data_consignacao" type="date" value="{{ dados.get('data_consignacao', data_atual) }}">
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'data_vencimento') %}
+          <label class="field">
+            <span class="field__label">Data de vencimento</span>
+            <input class="input" name="data_vencimento" type="date" value="{{ dados.get('data_vencimento', '') }}">
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}
+          <label class="field">
+            <span class="field__label">Valor de venda *</span>
+            <input class="input" name="valor_venda" data-testid="consignacao-wizard-value" type="text" inputmode="decimal" value="{{ dados.get('valor_venda', '') }}" required>
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}
+          <label class="field">
+            <span class="field__label">Comissão (%)</span>
+            <input class="input" name="comissao_percentual" type="text" inputmode="decimal" value="{{ dados.get('comissao_percentual', '') }}">
+          </label>
+          {% endif %}
+        </fieldset>
+
+        {# Step 4: Observações #}
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
+          <label class="field">
+            <span class="field__label">Investidor *</span>
+            <select class="select" name="vei_investidor_id" required>
+              {% for inv in investidores %}<option value="{{ inv.id }}"{% if dados.get('vei_investidor_id')|string == inv.id|string or (not dados.get('vei_investidor_id') and investidor_padrao_id == inv.id) %} selected{% endif %}>{{ inv.nome }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">KM</span>
+            <input class="input" name="vei_km" type="number" value="{{ dados.get('vei_km', '') }}">
+          </label>
+          {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}
+          <label class="field field--full">
+            <span class="field__label">Observações</span>
+            <textarea class="input" name="observacoes" rows="4">{{ dados.get('observacoes', '') }}</textarea>
+          </label>
+          {% endif %}
+        </fieldset>
+
+        {# Step 5: Contrato #}
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 5 %} is-active{% endif %}" data-step="5" :class="{ 'is-active': step === 5 }">
+          <label class="field field--full">
+            <span class="field__label">Contrato de consignação</span>
+            <input class="input" name="contratos_consignacao" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple>
+            <span class="field__hint">PDF, JPG, PNG ou WEBP (opcional)</span>
+          </label>
+        </fieldset>
+        {% endif %}
+      </div>
+
+      <div class="modal__foot">
+        {% if consignacao %}
+        <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" data-testid="consignacao-edit-submit">Salvar alterações</button>
+        {% else %}
+        <button type="button" class="btn btn--default" x-show="step > 1" @click="voltar()" data-testid="consignacao-wizard-back">{{ ui.icon("arrow-left") }} Voltar</button>
+        <span x-show="step <= 1"></span>
+        <button type="button" class="btn btn--primary" x-show="step < total" @click="proximo()" data-testid="consignacao-wizard-next">Próximo {{ ui.icon("arrow-right") }}</button>
+        <button type="submit" class="btn btn--primary" x-show="step >= total" x-cloak data-testid="consignacao-wizard-submit">{{ ui.icon("check") }} Cadastrar consignação</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>

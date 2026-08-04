@@ -1,0 +1,4 @@
+{% import "_macros.html" as ui %}
+{% set contratos_lookup = contratos_por_consignacao if contratos_por_consignacao is defined else {} %}
+{% set tem_contratos = has_contratos if has_contratos is defined else contratos_lookup.get(c.id) %}
+<button id="action-consignacao-{{ c.id }}-contratos" class="btn btn--ghost btn--sm{% if tem_contratos %} action-file{% endif %}"{% if action_oob %} hx-swap-oob="outerHTML"{% endif %} hx-get="/ui/consignacoes/{{ c.id }}/contratos" hx-target="#modal" hx-swap="innerHTML" aria-label="Contratos da consignação {{ c.id }}">{{ ui.icon("file") }}</button>

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ask Xtreme"
+  short_description: "Router — which skill flow fits this situation"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Consolidate Harness"
+  short_description: "Consolidate and rank harness-improvement suggestions"
+policy:
+  allow_implicit_invocation: false

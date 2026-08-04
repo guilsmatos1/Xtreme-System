@@ -1,6 +1,7 @@
 ---
 name: loops--state-management--consolidate-harness
-description: Consolidates harness-improvement suggestions produced by worktree runs. Reads versioned GUI-*.md reports in docs/analyze-token-efficiency/ and, for legacy runs, the latest .loop folder; groups equivalent issues through semantic deduplication and maintains an accumulated ranking (issues-harness.md, inside this skill). Use when asked to consolidate harness suggestions, rank run issues, or feed the continuous-improvement loop.
+description: Consolidate harness suggestions into an accumulated ranking.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--state-management--consolidate-harness

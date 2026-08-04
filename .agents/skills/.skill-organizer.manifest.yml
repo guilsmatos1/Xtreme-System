@@ -14,11 +14,23 @@ managed:
     coding--analyze--session-efficiency: coding/analyze/session-efficiency
     coding--analyze--testing-gaps: coding/analyze/testing-gaps
     coding--analyze--ui-ux: coding/analyze/ui-ux
+    coding--debug--diagnosing-bugs: coding/debug/diagnosing-bugs
     coding--debug--playwright-cli: coding/debug/playwright-cli
     coding--generate--issues-md: coding/generate/issues-md
     coding--refactor--design-overhaul: coding/refactor/design-overhaul
+    coding--review--standards-spec: coding/review/standards-spec
+    coding--ship--domain-modeling: coding/ship/domain-modeling
+    coding--ship--grill-me: coding/ship/grill-me
+    coding--ship--grill-with-docs: coding/ship/grill-with-docs
+    coding--ship--grilling: coding/ship/grilling
+    coding--ship--implement: coding/ship/implement
+    coding--ship--tdd: coding/ship/tdd
+    coding--ship--to-spec: coding/ship/to-spec
+    coding--ship--to-tickets: coding/ship/to-tickets
+    devops--ask-xtreme: devops/ask-xtreme
     devops--deploy--commit-merge: devops/deploy/commit-merge
     devops--deploy--git-push: devops/deploy/git-push
+    devops--handoff: devops/handoff
     devops--linear--duplicate-triage: devops/linear/duplicate-triage
     devops--linear--send: devops/linear/send
     devops--skill-organizer: devops/skill-organizer

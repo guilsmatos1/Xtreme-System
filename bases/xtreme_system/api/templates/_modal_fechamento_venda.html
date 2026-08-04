@@ -3,7 +3,7 @@
   <div class="modal__panel">
     <div class="modal__head">
       <h3>Fechamento da venda #{{ venda.id }}</h3>
-      <button class="icon-btn" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+      <button class="icon-btn" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     {% if erro %}<div class="modal__body">{{ ui.alert(erro) }}</div>{% endif %}
     {% if fechamento %}
@@ -29,10 +29,10 @@
       {% endif %}
     </div>
     <div class="modal__foot">
-      <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Fechar</button>
+      <button class="btn btn--ghost" type="button" @click="fechar()">Fechar</button>
     </div>
     {% else %}
-    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita."
+    <form x-data="rateioLucro({{ preview.investidores | length }})" hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita."
           hx-sync="this:drop" hx-disabled-elt="find button[type='submit']">
       <div class="modal__body">
         <dl class="details-list">
@@ -51,36 +51,20 @@
           <label class="field">
             <span class="field__label">{{ investidor.nome }}</span>
             <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
-            <input class="input" name="percentual" type="text" inputmode="decimal" min="0" max="100" step="0.01" placeholder="0,00" required>
+            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00" required
+                   x-model.number="percentuais[{{ loop.index0 }}]">
           </label>
           {% endfor %}
-          <p id="rateio-total" role="status" aria-live="polite">Total: 0,00% — deve somar 100%</p>
+          <p id="rateio-total" role="status" aria-live="polite" :style="{ color: valido() ? 'var(--success)' : 'var(--danger)' }">Total: <span x-text="total().toFixed(2).replace('.', ',')"></span>%<span x-text="valido() ? ' ✓' : ' — deve somar 100%'"></span></p>
         </div>
         {% endif %}
       </div>
       <div class="modal__foot">
-        <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Cancelar</button>
-        <button class="btn btn--primary" type="submit" {% if not preview.elegivel or (preview.lucro_liquido > 0 and preview.investidores and pode_ver_campo(user, 'vendas', 'participacao')) %}disabled{% endif %}>Confirmar fechamento</button>
+        <button class="btn btn--ghost" type="button" @click="fechar()">Cancelar</button>
+        <button class="btn btn--primary" type="submit"
+                {% if not preview.elegivel %}disabled
+                {%- elif preview.lucro_liquido > 0 and preview.investidores and pode_ver_campo(user, 'vendas', 'participacao') %} :disabled="!valido()"{% endif %}>Confirmar fechamento</button>
       </div>
-      <script>
-        (function () {
-          var form = document.currentScript.closest("form");
-          var fields = form.querySelectorAll('input[name="percentual"]');
-          var total = form.querySelector("#rateio-total");
-          var submit = form.querySelector('button[type="submit"]');
-          if (!fields.length || !total) return;
-          function updateTotal() {
-            var sum = 0;
-            fields.forEach(function (field) { sum += Number(field.value.replace(",", ".")) || 0; });
-            var valid = Math.round(sum * 100) === 10000;
-            total.textContent = "Total: " + sum.toFixed(2).replace(".", ",") + (valid ? "% ✓" : "% — deve somar 100%");
-            total.style.color = valid ? "var(--success)" : "var(--danger)";
-            submit.disabled = !valid;
-          }
-          fields.forEach(function (field) { field.addEventListener("input", updateTotal); });
-          updateTotal();
-        })();
-      </script>
     </form>
     {% endif %}
   </div>

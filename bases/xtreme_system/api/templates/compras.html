@@ -82,4 +82,5 @@
 
 {{ ui.paginacao(request.url.path, qs_base, "#linhas", page_start, page_end, page_count, limit, offset_anterior, offset_proximo, tem_anterior, tem_proximo) }}
 
+{% include "_modal_colunas.html" %}
 {% endblock %}

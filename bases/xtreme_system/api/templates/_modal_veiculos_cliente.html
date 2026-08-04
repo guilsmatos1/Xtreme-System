@@ -4,7 +4,7 @@
   <div class="modal__panel">
     <div class="modal__head">
       <h2 id="modal-veiculos-title">{{ modal_title or "Veículos" }} — {{ cliente.nome }}</h2>
-      <button class="btn btn--ghost btn--sm" type="button" onclick="document.getElementById('modal').innerHTML=''" aria-label="Fechar">{{ ui.icon("close") }}</button>
+      <button class="btn btn--ghost btn--sm" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% for grupo in _grupos %}

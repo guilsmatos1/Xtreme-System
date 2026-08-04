@@ -1,6 +1,7 @@
 ---
 name: loops--task-orchestration--sequential-workers
-description: Execute a list of tasks sequentially. Each task runs in an isolated subagent. Use when the user provides a numbered list of items to implement, or asks to "execute sequentially", "run item by item", "implement the list", "orchestrate the tasks".
+description: Run a numbered task list sequentially in isolated subagents.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--task-orchestration--sequential-workers
@@ -48,7 +49,10 @@ Changes already applied in previous items:
 Instructions:
 - Implement ONLY the task described above.
 - Do not modify unrelated code.
-- Follow the project conventions (AGENTS.md).
+- Follow the project conventions (AGENTS.md, CONTEXT.md).
+- For build/fix tasks, follow coding--ship--tdd at pre-agreed seams
+  (red before green; vertical slices). Prefer coding--ship--implement
+  discipline when the item is a ticket/spec slice.
 - Once finished, run relevant tests and linters to validate.
 - Return: (a) summary of what was done, (b) list of modified files,
   (c) test/lint commands executed and their results.

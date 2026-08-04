@@ -110,13 +110,6 @@
     'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
     'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/>' +
     '<path d="M9 3v18M15 3v18"/></svg>';
-  var GRIP_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
-    'aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/>' +
-    '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/>' +
-    '<circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>';
-
   function ensureButton(table) {
     var actions = document.querySelector(".page-head__actions");
     if (!actions || actions.querySelector("[data-cols-btn]")) return;
@@ -126,12 +119,14 @@
     btn.setAttribute("data-cols-btn", "");
     btn.innerHTML = COLS_ICON + " Colunas";
     btn.addEventListener("click", function () {
-      openPanel(table);
+      window.dispatchEvent(new CustomEvent("abrir-colunas", { detail: { table: table } }));
     });
     actions.insertBefore(btn, actions.firstChild);
   }
 
-  function dragAfter(list, y) {
+  // Reordenação por drag: opera sobre um array (colunas do componente Alpine)
+  // via índice, em vez de mover nós do DOM — ver templates/_modal_colunas.html.
+  function dragIndexAfter(list, y) {
     var items = Array.prototype.slice.call(
       list.querySelectorAll("li:not(.dragging)")
     );
@@ -145,99 +140,7 @@
         closest = item;
       }
     });
-    return closest;
-  }
-
-  function openPanel(table) {
-    var tableKey = table.getAttribute("data-table");
-    var defaults = defaultCols(table);
-    var labels = colLabels(table);
-    var prefs = load(tableKey);
-    var order = resolvedOrder(prefs, defaults);
-    var hidden = prefs.hidden || [];
-
-    var overlay = document.createElement("div");
-    overlay.className = "modal";
-    overlay.innerHTML =
-      '<div class="modal__panel" role="dialog" aria-modal="true" ' +
-      'aria-label="Configurar colunas" style="max-width:400px">' +
-      '<div class="modal__head"><h3>Colunas</h3></div>' +
-      '<div class="modal__body">' +
-      '<p class="cols-hint">Arraste para reordenar. Desmarque para ocultar.</p>' +
-      '<ul class="cols-list"></ul></div>' +
-      '<div class="modal__foot">' +
-      '<button type="button" class="btn btn--default" data-reset>Restaurar padrão</button>' +
-      '<button type="button" class="btn btn--primary" data-close>Fechar</button>' +
-      "</div></div>";
-
-    var list = overlay.querySelector(".cols-list");
-    order.forEach(function (key) {
-      var li = document.createElement("li");
-      li.draggable = true;
-      li.dataset.col = key;
-      li.innerHTML =
-        '<span class="cols-list__grip" aria-hidden="true">' +
-        GRIP_ICON +
-        "</span>" +
-        '<label class="cols-list__label"><input type="checkbox"' +
-        (hidden.indexOf(key) === -1 ? " checked" : "") +
-        "><span>" +
-        labels[key] +
-        "</span></label>";
-      list.appendChild(li);
-    });
-
-    function persist() {
-      var newOrder = Array.prototype.map.call(list.children, function (li) {
-        return li.dataset.col;
-      });
-      var newHidden = [];
-      Array.prototype.forEach.call(list.children, function (li) {
-        if (!li.querySelector("input").checked) newHidden.push(li.dataset.col);
-      });
-      save(tableKey, { order: newOrder, hidden: newHidden });
-      applyPrefs(table);
-    }
-
-    var dragEl = null;
-    list.addEventListener("dragstart", function (e) {
-      dragEl = e.target.closest("li");
-      if (dragEl) dragEl.classList.add("dragging");
-    });
-    list.addEventListener("dragend", function () {
-      if (dragEl) dragEl.classList.remove("dragging");
-      dragEl = null;
-      persist();
-    });
-    list.addEventListener("dragover", function (e) {
-      e.preventDefault();
-      if (!dragEl) return;
-      var after = dragAfter(list, e.clientY);
-      if (after == null) list.appendChild(dragEl);
-      else list.insertBefore(dragEl, after);
-    });
-    list.addEventListener("change", persist);
-
-    function close() {
-      overlay.remove();
-      document.removeEventListener("keydown", onKey);
-    }
-    function onKey(ev) {
-      if (ev.key === "Escape") close();
-    }
-    document.addEventListener("keydown", onKey);
-    overlay.addEventListener("click", function (ev) {
-      if (ev.target === overlay) close();
-    });
-    overlay.querySelector("[data-close]").addEventListener("click", close);
-    overlay.querySelector("[data-reset]").addEventListener("click", function () {
-      reset(tableKey);
-      close();
-      applyPrefs(table);
-      openPanel(table);
-    });
-
-    document.body.appendChild(overlay);
+    return closest ? Number(closest.dataset.idx) : -1;
   }
 
   function initAll() {
@@ -253,4 +156,17 @@
     var tables = document.querySelectorAll("table[data-table]");
     Array.prototype.forEach.call(tables, applyPrefs);
   });
+
+  // Exposto para o componente Alpine "colunas" (static/components.js), que
+  // monta o painel via templates/_modal_colunas.html.
+  window.ColunasJS = {
+    load: load,
+    save: save,
+    reset: reset,
+    defaultCols: defaultCols,
+    colLabels: colLabels,
+    resolvedOrder: resolvedOrder,
+    applyPrefs: applyPrefs,
+    dragIndexAfter: dragIndexAfter,
+  };
 })();

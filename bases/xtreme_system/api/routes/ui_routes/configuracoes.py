@@ -32,6 +32,7 @@ from xtreme_system.database.core import (
 )
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
+from xtreme_system.rsd import core as rsd
 from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
@@ -45,13 +46,11 @@ logger = structlog.get_logger(__name__)
 def ui_configuracoes(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
-    config = whatsapp.get_config(session)
     return _pagina_empresa(
         request,
         session,
         user,
         empresa.get_config(session),
-        config=config,
         aba="banco",
     )
 
@@ -87,6 +86,87 @@ def ui_configuracoes_salvar(
         config=config,
         sucesso="Configurações salvas.",
         aba="whatsapp",
+    )
+
+
+@router.post("/ui/configuracoes/rsd")
+def ui_configuracoes_rsd_salvar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    email: Annotated[str, Form()] = "",
+    senha: Annotated[str, Form()] = "",
+    base_url: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    atual = rsd.get_config(session)
+    config_rsd = rsd.atualizar_config(
+        session,
+        rsd.RsdConfigUpdate(
+            email=email,
+            senha=senha or atual.senha,
+            base_url=base_url or atual.base_url,
+        ),
+        user.id,
+    )
+    return _pagina_empresa(
+        request,
+        session,
+        user,
+        empresa.get_config(session),
+        config_rsd=config_rsd,
+        sucesso="Configurações RSD salvas.",
+        aba="rsd",
+    )
+
+
+@router.post("/ui/configuracoes/rsd/teste")
+def ui_configuracoes_rsd_teste(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+) -> HTMLResponse:
+    config_rsd = rsd.get_config(session)
+    config_wa = whatsapp.get_config(session)
+    config_empresa = empresa.get_config(session)
+    try:
+        client = rsd.client_from_config(config_rsd)
+    except rsd.RsdNotConfiguredError as exc:
+        return _pagina_empresa(
+            request,
+            session,
+            user,
+            config_empresa,
+            config=config_wa,
+            config_rsd=config_rsd,
+            erro=str(exc),
+            aba="rsd",
+            status_code=400,
+        )
+    detach_request_session(request, keep=(user, config_rsd, config_wa, config_empresa))
+    try:
+        with client:
+            client.testar_conexao()
+    except rsd.RsdError as exc:
+        return _pagina_empresa(
+            request,
+            session,
+            user,
+            config_empresa,
+            config=config_wa,
+            config_rsd=config_rsd,
+            erro=str(exc),
+            aba="rsd",
+            status_code=400,
+        )
+    return _pagina_empresa(
+        request,
+        session,
+        user,
+        config_empresa,
+        config=config_wa,
+        config_rsd=config_rsd,
+        sucesso="Conexão com o portal RSD OK.",
+        aba="rsd",
     )
 
 
@@ -138,6 +218,7 @@ def _pagina_empresa(
     config_empresa: empresa.EmpresaConfig,
     *,
     config: whatsapp.WhatsappConfig | None = None,
+    config_rsd: rsd.RsdConfig | None = None,
     erro: str | None = None,
     sucesso: str | None = None,
     aba: str = "empresa",
@@ -149,6 +230,7 @@ def _pagina_empresa(
         {
             "user": user,
             "config": config or whatsapp.get_config(session),
+            "config_rsd": config_rsd or rsd.get_config(session),
             "config_empresa": config_empresa,
             "erro": erro,
             "sucesso": sucesso,

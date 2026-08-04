@@ -1,0 +1,35 @@
+<div class="modal" x-data="colunas" x-show="aberto" x-cloak
+     x-on:keydown.escape.window="fechar()" x-on:click.self="fechar()"
+     data-testid="modal-colunas">
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-label="Configurar colunas" style="max-width:400px">
+    <div class="modal__head"><h3>Colunas</h3></div>
+    <div class="modal__body">
+      <p class="cols-hint">Arraste para reordenar. Desmarque para ocultar.</p>
+      <ul class="cols-list">
+        <template x-for="(col, idx) in colunas" :key="col.key">
+          <li draggable="true" :data-idx="idx"
+              x-on:dragstart="arrastar($event, idx)"
+              x-on:dragover="sobreArrastar($event)"
+              x-on:dragend="soltar()">
+            <span class="cols-list__grip" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/>
+                <circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/>
+                <circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>
+              </svg>
+            </span>
+            <label class="cols-list__label">
+              <input type="checkbox" x-model="col.visivel" x-on:change="persistir()">
+              <span x-text="col.label"></span>
+            </label>
+          </li>
+        </template>
+      </ul>
+    </div>
+    <div class="modal__foot">
+      <button type="button" class="btn btn--default" data-testid="colunas-restaurar" x-on:click="restaurar()">Restaurar padrão</button>
+      <button type="button" class="btn btn--primary" data-testid="colunas-fechar" x-on:click="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>

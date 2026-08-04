@@ -1,0 +1,5 @@
+interface:
+  display_name: "Commit and Merge"
+  short_description: "Stage, commit, and merge into master with --no-ff"
+policy:
+  allow_implicit_invocation: false

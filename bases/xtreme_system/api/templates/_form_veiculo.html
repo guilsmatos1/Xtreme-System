@@ -1,15 +1,15 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
-<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
+<div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel{% if not veiculo %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mv-title">
     <div class="modal__head">
       <h3 id="mv-title">{{ 'Editar veículo' if veiculo else 'Novo veículo' }}</h3>
       <button class="icon-btn" type="button" aria-label="Fechar"
-              onclick="closeModalOnBackdrop(this.closest('.modal'))">{{ ui.icon("close") }}</button>
+              x-on:click="fecharComConfirmacao()">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
           hx-encoding="multipart/form-data" enctype="multipart/form-data"
-          {% if not veiculo %}id="form-novo-veiculo"{% endif %}>
+          {% if not veiculo %}id="form-novo-veiculo" x-data="wizard({{ dados.get('wizard_step', 1) }})"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
 
@@ -49,6 +49,27 @@
             <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
           </label>{% endif %}
+          {% if pode_operacao(user, 'veiculos', 'editar') %}
+          <div class="field field--full rsd-actions">
+            <span class="field__label">RSD</span>
+            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-indicator="#rsd-indicator">
+                {{ ui.icon("refresh") }} Puxar dados
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-timeout="130000" hx-indicator="#rsd-indicator">
+                {{ ui.icon("search") }} Consulta unitária
+              </button>
+              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
+            </div>
+            <div id="rsd-status" class="rsd-status"></div>
+          </div>
+          {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem</span>
             <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
@@ -125,10 +146,10 @@
 
         </div>
         {% else %}
-        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ dados.get('wizard_step', 1) }}">
-        <div class="wizard-steps">Passo <span id="wizard-step-atual">1</span> de 4</div>
+        <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        <div class="wizard-steps">Passo <span x-text="step">{{ dados.get('wizard_step', 1) }}</span> de <span x-text="total">4</span></div>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }">
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required autofocus>
@@ -143,11 +164,32 @@
           </label>{% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
             <span class="field__label">Placa *</span>
             <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase">
           </label>{% endif %}
+          {% if pode_operacao(user, 'veiculos', 'editar') %}
+          <div class="field field--full rsd-actions">
+            <span class="field__label">RSD</span>
+            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-indicator="#rsd-indicator">
+                {{ ui.icon("refresh") }} Puxar dados
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm"
+                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
+                      hx-target="#rsd-status" hx-swap="outerHTML"
+                      hx-timeout="130000" hx-indicator="#rsd-indicator">
+                {{ ui.icon("search") }} Consulta unitária
+              </button>
+              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
+            </div>
+            <div id="rsd-status" class="rsd-status"></div>
+          </div>
+          {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
             <span class="field__label">Modelo *</span>
             <input class="input" name="modelo" value="{{ dados.get('modelo', '') }}" required>
@@ -166,7 +208,7 @@
           </label>{% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           <label class="field">
             <span class="field__label">Preço Anunciado (R$) *</span>
             <input class="input" name="preco" type="text" inputmode="decimal" value="{{ dados.get('preco', '') }}" required>
@@ -191,7 +233,7 @@
           </label>
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
           <label class="field field--full">
             <span class="field__label">Cliente vendedor</span>
             <input class="input" id="cliente-vendedor-input" name="cliente_vendedor_label"
@@ -253,143 +295,17 @@
         {% endif %}
       </div>
       <div class="modal__foot">
-        <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
+        <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
         {% if veiculo %}
         <button type="submit" class="btn btn--primary" data-testid="veiculo-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
-        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">Voltar</button>
-        <button type="button" class="btn btn--primary" id="wizard-proximo">Próximo</button>
-        <button type="submit" class="btn btn--primary" id="wizard-salvar" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="button" class="btn btn--default" x-show="step > 1" style="display:none" @click="voltar()">Voltar</button>
+        <button type="button" class="btn btn--primary" x-show="step < total" @click="proximo()">Próximo</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" style="display:none">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>
   </div>
 </div>
-<script>
-(function () {
-  function setupReference(input) {
-    var hidden = document.getElementById(input.id.replace('-input', '-search'));
-    var list = document.getElementById(input.getAttribute('list'));
-    var more = document.querySelector('[data-reference-list="' + list.id + '"]');
-    if (!hidden || !list || !more) return;
-
-    var offset = 0;
-    var query = '';
-    var requestNumber = 0;
-    var selectedId = input.dataset.selectedId || hidden.value || '';
-
-    function optionFor(item) {
-      var option = document.createElement('option');
-      option.value = item.label;
-      option.dataset.id = item.id;
-      return option;
-    }
-
-    function sync() {
-      var match = Array.prototype.slice.call(list.options).filter(function (option) {
-        return option.value === input.value;
-      })[0];
-      hidden.value = match ? match.dataset.id || '' : '';
-    }
-
-    function load(reset, ids) {
-      if (reset) {
-        offset = 0;
-        query = input.value.trim();
-        list.innerHTML = '';
-      }
-      var request = ++requestNumber;
-      var params = new URLSearchParams({ limit: '20', offset: String(offset) });
-      if (query) params.set('q', query);
-      (ids || []).forEach(function (id) { params.append('ids', id); });
-      fetch(input.dataset.referenceUrl + '?' + params.toString())
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          if (request !== requestNumber) return;
-          data.items.forEach(function (item) { list.appendChild(optionFor(item)); });
-          more.hidden = !data.has_more;
-          offset += data.items.length;
-          sync();
-        })
-        .catch(function () { more.hidden = true; });
-    }
-
-    input.addEventListener('input', function () {
-      selectedId = '';
-      hidden.value = '';
-      load(true);
-    });
-    input.addEventListener('change', sync);
-    more.addEventListener('click', function () { load(false); });
-    load(true, selectedId ? [selectedId] : []);
-  }
-
-  document.querySelectorAll('[data-reference-url]').forEach(setupReference);
-})();
-</script>
 {% if not veiculo %}
-<script>
-(function () {
-  var form = document.getElementById('form-novo-veiculo');
-  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
-  var total = steps.length;
-  var stepInput = document.getElementById('wizard-step');
-  var current = Number(stepInput.value) || 1;
-
-  var btnVoltar = document.getElementById('wizard-voltar');
-  var btnProximo = document.getElementById('wizard-proximo');
-  var btnSalvar = document.getElementById('wizard-salvar');
-  var stepAtual = document.getElementById('wizard-step-atual');
-
-  form.addEventListener('submit', function () { stepInput.value = current; });
-
-  function stepEl(n) {
-    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
-  }
-
-  function show(n) {
-    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
-    stepAtual.textContent = n;
-    btnVoltar.style.display = n > 1 ? '' : 'none';
-    btnProximo.style.display = n < total ? '' : 'none';
-    btnSalvar.style.display = n === total ? '' : 'none';
-  }
-
-  function validStep(n) {
-    var controls = stepEl(n).querySelectorAll('input, select');
-    for (var i = 0; i < controls.length; i++) {
-      var el = controls[i];
-      if (el.disabled) continue;
-      if (!el.checkValidity()) { el.reportValidity(); return false; }
-    }
-    return true;
-  }
-
-  btnProximo.addEventListener('click', function () {
-    if (!validStep(current)) return;
-    current = Math.min(current + 1, total);
-    show(current);
-  });
-
-  btnVoltar.addEventListener('click', function () {
-    current = Math.max(current - 1, 1);
-    show(current);
-  });
-
-  var selectVendedor = document.getElementById('cliente-vendedor-select');
-  var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
-
-  function sincronizarVendedor() {
-    var existente = !!selectVendedor.value;
-    camposNovoCliente.forEach(function (campo) {
-      campo.disabled = existente;
-      campo.closest('.field').style.display = existente ? 'none' : '';
-    });
-  }
-  selectVendedor.addEventListener('change', sincronizarVendedor);
-  sincronizarVendedor();
-
-  show(current);
-})();
-</script>
 {% endif %}

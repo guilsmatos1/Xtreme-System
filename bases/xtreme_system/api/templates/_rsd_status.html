@@ -1,0 +1,35 @@
+{% import "_macros.html" as ui %}
+<div id="rsd-status" class="rsd-status">
+  {% if erro %}{{ ui.alert(erro) }}{% endif %}
+  {% if sucesso and not erro %}
+  {{ ui.alert(sucesso) }}
+  {% if unitaria %}
+  <div class="rsd-status__actions">
+    <span class="muted">Dossiê #{{ unitaria.dossie_id }}
+      {% if unitaria.status_display %} — {{ unitaria.status_display }}{% endif %}
+    </span>
+    <a class="btn btn--ghost btn--sm" href="/ui/rsd/dossie/{{ unitaria.dossie_id }}/pdf"
+       target="_blank" rel="noopener">
+      {{ ui.icon("download") }} Baixar PDF
+    </a>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% if campos %}
+<script>
+(function () {
+  var campos = {{ campos | tojson }};
+  var root = document.getElementById("modal") || document;
+  var form = root.querySelector("form");
+  if (!form) return;
+  Object.keys(campos).forEach(function (name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    if (!el || campos[name] == null || campos[name] === "") return;
+    el.value = campos[name];
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+})();
+</script>
+{% endif %}

@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--duplicates
-description: Analyze the codebase for code consolidation opportunities — duplicated, near-duplicated, and redundant code that can be unified without losing any functionality. Use when asked to find duplication, copy-paste, repeated logic, parallel implementations of the same rule, redundant helpers/templates/queries, or a prioritized list of safe behavior-preserving merges.
+description: Analyze safe code consolidation of duplicated or parallel logic. Use when asked to find duplication, copy-paste, or redundant helpers/templates.
 metadata:
     skill-organizer:
         original-name: coding--analyze--duplicates
@@ -20,10 +20,6 @@ near-duplicated, or redundant code without removing, weakening, or changing exis
 Prioritize duplicated business rules, divergent parallel implementations, and repeated workflow or
 template patterns over cosmetic similarity.
 
-Quality over quantity. Target 10-15 opportunities, but only include findings with impact `High` or
-`Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
-cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
-to fill the count.
 
 ## Review Dimensions
 
@@ -79,31 +75,6 @@ For each opportunity, evaluate the relevant dimensions below:
 8. After preparing the findings, hand them to the `coding--generate--issues-md` skill,
    which formats and writes `.loop/running/issues-duplicates.md`.
 
-## Suggested Workflow
-
-Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
-
-- duplicated logic: `graphify query "duplicated or parallel implementations"`
-- route/template duplication: `graphify query "repeated route handlers and jinja fragments"`
-- a specific concept: `graphify explain "<business rule or workflow>"`
-- relationship between duplicate sites: `graphify path "<A>" "<B>"`
-- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
-
-Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
-surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
-file tree or definition list by hand when graphify can answer the same question with a fraction of
-the tokens.
-
-## Reading Budget
-
-Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
-discipline for every `coding--analyze--*` skill (repo path:
-`skills-organized/coding/analyze/references/reading-budget.md`).
-
-It applies with full force here: a duplication survey needs shapes and call patterns across many
-files, so it is the review most likely to load full route modules it never quotes. Sweep signatures
-first, read only the ranges you will cite, and never re-read a file already in context.
-
 ## What Strong Findings Look Like
 
 Strong finding:
@@ -122,65 +93,18 @@ Do not report similar-looking code unless it represents one logical rule or reus
 can be unified while preserving behavior. Do not lower the bar just to reach a round number of
 findings.
 
-## Output Requirements
+## Domain notes
 
-Deliver 10-15 opportunities (fewer if that's all the evidence supports), ordered from highest to
-lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
-rather than padding the list with them.
+- Every finding must include **Consolidation details**: duplicate type, all sites, differences between copies, behavior preservation, and verification plan.
+- Cite all duplicate sites, not just a representative one.
 
-For each opportunity, include:
+## Shared harness
 
-- **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
-- **Short title**: actionable, specific to the duplication
-- **Location**: representative file, line range, function, and a real code snippet (10-15 lines)
-- **Impact**: `High` or `Medium`
-- **Category**: primary dimension from review dimensions
-- **Description**: specific explanation tied to the duplicated code
-- **Why it matters**: correctness, risk, maintainability, or operational consequence
-- **Concrete fix**: smallest behavior-preserving consolidation
-- **Estimated effort**: `Low`, `Medium`, or `High`
-- **Potential savings**: concrete, estimated benefit when it can be reasoned about — omit rather than guess
-- **Priority**: `high`, `medium`, or `low` (may differ from impact)
-- **Risk level**: `high`, `medium`, or `low` (implementation risk)
-- **Tags**: searchable labels
-- **Files affected**: list of all duplicate sites and consolidation targets
-- **Related opportunities**: IDs of related findings from the same analysis
-- **Self-critique**: per-opportunity honest assessment — confidence score, strengths, weaknesses, and uncertainty
-- **Consolidation details**: duplicate type, all sites, differences between copies, behavior preservation, and verification plan
-
-## Output Format
-
-Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
-retained opportunities in final ranked order, the discarded candidates with their reasons, every
-analysis-specific field (including the consolidation details), and the output path below. That skill
-owns the shared Issues Markdown contract and is the single definition of the format; it
-preserves analysis-specific fields under `Domain details` and validates the finished document.
+Follow [../references/analyze-harness.md](../references/analyze-harness.md) for ranking, graphify
+orientation, reading budget, output fields, issues-md handoff, and review standard.
 
 ## Persistence
 
-- The output path is `.loop/running/issues-duplicates.md`. Pass it to `coding--generate--issues-md`, which creates the
-  directory when missing, overwrites any existing report, sets `Generated` and `Total` from the
-  actual document, and validates it against the contract.
-- Hand over every retained finding and discarded candidate from this review — do not summarize,
-  drop, or re-rank them on the way in.
-
-## Review Standard
-
-- Be specific, surgical, and evidence-based.
-- Prefer duplicate rules with real drift risk over visual similarity.
-- Cite all duplicate sites, not just a representative one.
-- State the differences between copies explicitly, even when there are none.
-- If the copies diverge, preserve the union of behavior or explain which behavior intentionally wins.
-- Name the tradeoff when consolidation crosses a layer boundary.
-- If a suspected duplicate is uncertain, set `self_critique.uncertain: true`, list it in
-  `weaknesses`, and lower its priority/confidence_score accordingly.
-- Include all enriched metadata: tags, affected files, related opportunities, duplicate sites,
-  behavior-preservation details, and self-assessment of confidence.
-- Honesty over completeness: an accurate list of 7 is better than an inflated list of 10.
-
-
-
-**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-
-The full report is the deliverable, and it goes to
-`.loop/running/issues-duplicates.md` ONLY.
+- The output path is `.loop/running/issues-duplicates.md`. Pass it to `coding--generate--issues-md` per the harness.
+- Hand over every retained finding and discarded candidate from this review — do not summarize, drop,
+  or re-rank them on the way in.

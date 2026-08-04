@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.consignacao import core as consignacao
 from xtreme_system.investidor import core as investidor
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -47,7 +48,12 @@ def validate_veiculo_fks(
 
 
 ClienteVeiculoData = (
-    compra.CompraCreate | compra.CompraUpdate | venda.VendaCreate | venda.VendaUpdate
+    compra.CompraCreate
+    | compra.CompraUpdate
+    | venda.VendaCreate
+    | venda.VendaUpdate
+    | consignacao.ConsignacaoCreate
+    | consignacao.ConsignacaoUpdate
 )
 
 

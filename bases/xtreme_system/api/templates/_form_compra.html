@@ -1,16 +1,16 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
-<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
+<div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel{% if not compra %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mc-title">
     <div class="modal__head">
       <h3 id="mc-title">{{ 'Editar compra' if compra else 'Nova compra' }}</h3>
       <button class="icon-btn" data-testid="compra-wizard-close" type="button" aria-label="Fechar"
-              onclick="closeModalOnBackdrop(this.closest('.modal'))">{{ ui.icon("close") }}</button>
+              x-on:click="fecharComConfirmacao()">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/compras{% if compra %}/{{ compra.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
           hx-encoding="multipart/form-data" enctype="multipart/form-data"
           hx-sync="this:drop" hx-disabled-elt="find button[type='submit']"
-          {% if not compra %}id="form-nova-compra"{% endif %}>
+          {% if not compra %}id="form-nova-compra" x-data="wizard({{ dados.get('wizard_step', 1) }})"{% endif %}>
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
 
@@ -68,87 +68,75 @@
         </div>
         {% else %}
         <input type="hidden" name="idempotency_key" value="{{ dados.get('idempotency_key', idempotency_key) }}">
-        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ dados.get('wizard_step', 1) }}">
+        <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        {% set passo_atual = dados.get('wizard_step', 1)|int %}
         <div class="stepper">
-          <div class="stepper__item is-active" data-stepper="1">
-            <span class="stepper__num">1</span>
-            <span class="stepper__label">Cliente</span>
+          {% for rotulo in ["Cliente", "Veículo", "Valores", "Observações", "Comprovante"] %}
+          {% if not loop.first %}
+          <div class="stepper__connector{% if passo_atual > loop.index - 1 %} is-done{% endif %}"
+               :class="{ 'is-done': step > {{ loop.index - 1 }} }"></div>
+          {% endif %}
+          <div class="stepper__item{% if passo_atual == loop.index %} is-active{% elif passo_atual > loop.index %} is-done{% endif %}"
+               :class="{ 'is-active': step === {{ loop.index }}, 'is-done': step > {{ loop.index }} }">
+            <span class="stepper__num">{{ loop.index }}</span>
+            <span class="stepper__label">{{ rotulo }}</span>
           </div>
-          <div class="stepper__connector" data-connector="1"></div>
-          <div class="stepper__item" data-stepper="2">
-            <span class="stepper__num">2</span>
-            <span class="stepper__label">Veículo</span>
-          </div>
-          <div class="stepper__connector" data-connector="2"></div>
-          <div class="stepper__item" data-stepper="3">
-            <span class="stepper__num">3</span>
-            <span class="stepper__label">Valores</span>
-          </div>
-          <div class="stepper__connector" data-connector="3"></div>
-          <div class="stepper__item" data-stepper="4">
-            <span class="stepper__num">4</span>
-            <span class="stepper__label">Observações</span>
-          </div>
-          <div class="stepper__connector" data-connector="4"></div>
-          <div class="stepper__item" data-stepper="5">
-            <span class="stepper__num">5</span>
-            <span class="stepper__label">Comprovante</span>
-          </div>
+          {% endfor %}
         </div>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
           {% if pode_ver_campo(user, 'compras', 'cliente') %}
           <label class="field field--full">
             <span class="field__label">Cliente</span>
-            <select class="select" id="cliente-select" data-testid="compra-wizard-client-select" name="cliente_id" autofocus>
+            <select class="select" id="cliente-select" x-model="clienteExistente" data-testid="compra-wizard-client-select" name="cliente_id" autofocus>
               <option value="">➕ Cadastrar novo cliente</option>
               {% for c in clientes %}
               <option value="{{ c.id }}"{% if dados.get('cliente_id')|string == c.id|string %} selected{% endif %}>{{ c.nome }}{% if c.documento %} · {{ c.documento }}{% endif %}</option>
               {% endfor %}
             </select>
           </label>
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-testid="compra-wizard-client-name" data-novo-cliente value="{{ dados.get('cli_nome', '') }}" required>
+            <input class="input" name="cli_nome" data-testid="compra-wizard-client-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
-            <select class="select" name="cli_tipo" data-novo-cliente>
+            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente">
               {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
-            <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente value="{{ dados.get('cli_email', '') }}">
+            <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
-          <label class="field field--full">
+          <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Endereço</span>
-            <input class="input" name="cli_endereco" data-novo-cliente value="{{ dados.get('cli_endereco', '') }}">
+            <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
-            <input class="input" name="cli_cidade" data-novo-cliente value="{{ dados.get('cli_cidade', '') }}">
+            <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Estado</span>
-            <input class="input" name="cli_estado" data-novo-cliente value="{{ dados.get('cli_estado', '') }}">
+            <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
-          <label class="field">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
           </label>
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field">
             <span class="field__label">Tipo *</span>
@@ -191,7 +179,7 @@
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field field--full">
             <span class="field__label">Data da compra</span>
@@ -212,7 +200,7 @@
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4">
+        <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field">
             <span class="field__label">Tipo de Entrada *</span>
@@ -240,7 +228,7 @@
           {% endif %}
         </fieldset>
 
-        <fieldset class="wizard-step{% if dados.get('wizard_step', 1)|int == 5 %} is-active{% endif %}" data-step="5">
+        <fieldset class="wizard-step{% if dados.get('wizard_step', 1)|int == 5 %} is-active{% endif %}" data-step="5" :class="{ 'is-active': step === 5 }">
           {% if pode_operacao(user, 'compras', 'enviar_comprovante') %}
           <div class="mmgr__upload">
             <label class="mmgr__drop">
@@ -256,95 +244,17 @@
         {% endif %}
       </div>
       <div class="modal__foot">
-        <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
+        <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
         {% if compra %}
         <button type="submit" class="btn btn--primary" data-testid="compra-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
-        <button type="button" class="btn btn--default" id="wizard-voltar" style="display:none">{{ ui.icon("arrow-left") }} Voltar</button>
-        <button type="button" class="btn btn--primary" id="wizard-proximo" data-testid="compra-wizard-next">Próximo {{ ui.icon("arrow-right") }}</button>
-        <button type="submit" class="btn btn--primary" id="wizard-salvar" data-testid="compra-wizard-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="button" class="btn btn--default" x-show="step > 1" style="display:none" @click="voltar()">{{ ui.icon("arrow-left") }} Voltar</button>
+        <button type="button" class="btn btn--primary" x-show="step < total" data-testid="compra-wizard-next" @click="proximo()">Próximo {{ ui.icon("arrow-right") }}</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" data-testid="compra-wizard-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>
   </div>
 </div>
 {% if not compra %}
-<script>
-(function () {
-  var form = document.getElementById('form-nova-compra');
-  var steps = Array.prototype.slice.call(form.querySelectorAll('.wizard-step'));
-  var stepperItems = Array.prototype.slice.call(form.querySelectorAll('[data-stepper]'));
-  var connectors = Array.prototype.slice.call(form.querySelectorAll('[data-connector]'));
-  var total = steps.length;
-  var stepInput = document.getElementById('wizard-step');
-  var current = Number(stepInput.value) || 1;
-
-  var btnVoltar = document.getElementById('wizard-voltar');
-  var btnProximo = document.getElementById('wizard-proximo');
-  var btnSalvar = document.getElementById('wizard-salvar');
-
-  form.addEventListener('submit', function () { stepInput.value = current; });
-
-  function stepEl(n) {
-    return steps.filter(function (s) { return Number(s.dataset.step) === n; })[0];
-  }
-
-  function show(n) {
-    steps.forEach(function (s) { s.classList.toggle('is-active', Number(s.dataset.step) === n); });
-    stepperItems.forEach(function (item) {
-      var i = Number(item.dataset.stepper);
-      item.classList.toggle('is-active', i === n);
-      item.classList.toggle('is-done', i < n);
-    });
-    connectors.forEach(function (c) {
-      c.classList.toggle('is-done', Number(c.dataset.connector) < n);
-    });
-    btnVoltar.style.display = n > 1 ? '' : 'none';
-    btnProximo.style.display = n < total ? '' : 'none';
-    btnSalvar.style.display = n === total ? '' : 'none';
-  }
-
-  function validStep(n) {
-    var controls = stepEl(n).querySelectorAll('input, select');
-    for (var i = 0; i < controls.length; i++) {
-      var el = controls[i];
-      if (el.disabled) continue;
-      if (!el.checkValidity()) { el.reportValidity(); return false; }
-    }
-    return true;
-  }
-
-  btnProximo.addEventListener('click', function () {
-    if (!validStep(current)) return;
-    current = Math.min(current + 1, total);
-    show(current);
-  });
-
-  btnVoltar.addEventListener('click', function () {
-    current = Math.max(current - 1, 1);
-    show(current);
-  });
-
-  show(current);
-
-  var selectCliente = document.getElementById('cliente-select');
-  var camposNovoCliente = form.querySelectorAll('[data-novo-cliente]');
-
-  function sincronizarCliente() {
-    if (!selectCliente) return;
-    var existente = !!selectCliente.value;
-    camposNovoCliente.forEach(function (campo) {
-      campo.disabled = existente;
-      campo.closest('.field').style.display = existente ? 'none' : '';
-    });
-  }
-  if (selectCliente) selectCliente.addEventListener('change', sincronizarCliente);
-  sincronizarCliente();
-
-  var camposNovoVeiculo = form.querySelectorAll('[data-novo-veiculo]');
-  camposNovoVeiculo.forEach(function (campo) {
-    campo.disabled = false;
-  });
-})();
-</script>
 {% endif %}

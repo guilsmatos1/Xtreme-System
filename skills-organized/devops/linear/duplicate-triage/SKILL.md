@@ -1,7 +1,7 @@
 ---
 name: devops--linear--duplicate-triage
-description: >-
-    Detects and closes duplicate Linear issues in a team's open backlog, keeping one canonical issue per cluster. Use when asked to triage or clean up duplicate tickets. Defaults to team `GUI`.
+description: Detect and close duplicate Linear issues, keeping one canonical per cluster.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: devops--linear--duplicate-triage

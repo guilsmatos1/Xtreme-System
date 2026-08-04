@@ -6,10 +6,9 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from starlette.requests import Request
 
 from xtreme_system.api import deps
 from xtreme_system.api.core import app

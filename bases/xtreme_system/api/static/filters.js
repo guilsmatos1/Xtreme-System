@@ -1,6 +1,12 @@
-/* Filtro de tabelas: troca o campo de valor entre texto e select conforme
-   a coluna escolhida, sem round-trip ao servidor. Cada <option> da coluna
-   carrega as opções em data-options (JSON [[valor, rótulo], ...] ou []). */
+/* Campos decimais: formata em pt-BR na exibição (1.234,56) e normaliza de
+   volta para ponto decimal antes de cada requisição do HTMX. Também remove
+   parâmetros vazios em formulários marcados com data-omit-empty-params.
+
+   Não migrado para x-mask: o plugin vendorizado (alpine-mask.min.js) modela
+   $money como entrada estilo maquininha de cartão — os dígitos entram da
+   direita, os 2 últimos são sempre centavos — não como formatador de um
+   valor já digitado por extenso. Testado em 2026-08-04: preencher "140000"
+   (R$140.000) salvou R$140,00. Ver docs/migracao-alpine.md, etapa 8. */
 (function () {
   "use strict";
 
@@ -40,43 +46,6 @@
 
   document.body.addEventListener("htmx:load", function (e) {
     formatDecimalInputs(e.detail.elt);
-  });
-
-  document.addEventListener("change", function (e) {
-    var select = e.target;
-    if (!select.matches("[data-filter-col]")) return;
-
-    var form = select.closest("form");
-    var valueField = form.querySelector("[data-filter-val]");
-    var opt = select.options[select.selectedIndex];
-    var options;
-    try {
-      options = JSON.parse(opt.getAttribute("data-options") || "[]");
-    } catch (err) {
-      options = [];
-    }
-
-    var current = valueField.value;
-    var replacement;
-    if (options.length) {
-      replacement = document.createElement("select");
-      var html = '<option value="">Todos</option>';
-      options.forEach(function (pair) {
-        var isSelected = pair[0] === current ? " selected" : "";
-        html += '<option value="' + pair[0] + '"' + isSelected + ">" + pair[1] + "</option>";
-      });
-      replacement.innerHTML = html;
-    } else {
-      replacement = document.createElement("input");
-      replacement.type = "text";
-      replacement.value = current;
-      replacement.placeholder = "Valor…";
-    }
-    replacement.name = "filter_val";
-    replacement.className = "input";
-    replacement.setAttribute("data-filter-val", "");
-    replacement.setAttribute("aria-label", "Valor do filtro");
-    valueField.replaceWith(replacement);
   });
 
   document.body.addEventListener("htmx:configRequest", function (e) {

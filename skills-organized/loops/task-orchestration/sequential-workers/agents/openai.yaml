@@ -1,0 +1,5 @@
+interface:
+  display_name: "Sequential Workers"
+  short_description: "Execute a numbered task list with isolated subagents"
+policy:
+  allow_implicit_invocation: false

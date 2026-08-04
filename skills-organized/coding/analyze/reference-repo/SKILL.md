@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--reference-repo
-description: Compare a reference repository against this local project and surface high-value opportunities the local project is missing or implementing worse. Use when the user provides a reference repo path or link and asks to compare with reference repo, what the reference is doing better, patterns we are ignoring, features missing compared to X, opportunities from this codebase, or the Portuguese equivalents (oportunidades do repositório referência, o que o projeto está ignorando, padrões que faltam).
+description: Compare a reference repo to this project and rank transferable opportunities. Use when given a reference codebase and asked what we are missing or doing worse.
 metadata:
     skill-organizer:
         original-name: reference-repo-opportunities
@@ -90,6 +90,14 @@ For every candidate opportunity, before it is allowed onto the list:
    this."
 
 Rank by impact ÷ effort, highest first.
+
+## Shared harness
+
+Follow [../references/analyze-harness.md](../references/analyze-harness.md) for ranking,
+graphify orientation (LOCAL side), reading budget, and issues-md handoff. This skill keeps
+its own REF/LOCAL comparison process and Domain details fields below.
+
+When exploring LOCAL, read `CONTEXT.md` if it exists.
 
 ## Reading Budget
 

@@ -1,11 +1,11 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
-<div class="modal" onclick="if(event.target===this)closeModalOnBackdrop(this)">
+<div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mcv-title">
     <div class="modal__head">
       <h3 id="mcv-title">{{ 'Editar custo' if custo else 'Novo custo' }}</h3>
       <button class="icon-btn" type="button" aria-label="Fechar"
-              onclick="closeModalOnBackdrop(this.closest('.modal'))">{{ ui.icon("close") }}</button>
+              x-on:click="fecharComConfirmacao()">{{ ui.icon("close") }}</button>
     </div>
     <form hx-post="/ui/custos-veiculos{% if custo %}/{{ custo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
           hx-sync="this:drop" hx-disabled-elt="find button[type='submit']">
@@ -54,7 +54,7 @@
         </div>
       </div>
       <div class="modal__foot">
-        <button type="button" class="btn btn--default" onclick="closeModalOnBackdrop(this.closest('.modal'))">Cancelar</button>
+        <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
         <button type="submit" class="btn btn--primary" data-testid="custo-veiculo-form-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>

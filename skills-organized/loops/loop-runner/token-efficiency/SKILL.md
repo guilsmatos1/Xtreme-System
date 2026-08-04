@@ -1,6 +1,7 @@
 ---
 name: loops--loop-runner--token-efficiency
-description: Discovers unanalyzed Codex worker sessions for xtreme-system and dispatches one isolated token-efficiency analysis agent per session, sequentially, through loops--task-orchestration--skill-dispatcher. Use for token retrospectives or to feed skill loops--state-management--consolidate-harness.
+description: Dispatch token-efficiency analysis for unanalyzed Codex sessions.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: loops--loop-runner--token-efficiency
@@ -32,9 +33,9 @@ context. This skill coordinates the batch; it does not analyze sessions itself.
    - Do not inspect rollout contents or alter the generated jobs.
 
 3. Invoke skill `loops--task-orchestration--skill-dispatcher` with the generated jobs file.
-   Follow that skill exactly: run its helper detached, poll its JSONL output, and
-   wait for its final summary. It provides the required strict sequencing and
-   fresh Orca terminal for every analysis.
+   Follow that skill and [../../references/orchestration-harness.md](../../references/orchestration-harness.md):
+   run the helper detached, poll JSONL, wait for the final summary (strict sequencing +
+   fresh Orca terminal per analysis).
 
 4. After the dispatcher finishes, audit the expected artifacts:
 

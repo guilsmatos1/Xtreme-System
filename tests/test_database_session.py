@@ -1,12 +1,11 @@
 from contextlib import suppress
 from typing import Any
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from starlette.requests import Request
 
 from xtreme_system.database import core
 

@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--concurrency
-description: Analyze the codebase for concurrency weaknesses — race conditions, non-atomic check-then-act logic, missing locks on shared/mutable state, and non-idempotent writes vulnerable to retries or duplicate requests — prioritized by how likely concurrent access is and how bad the outcome would be. Use when asked to review concurrency, find race conditions, audit locking/idempotency, check for double-submit or duplicate-write bugs, or produce a prioritized list of concrete concurrency issues tied to specific files and line numbers.
+description: Analyze concurrency risks (races, check-then-act, non-idempotent writes). Use when asked about race conditions, locks, or duplicate-request safety.
 metadata:
     skill-organizer:
         original-name: coding--analyze--concurrency
@@ -22,10 +22,6 @@ webhooks, background jobs that can overlap) over theoretical races with no plaus
 a distinct lens from `coding--analyze--data-integrity`: that skill asks whether the *schema* enforces
 an invariant; this one asks whether the *application logic* can race with itself.
 
-Quality over quantity. Target 10-15 opportunities, but only include findings with impact `High` or
-`Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
-cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
-to fill the count.
 
 ## Review Dimensions
 
@@ -99,32 +95,6 @@ For each opportunity, evaluate the relevant dimensions below:
    no overlap possibility is not the same finding as a user-facing endpoint hit by many concurrent
    requests.
 
-## Suggested Workflow
-
-Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
-
-- hotspots: `graphify query "stock, balance, booking, and check-then-act write patterns"`
-- a specific dimension: `graphify query "<dimension, e.g. idempotency, locking, background job overlap>"`
-- a concept in isolation: `graphify explain "<concept, e.g. a specific booking/stock function>"`
-- relationship between two areas: `graphify path "<A>" "<B>"`
-- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
-
-Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
-surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
-file tree or definition list by hand when graphify can answer the same question with a fraction of
-the tokens.
-
-## Reading Budget
-
-Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
-discipline for every `coding--analyze--*` skill (repo path:
-`skills-organized/coding/analyze/references/reading-budget.md`).
-
-It applies with full force here: proving a race requires reading the full check-to-write sequence,
-which can span helper calls, so it's tempting to pull whole files to trace it. Sweep query/lock sites
-first, read only the specific function chain each hit belongs to, and never re-read a file already in
-context.
-
 ## What Strong Findings Look Like
 
 Strong finding:
@@ -146,77 +116,13 @@ Do not report cosmetic findings (e.g. a check-then-act on data that only one pro
 protected by an outer lock not visible in the snippet but confirmed present) unless a concrete
 concurrent trigger is plausible. Do not lower the bar just to reach a round number of findings.
 
-## Output Requirements
+## Shared harness
 
-Deliver 10-15 opportunities (fewer if that's all the evidence supports), ordered from highest to
-lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
-rather than padding the list with them.
-
-For each opportunity, include:
-
-- **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
-- **Short title**: actionable, specific to the race/concurrency issue
-- **Location**: file, line range, function, and a real code snippet (10-15 lines) showing the
-  non-atomic sequence
-- **Impact**: `High` or `Medium`
-- **Category**: primary dimension from review dimensions (e.g. "check-then-act race", "read-modify-
-  write", "idempotency", "locking granularity", "job overlap")
-- **Description**: specific explanation tied to the code, including the concrete interleaving of two
-  concurrent requests/jobs that produces the bad outcome
-- **Why it matters**: correctness, financial, or operational consequence (overselling, double-
-  crediting, lost updates, deadlock)
-- **Concrete fix**: smallest useful fix with example (row lock, atomic update, unique constraint,
-  idempotency key)
-- **Estimated effort**: `Low`, `Medium`, or `High`
-- **Potential savings**: concrete, estimated benefit when it can be reasoned about (e.g. "prevents
-  double-booking under concurrent requests", "stops duplicate payment crediting on webhook retry") —
-  omit rather than guess a number you can't justify
-- **Priority**: `high`, `medium`, or `low` (may differ from impact)
-- **Risk level**: `high`, `medium`, or `low` (implementation risk — locking changes can introduce
-  contention or deadlock if done carelessly; call this out explicitly)
-- **Tags**: searchable labels (e.g. "concurrency", "race-condition", "idempotency", "locking")
-- **Files affected**: list of all files involved in the fix
-- **Related opportunities**: IDs of related findings from the same analysis
-- **Self-critique**: per-opportunity honest assessment — confidence score, strengths, weaknesses, and
-  whether this finding is uncertain (see schema below)
-
-## Output Format
-
-Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
-retained opportunities in final ranked order, the discarded candidates with their reasons, every
-analysis-specific field, and the output path below. That skill owns the shared Issues Markdown
-contract and is the single definition of the format; it preserves analysis-specific fields under
-`Domain details` and validates the finished document.
+Follow [../references/analyze-harness.md](../references/analyze-harness.md) for ranking, graphify
+orientation, reading budget, output fields, issues-md handoff, and review standard.
 
 ## Persistence
 
-- The output path is `.loop/running/issues-concurrency.md`. Pass it to `coding--generate--issues-md`,
-  which creates the directory when missing, overwrites any existing report, sets `Generated` and
-  `Total` from the actual document, and validates it against the contract.
+- The output path is `.loop/running/issues-concurrency.md`. Pass it to `coding--generate--issues-md` per the harness.
 - Hand over every retained finding and discarded candidate from this review — do not summarize, drop,
   or re-rank them on the way in.
-
-## Review Standard
-
-- Be specific, surgical, and evidence-based; always show the concrete interleaving of two concurrent
-  actors that produces the bad outcome, not just "this could race in theory."
-- Prefer paths with realistic concurrent traffic (user-facing booking/payment/stock endpoints, retried
-  webhooks, overlapping scheduled jobs) over paths that are functionally single-writer today.
-- Name the tradeoff when a fix adds locking/contention cost (e.g. a row lock that serializes writes on
-  a hot table) versus the corruption risk it prevents.
-- If the same race pattern appears across multiple resources (e.g. the same check-then-act shape for
-  stock and for seat booking), cite the best representative examples and list every affected file,
-  instead of repeating yourself.
-- If a suspected race is uncertain (e.g. whether the endpoint is ever called concurrently in practice),
-  set `self_critique.uncertain: true`, list it in `weaknesses`, and lower its priority/confidence_score
-  accordingly — never silently upgrade an uncertain hunch to a confident finding.
-- Include all enriched metadata: tags, affected files, related opportunities, and self-assessment of
-  confidence.
-- Honesty over completeness: an accurate list of 7 is better than an inflated list of 10.
-
-
-
-**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-
-The full report is the deliverable, and it goes to
-`.loop/running/issues-concurrency.md` ONLY.

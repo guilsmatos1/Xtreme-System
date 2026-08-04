@@ -15,6 +15,7 @@ from typing import Any, cast
 
 import structlog
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
@@ -26,7 +27,6 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from jwt import InvalidTokenError
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from starlette.concurrency import run_in_threadpool
 
 from xtreme_system.api.deps import (
     NaoAdminError,

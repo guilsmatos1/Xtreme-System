@@ -1,6 +1,6 @@
 ---
 name: coding--analyze--security
-description: Analyze the codebase for security weaknesses — injection, broken auth/authorization, exposed secrets, unsafe deserialization, missing input validation, and other OWASP-class risks — prioritized by exploitability and blast radius. Use when asked to review security, find vulnerabilities, audit auth/permissions, check for injection or exposed secrets, or produce a prioritized list of concrete security issues tied to specific files and line numbers.
+description: Analyze security weaknesses (injection, authz, secrets, unsafe input). Use when asked for a security review, vulnerability audit, or auth/permissions check.
 metadata:
     skill-organizer:
         original-name: coding--analyze--security
@@ -21,10 +21,6 @@ they shouldn't, escalate privileges, exfiltrate secrets, or crash the system, ov
 theoretical hardening. This is defensive analysis only: identify and explain, never craft or stage
 an actual exploit payload.
 
-Quality over quantity. Target 10-15 opportunities, but only include findings with impact `High` or
-`Medium`. It is better to return 6 excellent findings than to pad the list to hit a number. If you
-cannot find 8 strong opportunities, return fewer and say so — do not invent or inflate weak findings
-to fill the count.
 
 ## Review Dimensions
 
@@ -96,31 +92,6 @@ For each opportunity, evaluate the relevant dimensions below:
 6. Do not attempt to run, craft, or output a working exploit/payload — describe the vulnerability and
    the fix, not a proof-of-concept attack string.
 
-## Suggested Workflow
-
-Use `graphify` first to orient cheaply, then only read/grep what it can't answer:
-
-- hotspots: `graphify query "authentication, authorization, and input handling"`
-- a specific dimension: `graphify query "<dimension, e.g. SQL construction, secrets, CORS>"`
-- a concept in isolation: `graphify explain "<concept, e.g. policy.py, session cookie config>"`
-- relationship between two areas: `graphify path "<A>" "<B>"`
-- navigation without raw browsing: `graphify-out/wiki/index.md`, if present
-
-Only fall back to `rg`/`find`/`wc -l`/reading full files for what graphify's scoped subgraph doesn't
-surface, or to confirm exact line ranges before citing them in a finding. Never re-derive the whole
-file tree or definition list by hand when graphify can answer the same question with a fraction of
-the tokens.
-
-## Reading Budget
-
-Follow [../references/reading-budget.md](../references/reading-budget.md) — the shared cost
-discipline for every `coding--analyze--*` skill (repo path:
-`skills-organized/coding/analyze/references/reading-budget.md`).
-
-It applies with full force here: authorization checks are scattered one call at a time across many
-route handlers, so it's tempting to pull whole files to find them. Sweep call sites first, read only
-the block each hit belongs to, and never re-read a file already in context.
-
 ## What Strong Findings Look Like
 
 Strong finding:
@@ -141,73 +112,18 @@ Do not report cosmetic findings (e.g. a debug-only code path that is never reach
 or a theoretical issue with no realistic trigger) unless they materially affect confidentiality,
 integrity, or availability. Do not lower the bar just to reach a round number of findings.
 
-## Output Requirements
+## Domain notes
 
-Deliver 10-15 opportunities (fewer if that's all the evidence supports), ordered from highest to
-lowest impact. Only include `High` or `Medium` impact findings — discard `Low` impact candidates
-rather than padding the list with them.
+- Defensive analysis only: never craft or stage an exploit payload.
+- Never output a working exploit payload, credential, or token found in the codebase verbatim — describe it and redact the sensitive value.
 
-For each opportunity, include:
+## Shared harness
 
-- **ID**: unique identifier (format: `imp-YYYYMMDD-NNN`)
-- **Short title**: actionable, specific to the vulnerability class
-- **Location**: file, line range, function, and a real code snippet (10-15 lines)
-- **Impact**: `High` or `Medium`
-- **Category**: primary dimension from review dimensions (e.g. "injection", "authorization/IDOR",
-  "secrets exposure", "input validation")
-- **Description**: specific explanation tied to the code, including what request/actor triggers it
-- **Why it matters**: confidentiality, integrity, availability, or compliance consequence
-- **Concrete fix**: smallest useful fix with example (before/after when applicable)
-- **Estimated effort**: `Low`, `Medium`, or `High`
-- **Potential savings**: concrete, estimated benefit when it can be reasoned about (e.g. "closes
-  cross-tenant document read", "removes hardcoded credential from source history") — omit rather than
-  guess a number you can't justify
-- **Priority**: `high`, `medium`, or `low` (may differ from impact)
-- **Risk level**: `high`, `medium`, or `low` (implementation risk)
-- **Tags**: searchable labels (e.g. "security", "injection", "auth", "secrets", "idor")
-- **Files affected**: list of all files involved in the fix
-- **Related opportunities**: IDs of related findings from the same analysis
-- **Self-critique**: per-opportunity honest assessment — confidence score, strengths, weaknesses, and
-  whether this finding is uncertain (see schema below)
-
-## Output Format
-
-Do not format the report yourself. Invoke the `coding--generate--issues-md` skill and hand it the
-retained opportunities in final ranked order, the discarded candidates with their reasons, every
-analysis-specific field, and the output path below. That skill owns the shared Issues Markdown
-contract and is the single definition of the format; it preserves analysis-specific fields under
-`Domain details` and validates the finished document.
+Follow [../references/analyze-harness.md](../references/analyze-harness.md) for ranking, graphify
+orientation, reading budget, output fields, issues-md handoff, and review standard.
 
 ## Persistence
 
-- The output path is `.loop/running/issues-security.md`. Pass it to `coding--generate--issues-md`,
-  which creates the directory when missing, overwrites any existing report, sets `Generated` and
-  `Total` from the actual document, and validates it against the contract.
+- The output path is `.loop/running/issues-security.md`. Pass it to `coding--generate--issues-md` per the harness.
 - Hand over every retained finding and discarded candidate from this review — do not summarize, drop,
   or re-rank them on the way in.
-
-## Review Standard
-
-- Be specific, surgical, and evidence-based.
-- Prefer failure modes that let an attacker read/write unauthorized data, escalate privilege, or
-  exfiltrate secrets over theoretical or defense-in-depth-only suggestions.
-- Name the tradeoff when a fix (e.g. adding rate limiting, rotating a secret) has real cost or
-  requires coordination (key rotation, session invalidation).
-- If multiple endpoints share the same problem (e.g. the same missing ownership check across three
-  routes), cite the best representative examples and list every affected file, instead of repeating
-  yourself.
-- If a suspected issue is uncertain, set `self_critique.uncertain: true`, list it in `weaknesses`, and
-  lower its priority/confidence_score accordingly — never silently upgrade an uncertain hunch to a
-  confident finding.
-- Include all enriched metadata: tags, affected files, related opportunities, and self-assessment of
-  confidence.
-- Honesty over completeness: an accurate list of 7 is better than an inflated list of 10.
-- Never output a working exploit payload, credential, or token found in the codebase verbatim in the
-  report — describe it and redact the sensitive value.
-
-
-
-**IMPORTANT — DO NOT print the report or a summary of it in the terminal.**
-
-The full report is the deliverable, and it goes to
-`.loop/running/issues-security.md` ONLY.

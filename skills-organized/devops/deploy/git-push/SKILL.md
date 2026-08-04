@@ -1,6 +1,7 @@
 ---
 name: devops--deploy--git-push
-description: Push the current branch to the remote origin.
+description: Push the current branch to origin.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: devops--deploy--git-push

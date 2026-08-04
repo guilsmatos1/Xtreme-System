@@ -41,11 +41,11 @@ test: test-postgres
 test-postgres: db-test
 	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest $(PYTEST_ARGS)
 
-test-e2e:
-	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium --headed -p pytest_playwright
+test-e2e: db-test
+	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/e2e/ -q --browser chromium --headed -p pytest_playwright
 
-test-e2e-headless:
-	$(PYTHON) -m pytest tests/e2e/ -q --browser chromium -p pytest_playwright
+test-e2e-headless: db-test
+	TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme_test $(PYTHON) -m pytest tests/e2e/ -q --browser chromium -p pytest_playwright
 
 watch:
 	uv run ptw --runner "python -m pytest tests/ -q"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Standards + Spec Review"
+  short_description: "Two-axis review of diff since a fixed point"

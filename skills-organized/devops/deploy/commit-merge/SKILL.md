@@ -1,6 +1,7 @@
 ---
 name: devops--deploy--commit-merge
-description: Stage, commit, and merge the current branch into master with --no-ff. Handles worktree conflicts.
+description: Stage, commit, and merge the current branch into master with --no-ff.
+disable-model-invocation: true
 metadata:
     skill-organizer:
         original-name: devops--deploy--commit-merge

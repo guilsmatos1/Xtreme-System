@@ -3,12 +3,13 @@
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
 {% set configurado = config.evolution_api_url and config.evolution_instance %}
+{% set rsd_ok = config_rsd.email and config_rsd.senha %}
 {% set aba_ativa = aba or "banco" %}
 
 <div class="page-head">
   <div class="page-head__title">
     <h1>Configurações</h1>
-    <p class="page-head__subtitle">Dados da empresa, tema, WhatsApp e backup</p>
+    <p class="page-head__subtitle">Dados da empresa, tema, WhatsApp, RSD e backup</p>
   </div>
 </div>
 
@@ -20,6 +21,8 @@
          id="tab-banco" {% if aba_ativa == "banco" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
          id="tab-whatsapp" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-rsd" {% if aba_ativa == "rsd" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
          id="tab-tema" {% if aba_ativa == "tema" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
@@ -57,6 +60,17 @@
                   title="{{ 'Conectado' if configurado else 'Pendente' }}"></span>
           </span>
           <span class="settings-nav__desc">{{ "Conectado" if configurado else "Não configurado" }}</span>
+        </span>
+      </label>
+      <label class="settings-nav__item" for="tab-rsd" role="tab">
+        <span class="settings-nav__icon">{{ ui.icon("search") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">
+            RSD
+            <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if rsd_ok }}"
+                  title="{{ 'Conectado' if rsd_ok else 'Pendente' }}"></span>
+          </span>
+          <span class="settings-nav__desc">{{ "Conectado" if rsd_ok else "Não configurado" }}</span>
         </span>
       </label>
     </nav>
@@ -152,12 +166,12 @@
             </label>
             <label class="field">
               <span class="field__label">API key</span>
-              <span class="field-password">
-                <input class="input" id="api-key-input" name="evolution_api_key" type="password"
+              <span class="field-password" x-data="campoSenha">
+                <input class="input" id="api-key-input" name="evolution_api_key" :type="visivel ? 'text' : 'password'"
                        placeholder="•••••••• (deixe vazio para manter a chave atual)"
                        autocomplete="off">
-                <button type="button" class="field-password__toggle" aria-label="Mostrar chave"
-                        onclick="const i=document.getElementById('api-key-input'); const hidden=i.type==='password'; i.type=hidden?'text':'password'; this.classList.toggle('is-visible',hidden); this.setAttribute('aria-label', hidden?'Ocultar chave':'Mostrar chave');">
+                <button type="button" class="field-password__toggle" :class="{ 'is-visible': visivel }"
+                        :aria-label="visivel ? 'Ocultar chave' : 'Mostrar chave'" x-on:click="alternar()">
                   <span class="field-password__icon-show">{{ ui.icon("eye") }}</span>
                   <span class="field-password__icon-hide">{{ ui.icon("eye-off") }}</span>
                 </button>
@@ -176,16 +190,15 @@
           </div>
         </div>
 
-        <div class="modal-section settings-message">
+        <div class="modal-section settings-message" x-data="templateComPlaceholders">
           <h4>{{ ui.icon("megaphone") }} Mensagem</h4>
           <label class="field field--full">
             <span class="field__label">Template da mensagem</span>
-            <textarea class="input" id="mensagem-template" name="mensagem_template" rows="6">{{ config.mensagem_template }}</textarea>
+            <textarea class="input" id="mensagem-template" name="mensagem_template" rows="6" x-ref="textarea">{{ config.mensagem_template }}</textarea>
           </label>
           <div class="placeholder-chips">
             {% for ph in ["cliente", "veiculo", "valor", "forma_pagamento", "parcelas", "vendedor"] %}
-            <button type="button" class="placeholder-chip"
-                    onclick="const t=document.getElementById('mensagem-template'); const s=t.selectionStart||t.value.length; const v=t.value; t.value=v.slice(0,s)+'{{'{'}}{{ ph }}{{'}'}}'+v.slice(s); t.focus();">{{'{'}}{{ ph }}{{'}'}}</button>
+            <button type="button" class="placeholder-chip" x-on:click="inserir('{{ ph }}')">{{'{'}}{{ ph }}{{'}'}}</button>
             {% endfor %}
           </div>
           <p class="muted">Clique em um placeholder para inseri-lo no texto.</p>
@@ -193,6 +206,71 @@
 
         <div class="field settings-actions">
           <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="settings-tabs__panel settings-tabs__panel--rsd">
+      <div class="settings-panel-head">
+        <h2>Portal RSD</h2>
+        <p class="page-head__subtitle">
+          Credenciais da loja para puxar dados e consulta unitária (Base Estadual).
+        </p>
+      </div>
+
+      <div class="connection-status {{ 'connection-status--ok' if rsd_ok else 'connection-status--pending' }}">
+        <span class="connection-status__icon">{{ ui.icon("search") }}</span>
+        <div class="connection-status__text">
+          <strong>{{ "Integração conectada" if rsd_ok else "Integração não configurada" }}</strong>
+          <span>
+            {% if rsd_ok %}
+              Conta <code>{{ config_rsd.email }}</code> pronta para consultas.
+            {% else %}
+              Informe e-mail e senha do portal lojas.rsdsistema.com.br.
+            {% endif %}
+          </span>
+        </div>
+        {% if rsd_ok %}
+        <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
+        {% else %}
+        <span class="badge badge--neutral">Não configurado</span>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/ui/configuracoes/rsd" class="card card--pad settings-form">
+        <div class="modal-section">
+          <h4>{{ ui.icon("link") }} Credenciais</h4>
+          <div class="form-grid">
+            <label class="field field--full">
+              <span class="field__label">E-mail</span>
+              <input class="input" name="email" type="email" placeholder="loja@email.com"
+                     value="{{ config_rsd.email }}" autocomplete="off">
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Senha</span>
+              <span class="field-password" x-data="campoSenha">
+                <input class="input" name="senha" :type="visivel ? 'text' : 'password'"
+                       placeholder="•••••••• (deixe vazio para manter a senha atual)"
+                       autocomplete="new-password">
+                <button type="button" class="field-password__toggle" :class="{ 'is-visible': visivel }"
+                        :aria-label="visivel ? 'Ocultar senha' : 'Mostrar senha'" x-on:click="alternar()">
+                  <span class="field-password__icon-show">{{ ui.icon("eye") }}</span>
+                  <span class="field-password__icon-hide">{{ ui.icon("eye-off") }}</span>
+                </button>
+              </span>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">URL base</span>
+              <input class="input" name="base_url" placeholder="https://lojas.rsdsistema.com.br"
+                     value="{{ config_rsd.base_url }}" autocomplete="off">
+            </label>
+          </div>
+        </div>
+        <div class="field settings-actions" style="display:flex;gap:var(--s-2);flex-wrap:wrap">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
+          <button class="btn btn--default" type="submit" formaction="/ui/configuracoes/rsd/teste">
+            {{ ui.icon("refresh") }} Testar conexão
+          </button>
         </div>
       </form>
     </section>
@@ -294,7 +372,7 @@
           <span class="action-card__icon action-card__icon--accent">{{ ui.icon("sun") }}</span>
           <h3>Alternar tema</h3>
           <p class="muted">A preferência fica salva neste navegador.</p>
-          <button class="btn btn--primary" type="button" onclick="toggleTheme()">
+          <button class="btn btn--primary" type="button" x-on:click="alternarTema()">
             {{ ui.icon("sun") }} Alternar tema
           </button>
         </div>

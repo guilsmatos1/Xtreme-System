@@ -63,6 +63,4 @@ def decode_token(token: str) -> TokenData:
     try:
         return TokenData(username=payload["sub"], token_version=payload["tv"])
     except KeyError as exc:
-        raise jwt.InvalidTokenError(  # noqa: TRY003 -- exceção de terceiros, não dá pra mover a mensagem
-            "token sem claims obrigatórias"
-        ) from exc
+        raise jwt.InvalidTokenError("token sem claims obrigatórias") from exc

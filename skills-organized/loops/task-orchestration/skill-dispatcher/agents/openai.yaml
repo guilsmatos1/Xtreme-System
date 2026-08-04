@@ -1,0 +1,5 @@
+interface:
+  display_name: "Skill Dispatcher"
+  short_description: "Dispatch skill jobs to Orca agents from a jobs JSON"
+policy:
+  allow_implicit_invocation: false
