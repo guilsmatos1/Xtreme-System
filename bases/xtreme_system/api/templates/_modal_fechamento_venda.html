@@ -32,7 +32,8 @@
       <button class="btn btn--ghost" type="button" onclick="document.getElementById('modal').innerHTML=''">Fechar</button>
     </div>
     {% else %}
-    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita.">
+    <form hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita."
+          hx-sync="this:drop" hx-disabled-elt="find button[type='submit']">
       <div class="modal__body">
         <dl class="details-list">
           <div><dt>Receita</dt><dd>{{ ui.moeda(preview.receita) }}</dd></div>
