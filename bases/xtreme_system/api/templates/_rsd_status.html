@@ -1,5 +1,6 @@
 {% import "_macros.html" as ui %}
-<div id="rsd-status" class="rsd-status">
+{% set status_id = status_id or "rsd-status" %}
+<div id="{{ status_id }}" class="rsd-status">
   {% if erro %}{{ ui.alert(erro) }}{% endif %}
   {% if sucesso and not erro %}
   {{ ui.alert(sucesso) }}
@@ -20,16 +21,50 @@
 <script>
 (function () {
   var campos = {{ campos | tojson }};
-  var root = document.getElementById("modal") || document;
-  var form = root.querySelector("form");
+  var status = document.getElementById({{ status_id | tojson }});
+  var form = status && status.closest("form");
   if (!form) return;
+  var conflicts = [];
   Object.keys(campos).forEach(function (name) {
     var el = form.querySelector('[name="' + name + '"]');
     if (!el || campos[name] == null || campos[name] === "") return;
-    el.value = campos[name];
+    var value = String(campos[name]);
+    var current = String(el.value || "").trim();
+    if (current) {
+      if (current === value) return;
+      conflicts.push(name);
+      el.classList.add("rsd-field--conflict");
+      el.dataset.rsdSuggested = value;
+      el.title = "RSD sugere: " + value;
+      if (!el.nextElementSibling || !el.nextElementSibling.matches(".rsd-apply")) {
+        var apply = document.createElement("button");
+        apply.type = "button";
+        apply.className = "btn btn--ghost btn--sm rsd-apply";
+        apply.textContent = "Aplicar RSD";
+        apply.addEventListener("click", function () {
+          el.value = value;
+          el.classList.remove("rsd-field--conflict");
+          el.removeAttribute("title");
+          delete el.dataset.rsdSuggested;
+          apply.remove();
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        el.insertAdjacentElement("afterend", apply);
+      }
+      return;
+    }
+    el.value = value;
+    el.classList.add("rsd-field--filled");
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
   });
+  if (conflicts.length) {
+    var notice = document.createElement("p");
+    notice.className = "muted rsd-status__notice";
+    notice.textContent = "Campos já preenchidos foram preservados. Use “Aplicar RSD” para substituir.";
+    status.appendChild(notice);
+  }
 })();
 </script>
 {% endif %}

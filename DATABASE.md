@@ -21,6 +21,7 @@ O banco utiliza SQLAlchemy + Alembic (migrations em `alembic/versions/`). Abaixo
 | `papel` | `admin`, `funcionario` | `usuario.papel` |
 | `tipolancamento` | `aporte`, `custo`, `receita_venda`, `distribuicao_lucro` | `lancamento_investimento.tipo` |
 | `origemlancamento` | `manual`, `veiculo`, `fechamento_venda` | `lancamento_investimento.origem` |
+| `statusconsignacao` | `ativa`, `vendida`, `devolvida`, `cancelada` | `consignacao.status` |
 
 ---
 
@@ -287,6 +288,46 @@ Imagens de comprovantes de pagamento associados a uma compra.
 | `compra_id` | `INTEGER` | Não | - | FK → `compra.id` (CASCADE), indexado |
 | `url` | `VARCHAR` | Não | - | URL da imagem |
 
+### `consignacao`
+
+Registro de consignações de veículos.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `cliente_id` | `INTEGER` | Não | - | FK → `cliente.id` (RESTRICT), indexado |
+| `veiculo_id` | `INTEGER` | Não | - | FK → `veiculo.id` (RESTRICT), indexado |
+| `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado |
+| `idempotency_key` | `VARCHAR(64)` | Sim | - | Chave única para evitar duplicidades, indexado |
+| `data_consignacao` | `DATE` | Não | - | |
+| `data_vencimento` | `DATE` | Sim | - | |
+| `criado_em` | `DATETIME` | Não | `now()` | |
+| `valor_venda` | `NUMERIC(12,2)` | Não | - | Validado pela aplicação como `> 0` |
+| `comissao_percentual` | `NUMERIC(5,2)` | Sim | - | Entre 0 e 100% |
+| `observacoes` | `VARCHAR` | Sim | - | |
+| `status` | `statusconsignacao` | Não | `ativa` | `ativa`, `vendida`, `devolvida`, `cancelada` |
+
+### `imagem_contrato_consignacao`
+
+Imagens de contratos de consignação de veículos.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `consignacao_id` | `INTEGER` | Não | - | FK → `consignacao.id` (CASCADE), indexado |
+| `url` | `VARCHAR` | Não | - | URL do contrato/imagem |
+
+### `rsd_config`
+
+Credenciais e configurações do portal RSD. Linha única (`id` fixo em `1`), editável na tela de Configurações.
+
+| Coluna | Tipo | Nullable | Default | Observações |
+|--------|------|----------|---------|-------------|
+| `id` | `INTEGER` | Não | - | PK |
+| `email` | `VARCHAR` | Não | `''` | E-mail de autenticação no RSD |
+| `senha` | `VARCHAR` | Não | `''` | Senha de autenticação no RSD |
+| `base_url` | `VARCHAR` | Não | `'https://lojas.rsdsistema.com.br'` | URL base do portal RSD |
+
 ### `whatsapp_config`
 
 Configuração da notificação de vendas via WhatsApp (Evolution API). Linha única (`id` fixo em `1`), editável na tela de Configurações.
@@ -342,6 +383,9 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 - Um **fechamento de venda** pode ter várias **participações de investidores**.
 - Um **fechamento de venda** gera lançamentos automáticos em `lancamento_investimento`.
 - Uma **compra** pode ter vários **comprovantes de pagamento**.
+- Uma **consignação** pode ter várias **imagens de contratos** (`imagem_contrato_consignacao`).
+- Um **cliente** pode ter várias **consignações**.
+- Um **veículo** pode ter várias **consignações**.
 
 ---
 
@@ -382,3 +426,8 @@ Dados cadastrais da empresa. Linha única (`id` fixo em `1`), editável na tela 
 | `participacao_fechamento_venda` | `uq_participacao_fechamento_investidor` | `fechamento_venda_id`, `investidor_id` | Sim |
 | `imagem_documento_cliente` | `ix_imagem_documento_cliente_cliente_id` | `cliente_id` | Não |
 | `imagem_comprovante_compra` | `ix_imagem_comprovante_compra_compra_id` | `compra_id` | Não |
+| `consignacao` | `ix_consignacao_cliente_id` | `cliente_id` | Não |
+| `consignacao` | `ix_consignacao_idempotency_key` | `idempotency_key` | Sim |
+| `consignacao` | `ix_consignacao_usuario_id` | `usuario_id` | Não |
+| `consignacao` | `ix_consignacao_veiculo_id` | `veiculo_id` | Não |
+| `imagem_contrato_consignacao` | `ix_imagem_contrato_consignacao_consignacao_id` | `consignacao_id` | Não |

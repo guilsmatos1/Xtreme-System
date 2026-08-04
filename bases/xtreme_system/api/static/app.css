@@ -275,6 +275,9 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .input::placeholder { color: var(--text-tertiary); }
 .input:focus, .select:focus { border-color: var(--accent); box-shadow: var(--ring); outline: none; }
 .input:hover, .select:hover { border-color: var(--border-strong); }
+.input.rsd-field--filled { border-color: var(--success); }
+.input.rsd-field--conflict { border-color: var(--warning); }
+.rsd-apply { margin-left: var(--s-2); }
 .select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23868c96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right var(--s-3) center;
@@ -344,6 +347,7 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .card--pad { padding: var(--s-5); }
 .card--pad > h2 { display: flex; align-items: center; gap: var(--s-2); font-size: 1rem; margin-bottom: var(--s-5); color: var(--text); }
+.card--pad > h2 svg { width: 20px; height: 20px; flex: none; }
 .panel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); align-items: stretch; margin-bottom: var(--s-4); }
 .toolbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -682,6 +686,7 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   padding: var(--s-2) var(--s-3); border-radius: var(--r);
   font-size: .84rem; background: var(--danger-soft); color: var(--danger);
   border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent);
+  margin-bottom: var(--s-4);
 }
 .alert svg { width: 16px; height: 16px; flex: none; }
 .alert--success {
@@ -725,10 +730,11 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
   display: grid;
   place-items: center;
   padding: var(--s-6);
-  background-color: var(--canvas);
+  background-color: #0c0d0f;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(211, 47, 47, 0.12), transparent),
-    radial-gradient(circle at 90% 90%, rgba(22, 24, 29, 0.05), transparent 40%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240, 85, 69, 0.22), transparent),
+    radial-gradient(circle at 10% 90%, rgba(240, 85, 69, 0.08), transparent 40%),
+    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.03), transparent 30%);
   background-attachment: fixed;
 }
 .auth__card {
@@ -762,13 +768,6 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
 .auth__title { text-align: center; margin-bottom: var(--s-6); }
 .auth__title p { color: var(--text-secondary); font-size: .84rem; margin-top: var(--s-1); }
 .auth form { display: flex; flex-direction: column; gap: var(--s-4); }
-
-:root[data-theme="dark"] .auth {
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240, 85, 69, 0.22), transparent),
-    radial-gradient(circle at 10% 90%, rgba(240, 85, 69, 0.08), transparent 40%),
-    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.03), transparent 30%);
-}
 
 /* ---- 17. Utilities ------------------------------------------------------- */
 .stack { display: flex; flex-direction: column; gap: var(--s-4); }
@@ -840,6 +839,9 @@ form.htmx-request .btn--primary { pointer-events: none; opacity: .7; }
 form.htmx-request .btn--primary svg { animation: spin .6s linear infinite; }
 .sort-link.htmx-request { opacity: .5; }
 .search:has(.input.htmx-request) > svg:first-child { animation: spin .6s linear infinite; color: var(--accent); }
+
+/* ---- PDF preview (modal de contrato) ------------------------------------ */
+.pdf-preview { width: 100%; height: 70vh; border: 0; border-radius: var(--r-lg); background: var(--surface-2); }
 
 /* ---- Sortable column links (ponytail: inline, no icon deps) ---- */
 .sort-link {

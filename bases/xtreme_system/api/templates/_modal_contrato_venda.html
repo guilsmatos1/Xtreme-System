@@ -1,0 +1,27 @@
+{% import "_macros.html" as ui %}
+<div id="modal-content" class="modal" role="dialog" aria-modal="true">
+  <div class="modal__panel" style="max-width: 900px">
+    <div class="modal__head">
+      <h3 id="modal-contrato-title">Contrato — venda #{{ venda.id }}</h3>
+      <button class="icon-btn" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
+    </div>
+    <div class="modal__body">
+      {% if documento %}
+      <iframe class="pdf-preview" src="{{ documento.url }}" title="Contrato da venda {{ venda.id }}"></iframe>
+      {% else %}
+      {{ ui.empty("file", "Contrato ainda não gerado", "Clique em Processar para gerar o PDF do contrato desta venda.") }}
+      {% endif %}
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" type="button" @click="fechar()">Fechar</button>
+      {% if documento %}
+      <a class="btn btn--ghost" href="/ui/vendas/{{ venda.id }}/contrato" target="_blank" rel="noopener">{{ ui.icon("download") }} Baixar</a>
+      {% if pode_operacao(user, 'vendas', 'editar') %}
+      <button class="btn btn--primary" type="button" hx-post="/ui/vendas/{{ venda.id }}/contrato/processar" hx-target="#modal" hx-swap="innerHTML" hx-disabled-elt="this">{{ ui.icon("refresh") }} Reprocessar</button>
+      {% endif %}
+      {% elif pode_operacao(user, 'vendas', 'editar') %}
+      <button class="btn btn--primary" type="button" hx-post="/ui/vendas/{{ venda.id }}/contrato/processar" hx-target="#modal" hx-swap="innerHTML" hx-disabled-elt="this">{{ ui.icon("file") }} Processar</button>
+      {% endif %}
+    </div>
+  </div>
+</div>

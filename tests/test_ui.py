@@ -1324,7 +1324,7 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert criado.status_code == 200
     assert "Carlos Lima" in criado.text
     assert "HB20" not in criado.text
-    assert re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", criado.text)
+    assert re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", criado.text)
     assert "/07/2026" not in criado.text
 
     venda_id = client.get("/vendas", headers=headers).json()[0]["id"]

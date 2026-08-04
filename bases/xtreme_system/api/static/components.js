@@ -50,13 +50,19 @@
       return {
         aberto: false,
         gatilho: null,
+        limpezaTimer: null,
+        // $el do Alpine, nas expressões x-on dos filhos, aponta para o
+        // elemento do clique (ex.: botão Fechar) — não para #modal. Guardamos
+        // a raiz no init para fechar/sincronizar sempre operarem no container.
+        root: null,
 
         init: function () {
           var self = this;
+          this.root = this.$el;
           this.sincronizar();
           new MutationObserver(function () {
             self.sincronizar();
-          }).observe(this.$el, { childList: true });
+          }).observe(this.root, { childList: true });
 
           // O gatilho e capturado ANTES do swap: quando o modal entra, o htmx
           // ja trocou o conteudo e o botao perdeu o foco, entao o retorno
@@ -68,9 +74,55 @@
         },
 
         sincronizar: function () {
-          var aberto = !!this.$el.querySelector(".modal");
+          var aberto = !!this.root.querySelector(".modal");
           if (this.aberto && !aberto) this.restaurarFoco();
+          if (!aberto) {
+            clearTimeout(this.limpezaTimer);
+            this.limpezaTimer = null;
+          } else if (!this.aberto && aberto) {
+            // x-mask reformata valores (~1 frame após o swap). Adiamos a
+            // baseline do dirty check; fecharComConfirmacao faz flush se o
+            // usuário fechar antes do timer.
+            var self = this;
+            clearTimeout(this.limpezaTimer);
+            this.limpezaTimer = setTimeout(function () {
+              self.limpezaTimer = null;
+              self.marcarComoLimpo();
+            }, 50);
+          }
           this.aberto = aberto;
+        },
+
+        garantirBaseline: function () {
+          if (!this.limpezaTimer) return;
+          clearTimeout(this.limpezaTimer);
+          this.limpezaTimer = null;
+          this.marcarComoLimpo();
+        },
+
+        // Alinha defaultValue/defaultSelected/defaultChecked ao estado atual
+        // do formulário, para o dirty check não tratar máscara, botões ou
+        // <select> sem atributo selected como "alterado".
+        marcarComoLimpo: function () {
+          var form = this.root.querySelector("form");
+          if (!form) return;
+          Array.prototype.forEach.call(form.elements, function (field) {
+            if (field.type === "checkbox" || field.type === "radio") {
+              field.defaultChecked = field.checked;
+            } else if (field.tagName === "SELECT") {
+              Array.prototype.forEach.call(field.options, function (option) {
+                option.defaultSelected = option.selected;
+              });
+            } else if (
+              field.tagName !== "BUTTON" &&
+              field.type !== "button" &&
+              field.type !== "submit" &&
+              field.type !== "reset" &&
+              field.type !== "file"
+            ) {
+              field.defaultValue = field.value;
+            }
+          });
         },
 
         restaurarFoco: function () {
@@ -80,7 +132,7 @@
         },
 
         fechar: function () {
-          if (this.aberto) this.$el.innerHTML = "";
+          if (this.aberto) this.root.innerHTML = "";
         },
 
         // Fecha com confirmação se o formulário do modal tiver mudado —
@@ -88,9 +140,18 @@
         // check à mão. Usado pelo clique no backdrop e pelos botões
         // "Cancelar"/fechar dos formulários de _form_*.html.
         fecharComConfirmacao: function () {
-          var form = this.$el.querySelector("form");
+          this.garantirBaseline();
+          var form = this.root.querySelector("form");
           var changed = form && Array.prototype.some.call(form.elements, function (field) {
             if (field.disabled) return false;
+            if (
+              field.tagName === "BUTTON" ||
+              field.type === "button" ||
+              field.type === "submit" ||
+              field.type === "reset"
+            ) {
+              return false;
+            }
             if (field.type === "file") return field.files && field.files.length > 0;
             if (field.type === "checkbox" || field.type === "radio") {
               return field.checked !== field.defaultChecked;

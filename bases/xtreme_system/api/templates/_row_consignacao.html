@@ -8,7 +8,6 @@
   {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}<td data-col="modelo">{{ c.veiculo.modelo }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(c.valor_venda) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}<td class="cell-num" data-col="comissao">{{ c.comissao_percentual if c.comissao_percentual is not none else "-" }}{% if c.comissao_percentual is not none %}%{% endif %}</td>{% endif %}
-  {% if pode_ver_campo(user, 'consignacoes', 'data_vencimento') %}<td data-col="vencimento">{{ c.data_vencimento.strftime('%d/%m/%Y') if c.data_vencimento else "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'usuario') %}<td data-col="usuario">{{ (c.usuario.nome or c.usuario.username) if c.usuario else "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}<td data-col="observacoes">{{ c.observacoes or "-" }}</td>{% endif %}
   {% set pode_abrir_contrato = pode_operacao(user, 'consignacoes', 'abrir_contrato') %}

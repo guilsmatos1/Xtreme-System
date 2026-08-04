@@ -34,6 +34,7 @@ _DOSSIE_ID_RE = re.compile(r"/dossie/(\d+)/?")
 _POLL_INTERVAL_S = 2.0
 _POLL_TIMEOUT_S = 120.0
 _HTTP_TIMEOUT_S = 30.0
+_SESSION_EXPIRED_STATUS_CODES = frozenset({301, 302, 303, 307, 308, 401, 403})
 
 
 class RsdError(Exception):
@@ -267,7 +268,7 @@ class RsdClient:
             data={"placa": placa_norm},
             headers=headers,
         )
-        if resp.status_code in (401, 403):
+        if resp.status_code in _SESSION_EXPIRED_STATUS_CODES:
             # Sessão expirou — reloga uma vez
             self.login()
             headers = self._csrf_headers("/atpv/nova/")
@@ -388,26 +389,28 @@ class RsdClient:
         return resp.content
 
 
-def mapear_para_veiculo(dados: PuxarDadosResult) -> dict[str, Any]:
+def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[str, Any]:
     """Campos do formulário de veículo a partir do JSON puxar-dados."""
     out: dict[str, Any] = {}
     if dados.marca_modelo:
-        out["modelo"] = dados.marca_modelo
-        marca, _, _resto = dados.marca_modelo.partition("/")
-        if marca.strip():
-            out["marca"] = marca.strip()
+        marca, separador, resto = dados.marca_modelo.partition("/")
+        out[f"{prefix}modelo"] = (
+            resto.strip() if separador and resto.strip() else dados.marca_modelo
+        )
+        if separador and marca.strip():
+            out[f"{prefix}marca"] = marca.strip()
     if dados.ano is not None:
-        out["ano"] = dados.ano
+        out[f"{prefix}ano"] = dados.ano
     if dados.cor:
-        out["cor"] = dados.cor
+        out[f"{prefix}cor"] = dados.cor
     if dados.chassi:
-        out["chassi"] = dados.chassi
+        out[f"{prefix}chassi"] = dados.chassi
     if dados.renavam:
-        out["renavam"] = dados.renavam
+        out[f"{prefix}renavam"] = dados.renavam
     if dados.nome_proprietario:
-        out["proprietario_registrado"] = dados.nome_proprietario
+        out[f"{prefix}proprietario_registrado"] = dados.nome_proprietario
     if dados.placa:
-        out["placa"] = dados.placa
+        out[f"{prefix}placa"] = dados.placa
     return out
 
 

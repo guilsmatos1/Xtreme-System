@@ -69,9 +69,10 @@
         {% else %}
         <input type="hidden" name="idempotency_key" value="{{ dados.get('idempotency_key', idempotency_key) }}">
         <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        <input type="hidden" name="vei_tipo_entrada" value="compra">
         {% set passo_atual = dados.get('wizard_step', 1)|int %}
         <div class="stepper">
-          {% for rotulo in ["Cliente", "Veículo", "Valores", "Observações", "Comprovante"] %}
+          {% for rotulo in ["Cliente", "Veículo", "Valores", "Outros", "Comprovante"] %}
           {% if not loop.first %}
           <div class="stepper__connector{% if passo_atual > loop.index - 1 %} is-done{% endif %}"
                :class="{ 'is-done': step > {{ loop.index - 1 }} }"></div>
@@ -118,8 +119,16 @@
             <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field field--full">
+            <span class="field__label">CEP</span>
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Endereço</span>
             <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Complemento</span>
+            <input class="input" name="cli_complemento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_complemento', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
@@ -129,24 +138,21 @@
             <span class="field__label">Estado</span>
             <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
-          </label>
           {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
+          <label class="field field--full">
+            <span class="field__label">Placa *</span>
+            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
+          </label>
+          {{ ui.rsd_actions("vei_", "rsd-status-compra") }}
           <label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="vei_tipo" data-novo-veiculo required>
               {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
-          </label>
-          <label class="field field--full">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
           </label>
           <label class="field field--full">
             <span class="field__label">Modelo *</span>
@@ -157,12 +163,12 @@
             <input class="input" name="vei_marca" data-novo-veiculo value="{{ dados.get('vei_marca', '') }}">
           </label>
           <label class="field">
-            <span class="field__label">Cor *</span>
-            <input class="input" name="vei_cor" data-testid="compra-wizard-vehicle-color" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
-          </label>
-          <label class="field">
             <span class="field__label">Ano *</span>
             <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Cor *</span>
+            <input class="input" name="vei_cor" data-testid="compra-wizard-vehicle-color" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
           </label>
           <label class="field">
             <span class="field__label">Chassi</span>
@@ -182,8 +188,8 @@
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           {% if pode_ver_campo(user, 'compras', 'data_compra') %}
           <label class="field field--full">
-            <span class="field__label">Data da compra</span>
-            <input class="input" name="data_compra" type="date" value="{{ dados.get('data_compra', data_atual) }}">
+            <span class="field__label">Data da compra *</span>
+            <input class="input" name="data_compra" type="date" value="{{ dados.get('data_compra', data_atual) }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
@@ -202,12 +208,6 @@
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 4 %} is-active{% endif %}" data-step="4" :class="{ 'is-active': step === 4 }">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
-          <label class="field">
-            <span class="field__label">Tipo de Entrada *</span>
-            <select class="select" name="vei_tipo_entrada" data-novo-veiculo required>
-              {% for t in tipo_entradas %}<option value="{{ t.value }}"{% if dados.get('vei_tipo_entrada') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>
           <label class="field">
             <span class="field__label">Investidor *</span>
             <select class="select" name="vei_investidor_id" data-testid="compra-wizard-vehicle-investor" data-novo-veiculo required>

@@ -175,6 +175,7 @@ The following resources are managed through a generic CRUD interface. Each resou
 - **Clientes** - Clients/Customers
 - **Compras** - Purchases
 - **Vendas** - Sales
+- **Consignações** - Consignments
 
 ### CRUD Operations
 
@@ -186,6 +187,7 @@ For each resource, replace `{resource}` with one of:
 - `clientes`
 - `compras`
 - `vendas`
+- `consignacoes`
 
 #### List Resources
 
@@ -422,6 +424,15 @@ Pydantic (com `loc` do campo). Usuário não-admin recebe `403`.
 - `veiculo_id` (if provided) must reference an existing vehicle
 - `status` defaults to `pendente`
 
+### Consignações (Consignments)
+
+**Validation**:
+
+- `cliente_id` must reference an existing client
+- `veiculo_id` must reference an existing vehicle
+- `status` defaults to `ativa` (values: `ativa`, `vendida`, `devolvida`, `cancelada`)
+- `comissao_percentual` must be between 0 and 100
+
 ### Auditoria
 
 **Endpoint**: `GET /auditoria`
@@ -494,4 +505,4 @@ In addition to the JSON API, the application provides a server-rendered HTML UI 
 Páginas admin-only fora do catálogo de `perfil`: `/ui/dashboard`, `/ui/auditoria`,
 `/ui/perfis`, `/ui/usuarios`, `/ui/configuracoes` e `/ui/relatorios/dre`.
 
-**Note**: The UI reuses the same JWT in an HTTP-only cookie and applies page access rules based on the user's `perfil`. Beyond pages, a `perfil` can also restrict specific fields (hidden in the UI, denylist — visible by default) and write operations (allowlist — denied by default for non-admins) on a per-page basis via `Perfil.restricoes`. Applied across all 6 pages (`veiculos`, `investidores`, `clientes`, `compras`, `custos-veiculos`, `vendas`), including page-specific operations like `excluir_comprovante`, `excluir_documento`, and `fechar` (venda closing, which also hides profit/investor-payout fields). In `veiculos`, the restricted field catalog includes `preco`, `investidor`, `revisao`, and `debitos`.
+**Note**: The UI reuses the same JWT in an HTTP-only cookie and applies page access rules based on the user's `perfil`. Beyond pages, a `perfil` can also restrict specific fields (hidden in the UI, denylist — visible by default) and write operations (allowlist — denied by default for non-admins) on a per-page basis via `Perfil.restricoes`. Applied across all 7 pages (`veiculos`, `investidores`, `clientes`, `compras`, `custos-veiculos`, `vendas`, `consignacoes`), including page-specific operations like `excluir_comprovante`, `excluir_documento`, `excluir_contrato_consignacao` and `fechar` (venda closing, which also hides profit/investor-payout fields). In `veiculos`, the restricted field catalog includes `preco`, `investidor`, `revisao`, and `debitos`.

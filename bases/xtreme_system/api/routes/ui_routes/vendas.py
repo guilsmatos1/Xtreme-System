@@ -564,16 +564,55 @@ def _criar_venda_com_hooks(
     return obj
 
 
+def _ultimo_contrato_venda(session: Session, venda_id: int) -> Any:
+    documentos = documento_contrato_venda.list_by_venda(session, venda_id)
+    if not documentos:
+        return None
+    return max(documentos, key=lambda item: item.id)
+
+
 @router.get("/ui/vendas/{item_id}/contrato")
 def _baixar_contrato_venda(
     item_id: int, session: SessionDep, _: _BaixarContratoVendaDep
 ) -> RedirectResponse:
     obj = found(venda.get(session, item_id), "Venda")
-    documentos = documento_contrato_venda.list_by_venda(session, obj.id)
-    if not documentos:
+    documento = _ultimo_contrato_venda(session, obj.id)
+    if documento is None:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
-    documento = max(documentos, key=lambda item: item.id)
     return RedirectResponse(documento.url)
+
+
+@router.get("/ui/vendas/{item_id}/contrato/modal")
+def _modal_contrato_venda(
+    item_id: int, request: Request, session: SessionDep, user: _BaixarContratoVendaDep
+) -> HTMLResponse:
+    obj = found(venda.get(session, item_id), "Venda")
+    documento = _ultimo_contrato_venda(session, obj.id)
+    return templates.TemplateResponse(
+        request,
+        "_modal_contrato_venda.html",
+        {"venda": obj, "documento": documento, "user": user},
+    )
+
+
+@router.post("/ui/vendas/{item_id}/contrato/processar")
+def _processar_contrato_venda(
+    item_id: int, request: Request, session: SessionDep, user: _EditarVendaDep
+) -> HTMLResponse:
+    """Gera (ou regera) o PDF do contrato e devolve o modal atualizado.
+
+    Usado pelos botões Processar/Reprocessar do modal de contrato — a
+    geração é síncrona para que o HTMX possa exibir o PDF assim que a
+    resposta chegar, sem recarregar a página.
+    """
+    obj = found(venda.get(session, item_id), "Venda")
+    _persistir_contrato_venda(session, obj, user.id)
+    documento = _ultimo_contrato_venda(session, obj.id)
+    return templates.TemplateResponse(
+        request,
+        "_modal_contrato_venda.html",
+        {"venda": obj, "documento": documento, "user": user},
+    )
 
 
 @router.post("/ui/vendas/{item_id}/contrato/regerar")

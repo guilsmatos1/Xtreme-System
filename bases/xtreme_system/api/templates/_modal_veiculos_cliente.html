@@ -1,16 +1,16 @@
 {% import "_macros.html" as ui %}
 {% set _grupos = grupos or [{"titulo": None, "registros": registros, "kind": modal_kind, "empty_text": modal_empty_text}] %}
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-veiculos-title">
-  <div class="modal__panel">
+  <div class="modal__panel" style="max-width: 800px;">
     <div class="modal__head">
       <h2 id="modal-veiculos-title">{{ modal_title or "Veículos" }} — {{ cliente.nome }}</h2>
       <button class="btn btn--ghost btn--sm" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>
     </div>
     <div class="modal__body">
       {% for grupo in _grupos %}
-      {% if grupo.titulo %}<h3 class="modal__section">{{ grupo.titulo }}</h3>{% endif %}
+      {% if grupo.titulo %}<h3 class="modal__section" style="margin-top: var(--s-4);">{{ grupo.titulo }}</h3>{% endif %}
       {% if grupo.registros %}
-      <div class="table-wrap">
+      <div class="table-wrap" style="max-height: none; overflow-y: visible;">
         <table>
           <thead>
             <tr>

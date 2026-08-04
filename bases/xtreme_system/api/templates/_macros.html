@@ -224,6 +224,30 @@
 </div>
 {%- endmacro %}
 
+{% macro rsd_actions(prefix="", status_id="rsd-status") -%}
+<input type="hidden" name="rsd_prefix" value="{{ prefix }}">
+<input type="hidden" name="rsd_status_id" value="{{ status_id }}">
+<div class="field field--full rsd-actions">
+  <span class="field__label">RSD</span>
+  <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+    <button type="button" class="btn btn--ghost btn--sm"
+            hx-post="/ui/rsd/puxar-dados" hx-include="closest form"
+            hx-target="#{{ status_id }}" hx-swap="outerHTML"
+            hx-indicator="#{{ status_id }}-indicator">
+      {{ icon("refresh") }} Puxar dados
+    </button>
+    <button type="button" class="btn btn--ghost btn--sm"
+            hx-post="/ui/rsd/consulta-unitaria" hx-include="closest form"
+            hx-target="#{{ status_id }}" hx-swap="outerHTML"
+            hx-timeout="130000" hx-indicator="#{{ status_id }}-indicator">
+      {{ icon("search") }} Consulta unitária
+    </button>
+    <span id="{{ status_id }}-indicator" class="htmx-indicator muted">Consultando…</span>
+  </div>
+  <div id="{{ status_id }}" class="rsd-status"></div>
+</div>
+{%- endmacro %}
+
 {% macro paginacao(
     path,
     qs_base,

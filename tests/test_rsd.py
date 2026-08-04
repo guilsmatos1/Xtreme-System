@@ -177,10 +177,63 @@ def test_login_e_puxar_dados(rsd_client: rsd.RsdClient) -> None:
     assert dados.marca_modelo == "CHEV/ONIX 10MT LT2"
     assert dados.ano == 2025
     mapped = rsd.mapear_para_veiculo(dados)
-    assert mapped["modelo"] == "CHEV/ONIX 10MT LT2"
+    assert mapped["modelo"] == "ONIX 10MT LT2"
     assert mapped["marca"] == "CHEV"
     assert mapped["cor"] == "CINZA"
     assert mapped["chassi"] == "9BGEB48A0SG190437"
+
+
+def test_mapear_para_veiculo_preserva_modelo_sem_separador() -> None:
+    mapped = rsd.mapear_para_veiculo(
+        rsd.PuxarDadosResult(marca_modelo="MODELO SEM MARCA")
+    )
+    assert mapped == {"modelo": "MODELO SEM MARCA"}
+
+
+def test_puxar_dados_reloga_apos_redirect_de_sessao() -> None:
+    puxar_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal puxar_calls
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            puxar_calls += 1
+            if puxar_calls == 1:
+                return httpx.Response(302, headers={"Location": "/accounts/login/"})
+            return httpx.Response(200, json={"marca_modelo": "CHEV/ONIX"})
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        client.login()
+        dados = client.puxar_dados("TCM9G85")
+
+    assert puxar_calls == 2
+    assert dados.marca_modelo == "CHEV/ONIX"
 
 
 def test_login_credenciais_invalidas(rsd_client: rsd.RsdClient) -> None:
@@ -290,7 +343,28 @@ def test_ui_puxar_dados_com_mock(
     resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
     assert resp.status_code == 200
     assert "Dados carregados" in resp.text
-    assert "CHEV/ONIX" in resp.text
+    assert "ONIX 10MT LT2" in resp.text
+    assert "CHEV/ONIX 10MT LT2" not in resp.text
+
+
+def test_ui_puxar_dados_com_prefixo_de_wizard(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    _patch_client_from_config(monkeypatch)
+
+    resp = client.post(
+        "/ui/rsd/puxar-dados",
+        data={
+            "vei_placa": "TCM9G85",
+            "rsd_prefix": "vei_",
+            "rsd_status_id": "rsd-status-compra",
+        },
+    )
+    assert resp.status_code == 200
+    assert 'id="rsd-status-compra"' in resp.text
+    assert '"vei_modelo": "ONIX 10MT LT2"' in resp.text
 
 
 def test_ui_consulta_unitaria_com_mock(

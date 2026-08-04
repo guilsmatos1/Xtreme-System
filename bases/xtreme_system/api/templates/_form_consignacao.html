@@ -157,6 +157,7 @@
             <span class="field__label">Placa *</span>
             <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required>
           </label>
+          {{ ui.rsd_actions("vei_", "rsd-status-consignacao") }}
           <label class="field">
             <span class="field__label">Modelo *</span>
             <input class="input" name="vei_modelo" data-testid="consignacao-wizard-model" value="{{ dados.get('vei_modelo', '') }}" required>

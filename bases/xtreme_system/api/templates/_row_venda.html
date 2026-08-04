@@ -1,7 +1,7 @@
 {% import "_macros.html" as ui %}
 <tr id="venda-{{ v.id }}">
   {% set fechamento_id = fechamentos_by_venda.get(v.id) if fechamentos_by_venda is defined else none %}
-  {% if pode_ver_campo(user, 'vendas', 'data_venda') %}<td data-col="data">{{ v.criado_em.isoformat() }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'data_venda') %}<td data-col="data">{{ v.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'cliente') %}<td class="cell-strong" data-col="cliente">{{ v.cliente.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'veiculo') %}<td data-col="veiculo">{{ v.veiculo.modelo }} / {{ v.veiculo.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'vendedor') %}<td data-col="vendedor">{{ (v.vendedor.nome or v.vendedor.username) if v.vendedor else "-" }}</td>{% endif %}
@@ -28,7 +28,7 @@
   {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}<td class="cell-num" data-col="entrada">{% if v.valor_entrada is not none %}{{ ui.moeda(v.valor_entrada) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}<td class="cell-num" data-col="divida">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}{{ ui.moeda(v.valor_pendente) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}<td data-col="pagamento">{{ v.forma_pagamento }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'vendas', 'parcelas') %}<td class="cell-num" data-col="parcelas">{{ v.parcelas }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'parcelas') %}<td class="cell-num" data-col="parcelas">{{ v.parcelas if v.parcelas is not none else 0 }}</td>{% endif %}
   {% set pode_baixar_contrato = pode_operacao(user, 'vendas', 'baixar_contrato') %}
   {% set pode_editar = pode_operacao(user, 'vendas', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'vendas', 'excluir') %}
@@ -37,12 +37,7 @@
   <td class="col-actions" data-col="acoes" data-col-fixed>
     <div class="row-actions">
       {% if pode_baixar_contrato %}
-      <a class="btn btn--ghost btn--sm action-file" href="/ui/vendas/{{ v.id }}/contrato" target="_blank" rel="noopener" aria-label="Baixar contrato da venda {{ v.id }}">{{ ui.icon("file") }}</a>
-      {% endif %}
-      {% if pode_editar %}
-      <form method="post" action="/ui/vendas/{{ v.id }}/contrato/regerar" target="_blank" style="display:contents">
-        <button class="btn btn--ghost btn--sm" type="submit" title="Regerar contrato" aria-label="Regerar contrato da venda {{ v.id }}">{{ ui.icon("refresh") }}</button>
-      </form>
+      <button class="btn btn--ghost btn--sm action-file" type="button" hx-get="/ui/vendas/{{ v.id }}/contrato/modal" hx-target="#modal" hx-swap="innerHTML" aria-label="Contrato da venda {{ v.id }}">{{ ui.icon("file") }}</button>
       {% endif %}
       {% if pode_fechar and not fechamento_id and v.status.value == 'concluido' and not v.pagamento_pendente %}
       <button class="btn btn--ghost btn--sm action-cash" hx-get="/ui/vendas/{{ v.id }}/fechamento" hx-target="#modal" hx-swap="innerHTML" aria-label="Fechar venda {{ v.id }}">{{ ui.icon("cash") }}</button>

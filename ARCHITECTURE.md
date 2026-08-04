@@ -77,6 +77,7 @@ oauth2_scheme (OAuth2PasswordBearer)  →  get_current_user  →  CurrentUser
 | `/clientes` | GET, POST, PATCH, DELETE | idem |
 | `/compras` | GET, POST, PATCH, DELETE | idem |
 | `/vendas` | GET, POST, PATCH, DELETE | idem |
+| `/consignacoes` | GET, POST, PATCH, DELETE | idem |
 | `/auditoria` | GET | Admin |
 | `/vendas/{id}/fechamento/preview` | GET | CurrentUser + perfil `vendas`; oculta campos sensíveis |
 | `/vendas/{id}/fechamento` | POST | Admin |
@@ -120,6 +121,10 @@ para autenticação (httpOnly, mesmo segredo JWT) e `perfil` para autorização 
 | `/ui/vendas` | Listagem de vendas |
 | `/ui/vendas/{id}/fechamento` | Modal HTMX de fechamento financeiro |
 | `/ui/fechamentos-vendas/{id}` | Modal HTMX de detalhe do fechamento |
+| `/ui/consignacoes` | Gestão de consignações e contratos |
+| `/ui/rsd/puxar-dados` | Puxar dados do portal RSD |
+| `/ui/rsd/consulta-unitaria` | Consultar placa / criar dossiê RSD |
+| `/ui/rsd/dossie/{dossie_id}/pdf` | Baixar PDF de dossiê do RSD |
 | `/ui/perfis` | Gestão de perfis de acesso |
 | `/ui/usuarios` | Gestão de usuários |
 | `/ui/usuarios/{id}/editar` | Edição de usuário e vínculo com perfil |
@@ -143,14 +148,14 @@ controla ações de escrita. `admin` sempre passa em ambos. Ambos são globals d
 Jinja (`deps.py`) e `require_operacao(pagina, operacao)` é uma dependency
 factory para bloquear no servidor, não só esconder no HTML.
 
-Aplicado nas 6 páginas (`veiculos`, `investidores`, `clientes`, `compras`,
-`custos-veiculos`, `vendas`). Dois caminhos de implementação:
+Aplicado nas 7 páginas (`veiculos`, `investidores`, `clientes`, `compras`,
+`custos-veiculos`, `vendas`, `consignacoes`). Dois caminhos de implementação:
 - **Rotas geradas pela fábrica CRUD** (`crud_ui/routes.py`): passe
    `editar_dep`/`excluir_dep` (dependencies que substituem `UIAdmin`),
    `pagina` e `campos_form_map` (campo interno → nome do input HTML) para
    `register_crud_ui_routes`. A fábrica injeta `user` no contexto do form e
    remove do payload, antes da validação, os campos que o perfil não pode ver
-   — ver `custos_veiculos.py`, `compras.py`, `vendas.py`, `clientes.py`.
+   — ver `custos_veiculos.py`, `compras.py`, `vendas.py`, `clientes.py`, `consignacoes.py`.
 - **Rotas manuais** (sem fábrica): trocar a dependency `UIAdmin` por
   `Depends(require_operacao(pagina, operacao))` diretamente — ver
   `investidores.py` e as rotas de editar/excluir de `veiculos.py` (que
@@ -158,7 +163,7 @@ Aplicado nas 6 páginas (`veiculos`, `investidores`, `clientes`, `compras`,
   fábrica por já ter overrides próprios de create/update).
 
 Operações específicas fora do CRUD padrão também usam `require_operacao`:
-`excluir_comprovante` (compras), `excluir_documento` (clientes) e `fechar`
+`excluir_comprovante` (compras), `excluir_documento` (clientes), `excluir_contrato_consignacao` (consignações) e `fechar`
 (fechamento de venda, que também oculta Lucro Líquido/Participação por
 investidor via `pode_ver_campo` quando o perfil não tem esses campos
 liberados).
@@ -179,6 +184,8 @@ liberados).
 | `compra/` | `Compra` | Compras de veículos, status e comprovantes |
 | `custo_veiculo/` | `CustoVeiculo` | Custos operacionais por veículo, sem impacto em saldo de investidor |
 | `fechamento_venda/` | `FechamentoVenda`, `ParticipacaoFechamentoVenda` | Fecha financeiramente vendas concluídas, calcula lucro líquido, persiste snapshots e gera lançamentos automáticos no caixa |
+| `consignacao/` | `Consignacao` | Registro de consignações de veículos, status e comissões |
+| `rsd/` | `RsdConfig` | Integração com o portal RSD para consulta unitária e puxar dados de veículos |
 | `crud/` | — | Helpers CRUD compartilhados |
 | `documento_veiculo/` | — | Documentos de veículos (arquivos/imagens) |
 | `documento_procuracao/` | — | Documentos de procuração de veículos |
@@ -186,6 +193,7 @@ liberados).
 | `imagem_comprovante_venda/` | — | Comprovantes de venda |
 | `imagem_comprovante_compra/` | — | Comprovantes de compra |
 | `imagem_documento_cliente/` | — | Documentos de clientes |
+| `imagem_contrato_consignacao/` | — | Contratos de consignação |
 
 Cada componente segue o mesmo padrão interno: `core.py` exporta as funções
 públicas (CRUD e helpers), `models.py` define os modelos SQLAlchemy, e

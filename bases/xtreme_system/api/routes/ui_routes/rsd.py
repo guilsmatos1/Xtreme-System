@@ -11,6 +11,19 @@ from xtreme_system.rsd import core as rsd
 from xtreme_system.usuario import core as usuario
 
 router = APIRouter()
+_RSD_STATUS_IDS = {
+    "rsd-status",
+    "rsd-status-compra",
+    "rsd-status-consignacao",
+}
+
+
+def _normalize_status_id(value: str) -> str:
+    return value if value in _RSD_STATUS_IDS else "rsd-status"
+
+
+def _normalize_prefix(value: str) -> str:
+    return value if value in {"", "vei_"} else ""
 
 
 def _status_partial(
@@ -19,6 +32,7 @@ def _status_partial(
     erro: str | None = None,
     sucesso: str | None = None,
     unitaria: rsd.UnitariaResult | None = None,
+    status_id: str = "rsd-status",
     status_code: int = 200,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -28,6 +42,7 @@ def _status_partial(
             "erro": erro,
             "sucesso": sucesso,
             "unitaria": unitaria,
+            "status_id": _normalize_status_id(status_id),
         },
         status_code=status_code,
     )
@@ -39,21 +54,35 @@ def ui_rsd_puxar_dados(
     session: SessionDep,
     user: Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))],
     placa: Annotated[str, Form()] = "",
+    vei_placa: Annotated[str, Form()] = "",
+    rsd_prefix: Annotated[str, Form()] = "",
+    rsd_status_id: Annotated[str, Form()] = "rsd-status",
 ) -> HTMLResponse:
+    placa = placa or vei_placa
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
     except rsd.RsdNotConfiguredError as exc:
-        return _status_partial(request, erro=str(exc), status_code=400)
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id=rsd_status_id,
+            status_code=400,
+        )
 
     detach_request_session(request, keep=(user, config))
     try:
         with client:
             dados = client.puxar_dados(placa)
     except rsd.RsdError as exc:
-        return _status_partial(request, erro=str(exc), status_code=400)
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id=rsd_status_id,
+            status_code=400,
+        )
 
-    campos = rsd.mapear_para_veiculo(dados)
+    campos = rsd.mapear_para_veiculo(dados, prefix=_normalize_prefix(rsd_prefix))
     return templates.TemplateResponse(
         request,
         "_rsd_status.html",
@@ -62,6 +91,7 @@ def ui_rsd_puxar_dados(
             "campos": campos,
             "erro": None,
             "unitaria": None,
+            "status_id": _normalize_status_id(rsd_status_id),
         },
     )
 
@@ -72,24 +102,38 @@ def ui_rsd_consulta_unitaria(
     session: SessionDep,
     user: Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))],
     placa: Annotated[str, Form()] = "",
+    vei_placa: Annotated[str, Form()] = "",
+    rsd_status_id: Annotated[str, Form()] = "rsd-status",
 ) -> HTMLResponse:
+    placa = placa or vei_placa
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
     except rsd.RsdNotConfiguredError as exc:
-        return _status_partial(request, erro=str(exc), status_code=400)
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id=rsd_status_id,
+            status_code=400,
+        )
 
     detach_request_session(request, keep=(user, config))
     try:
         with client:
             resultado = client.consultar_unitaria_be(placa)
     except rsd.RsdError as exc:
-        return _status_partial(request, erro=str(exc), status_code=400)
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id=rsd_status_id,
+            status_code=400,
+        )
 
     return _status_partial(
         request,
         sucesso=resultado.status_display or "Consulta concluída.",
         unitaria=resultado,
+        status_id=rsd_status_id,
     )
 
 

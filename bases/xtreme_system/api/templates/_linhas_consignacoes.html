@@ -3,7 +3,7 @@
   {% for c in consignacoes %}
     {% include "_row_consignacao.html" %}
   {% else %}
-  <tr class="empty-row"><td colspan="11">
+  <tr class="empty-row"><td colspan="10">
     {% call ui.empty("inbox", "Nenhuma consignação encontrada", "Cadastre uma consignação para começar.") %}{% endcall %}
   </td></tr>
   {% endfor %}

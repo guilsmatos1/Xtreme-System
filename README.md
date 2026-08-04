@@ -113,7 +113,7 @@ Workspace Polylith (`workspace.toml`):
 | Pasta                       | Propósito                                                                                                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `bases/xtreme_system/api/`  | App FastAPI, templates Jinja2, arquivos estáticos                                                                                                                            |
-| `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `custo_veiculo`, `perfil`, `crud` e submódulos de imagens/documentos |
+| `components/xtreme_system/` | Domínio: `auth`, `database`, `usuario`, `veiculo`, `cliente`, `venda`, `caixa`, `investidor`, `compra`, `custo_veiculo`, `perfil`, `consignacao`, `rsd`, `crud` e submódulos de imagens/documentos |
 | `projects/inventory_api/`   | Projeto deployável — monta os bricks Polylith                                                                                                                                |
 | `development/`              | Scripts auxiliares: `create_admin.py`                                                                                                                                        |
 | `tests/`                    | Suite de testes; `make test` usa PostgreSQL migrado via Alembic; SQLite in-memory é fallback explícito para ciclos locais rápidos                                          |

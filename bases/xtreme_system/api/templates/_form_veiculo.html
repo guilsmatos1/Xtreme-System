@@ -50,25 +50,7 @@
             <input class="input" name="placa" value="{{ veiculo.placa }}" required style="text-transform:uppercase">
           </label>{% endif %}
           {% if pode_operacao(user, 'veiculos', 'editar') %}
-          <div class="field field--full rsd-actions">
-            <span class="field__label">RSD</span>
-            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
-              <button type="button" class="btn btn--ghost btn--sm"
-                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
-                      hx-target="#rsd-status" hx-swap="outerHTML"
-                      hx-indicator="#rsd-indicator">
-                {{ ui.icon("refresh") }} Puxar dados
-              </button>
-              <button type="button" class="btn btn--ghost btn--sm"
-                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
-                      hx-target="#rsd-status" hx-swap="outerHTML"
-                      hx-timeout="130000" hx-indicator="#rsd-indicator">
-                {{ ui.icon("search") }} Consulta unitária
-              </button>
-              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
-            </div>
-            <div id="rsd-status" class="rsd-status"></div>
-          </div>
+          {{ ui.rsd_actions() }}
           {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem</span>
@@ -139,8 +121,6 @@
                    data-selected-id="{{ veiculo.investidor_id }}">
             <input id="investidor-search" name="investidor_id" type="hidden" value="{{ veiculo.investidor_id }}">
             <datalist id="investidores-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="investidores-list" hidden>Carregar mais</button>
           </label>
           {% endif %}
 
@@ -170,25 +150,7 @@
             <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase">
           </label>{% endif %}
           {% if pode_operacao(user, 'veiculos', 'editar') %}
-          <div class="field field--full rsd-actions">
-            <span class="field__label">RSD</span>
-            <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
-              <button type="button" class="btn btn--ghost btn--sm"
-                      hx-post="/ui/rsd/puxar-dados" hx-include="[name='placa']"
-                      hx-target="#rsd-status" hx-swap="outerHTML"
-                      hx-indicator="#rsd-indicator">
-                {{ ui.icon("refresh") }} Puxar dados
-              </button>
-              <button type="button" class="btn btn--ghost btn--sm"
-                      hx-post="/ui/rsd/consulta-unitaria" hx-include="[name='placa']"
-                      hx-target="#rsd-status" hx-swap="outerHTML"
-                      hx-timeout="130000" hx-indicator="#rsd-indicator">
-                {{ ui.icon("search") }} Consulta unitária
-              </button>
-              <span id="rsd-indicator" class="htmx-indicator muted">Consultando…</span>
-            </div>
-            <div id="rsd-status" class="rsd-status"></div>
-          </div>
+          {{ ui.rsd_actions() }}
           {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
             <span class="field__label">Modelo *</span>
@@ -228,8 +190,6 @@
                    data-selected-id="{{ dados.get('investidor_id', '') }}">
             <input id="investidor-search" name="investidor_id" type="hidden" value="{{ dados.get('investidor_id', '') }}">
             <datalist id="investidores-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="investidores-list" hidden>Carregar mais</button>
           </label>
         </fieldset>
 
@@ -244,8 +204,6 @@
             <input id="cliente-vendedor-search" name="cliente_vendedor_id" type="hidden"
                    value="{{ dados.get('cliente_vendedor_id', '') }}">
             <datalist id="clientes-vendedor-list"></datalist>
-            <button type="button" class="btn btn--ghost btn--sm reference-load-more"
-                    data-reference-list="clientes-vendedor-list" hidden>Carregar mais</button>
             <small class="field__hint">Deixe vazio para cadastrar um novo cliente.</small>
           </label>
 
