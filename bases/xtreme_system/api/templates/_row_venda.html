@@ -51,7 +51,7 @@
       <button class="btn btn--ghost btn--sm action-edit" hx-get="/ui/vendas/{{ v.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar venda {{ v.id }}">{{ ui.icon("edit") }}</button>
       {% endif %}
       {% if pode_excluir %}
-      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/vendas/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir esta venda?" aria-label="Excluir venda {{ v.id }}">{{ ui.icon("trash") }}</button>
+      <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="/ui/vendas/{{ v.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir a venda de {{ v.cliente.nome }} — {{ v.veiculo.modelo }} / {{ v.veiculo.placa }}?" aria-label="Excluir venda {{ v.id }}">{{ ui.icon("trash") }}</button>
       {% endif %}
     </div>
   </td>
