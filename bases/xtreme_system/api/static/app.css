@@ -365,9 +365,13 @@ textarea.input { height: auto; padding: var(--s-2) var(--s-3); }
 .stat--warning .stat__label svg { color: var(--warning); }
 .stat--warning .stat__value { color: var(--warning); }
 
-.stat--info { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 28%, transparent); }
-.stat--info .stat__label svg { color: var(--danger); }
-.stat--info .stat__value { color: var(--danger); }
+.stat--info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 28%, transparent); }
+.stat--info .stat__label svg { color: var(--info); }
+.stat--info .stat__value { color: var(--info); }
+
+.stat--cost { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 28%, transparent); }
+.stat--cost .stat__label svg { color: var(--danger); }
+.stat--cost .stat__value { color: var(--danger); }
 
 /* ---- 10. Table ----------------------------------------------------------- */
 .table-wrap { position: relative; max-height: calc(100dvh - 220px); overflow: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
