@@ -72,6 +72,7 @@ from xtreme_system.api.deps import (
     UIUser,
     found,
     get_ui_user,
+    require_operacao,
     require_ui_admin,
 )
 from xtreme_system.perfil import core as perfil
@@ -340,8 +341,18 @@ def register_export_route(
     *,
     config: CrudUIExportRouteConfig[EntityT],
 ) -> None:
+    dep = (
+        require_operacao(config.pagina, "exportar")
+        if config.pagina is not None
+        else get_ui_user
+    )
+
     @app.get(f"{prefix}/exportar")
-    def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
+    def _exportar(
+        session: SessionDep,
+        user: Annotated[usuario.Usuario, Depends(dep)],
+        q: str = "",
+    ) -> Response:
         lista = query_list(
             session, module, listing=config.listing, state=ListState(q=q)
         )

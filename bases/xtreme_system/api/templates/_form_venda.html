@@ -359,6 +359,17 @@
               <span class="field__label">Proprietário Registrado</span>
               <input class="input" name="veic_troca_proprietario_registrado" value="{{ dados.get('veic_troca_proprietario_registrado', '') }}" disabled>
             </label>
+            <label class="field">
+              <span class="field__label">Valor de avaliação (R$) *</span>
+              <input class="input" name="veic_troca_preco" value="{{ dados.get('veic_troca_preco', '') }}" type="text" inputmode="decimal" required disabled>
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Investidor *</span>
+              <select class="select" name="veic_troca_investidor_id" required disabled>
+                <option value="">Selecione</option>
+                {% for i in investidores %}<option value="{{ i.id }}"{% if dados.get('veic_troca_investidor_id')|string == i.id|string %} selected{% endif %}>{{ i.nome }}</option>{% endfor %}
+              </select>
+            </label>
             <hr class="form-grid__divider">
             {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
             <label class="field">

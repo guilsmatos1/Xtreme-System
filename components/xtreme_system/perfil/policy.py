@@ -148,6 +148,7 @@ CAMPOS_FORM_PROTEGIDOS: dict[str, dict[str, str]] = {
 OPERACOES: dict[str, list[tuple[str, str]]] = {
     "veiculos": [
         ("editar", "Editar"),
+        ("exportar", "Exportar"),
         ("excluir", "Excluir"),
         ("abrir_cliente_vendedor", "Abrir cliente vendedor"),
         ("upload_documento", "Upload de documento do veículo"),
@@ -158,16 +159,22 @@ OPERACOES: dict[str, list[tuple[str, str]]] = {
         ("enviar_procuracao", "Enviar documentos de procuração"),
         ("excluir_procuracao", "Excluir documentos de procuração"),
     ],
-    "investidores": [("editar", "Editar"), ("excluir", "Excluir")],
+    "investidores": [
+        ("editar", "Editar"),
+        ("exportar", "Exportar"),
+        ("excluir", "Excluir"),
+    ],
     "clientes": [
         ("cadastrar", "Cadastrar"),
         ("editar", "Editar"),
+        ("exportar", "Exportar"),
         ("excluir", "Excluir"),
         ("excluir_documento", "Excluir documento"),
     ],
     "compras": [
         ("cadastrar", "Cadastrar"),
         ("editar", "Editar"),
+        ("exportar", "Exportar"),
         ("excluir", "Excluir"),
         ("abrir_comprovante", "Abrir comprovantes"),
         ("enviar_comprovante", "Enviar comprovantes"),
@@ -176,15 +183,21 @@ OPERACOES: dict[str, list[tuple[str, str]]] = {
     "consignacoes": [
         ("cadastrar", "Cadastrar"),
         ("editar", "Editar"),
+        ("exportar", "Exportar"),
         ("excluir", "Excluir"),
         ("abrir_contrato", "Abrir contratos"),
         ("enviar_contrato", "Enviar contratos"),
         ("excluir_contrato", "Excluir contrato"),
     ],
-    "custos-veiculos": [("editar", "Editar"), ("excluir", "Excluir")],
+    "custos-veiculos": [
+        ("editar", "Editar"),
+        ("exportar", "Exportar"),
+        ("excluir", "Excluir"),
+    ],
     "vendas": [
         ("cadastrar", "Cadastrar"),
         ("editar", "Editar"),
+        ("exportar", "Exportar"),
         ("excluir", "Excluir"),
         ("baixar_contrato", "Baixar contrato"),
         ("fechar", "Fechar venda"),

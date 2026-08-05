@@ -8,9 +8,11 @@
     <p class="page-head__subtitle">Gerencie o estoque de veículos da operação</p>
   </div>
   <div class="page-head__actions">
+    {% if pode_operacao(user, 'veiculos', 'exportar') %}
     <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
       {{ ui.icon("inbox") }} Exportar
     </a>
+    {% endif %}
   </div>
 </div>
 

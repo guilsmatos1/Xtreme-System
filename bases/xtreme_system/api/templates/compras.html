@@ -8,9 +8,11 @@
     <p class="page-head__subtitle">Registre e acompanhe as compras de veículos</p>
   </div>
   <div class="page-head__actions">
+    {% if pode_operacao(user, 'compras', 'exportar') %}
     <a class="btn btn--ghost" href="/ui/compras/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
       {{ ui.icon("inbox") }} Exportar
     </a>
+    {% endif %}
     {% if pode_operacao(user, 'compras', 'cadastrar') %}
     <button class="btn btn--primary" data-testid="compras-create" hx-get="/ui/compras/novo" hx-target="#modal" hx-swap="innerHTML">
       {{ ui.icon("plus") }} Nova compra

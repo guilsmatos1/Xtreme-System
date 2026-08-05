@@ -218,6 +218,8 @@ def test_catalogos_cobrem_as_seis_paginas_do_rollout() -> None:
     ):
         chaves = {chave for chave, _ in perfil.OPERACOES.get(pagina, [])}
         assert {"editar", "excluir"} <= chaves
+    for pagina in perfil.PAGINAS_VALIDAS:
+        assert {"exportar"} <= {chave for chave, _ in perfil.OPERACOES[pagina]}
     for pagina in ("clientes", "compras", "vendas"):
         assert {"cadastrar"} <= {chave for chave, _ in perfil.OPERACOES[pagina]}
     assert {"excluir_documento"} <= {chave for chave, _ in perfil.OPERACOES["clientes"]}

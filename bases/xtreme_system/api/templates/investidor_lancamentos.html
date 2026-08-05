@@ -13,9 +13,11 @@
     </p>
   </div>
   <div class="page-head__actions">
+    {% if pode_operacao(user, 'investidores', 'exportar') %}
     <a class="btn btn--ghost" href="/ui/investidores/{{ investidor_id }}/lancamentos/exportar">
       {{ ui.icon("inbox") }} Exportar
     </a>
+    {% endif %}
     <a class="btn btn--ghost" href="/ui/investidores">{{ ui.icon("wallet") }} Voltar aos investidores</a>
     {% if is_admin(user) %}
     <button class="btn btn--primary" data-testid="lancamentos-create" hx-get="/ui/investidores/{{ investidor_id }}/lancamentos/novo" hx-target="#modal" hx-swap="innerHTML">

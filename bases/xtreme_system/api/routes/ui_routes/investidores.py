@@ -185,7 +185,12 @@ def ui_investidores(
 
 
 @router.get("/ui/investidores/exportar")
-def ui_investidores_exportar(session: SessionDep, _: UIUser) -> Response:
+def ui_investidores_exportar(
+    session: SessionDep,
+    _: Annotated[
+        usuario.Usuario, Depends(require_operacao("investidores", "exportar"))
+    ],
+) -> Response:
     investidores = investidor.list_all(session)
     saldos = caixa.saldos(session)
     num_v, val_v, tot_a = caixa.agregados_investidores(session)

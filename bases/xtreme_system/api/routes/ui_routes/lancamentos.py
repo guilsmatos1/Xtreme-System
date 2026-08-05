@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -19,6 +19,7 @@ from xtreme_system.api.deps import (
     UIAdmin,
     UIUser,
     found,
+    require_operacao,
     templates,
 )
 from xtreme_system.caixa import core as caixa
@@ -159,7 +160,11 @@ def ui_investidor_lancamentos(
 
 @router.get("/ui/investidores/{investidor_id}/lancamentos/exportar")
 def ui_investidor_lancamentos_exportar(
-    investidor_id: int, session: SessionDep, _: UIUser
+    investidor_id: int,
+    session: SessionDep,
+    _: Annotated[
+        usuario.Usuario, Depends(require_operacao("investidores", "exportar"))
+    ],
 ) -> Response:
     investidor_obj = found(investidor.get(session, investidor_id), "Investidor")
     lancamentos = caixa.list_by_investidor(session, investidor_id)

@@ -623,8 +623,12 @@ def test_ui_perfis_novo_exibe_cadastro_de_clientes_compras_e_vendas(
     for modulo in ("Clientes", "Compras", "Vendas"):
         assert f"{modulo} — Operações permitidas" in pagina.text
     assert 'name="op__clientes__cadastrar"' in pagina.text
+    assert 'name="op__clientes__editar"' in pagina.text
+    assert 'name="op__clientes__exportar"' in pagina.text
     assert 'name="op__compras__cadastrar"' in pagina.text
+    assert 'name="op__compras__exportar"' in pagina.text
     assert 'name="op__vendas__cadastrar"' in pagina.text
+    assert 'name="op__vendas__exportar"' in pagina.text
 
 
 def test_ui_perfis_salva_cadastro_de_compras_e_vendas(client: TestClient) -> None:
@@ -1720,7 +1724,7 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
     assert 'id="veiculo-troca-search"' not in resp.text
     assert "Quilometragem *</span>" in resp.text
     assert re.search(r'name="km"[^>]*required', resp.text)
-    assert "Débitos do veículo *</span>" in resp.text
+    assert "Débitos do veículo (R$) *</span>" in resp.text
     assert re.search(r'name="debitos"[^>]*required', resp.text)
     assert resp.text.count('name="veic_troca_tipo" required') == 1
     for campo in (
@@ -3208,6 +3212,7 @@ def test_ui_exportacao_respeita_permissao_de_campo(client: TestClient) -> None:
             "nome": "Sem Preco",
             "paginas": "veiculos",
             "oculto__veiculos__preco": "on",
+            "op__veiculos__exportar": "on",
         },
     )
     client.post(
@@ -3226,6 +3231,63 @@ def test_ui_exportacao_respeita_permissao_de_campo(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "Preco" not in resp.text
     assert "85000.00" not in resp.text
+
+
+def test_ui_exportacao_exige_permissao_do_perfil(client: TestClient) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={"nome": "Leitor de veiculos", "paginas": "veiculos"},
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "leitor_veiculos",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "leitor_veiculos", "password": "abc"})
+
+    pagina = client.get("/ui/veiculos")
+    exportacao = client.get("/ui/veiculos/exportar")
+
+    assert pagina.status_code == 200
+    assert "Exportar" not in pagina.text
+    assert exportacao.status_code == 403
+
+
+def test_ui_clientes_exibe_cadastro_para_perfil_autorizado(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    client.post(
+        "/ui/perfis",
+        data={
+            "nome": "Cadastro de clientes",
+            "paginas": "clientes",
+            "op__clientes__cadastrar": "on",
+            "op__clientes__editar": "on",
+        },
+    )
+    client.post(
+        "/ui/usuarios",
+        data={
+            "username": "cadastro_clientes",
+            "senha": "abc",
+            "papel": "funcionario",
+            "perfil_id": "1",
+        },
+    )
+    client.post("/ui/login", data={"username": "cadastro_clientes", "password": "abc"})
+
+    pagina = client.get("/ui/clientes/todos")
+    novo = client.get("/ui/clientes/todos/novo")
+
+    assert pagina.status_code == 200
+    assert 'data-testid="clientes-create"' in pagina.text
+    assert novo.status_code == 200
 
 
 def test_ui_clientes_modal_cadastro_cria_cliente(client: TestClient) -> None:
