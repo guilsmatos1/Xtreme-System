@@ -48,6 +48,7 @@ from xtreme_system.api.routes.ui_routes.uploads import (
 from xtreme_system.caixa import core as caixa
 from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
+from xtreme_system.crud import core as crud
 from xtreme_system.custo_veiculo import core as custo_veiculo
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
@@ -440,7 +441,7 @@ async def _atualizar_veiculo(
         debitos_raw = str(form.get("debitos") or "").strip()
         if debitos_raw:
             try:
-                debitos = Decimal(debitos_raw.replace(",", "."))
+                debitos = Decimal(crud.parse_decimal_br(debitos_raw))
             except Exception:
                 return _erro_veiculo(
                     request, session, user, "Débitos inválidos", item_id

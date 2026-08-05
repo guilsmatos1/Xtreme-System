@@ -161,7 +161,7 @@
 
 | # | Passo | Resultado Esperado |
 |---|-------|-------------------|
-| 1 | Clicar "Exportar dados" | Download de CSV iniciado |
+| 1 | Clicar "Exportar" | Download de CSV iniciado |
 | 2 | Exportar com busca ativa | CSV filtrado pelo termo de busca |
 
 ### 4.4 Modal de Edição

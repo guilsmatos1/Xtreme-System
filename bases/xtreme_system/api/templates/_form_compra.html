@@ -16,34 +16,16 @@
 
         {% if compra %}
         <div class="form-grid">
-          {% if pode_ver_campo(user, 'compras', 'cliente') %}
-          <div class="field">
-            <span class="field__label">Cliente</span>
-            <div class="input">{{ compra.cliente.nome }}{% if compra.cliente.documento %} · {{ compra.cliente.documento }}{% endif %}</div>
-          </div>
-          {% endif %}
-          {% if pode_ver_campo(user, 'compras', 'veiculo') %}
-          <div class="field">
-            <span class="field__label">Veículo</span>
-            <div class="input">{{ compra.veiculo.placa }} · {{ compra.veiculo.modelo }}</div>
-          </div>
-          {% endif %}
-          {% if pode_ver_campo(user, 'compras', 'data_compra') %}
-          <label class="field">
-            <span class="field__label">Data da compra</span>
-            <input class="input" name="data_compra" type="date" value="{{ compra.data_compra.isoformat() if compra and compra.data_compra else '' }}"{% if compra %} readonly{% endif %}>
-          </label>
-          {% endif %}
-
           {% if pode_ver_campo(user, 'compras', 'status') %}
-          <label class="field">
-            <span class="field__label">Estado</span>
+          <label class="field field--full">
+            <span class="field__label">Status</span>
             <select class="select" name="status">
               <option value="pendente"{% if compra and compra.status.value == "pendente" %} selected{% endif %}>Pendente</option>
               <option value="concluido"{% if compra and compra.status.value == "concluido" %} selected{% endif %}>Concluído</option>
               <option value="cancelado"{% if compra and compra.status.value == "cancelado" %} selected{% endif %}>Cancelado</option>
             </select>
           </label>
+          <hr class="form-grid__divider">
           {% endif %}
 
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
@@ -103,7 +85,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
@@ -113,7 +95,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
@@ -122,7 +104,7 @@
           <hr class="form-grid__divider" x-show="!clienteExistente">
           <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}" x-mask="99999-999">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Endereço</span>
@@ -147,7 +129,7 @@
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
           <label class="field field--plate">
             <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
+            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>
           {{ ui.rsd_actions("vei_", "rsd-status-compra", true) }}
           <label class="field field--full">

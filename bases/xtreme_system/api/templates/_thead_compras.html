@@ -1,0 +1,16 @@
+{% import "_macros.html" as ui %}
+{% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
+<thead id="cabecalho-linhas"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <tr>
+    {% if pode_ver_campo(user, 'compras', 'data_compra') %}<th data-col="data" data-col-label="Data/Hora" aria-sort="{{ ui.sortable_aria("data", sort, order) }}">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'cliente') %}<th data-col="cliente" data-col-label="Nome do Cliente" aria-sort="{{ ui.sortable_aria("cliente", sort, order) }}">{{ ui.sortable("cliente", "Nome do Cliente", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'documento_cliente') %}<th data-col="documento" data-col-label="DOCUMENTO" aria-sort="{{ ui.sortable_aria("documento", sort, order) }}">{{ ui.sortable("documento", "DOCUMENTO", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'status') %}<th data-col="status" data-col-label="STATUS" aria-sort="{{ ui.sortable_aria("status", sort, order) }}">{{ ui.sortable("status", "STATUS", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'placa') %}<th data-col="placa" data-col-label="Placa" aria-sort="{{ ui.sortable_aria("placa", sort, order) }}">{{ ui.sortable("placa", "Placa", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'veiculo') %}<th data-col="modelo" data-col-label="Veículo" aria-sort="{{ ui.sortable_aria("modelo", sort, order) }}">{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'valor_compra') %}<th data-col="valor" data-col-label="Valor" aria-sort="{{ ui.sortable_aria("valor", sort, order) }}">{{ ui.sortable("valor", "Valor", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'usuario') %}<th data-col="usuario" data-col-label="Usuário" aria-sort="{{ ui.sortable_aria("usuario", sort, order) }}">{{ ui.sortable("usuario", "Usuário", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_ver_campo(user, 'compras', 'observacoes') %}<th data-col="observacoes" data-col-label="Observações" aria-sort="{{ ui.sortable_aria("observacoes", sort, order) }}">{{ ui.sortable("observacoes", "Observações", sort, order, "/ui/compras", extra_qs=sort_qs) }}</th>{% endif %}
+    {% if pode_operacao(user, 'compras', 'abrir_comprovante') or pode_operacao(user, 'compras', 'editar') or pode_operacao(user, 'compras', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+  </tr>
+</thead>

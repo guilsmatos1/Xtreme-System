@@ -1,0 +1,6 @@
+{% import "_macros.html" as ui %}
+<thead id="cabecalho-linhas"{% if oob %} hx-swap-oob="true"{% endif %}><tr>
+  <th data-col="nome" data-col-label="Nome" aria-sort="{{ ui.sortable_aria("nome", sort, order) }}">{{ ui.sortable("nome", "Nome", sort, order, "/ui/perfis") }}</th>
+  <th data-col="paginas" data-col-label="Páginas">Páginas</th>
+  <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
+</tr></thead>

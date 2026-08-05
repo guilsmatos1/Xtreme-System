@@ -1,9 +1,9 @@
 """Usuário: enum de papel, model, schemas e CRUD."""
 
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
@@ -67,6 +67,18 @@ class UsuarioCreate(BaseModel):
     papel: Papel = Papel.funcionario
     perfil_id: int | None = None
 
+    @field_validator("username", mode="before")
+    @classmethod
+    def _validar_username(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto_obrigatorio(value)
+
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _normalizar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto(value)
+
 
 class UsuarioUpdate(BaseModel):
     username: str
@@ -74,6 +86,18 @@ class UsuarioUpdate(BaseModel):
     papel: Papel = Papel.funcionario
     ativo: bool = True
     perfil_id: int | None = None
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def _validar_username(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto_obrigatorio(value)
+
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _normalizar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto(value)
 
 
 class UsuarioRead(BaseModel):

@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -34,6 +34,7 @@ __all__ = [
     "PerfilRead",
     "PerfilUpdate",
     "campos_form_visiveis",
+    "campos_ocultados",
     "create",
     "delete",
     "get",
@@ -68,6 +69,17 @@ def campos_form_visiveis(
     return filtered_data
 
 
+def campos_ocultados(user: usuario.Usuario, pagina: str | None) -> set[str]:
+    """Nomes de campo (schema) ocultados do form deste usuário nesta página."""
+    if pagina is None:
+        return set()
+    return {
+        campo_form
+        for campo, campo_form in CAMPOS_FORM_PROTEGIDOS.get(pagina, {}).items()
+        if not pode_ver_campo(user, pagina, campo)
+    }
+
+
 class Perfil(Base):
     __tablename__ = "perfil"
 
@@ -83,11 +95,25 @@ class PerfilCreate(BaseModel):
     paginas: list[str] = []
     restricoes: dict[str, Any] = {}
 
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _validar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto_obrigatorio(value)
+
 
 class PerfilUpdate(BaseModel):
     nome: str | None = None
     paginas: list[str] | None = None
     restricoes: dict[str, Any] | None = None
+
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _validar_nome(cls, value: Any) -> Any:
+        _ = cls
+        if value is None:
+            return None
+        return crud.trim_texto_obrigatorio(value)
 
 
 class PerfilRead(BaseModel):
@@ -126,6 +152,8 @@ def delete(session: Session, obj: Perfil, actor_id: int | None = None) -> None:
 
 
 def pagina_da_rota(path: str) -> str | None:
+    if path == "/consultas" or path.startswith("/consultas/"):
+        return "veiculos"
     if not path.startswith("/ui/"):
         return None
     segmento = path.removeprefix("/ui/").split("/", 1)[0]

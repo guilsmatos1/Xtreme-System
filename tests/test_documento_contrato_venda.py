@@ -128,6 +128,7 @@ def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
     assert "Gol" in texto
     assert "Volkswagen" in texto
     assert "12345678901" in texto
+    assert "Documento: 12345678901" in texto
     assert "ABC1D23" in texto
 
 

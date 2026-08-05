@@ -41,21 +41,15 @@ def test_ocultar_coluna_esconde_thead_e_tbody(page: Page, live_server_url: str) 
 
 
 @pytest.mark.e2e
-def test_preferencia_de_coluna_persiste_apos_reload(
-    page: Page, live_server_url: str
-) -> None:
+def test_marca_nao_faz_parte_da_tabela(page: Page, live_server_url: str) -> None:
     _login(page, live_server_url)
+
+    coluna_marca = page.locator('table[data-table="veiculos"] [data-col="marca"]')
+    expect(coluna_marca).to_have_count(0)
 
     page.locator("[data-cols-btn]").click()
     modal = page.get_by_test_id("modal-colunas")
-    modal.locator("li[data-idx] label", has_text="Marca").locator(
-        'input[type="checkbox"]'
-    ).uncheck()
-    page.get_by_test_id("colunas-fechar").click()
-
-    page.reload()
-    coluna_th = page.locator('table[data-table="veiculos"] thead th[data-col="marca"]')
-    expect(coluna_th).to_have_class("col-hidden")
+    expect(modal.locator("li[data-idx] label", has_text="Marca")).to_have_count(0)
 
 
 @pytest.mark.e2e

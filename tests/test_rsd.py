@@ -80,7 +80,7 @@ def _login_post(request: httpx.Request) -> httpx.Response:
 
 @_route("POST", "/atpv/puxar-dados/")
 def _puxar_dados(request: httpx.Request) -> httpx.Response:
-    if "placa=FAIL1" in request.content.decode():
+    if "placa=FAI1L23" in request.content.decode():
         return httpx.Response(422, json={"erro": "placa inválida"})
     return httpx.Response(
         200,
@@ -262,7 +262,7 @@ def test_puxar_dados_erro_do_portal(rsd_client: rsd.RsdClient) -> None:
     with rsd_client:
         rsd_client.login()
         with pytest.raises(rsd.RsdConsultaError, match="placa inválida"):
-            rsd_client.puxar_dados("FAIL1")
+            rsd_client.puxar_dados("FAI1L23")
 
 
 def test_puxar_dados_timeout_vira_erro_da_integracao() -> None:
@@ -287,6 +287,78 @@ def test_puxar_dados_timeout_vira_erro_da_integracao() -> None:
         client.login()
         with pytest.raises(rsd.RsdTimeoutError, match="não respondeu a tempo"):
             client.puxar_dados("TCM9G85")
+
+
+def test_puxar_dados_payload_invalido_vira_erro_da_integracao() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            return httpx.Response(200, json={"ano": {"nao": "é ano"}})
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client, pytest.raises(rsd.RsdConsultaError, match="Resposta inválida"):
+        client.puxar_dados("TCM9G85")
+
+
+def test_puxar_dados_falha_de_conexao_vira_erro_da_integracao() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            raise httpx.ConnectError("portal indisponível", request=request)
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client, pytest.raises(rsd.RsdConsultaError, match="Falha ao consultar"):
+        client.puxar_dados("TCM9G85")
 
 
 def test_client_from_config_exige_credenciais(db_session: Session) -> None:
@@ -370,6 +442,26 @@ def test_ui_puxar_dados_sem_config(client: TestClient) -> None:
     resp = client.post("/ui/rsd/puxar-dados", data={"placa": "ABC1D23"})
     assert resp.status_code == 400
     assert "Configure" in resp.text or "configur" in resp.text.lower()
+    assert 'role="alert"' in resp.text
+    assert 'id="rsd-status"' in resp.text
+
+
+def test_ui_puxar_dados_placa_vazia(client: TestClient) -> None:
+    _login_ui(client)
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": ""})
+    assert resp.status_code == 400
+    assert "Informe a placa" in resp.text
+    assert 'role="alert"' in resp.text
+    assert "data-rsd-campos=" not in resp.text
+
+
+def test_ui_puxar_dados_placa_invalida(client: TestClient) -> None:
+    _login_ui(client)
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "XX"})
+    assert resp.status_code == 400
+    assert "Placa inválida" in resp.text
+    assert 'role="alert"' in resp.text
+    assert "data-rsd-campos=" not in resp.text
 
 
 def test_ui_puxar_dados_com_mock(
@@ -382,8 +474,11 @@ def test_ui_puxar_dados_com_mock(
     resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
     assert resp.status_code == 200
     assert "Dados carregados" in resp.text
+    assert "alert--success" in resp.text
+    assert "data-rsd-campos=" in resp.text
     assert "ONIX 10MT LT2" in resp.text
     assert "CHEV/ONIX 10MT LT2" not in resp.text
+    assert "<script>" not in resp.text
 
 
 def test_ui_puxar_dados_timeout_retorna_feedback_htmx(
@@ -409,6 +504,8 @@ def test_ui_puxar_dados_timeout_retorna_feedback_htmx(
 
     assert resp.status_code == 400
     assert "não respondeu a tempo" in resp.text
+    assert 'role="alert"' in resp.text
+    assert 'id="rsd-status"' in resp.text
 
 
 def test_ui_puxar_dados_com_prefixo_de_wizard(
@@ -428,7 +525,10 @@ def test_ui_puxar_dados_com_prefixo_de_wizard(
     )
     assert resp.status_code == 200
     assert 'id="rsd-status-compra"' in resp.text
-    assert '"vei_modelo": "ONIX 10MT LT2"' in resp.text
+    assert "data-rsd-campos=" in resp.text
+    assert "vei_modelo" in resp.text
+    assert "ONIX 10MT LT2" in resp.text
+    assert "alert--success" in resp.text
 
 
 def _ultima_consulta(**filtros: object) -> rsd.RsdConsulta | None:
@@ -539,7 +639,7 @@ def test_ui_puxar_dados_registra_consulta_erro(
     _salvar_config_rsd(client)
     _patch_client_from_config(monkeypatch)
 
-    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "FAIL1"})
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "FAI1L23"})
     assert resp.status_code == 400
 
     assert len(chamadas) == 1
@@ -610,8 +710,8 @@ def test_ui_pdf_com_mock(client: TestClient, monkeypatch: pytest.MonkeyPatch) ->
 def test_pagina_da_rota_rsd_mapeia_para_veiculos() -> None:
     assert perfil.pagina_da_rota("/ui/rsd/puxar-dados") == "veiculos"
     assert perfil.pagina_da_rota("/ui/rsd/dossie/1/pdf") == "veiculos"
-    assert perfil.pagina_da_rota("/ui/rsd/consultas") == "veiculos"
-    assert perfil.pagina_da_rota("/ui/rsd/consultas/1/detalhe") == "veiculos"
+    assert perfil.pagina_da_rota("/consultas") == "veiculos"
+    assert perfil.pagina_da_rota("/consultas/1/detalhe") == "veiculos"
 
 
 # ---- Histórico de consultas (listagem, filtros e rotas) ----
@@ -758,7 +858,7 @@ def historico_client(make_client: Callable[..., TestClient]) -> TestClient:
 
 def test_ui_rsd_consultas_admin_retorna_200(historico_client: TestClient) -> None:
     _login_ui(historico_client)
-    resp = historico_client.get("/ui/rsd/consultas")
+    resp = historico_client.get("/consultas")
     assert resp.status_code == 200
     assert "Consultas" in resp.text
     assert "TCM9G85" in resp.text
@@ -775,7 +875,7 @@ def test_ui_rsd_consultas_nao_admin_retorna_403(
         follow_redirects=False,
     )
     assert resp.status_code in (200, 302, 303)
-    resp = client.get("/ui/rsd/consultas")
+    resp = client.get("/consultas")
     assert resp.status_code == 403
 
 
@@ -784,15 +884,15 @@ def test_ui_rsd_consultas_detalhe_contem_payload(
 ) -> None:
     _login_ui(historico_client)
 
-    listagem = historico_client.get("/ui/rsd/consultas")
+    listagem = historico_client.get("/consultas")
     assert listagem.status_code == 200
 
     # Pega o id da primeira linha de detalhe disponível
-    match = re.search(r"/ui/rsd/consultas/(\d+)/detalhe", listagem.text)
+    match = re.search(r"/consultas/(\d+)/detalhe", listagem.text)
     assert match is not None
     consulta_id = int(match.group(1))
 
-    resp = historico_client.get(f"/ui/rsd/consultas/{consulta_id}/detalhe")
+    resp = historico_client.get(f"/consultas/{consulta_id}/detalhe")
     assert resp.status_code == 200
     assert "Payload do portal" in resp.text
     assert "Campos aplicados" in resp.text

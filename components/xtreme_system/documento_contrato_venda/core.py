@@ -316,7 +316,13 @@ def _bloco_pagamento(pdf: FPDF, venda_obj: "Venda") -> None:
     pdf.ln(4)
 
     pdf.set_font("Helvetica", "B", 9)
-    pdf.cell(0, 5, "Documento", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        5,
+        f"Documento: {venda_obj.cliente.documento}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
     pdf.cell(0, 5, "Valor do Documento:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     consultor = venda_obj.vendedor.nome if venda_obj.vendedor is not None else ""
     pdf.cell(

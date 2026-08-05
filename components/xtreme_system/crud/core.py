@@ -1,5 +1,6 @@
 """CRUD genérico: list_all, get, create, update, delete para qualquer model."""
 
+from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
 from sqlalchemy.orm import Session
@@ -9,6 +10,43 @@ from xtreme_system.auditoria.core import auditar, snapshot
 
 def flush(session: Session) -> None:
     session.flush()
+
+
+def parse_decimal_br(value: Any) -> Any:
+    """Normaliza valores monetários digitados em formulários (pt-BR ou US).
+
+    Aceita "1.234,56" (BR), "1234.56" (US/inputmode=decimal) e tipos não-str
+    (int, float, Decimal, None) sem alteração — a validação de tipo/faixa
+    fica a cargo do Field do schema chamador.
+    """
+    if not isinstance(value, str):
+        return value
+    texto = value.strip()
+    if not texto:
+        return None
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
+    try:
+        Decimal(texto)
+    except InvalidOperation:
+        return value
+    return texto
+
+
+def trim_texto_obrigatorio(value: Any) -> Any:
+    """Remove espaços e rejeita string vazia/whitespace-only em campo obrigatório."""
+    if isinstance(value, str):
+        value = value.strip()
+    if not value:
+        raise ValueError("Campo obrigatório")
+    return value
+
+
+def trim_texto(value: Any) -> Any:
+    """Remove espaços de um campo string opcional, sem rejeitar vazio."""
+    if isinstance(value, str):
+        return value.strip()
+    return value
 
 
 def list_all[M](

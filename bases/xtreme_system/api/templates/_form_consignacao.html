@@ -110,7 +110,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="consignacao-wizard-owner-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-testid="consignacao-wizard-owner-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
@@ -120,7 +120,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="consignacao-wizard-owner-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="consignacao-wizard-owner-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
@@ -129,7 +129,7 @@
           <hr class="form-grid__divider" x-show="!clienteExistente">
           <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}" x-mask="99999-999">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Endereço</span>
@@ -155,7 +155,7 @@
           {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}
           <label class="field field--plate">
             <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase">
+            <input class="input" name="vei_placa" data-testid="consignacao-wizard-plate" value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>
           {{ ui.rsd_actions("vei_", "rsd-status-consignacao", true) }}
           <label class="field field--full">

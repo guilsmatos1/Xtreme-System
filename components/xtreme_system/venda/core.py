@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -174,6 +174,25 @@ class VendaCreate(BaseModel):
     valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
 
+    @field_validator(
+        "valor_venda",
+        "valor_entrada",
+        "debitos",
+        "valor_diferenca",
+        "valor_pendente",
+        mode="before",
+    )
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
+
+    @field_validator("forma_pagamento", mode="before")
+    @classmethod
+    def _validar_forma_pagamento(cls, value: object) -> object:
+        _ = cls
+        return crud.trim_texto_obrigatorio(value)
+
     @model_validator(mode="after")
     def validar_valores(self) -> Self:
         validar_coerencia_valores(self.valor_venda, self.valor_entrada)
@@ -201,6 +220,27 @@ class VendaUpdate(BaseModel):
     pagamento_pendente: bool = False
     valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
+
+    @field_validator(
+        "valor_venda",
+        "valor_entrada",
+        "debitos",
+        "valor_diferenca",
+        "valor_pendente",
+        mode="before",
+    )
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
+
+    @field_validator("forma_pagamento", mode="before")
+    @classmethod
+    def _validar_forma_pagamento(cls, value: object) -> object:
+        _ = cls
+        if value is None:
+            return None
+        return crud.trim_texto_obrigatorio(value)
 
 
 def validate_valores_venda_update(venda_obj: Venda, data: VendaUpdate) -> None:

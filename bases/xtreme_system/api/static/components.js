@@ -31,6 +31,37 @@
       callback: null,
     });
 
+    /* Padrões de x-mask:dynamic para campos cujo formato depende do que já
+       foi digitado. O servidor sempre recebe/normaliza por dígitos (ver
+       normalizar_documento/normalizar_telefone/normalizar_cep em
+       cliente/core.py e normalizar_placa em veiculo/core.py) — a máscara é
+       só affordance visual, nunca a fonte de verdade do valor salvo. Por
+       isso, ao contrário de valores monetários (ver filters.js), não há
+       risco de ambiguidade de dígito aqui. */
+    Alpine.magic("maskDocumento", function () {
+      return function (input) {
+        var digitos = String(input || "").replace(/\D/g, "");
+        return digitos.length > 11 ? "99.999.999/9999-99" : "999.999.999-99";
+      };
+    });
+
+    Alpine.magic("maskTelefone", function () {
+      return function (input) {
+        var digitos = String(input || "").replace(/\D/g, "");
+        return digitos.length > 10 ? "(99) 99999-9999" : "(99) 9999-9999";
+      };
+    });
+
+    Alpine.magic("maskPlaca", function () {
+      return function (input) {
+        var limpo = String(input || "")
+          .replace(/[^A-Za-z0-9]/g, "")
+          .toUpperCase();
+        var mercosul = limpo.length >= 5 && /[A-Z]/.test(limpo.charAt(4));
+        return mercosul ? "aaa9a99" : "aaa9999";
+      };
+    });
+
     /* Foco dos modais servidos pelo servidor.
 
        Os modais chegam por swap do HTMX dentro de #modal, então não há um
@@ -200,8 +231,14 @@
         ativo: !!ativoInicial,
         modoNovo: String(modoNovoInicial) === "1",
         veiculoId: "",
+        // Mesma razão do wizard/modalFoco: aoBuscar/aoResolverReferencia vêm
+        // do @input do campo de busca e cadastrarNovo do @click do botão, e
+        // nessas expressões $el é o próprio elemento do evento — buscar o
+        // hidden dentro dele não acha nada.
+        raiz: null,
 
         init: function () {
+          this.raiz = this.$el;
           var hidden = this.hiddenId();
           this.veiculoId = hidden ? hidden.value : "";
           this.$watch("ativo", this.aplicar.bind(this));
@@ -211,11 +248,11 @@
         },
 
         hiddenId: function () {
-          return this.$el.querySelector("#veiculo-troca-search");
+          return this.raiz.querySelector("#veiculo-troca-search");
         },
 
         busca: function () {
-          return this.$el.querySelector("#veiculo-troca-input");
+          return this.raiz.querySelector("#veiculo-troca-input");
         },
 
         // Fonte da verdade da UI e do que vai para o servidor.
@@ -254,7 +291,7 @@
         // ja tiver corrigido no formulario de cadastro.
         preencherPlaca: function () {
           if (!this.modoNovo) return;
-          var placa = this.$el.querySelector("#veic-troca-placa");
+          var placa = this.raiz.querySelector("#veic-troca-placa");
           var busca = this.busca();
           if (placa && busca && !placa.value) {
             placa.value = busca.value.trim().toUpperCase();
@@ -266,7 +303,7 @@
           // O original so zera valores ao desligar a troca ou ao escolher um
           // veiculo existente; ao apenas recolher o bloco, preserva o digitado.
           var limpar = !this.ativo || !!this.veiculoId;
-          var campos = this.$el.querySelectorAll(
+          var campos = this.raiz.querySelectorAll(
             "[data-novo-veiculo-troca] input, [data-novo-veiculo-troca] select"
           );
           Array.prototype.forEach.call(campos, function (campo) {
@@ -387,9 +424,15 @@
       return {
         step: Number(inicial) || 1,
         total: 1,
+        // $el do Alpine, nas expressões x-on dos filhos, aponta para o
+        // elemento do clique (ex.: botão Próximo) — não para a <form>. Sem a
+        // raiz guardada aqui, validStep() buscava .wizard-step dentro do
+        // botão, não achava nada e liberava o avanço com campos vazios.
+        raiz: null,
 
         init: function () {
-          this.total = this.$el.querySelectorAll(".wizard-step").length || 1;
+          this.raiz = this.$el;
+          this.total = this.raiz.querySelectorAll(".wizard-step").length || 1;
         },
 
         proximo: function () {
@@ -415,7 +458,7 @@
         // checkValidity (texto não vazio), mas o hidden fica vazio se o
         // usuário não selecionou um item da lista.
         validStep: function (n) {
-          var passo = this.$el.querySelector('.wizard-step[data-step="' + n + '"]');
+          var passo = this.raiz.querySelector('.wizard-step[data-step="' + n + '"]');
           if (!passo) return true;
           var controls = passo.querySelectorAll("input, select, textarea");
           for (var i = 0; i < controls.length; i++) {
@@ -587,5 +630,84 @@
         },
       };
     });
+  });
+
+  /* Preenche o form do modal com o retorno de POST /ui/rsd/puxar-dados.
+     O partial _rsd_status.html traz data-rsd-campos; o apply roda após o
+     swap (htmx:load) para não depender de <script> irmão do outerHTML. */
+  var PLACA_RE = /^[A-Z]{3}(?:[0-9]{4}|[0-9][A-Z][0-9]{2})$/;
+
+  function normalizarPlaca(value) {
+    return String(value || "").replace(/[^0-9A-Za-z]/g, "").toUpperCase();
+  }
+
+  function mensagemPlacaRsd(value) {
+    var placa = normalizarPlaca(value);
+    if (!placa) return "Informe a placa para puxar dados.";
+    if (!PLACA_RE.test(placa)) return "Placa inválida";
+    return null;
+  }
+
+  function mostrarErroRsdStatus(statusId, msg) {
+    var status = document.getElementById(statusId);
+    if (!status) return;
+    status.outerHTML =
+      '<div id="' + statusId + '" class="field field--full rsd-status" aria-live="polite">' +
+      '<div class="alert" role="alert"><span></span></div></div>';
+    var novo = document.getElementById(statusId);
+    if (novo) {
+      var span = novo.querySelector("span");
+      if (span) span.textContent = msg;
+    }
+  }
+
+  function aplicarCamposRsd(statusEl) {
+    var raw = statusEl.getAttribute("data-rsd-campos");
+    if (!raw) return;
+    var campos;
+    try {
+      campos = JSON.parse(raw);
+    } catch (err) {
+      return;
+    }
+    var form = statusEl.closest("form");
+    if (!form) return;
+    Object.keys(campos).forEach(function (name) {
+      var el = form.querySelector('[name="' + name + '"]');
+      if (!el || campos[name] == null || campos[name] === "") return;
+      el.value = String(campos[name]);
+      el.classList.add("rsd-field--filled");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  document.body.addEventListener("htmx:beforeRequest", function (event) {
+    var elt = event.detail && event.detail.elt;
+    if (!elt || !elt.getAttribute) return;
+    var post = elt.getAttribute("hx-post") || "";
+    if (post.indexOf("/ui/rsd/puxar-dados") === -1) return;
+
+    var form = elt.closest("form");
+    if (!form) return;
+    var prefixEl = form.querySelector('[name="rsd_prefix"]');
+    var statusEl = form.querySelector('[name="rsd_status_id"]');
+    var prefix = prefixEl ? prefixEl.value : "";
+    var statusId = (statusEl && statusEl.value) || "rsd-status";
+    var fieldName = prefix === "vei_" ? "vei_placa" : "placa";
+    var input = form.querySelector('[name="' + fieldName + '"]');
+    var erro = mensagemPlacaRsd(input ? input.value : "");
+    if (!erro) return;
+
+    event.preventDefault();
+    mostrarErroRsdStatus(statusId, erro);
+    if (input) input.focus();
+  });
+
+  document.body.addEventListener("htmx:load", function (event) {
+    var elt = event.detail && event.detail.elt;
+    if (elt && elt.getAttribute && elt.getAttribute("data-rsd-campos")) {
+      aplicarCamposRsd(elt);
+    }
   });
 })();

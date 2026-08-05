@@ -58,7 +58,16 @@ def parse_venda_form(form: Any) -> dict[str, Any]:
         data["valor_pendente"] = None
     if data.get("datas_pagamento") == "":
         data["datas_pagamento"] = None
-    data["pagamento_pendente"] = bool(data.get("pagamento_pendente"))
+    raw_pp = data.get("pagamento_pendente")
+    if isinstance(raw_pp, bool):
+        data["pagamento_pendente"] = raw_pp
+    else:
+        data["pagamento_pendente"] = str(raw_pp or "").lower() in (
+            "true",
+            "1",
+            "on",
+            "sim",
+        )
     if not data.get("data_venda"):
         data["data_venda"] = str(datetime.now(UTC).date())
     return data

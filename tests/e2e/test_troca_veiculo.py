@@ -35,7 +35,7 @@ def _abrir_passo_troca(page: Page, live_server_url: str) -> None:
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     page.get_by_test_id("venda-wizard-next").click()
 
 

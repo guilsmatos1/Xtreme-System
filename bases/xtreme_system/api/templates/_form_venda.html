@@ -1,5 +1,7 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
+{% set formas_pagamento = [('a_vista', 'À vista'), ('financiamento', 'Financiamento'), ('dinheiro', 'Dinheiro'), ('pix', 'PIX')] %}
+{% set forma_vals = ['a_vista', 'financiamento', 'dinheiro', 'pix'] %}
 <div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel{% if not venda %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mv-title">
     <div class="modal__head">
@@ -15,12 +17,8 @@
 
         {% if venda %}
         <div class="form-grid" x-data="trocaVeiculo({{ 1 if (venda.veiculo_troca_id or dados.get('houve_troca')) else 0 }}, '{{ dados.get('veiculo_troca_novo', '0') }}')">
-          {% if pode_ver_campo(user, 'vendas', 'km') %}
-          <label class="field">
-            <span class="field__label">KM</span>
-            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', venda.km if venda.km is not none else '') }}">
-          </label>
-          {% endif %}
+
+
           {% if pode_ver_campo(user, 'vendas', 'status') %}
           <label class="field">
             <span class="field__label">Status *</span>
@@ -31,7 +29,17 @@
             </select>
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'km') %}
+          <label class="field">
+            <span class="field__label">Quilometragem</span>
+            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', venda.km if venda.km is not none else '') }}">
+          </label>
+          {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'valor_venda') or pode_ver_campo(user, 'vendas', 'valor_entrada') or pode_ver_campo(user, 'vendas', 'debitos') %}
+          <hr class="form-grid__divider">
+          <h3 class="modal__section field--full">Valores</h3>
+          {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}
           <label class="field">
             <span class="field__label">Valor da venda *</span>
@@ -51,10 +59,22 @@
           </label>
           {% endif %}
 
+          {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') or pode_ver_campo(user, 'vendas', 'parcelas') or pode_ver_campo(user, 'vendas', 'pagamento_pendente') or pode_ver_campo(user, 'vendas', 'valor_pendente') or pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
+          <hr class="form-grid__divider">
+          <h3 class="modal__section field--full">Pagamento</h3>
+          {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
+          {% set forma_atual = dados.get('forma_pagamento', venda.forma_pagamento) %}
           <label class="field">
             <span class="field__label">Forma de pagamento *</span>
-            <input class="input" name="forma_pagamento" value="{{ dados.get('forma_pagamento', venda.forma_pagamento) }}" required>
+            <select class="select" name="forma_pagamento" required>
+              {% for val, label in formas_pagamento %}
+              <option value="{{ val }}"{% if forma_atual == val %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+              {% if forma_atual and forma_atual not in forma_vals %}
+              <option value="{{ forma_atual }}" selected>{{ forma_atual }}</option>
+              {% endif %}
+            </select>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
@@ -63,8 +83,32 @@
             <input class="input" name="parcelas" type="number" min="1" value="{{ dados.get('parcelas', venda.parcelas) }}">
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
+          {% set pp = dados.get('pagamento_pendente') if 'pagamento_pendente' in dados else venda.pagamento_pendente %}
+          <label class="field">
+            <span class="field__label">Pagamento pendente</span>
+            <select class="select" name="pagamento_pendente">
+              <option value="true"{% if pp in (true, 'true', '1', 'on', 1) %} selected{% endif %}>Sim</option>
+              <option value="false"{% if pp not in (true, 'true', '1', 'on', 1) %} selected{% endif %}>Não</option>
+            </select>
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
+          <label class="field">
+            <span class="field__label">Valor pendente</span>
+            <input class="input" name="valor_pendente" type="text" inputmode="decimal" value="{{ dados.get('valor_pendente', venda.valor_pendente if venda.valor_pendente is not none else '') }}">
+          </label>
+          {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
+          <label class="field field--full">
+            <span class="field__label">Datas de pagamento</span>
+            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', venda.datas_pagamento if venda.datas_pagamento is not none else '') }}">
+          </label>
+          {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') or pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
+          <hr class="form-grid__divider">
+          <h3 class="modal__section field--full">Troca</h3>
           <label class="field field--full">
             <span class="field__label">Troca</span>
             <label>
@@ -85,8 +129,6 @@
             <datalist id="veiculos-troca-list"></datalist>
             <span id="veiculo-troca-nao-encontrado" x-show="ativo" style="display:none"><button type="button" id="cadastrar-veiculo-troca" @click="cadastrarNovo()" class="btn btn--ghost btn--sm">Cadastrar novo veículo</button></span>
           </label>
-          {% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
           <input type="hidden" :value="modoNovoEnviado" id="veiculo-troca-novo" name="veiculo_troca_novo" value="{{ dados.get('veiculo_troca_novo', '0') }}">
           <div class="form-grid" id="novo-veiculo-troca-campos" data-troca data-novo-veiculo-troca
                x-show="mostrarNovos" style="{% if not dados.get('veiculo_troca_novo') %}display:none{% endif %}">
@@ -151,29 +193,10 @@
             <input class="input" name="valor_diferenca" type="text" inputmode="decimal" value="{{ dados.get('valor_diferenca', venda.valor_diferenca if venda.valor_diferenca is not none else '') }}">
           </label>
           {% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
-          <label class="field">
-            <span class="field__label">Pagamento pendente</span>
-            <label>
-              <input name="pagamento_pendente" type="checkbox"{% if (dados.get('pagamento_pendente') if 'pagamento_pendente' in dados else venda.pagamento_pendente) %} checked{% endif %}>
-              Faltou parte do pagamento?
-            </label>
-          </label>
-          {% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}
-          <label class="field">
-            <span class="field__label">Valor pendente</span>
-            <input class="input" name="valor_pendente" type="text" inputmode="decimal" value="{{ dados.get('valor_pendente', venda.valor_pendente if venda.valor_pendente is not none else '') }}">
-          </label>
-          {% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'datas_pagamento') %}
-          <label class="field field--full">
-            <span class="field__label">Datas de pagamento</span>
-            <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', venda.datas_pagamento if venda.datas_pagamento is not none else '') }}">
-          </label>
-          {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
+          <hr class="form-grid__divider">
+          <h3 class="modal__section field--full">Outros</h3>
           <label class="field field--full">
             <span class="field__label">Observações</span>
             <textarea class="input" name="observacoes" rows="4">{{ dados.get('observacoes', venda.observacoes or '') }}</textarea>
@@ -196,6 +219,7 @@
           </div>
           {% endfor %}
         </div>
+        <hr class="form-grid__divider">
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }" x-data="{ clienteExistente: '{{ dados.get('cliente_id', '') }}' }">
           {% if pode_ver_campo(user, 'vendas', 'cliente') %}
@@ -208,13 +232,9 @@
               {% endfor %}
             </select>
           </label>
-          <label x-show="!clienteExistente" class="field field--full">
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-testid="venda-wizard-client-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
@@ -223,16 +243,27 @@
             </select>
           </label>
           <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Documento (CPF/CNPJ) *</span>
+            <input class="input" name="cli_documento" data-testid="venda-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
+          </label>
+
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="venda-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required>
+            <input class="input" name="cli_telefone" data-testid="venda-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
             <input class="input" name="cli_email" data-testid="venda-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
+
+          <hr class="form-grid__divider" x-show="!clienteExistente">
           <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Endereço</span>
             <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
+          </label>
+          <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Complemento</span>
+            <input class="input" name="cli_complemento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_complemento', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Cidade</span>
@@ -244,7 +275,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}" x-mask="99999-999">
           </label>
           {% endif %}
         </fieldset>
@@ -263,7 +294,7 @@
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'km') %}
           <label class="field">
-            <span class="field__label">KM</span>
+            <span class="field__label">Quilometragem</span>
             <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', '') }}">
           </label>
           {% endif %}
@@ -300,9 +331,18 @@
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}
+          {% set forma_atual = dados.get('forma_pagamento', '') %}
           <label class="field">
             <span class="field__label">Forma de pagamento *</span>
-            <input class="input" name="forma_pagamento" data-testid="venda-wizard-payment-method" value="{{ dados.get('forma_pagamento', '') }}" required>
+            <select class="select" name="forma_pagamento" data-testid="venda-wizard-payment-method" required>
+              <option value="">Selecione</option>
+              {% for val, label in formas_pagamento %}
+              <option value="{{ val }}"{% if forma_atual == val %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+              {% if forma_atual and forma_atual not in forma_vals %}
+              <option value="{{ forma_atual }}" selected>{{ forma_atual }}</option>
+              {% endif %}
+            </select>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'parcelas') %}
@@ -313,12 +353,13 @@
           {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'pagamento_pendente') %}
+          {% set pp = dados.get('pagamento_pendente') %}
           <label class="field">
             <span class="field__label">Pagamento pendente</span>
-            <label>
-              <input name="pagamento_pendente" type="checkbox"{% if dados.get('pagamento_pendente') %} checked{% endif %}>
-              Faltou parte do pagamento?
-            </label>
+            <select class="select" name="pagamento_pendente">
+              <option value="true"{% if pp in (true, 'true', '1', 'on', 1) %} selected{% endif %}>Sim</option>
+              <option value="false"{% if pp not in (true, 'true', '1', 'on', 1) %} selected{% endif %}>Não</option>
+            </select>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}

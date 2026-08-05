@@ -266,11 +266,11 @@
             </label>
           </div>
         </div>
-        <div class="field settings-actions" style="display:flex;gap:var(--s-2);flex-wrap:wrap">
-          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
+        <div class="field settings-actions" style="display:flex;gap:var(--s-2);flex-wrap:nowrap">
           <button class="btn btn--default" type="submit" formaction="/ui/configuracoes/rsd/teste">
             {{ ui.icon("refresh") }} Testar conexão
           </button>
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
         </div>
       </form>
     </section>
@@ -306,11 +306,11 @@
             </label>
             <label class="field">
               <span class="field__label">CEP</span>
-              <input class="input" name="cep" value="{{ config_empresa.cep }}" autocomplete="off">
+              <input class="input" name="cep" value="{{ config_empresa.cep }}" autocomplete="off" x-mask="99999-999">
             </label>
             <label class="field">
               <span class="field__label">Telefone</span>
-              <input class="input" name="telefone" value="{{ config_empresa.telefone }}" autocomplete="off">
+              <input class="input" name="telefone" value="{{ config_empresa.telefone }}" autocomplete="off" x-mask:dynamic="$maskTelefone($input)">
             </label>
             <label class="field">
               <span class="field__label">CNPJ</span>

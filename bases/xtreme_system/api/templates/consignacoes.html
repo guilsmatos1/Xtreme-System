@@ -9,7 +9,7 @@
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost" href="/ui/consignacoes/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
-      {{ ui.icon("inbox") }} Exportar dados
+      {{ ui.icon("inbox") }} Exportar
     </a>
     {% if pode_operacao(user, 'consignacoes', 'cadastrar') %}
     <button class="btn btn--primary" data-testid="consignacoes-create" hx-get="/ui/consignacoes/novo" hx-target="#modal" hx-swap="innerHTML">
@@ -61,22 +61,7 @@
 
 <div class="table-wrap">
   <table class="table--wide" data-table="consignacoes">
-    {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
-    <thead>
-      <tr>
-        {% if pode_ver_campo(user, 'consignacoes', 'data_consignacao') %}<th data-col="data" data-col-label="Data/Hora" aria-sort="{{ ui.sortable_aria("data", sort, order) }}">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'proprietario') %}<th data-col="proprietario" data-col-label="Proprietário" aria-sort="{{ ui.sortable_aria("proprietario", sort, order) }}">{{ ui.sortable("proprietario", "Proprietário", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'documento_proprietario') %}<th data-col="documento" data-col-label="DOCUMENTO" aria-sort="{{ ui.sortable_aria("documento", sort, order) }}">{{ ui.sortable("documento", "DOCUMENTO", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'status') %}<th data-col="status" data-col-label="STATUS" aria-sort="{{ ui.sortable_aria("status", sort, order) }}">{{ ui.sortable("status", "STATUS", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'placa') %}<th data-col="placa" data-col-label="Placa" aria-sort="{{ ui.sortable_aria("placa", sort, order) }}">{{ ui.sortable("placa", "Placa", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}<th data-col="modelo" data-col-label="Veículo" aria-sort="{{ ui.sortable_aria("modelo", sort, order) }}">{{ ui.sortable("modelo", "Veículo", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<th data-col="valor" data-col-label="Valor de Venda" aria-sort="{{ ui.sortable_aria("valor", sort, order) }}">{{ ui.sortable("valor", "Valor de Venda", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}<th data-col="comissao" data-col-label="Comissão" aria-sort="{{ ui.sortable_aria("comissao", sort, order) }}">{{ ui.sortable("comissao", "Comissão", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'usuario') %}<th data-col="usuario" data-col-label="Usuário" aria-sort="{{ ui.sortable_aria("usuario", sort, order) }}">{{ ui.sortable("usuario", "Usuário", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}<th data-col="observacoes" data-col-label="Observações" aria-sort="{{ ui.sortable_aria("observacoes", sort, order) }}">{{ ui.sortable("observacoes", "Observações", sort, order, "/ui/consignacoes", extra_qs=sort_qs) }}</th>{% endif %}
-        {% if pode_operacao(user, 'consignacoes', 'abrir_contrato') or pode_operacao(user, 'consignacoes', 'editar') or pode_operacao(user, 'consignacoes', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
-      </tr>
-    </thead>
+    {% include "_thead_consignacoes.html" %}
     {% include "_linhas_consignacoes.html" %}
   </table>
 </div>

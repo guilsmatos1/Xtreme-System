@@ -455,6 +455,7 @@ def register_create_route(
         try:
             data = config.create_schema.model_validate(dados_form)
         except ValidationError as exc:
+            ocultados = perfil.campos_ocultados(user, config.pagina)
             return error_response(
                 form.templates,
                 request,
@@ -463,7 +464,7 @@ def register_create_route(
                 item_key=form.item_key,
                 item=None,
                 user=user,
-                erro=validation_error_detail(exc),
+                erro=validation_error_detail(exc, campos_ocultados=ocultados),
                 status_code=400,
                 dados=dados_form,
             )
@@ -540,6 +541,7 @@ def register_update_route(
         try:
             data = config.update_schema.model_validate(dados_form)
         except ValidationError as exc:
+            ocultados = perfil.campos_ocultados(user, config.pagina)
             return error_response(
                 form.templates,
                 request,
@@ -548,7 +550,7 @@ def register_update_route(
                 item_key=form.item_key,
                 item=obj,
                 user=user,
-                erro=validation_error_detail(exc),
+                erro=validation_error_detail(exc, campos_ocultados=ocultados),
                 status_code=400,
                 dados=dados_form,
             )

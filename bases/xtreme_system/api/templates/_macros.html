@@ -123,6 +123,17 @@
 {{- "R$ %s" | format("{:,.2f}".format(v) | replace(",", "@") | replace(".", ",") | replace("@", ".")) -}}
 {%- endmacro %}
 
+{% macro moeda_curta(valor) -%}
+{%- set v = (valor or 0) | float -%}
+{%- if v >= 1000000 -%}
+{{- "R$ %sM" | format("%.1f" | format(v / 1000000) | replace(".", ",")) -}}
+{%- elif v >= 1000 -%}
+{{- "R$ %sk" | format("%.0f" | format(v / 1000)) -}}
+{%- else -%}
+{{- moeda(valor) -}}
+{%- endif -%}
+{%- endmacro %}
+
 {% macro empty(icon_name, title, text) -%}
 <div class="empty">
   <div class="empty__icon">{{ icon(icon_name) }}</div>
@@ -227,19 +238,20 @@
 {% macro rsd_actions(prefix="", status_id="rsd-status", inline=False) -%}
 <input type="hidden" name="rsd_prefix" value="{{ prefix }}">
 <input type="hidden" name="rsd_status_id" value="{{ status_id }}">
-<div class="field{% if not inline %} field--full{% endif %} rsd-actions{% if inline %} rsd-actions--inline{% endif %}">
+<div class="field{% if inline %} rsd-actions rsd-actions--inline{% else %} field--full rsd-actions{% endif %}">
   <span class="field__label sr-only">RSD</span>
-  <div id="{{ status_id }}" class="rsd-status" aria-live="polite"></div>
-  <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;align-items:center">
+  <div class="rsd-actions__controls">
     <button type="button" class="btn btn--info"
             hx-post="/ui/rsd/puxar-dados" hx-include="closest form"
             hx-target="#{{ status_id }}" hx-swap="outerHTML"
+            hx-disabled-elt="this"
             hx-indicator="#{{ status_id }}-indicator">
       {{ icon("refresh") }} Puxar dados
     </button>
     <span id="{{ status_id }}-indicator" class="htmx-indicator muted">Consultando…</span>
   </div>
 </div>
+<div id="{{ status_id }}" class="field field--full rsd-status" aria-live="polite"></div>
 {%- endmacro %}
 
 {% macro paginacao(

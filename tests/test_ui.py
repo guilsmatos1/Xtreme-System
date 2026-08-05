@@ -144,7 +144,8 @@ def test_ui_login_seta_cookie_e_lista_veiculos(
     pagina = client.get("/ui/veiculos")
     assert pagina.status_code == 200
     assert 'id="linhas"' in pagina.text
-    assert "Exportar dados" in pagina.text
+    assert "Exportar" in pagina.text
+    assert "Exportar dados" not in pagina.text
     assert "Valor disponível" not in pagina.text
 
 

@@ -608,11 +608,15 @@ def _processar_contrato_venda(
     obj = found(venda.get(session, item_id), "Venda")
     _persistir_contrato_venda(session, obj, user.id)
     documento = _ultimo_contrato_venda(session, obj.id)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "_modal_contrato_venda.html",
         {"venda": obj, "documento": documento, "user": user},
     )
+    # Este POST atualiza o modal em vez de concluir um formulário. Impede que
+    # o middleware global adicione toast e close-modal à resposta.
+    response.headers["HX-Trigger"] = "{}"
+    return response
 
 
 @router.post("/ui/vendas/{item_id}/contrato/regerar")

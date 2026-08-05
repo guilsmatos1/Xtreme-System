@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     CheckConstraint,
     Date,
@@ -84,6 +84,12 @@ class CompraCreate(BaseModel):
     observacoes: str | None = None
     status: StatusCompra = StatusCompra.pendente
 
+    @field_validator("valor_compra", "debitos", mode="before")
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
+
 
 class CompraUpdate(BaseModel):
     cliente_id: int | None = None
@@ -93,6 +99,12 @@ class CompraUpdate(BaseModel):
     debitos: Decimal | None = Field(default=None, ge=0)
     observacoes: str | None = None
     status: StatusCompra | None = None
+
+    @field_validator("valor_compra", "debitos", mode="before")
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
 
 
 class CompraRead(BaseModel):

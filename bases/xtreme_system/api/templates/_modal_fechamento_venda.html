@@ -8,23 +8,34 @@
     {% if erro %}<div class="modal__body">{{ ui.alert(erro) }}</div>{% endif %}
     {% if fechamento %}
     <div class="modal__body">
-      <dl class="details-list">
-        <div><dt>Receita</dt><dd>{{ ui.moeda(fechamento.receita) }}</dd></div>
-        <div><dt>Custo do veículo</dt><dd>{{ ui.moeda(fechamento.custo_veiculo) }}</dd></div>
-        <div><dt>Custos operacionais</dt><dd>{{ ui.moeda(fechamento.custos_operacionais) }}</dd></div>
-        {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ ui.moeda(fechamento.debitos) }}</dd></div>{% endif %}
-        {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ ui.moeda(fechamento.lucro_liquido) }}</dd></div>{% endif %}
-        <div><dt>Data</dt><dd>{{ fechamento.data_fechamento.isoformat() }}</dd></div>
+      <div class="fechamento-hero">
+        <span class="fechamento-hero__label">Lucro líquido</span>
+        {% if pode_ver_campo(user, 'vendas', 'lucro') %}
+        <span class="fechamento-hero__value{{ ' fechamento-hero__value--negative' if fechamento.lucro_liquido < 0 else ' fechamento-hero__value--positive' }}">{{ ui.moeda(fechamento.lucro_liquido) }}</span>
+        {% endif %}
+        <span class="fechamento-hero__date">Fechado em {{ fechamento.data_fechamento.isoformat() }}</span>
+      </div>
+      <dl class="fechamento-rows">
+        <div class="fechamento-row"><dt>Receita</dt><dd>{{ ui.moeda(fechamento.receita) }}</dd></div>
+        <div class="fechamento-row"><dt>Custo do veículo</dt><dd>{{ ui.moeda(fechamento.custo_veiculo) }}</dd></div>
+        <div class="fechamento-row"><dt>Custos operacionais</dt><dd>{{ ui.moeda(fechamento.custos_operacionais) }}</dd></div>
+        {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div class="fechamento-row"><dt>Débitos</dt><dd>{{ ui.moeda(fechamento.debitos) }}</dd></div>{% endif %}
       </dl>
       {% if fechamento.participacoes and pode_ver_campo(user, 'vendas', 'participacao') %}
       <div class="modal-section">
         <h4>Distribuição</h4>
-        {% for p in fechamento.participacoes %}
-        <div class="details-list">
-          <div><dt>Investidor</dt><dd>{{ p.investidor.nome }}</dd></div>
-          <div><dt>Participação</dt><dd>{{ p.percentual }}% · {{ ui.moeda(p.valor) }}</dd></div>
+        <div class="fechamento-participacoes">
+          {% for p in fechamento.participacoes %}
+          <div class="fechamento-investidor">
+            <span class="fechamento-investidor__avatar">{{ p.investidor.nome[:1] | upper }}</span>
+            <div class="fechamento-investidor__info">
+              <span class="fechamento-investidor__nome">{{ p.investidor.nome }}</span>
+              <span class="fechamento-investidor__pct">{{ p.percentual }}%</span>
+            </div>
+            <span class="fechamento-investidor__valor">{{ ui.moeda(p.valor) }}</span>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
       {% endif %}
     </div>
@@ -35,27 +46,36 @@
     <form x-data="rateioLucro({{ preview.investidores | length }})" hx-post="/ui/vendas/{{ venda.id }}/fechamento" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Confirmar o fechamento e o rateio? Esta ação não pode ser desfeita."
           hx-sync="this:drop" hx-disabled-elt="find button[type='submit']">
       <div class="modal__body">
-        <dl class="details-list">
-          <div><dt>Receita</dt><dd>{{ ui.moeda(preview.receita) }}</dd></div>
-          <div><dt>Custo do veículo</dt><dd>{{ ui.moeda(preview.custo_veiculo) }}</dd></div>
-          <div><dt>Custos operacionais</dt><dd>{{ ui.moeda(preview.custos_operacionais) }}</dd></div>
-          {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div><dt>Débitos</dt><dd>{{ ui.moeda(preview.debitos) }}</dd></div>{% endif %}
-          {% if pode_ver_campo(user, 'vendas', 'lucro') %}<div><dt>Lucro líquido</dt><dd>{{ ui.moeda(preview.lucro_liquido) }}</dd></div>{% endif %}
+        <div class="fechamento-hero">
+          <span class="fechamento-hero__label">Lucro líquido previsto</span>
+          {% if pode_ver_campo(user, 'vendas', 'lucro') %}
+          <span class="fechamento-hero__value{{ ' fechamento-hero__value--negative' if preview.lucro_liquido < 0 else ' fechamento-hero__value--positive' }}">{{ ui.moeda(preview.lucro_liquido) }}</span>
+          {% endif %}
+        </div>
+        <dl class="fechamento-rows">
+          <div class="fechamento-row"><dt>Receita</dt><dd>{{ ui.moeda(preview.receita) }}</dd></div>
+          <div class="fechamento-row"><dt>Custo do veículo</dt><dd>{{ ui.moeda(preview.custo_veiculo) }}</dd></div>
+          <div class="fechamento-row"><dt>Custos operacionais</dt><dd>{{ ui.moeda(preview.custos_operacionais) }}</dd></div>
+          {% if pode_ver_campo(user, 'vendas', 'debitos') %}<div class="fechamento-row"><dt>Débitos</dt><dd>{{ ui.moeda(preview.debitos) }}</dd></div>{% endif %}
         </dl>
         {% if not preview.elegivel %}
           {{ ui.alert(preview.motivo) }}
         {% elif preview.lucro_liquido > 0 and pode_ver_campo(user, 'vendas', 'participacao') %}
         <div class="modal-section">
           <h4>Rateio do lucro</h4>
-          {% for investidor in preview.investidores %}
-          <label class="field">
-            <span class="field__label">{{ investidor.nome }}</span>
-            <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
-            <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00" required
-                   x-model.number="percentuais[{{ loop.index0 }}]">
-          </label>
-          {% endfor %}
-          <p id="rateio-total" role="status" aria-live="polite" :style="{ color: valido() ? 'var(--success)' : 'var(--danger)' }">Total: <span x-text="total().toFixed(2).replace('.', ',')"></span>%<span x-text="valido() ? ' ✓' : ' — deve somar 100%'"></span></p>
+          <div class="fechamento-rateio">
+            {% for investidor in preview.investidores %}
+            <div class="fechamento-rateio__field">
+              <span class="fechamento-rateio__nome">{{ investidor.nome }}</span>
+              <input type="hidden" name="investidor_id" value="{{ investidor.id }}">
+              <span class="fechamento-rateio__input-wrap">
+                <input class="input" name="percentual" type="number" min="0" max="100" step="0.01" placeholder="0,00" required
+                       x-model.number="percentuais[{{ loop.index0 }}]">
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          <p id="rateio-total" role="status" aria-live="polite" class="fechamento-total-chip" :class="valido() ? 'fechamento-total-chip--valid' : 'fechamento-total-chip--invalid'">Total: <span x-text="total().toFixed(2).replace('.', ',')"></span>%<span x-text="valido() ? ' ✓' : ' — deve somar 100%'"></span></p>
         </div>
         {% endif %}
       </div>

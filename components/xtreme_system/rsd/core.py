@@ -22,7 +22,7 @@ from urllib.parse import urljoin
 import httpx
 import structlog
 from cryptography.fernet import Fernet, InvalidToken
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -534,13 +534,18 @@ class RsdClient:
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa para puxar dados.")
-        headers = self._csrf_headers("/atpv/nova/")
-        resp = self._post_puxar_dados(placa_norm, headers)
-        if resp.status_code in _SESSION_EXPIRED_STATUS_CODES:
-            # Sessão expirou — reloga uma vez
-            self.login()
+        try:
             headers = self._csrf_headers("/atpv/nova/")
             resp = self._post_puxar_dados(placa_norm, headers)
+            if resp.status_code in _SESSION_EXPIRED_STATUS_CODES:
+                # Sessão expirou — reloga uma vez
+                self.login()
+                headers = self._csrf_headers("/atpv/nova/")
+                resp = self._post_puxar_dados(placa_norm, headers)
+        except httpx.HTTPError as exc:
+            raise RsdConsultaError(
+                "Falha ao consultar o portal RSD. Tente novamente."
+            ) from exc
         if resp.status_code >= 400:
             raise RsdConsultaError(_msg_http(resp, "Falha ao puxar dados no RSD."))
         try:
@@ -549,7 +554,10 @@ class RsdClient:
             raise RsdConsultaError("Resposta inválida do RSD (não-JSON).") from exc
         if isinstance(payload, dict) and payload.get("erro"):
             raise RsdConsultaError(str(payload["erro"]))
-        result = PuxarDadosResult.model_validate(payload)
+        try:
+            result = PuxarDadosResult.model_validate(payload)
+        except ValidationError as exc:
+            raise RsdConsultaError("Resposta inválida do RSD.") from exc
         if result.outro_estado:
             raise RsdConsultaError(
                 "Placa de outro estado — "

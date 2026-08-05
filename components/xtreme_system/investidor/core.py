@@ -1,6 +1,8 @@
 """Investidor: model, schemas e CRUD."""
 
-from pydantic import BaseModel, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
@@ -17,9 +19,23 @@ class Investidor(Base):
 class InvestidorCreate(BaseModel):
     nome: str
 
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _validar_nome(cls, value: Any) -> Any:
+        _ = cls
+        return crud.trim_texto_obrigatorio(value)
+
 
 class InvestidorUpdate(BaseModel):
     nome: str | None = None
+
+    @field_validator("nome", mode="before")
+    @classmethod
+    def _validar_nome(cls, value: Any) -> Any:
+        _ = cls
+        if value is None:
+            return None
+        return crud.trim_texto_obrigatorio(value)
 
 
 class InvestidorRead(BaseModel):

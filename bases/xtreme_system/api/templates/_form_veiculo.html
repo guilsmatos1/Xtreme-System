@@ -29,7 +29,7 @@
 
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
             <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ veiculo.placa }}" required autofocus style="text-transform:uppercase">
+            <input class="input" name="placa" value="{{ veiculo.placa }}" required autofocus style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>{% endif %}
           {% if pode_operacao(user, 'veiculos', 'editar') %}
           {{ ui.rsd_actions(inline=True) }}
@@ -153,7 +153,7 @@
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
             <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase">
+            <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>{% endif %}
           {% if pode_operacao(user, 'veiculos', 'editar') %}
           {{ ui.rsd_actions() }}
@@ -222,7 +222,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">CPF *</span>
-            <input class="input" name="cli_documento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required>
+            <input class="input" name="cli_documento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Tipo</span>
@@ -232,7 +232,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Telefone</span>
-            <input class="input" name="cli_telefone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}">
+            <input class="input" name="cli_telefone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
@@ -252,7 +252,7 @@
           </label>
           <label x-show="!clienteExistente" class="field">
             <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}">
+            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}" x-mask="99999-999">
           </label>
           <label class="field field--full">
             <span class="field__label">Documentos do cliente</span>

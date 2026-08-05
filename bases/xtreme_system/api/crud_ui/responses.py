@@ -108,8 +108,15 @@ _MSGS = {
 }
 
 
-def validation_error_detail(exc: ValidationError) -> str:
-    """Format Pydantic errors as localized, user-facing messages."""
+def validation_error_detail(
+    exc: ValidationError, *, campos_ocultados: set[str] | None = None
+) -> str:
+    """Format Pydantic errors as localized, user-facing messages.
+
+    `campos_ocultados` lists schema fields removed from the form by
+    `perfil.campos_form_visiveis` for this user — a "missing" error on one of
+    these is a permission gap, not something the user can fix by retyping.
+    """
     messages = []
     for error in exc.errors():
         field = next(
@@ -121,6 +128,17 @@ def validation_error_detail(exc: ValidationError) -> str:
             None,
         )
         label = _LABELS[field] if field is not None else "Campo informado"
+        campo_oculto = (
+            campos_ocultados is not None
+            and field is not None
+            and field in campos_ocultados
+        )
+        if error.get("type") == "missing" and campo_oculto:
+            messages.append(
+                f"{label}: campo obrigatório, mas seu perfil não tem permissão "
+                "para preenchê-lo. Peça a um administrador para liberar o acesso."
+            )
+            continue
         message = _MSGS.get(error.get("type"), "informe um valor válido")
         messages.append(f"{label}: {message}.")
     return "\n".join(messages)

@@ -114,8 +114,6 @@ def _parse_compra_form(form: Any) -> dict[str, Any]:
     data = dict(form)
     if data.get("debitos") == "":
         data["debitos"] = None
-    elif isinstance(data.get("debitos"), str):
-        data["debitos"] = data["debitos"].replace(",", ".")
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if not data.get("data_compra"):

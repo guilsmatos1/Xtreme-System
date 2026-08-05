@@ -23,7 +23,6 @@ for _module_name in (
     "rsd",
     "usuarios",
     "veiculos",
-    "veiculos_cliente_vendedor",
     "veiculos_documentos",
     "veiculos_imagens",
     "veiculos_procuracao",

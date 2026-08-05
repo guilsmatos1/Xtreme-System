@@ -38,6 +38,7 @@ def test_wizard_htmx_cria_veiculo(
     page.get_by_test_id("compra-wizard-vehicle-model").fill("Civic E2E")
     page.get_by_test_id("compra-wizard-vehicle-color").fill("Branco")
     page.get_by_test_id("compra-wizard-vehicle-year").fill("2025")
+    page.locator('#modal select[name="vei_tipo"]').select_option("carro")
 
     page.get_by_test_id("compra-wizard-next").click()
     page.get_by_test_id("compra-wizard-purchase-value").fill("95000")
@@ -126,23 +127,6 @@ def test_modal_veiculo_editar_atualiza_preco(page: Page, live_server_url: str) -
 
 
 @pytest.mark.e2e
-def test_modal_cliente_vendedor_sem_compra_mostra_vazio(
-    page: Page, live_server_url: str
-) -> None:
-    _login(page, live_server_url)
-    page.goto(f"{live_server_url}/ui/veiculos")
-
-    linha = page.locator("tr", has_text="Onix")
-    linha.get_by_role("button", name="Cliente vendedor de Onix").click()
-
-    dialog = page.get_by_role("dialog", name="Cliente vendedor")
-    expect(dialog).to_be_visible()
-    expect(dialog).to_contain_text(
-        "Este veículo ainda não possui uma compra vinculada."
-    )
-
-
-@pytest.mark.e2e
 def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None:
     _login(page, live_server_url)
     page.goto(f"{live_server_url}/ui/vendas")
@@ -161,7 +145,7 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-save").click()
@@ -192,7 +176,7 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.locator("#houve-troca").check()
@@ -236,7 +220,7 @@ def test_modal_venda_troca_veiculo_existente_desabilita_cadastro_inline(
     vehicle_select.select_option(label="ABC1234 — Onix")
     page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.locator("#houve-troca").check()
@@ -274,7 +258,7 @@ def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").fill("Pix")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-save").click()
@@ -290,7 +274,10 @@ def test_modal_venda_editar_atualiza_valor(page: Page, live_server_url: str) -> 
     linha = page.locator("tr", has_text="Cliente Venda Setup")
     linha.get_by_role("button", name="Editar venda").click()
 
-    expect(page.get_by_role("dialog", name="Editar venda")).to_be_visible()
+    dialog = page.get_by_role("dialog", name="Editar venda")
+    expect(dialog).to_be_visible()
+    expect(dialog.get_by_text("Valores", exact=True)).to_be_visible()
+    expect(dialog.get_by_text("Pagamento", exact=True)).to_be_visible()
     valor = page.get_by_test_id("venda-edit-value")
     valor.fill("")
     valor.fill("140000")
@@ -317,7 +304,7 @@ def test_modal_venda_fechamento_confirma_rateio(
     expect(dialog).to_be_visible()
     expect(dialog).to_contain_text("Fechamento da venda")
 
-    dialog.locator('input[name="percentual"]').fill("100,00")
+    dialog.locator('input[name="percentual"]').fill("100.00")
     confirmar = dialog.get_by_role("button", name="Confirmar fechamento")
     expect(confirmar).to_be_enabled()
     confirmar.click()
@@ -348,6 +335,7 @@ def _criar_compra_via_wizard(
     page.get_by_test_id("compra-wizard-vehicle-model").fill("Civic E2E")
     page.get_by_test_id("compra-wizard-vehicle-color").fill("Branco")
     page.get_by_test_id("compra-wizard-vehicle-year").fill("2025")
+    page.locator('#modal select[name="vei_tipo"]').select_option("carro")
 
     page.get_by_test_id("compra-wizard-next").click()
     page.get_by_test_id("compra-wizard-purchase-value").fill("95000")
@@ -630,7 +618,7 @@ def test_modal_veiculos_vinculados_cliente_sem_historico(
     nome.fill("Cliente Sem Veiculos")
     documento.fill("55566677788")
     expect(nome).to_have_value("Cliente Sem Veiculos")
-    expect(documento).to_have_value("55566677788")
+    expect(documento).to_have_value("555.666.777-88")
     form_cliente.get_by_test_id("cliente-form-type").select_option(
         label="Pessoa Fisica"
     )
@@ -663,7 +651,7 @@ def test_modal_auditoria_detalhe_mostra_registro(
     nome.fill("Cliente Auditoria")
     documento.fill("66677788899")
     expect(nome).to_have_value("Cliente Auditoria")
-    expect(documento).to_have_value("66677788899")
+    expect(documento).to_have_value("666.777.888-99")
     form_cliente.get_by_test_id("cliente-form-type").select_option(
         label="Pessoa Fisica"
     )

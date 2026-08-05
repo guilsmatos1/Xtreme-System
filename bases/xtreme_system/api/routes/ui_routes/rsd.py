@@ -26,6 +26,7 @@ from xtreme_system.api.routes.ui_routes.filters import (
 from xtreme_system.database.core import detach_request_session
 from xtreme_system.rsd import core as rsd
 from xtreme_system.usuario import core as usuario
+from xtreme_system.veiculo import core as veiculo
 
 router = APIRouter()
 _RSD_STATUS_IDS = {
@@ -65,6 +66,17 @@ def _status_partial(
     )
 
 
+def _placa_para_puxar_dados(placa: str, vei_placa: str) -> str:
+    """Normaliza a placa do form; levanta ValueError com mensagem de UI."""
+    raw = (placa or vei_placa).strip()
+    if not raw:
+        raise ValueError("Informe a placa para puxar dados.")
+    try:
+        return veiculo.normalizar_placa(raw)
+    except veiculo.PlacaInvalidaError as exc:
+        raise ValueError(str(exc)) from exc
+
+
 @router.post("/ui/rsd/puxar-dados")
 def ui_rsd_puxar_dados(
     request: Request,
@@ -75,7 +87,16 @@ def ui_rsd_puxar_dados(
     rsd_prefix: Annotated[str, Form()] = "",
     rsd_status_id: Annotated[str, Form()] = "rsd-status",
 ) -> HTMLResponse:
-    placa = placa or vei_placa
+    try:
+        placa = _placa_para_puxar_dados(placa, vei_placa)
+    except ValueError as exc:
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id=rsd_status_id,
+            status_code=400,
+        )
+
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
@@ -366,7 +387,7 @@ def _ctx_consultas(
     }
 
 
-@router.get("/ui/rsd/consultas")
+@router.get("/consultas")
 def ui_rsd_consultas(
     request: Request,
     session: SessionDep,
@@ -385,7 +406,7 @@ def _pretty(dados: dict[str, Any] | None) -> str | None:
     return json.dumps(dados, indent=2, ensure_ascii=False, default=str)
 
 
-@router.get("/ui/rsd/consultas/{consulta_id}/detalhe")
+@router.get("/consultas/{consulta_id}/detalhe")
 def ui_rsd_consulta_detalhe(
     consulta_id: int, request: Request, session: SessionDep, _: UIAdmin
 ) -> HTMLResponse:

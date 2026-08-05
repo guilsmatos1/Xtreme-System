@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     CheckConstraint,
     Date,
@@ -87,6 +87,12 @@ class ConsignacaoCreate(BaseModel):
     observacoes: str | None = None
     status: StatusConsignacao = StatusConsignacao.ativa
 
+    @field_validator("valor_venda", "comissao_percentual", mode="before")
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
+
 
 class ConsignacaoUpdate(BaseModel):
     cliente_id: int | None = None
@@ -97,6 +103,12 @@ class ConsignacaoUpdate(BaseModel):
     comissao_percentual: Decimal | None = Field(default=None, ge=0, le=100)
     observacoes: str | None = None
     status: StatusConsignacao | None = None
+
+    @field_validator("valor_venda", "comissao_percentual", mode="before")
+    @classmethod
+    def _normalizar_valores(cls, value: object) -> object:
+        _ = cls
+        return crud.parse_decimal_br(value)
 
 
 class ConsignacaoRead(BaseModel):

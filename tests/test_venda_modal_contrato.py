@@ -137,6 +137,8 @@ def test_modal_contrato_com_documento_mostra_preview_e_botoes(
     assert "Contrato ainda não gerado" not in body
     assert ">Baixar<" in body or "Baixar" in body
     assert "Reprocessar" in body
+    assert 'class="btn__spinner htmx-indicator"' in body
+    assert 'hx-target="#modal"' in body
 
 
 def test_modal_contrato_sem_documento_mostra_processar(
@@ -173,9 +175,13 @@ def test_processar_contrato_gera_pdf_e_retorna_modal_com_preview(
         f"/ui/vendas/{venda_id}/contrato", headers=headers, follow_redirects=False
     ).headers["location"]
 
-    resp = client.post(f"/ui/vendas/{venda_id}/contrato/processar")
+    resp = client.post(
+        f"/ui/vendas/{venda_id}/contrato/processar",
+        headers={"HX-Request": "true"},
+    )
 
     assert resp.status_code == 200
+    assert resp.headers["HX-Trigger"] == "{}"
     body = resp.text
     assert 'class="pdf-preview"' in body
     assert "Reprocessar" in body

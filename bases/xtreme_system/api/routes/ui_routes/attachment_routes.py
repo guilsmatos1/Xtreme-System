@@ -179,13 +179,20 @@ def register_attachment_routes(
                 parent_id,
                 error=error,
             )
-        return render(
+        response = render(
             kwargs["request"],
             session,
             user,
             parent_id,
             action_oob=True,
         )
+        # Este POST atualiza o modal (lista de anexos) em vez de concluir um
+        # formulário — o modal deve continuar aberto. Sem isto, o middleware
+        # global (_htmx_write_feedback) adiciona HX-Trigger: close-modal a
+        # qualquer POST 2xx sem HX-Trigger próprio, e o cliente fecha #modal
+        # ~0ms depois do swap ter renderizado a lista atualizada.
+        response.headers["HX-Trigger"] = "{}"
+        return response
 
     def delete_endpoint(**kwargs: Any) -> HTMLResponse:
         parent_id = kwargs[config.parent_param]
@@ -204,13 +211,18 @@ def register_attachment_routes(
             actor_id=user.id,
             not_found_detail=f"{config.attachment_label} não encontrado",
         )
-        return render(
+        response = render(
             kwargs["request"],
             session,
             user,
             parent_id,
             action_oob=True,
         )
+        # Ver comentário equivalente em upload_endpoint: este POST atualiza o
+        # modal em vez de concluí-lo, então o close-modal automático do
+        # middleware precisa ser suprimido.
+        response.headers["HX-Trigger"] = "{}"
+        return response
 
     get_endpoint.__signature__ = _route_signature(config)  # type: ignore[attr-defined]
     upload_endpoint.__signature__ = _route_signature(config, upload=True)  # type: ignore[attr-defined]

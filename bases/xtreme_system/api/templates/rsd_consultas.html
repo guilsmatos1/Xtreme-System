@@ -11,7 +11,7 @@
 
 <section class="card card--pad" style="margin-bottom:var(--s-4)">
   <form class="form-grid"
-        hx-get="/ui/rsd/consultas" hx-target="#rsd-consultas-resultado" hx-swap="outerHTML"
+        hx-get="/consultas" hx-target="#rsd-consultas-resultado" hx-swap="outerHTML"
         hx-trigger="submit, change" hx-include="this" data-omit-empty-params>
     <label class="field">
       <span class="field__label">De</span>
@@ -52,7 +52,7 @@
     </label>
     <div class="field" style="justify-content:flex-end;flex-direction:row;gap:var(--s-2)">
       <button class="btn btn--primary" type="submit">{{ ui.icon("search") }} Filtrar</button>
-      <a class="btn btn--ghost" href="/ui/rsd/consultas">Limpar</a>
+      <a class="btn btn--ghost" href="/consultas">Limpar</a>
     </div>
   </form>
 </section>

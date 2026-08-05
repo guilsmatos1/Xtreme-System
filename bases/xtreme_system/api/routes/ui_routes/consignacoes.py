@@ -113,12 +113,8 @@ def _ctx_form_consignacao(session: Session) -> dict[str, Any]:
 
 def _parse_consignacao_form(form: Any) -> dict[str, Any]:
     data = dict(form)
-    if isinstance(data.get("valor_venda"), str):
-        data["valor_venda"] = data["valor_venda"].replace(",", ".")
     if data.get("comissao_percentual") == "":
         data["comissao_percentual"] = None
-    elif isinstance(data.get("comissao_percentual"), str):
-        data["comissao_percentual"] = data["comissao_percentual"].replace(",", ".")
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if not data.get("data_consignacao"):

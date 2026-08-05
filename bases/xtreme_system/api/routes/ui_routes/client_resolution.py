@@ -46,6 +46,7 @@ def resolver_cliente(
                 "cidade": str(form.get("cli_cidade") or "").strip() or None,
                 "estado": str(form.get("cli_estado") or "").strip() or None,
                 "cep": str(form.get("cli_cep") or "").strip() or None,
+                "profissao": str(form.get("cli_profissao") or "").strip() or None,
             }
         )
     except ValidationError as exc:

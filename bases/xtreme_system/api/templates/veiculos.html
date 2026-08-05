@@ -9,7 +9,7 @@
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost" href="/ui/veiculos/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
-      {{ ui.icon("inbox") }} Exportar dados
+      {{ ui.icon("inbox") }} Exportar
     </a>
   </div>
 </div>
@@ -62,25 +62,8 @@
 </div>
 
 <div class="table-wrap">
-  <table class="table--wide" data-table="veiculos" data-default-hidden="marca">
-    {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
-    <thead><tr>
-      {% if pode_ver_campo(user, 'veiculos', 'placa') %}<th data-col="placa" data-col-label="Placa" aria-sort="{{ ui.sortable_aria("placa", sort, order) }}">{{ ui.sortable("placa", "Placa", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<th data-col="modelo" data-col-label="Modelo" aria-sort="{{ ui.sortable_aria("modelo", sort, order) }}">{{ ui.sortable("modelo", "Modelo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'marca') %}<th data-col="marca" data-col-label="Marca" aria-sort="{{ ui.sortable_aria("marca", sort, order) }}">{{ ui.sortable("marca", "Marca", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<th data-col="tipo" data-col-label="Tipo" aria-sort="{{ ui.sortable_aria("tipo", sort, order) }}">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'ano') %}<th data-col="ano" data-col-label="Ano" aria-sort="{{ ui.sortable_aria("ano", sort, order) }}">{{ ui.sortable("ano", "Ano", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'km') %}<th data-col="km" data-col-label="KM" aria-sort="{{ ui.sortable_aria("km", sort, order) }}">{{ ui.sortable("km", "KM", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'status') %}<th data-col="status" data-col-label="STATUS" aria-sort="{{ ui.sortable_aria("status", sort, order) }}">{{ ui.sortable("status", "STATUS", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'preco') %}<th data-col="preco" data-col-label="Preço Anunciado" aria-sort="{{ ui.sortable_aria("preco", sort, order) }}">{{ ui.sortable("preco", "Preço Anunciado", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}<th data-col="tipo_entrada" data-col-label="ENTRADA" aria-sort="{{ ui.sortable_aria("tipo_entrada", sort, order) }}">{{ ui.sortable("tipo_entrada", "ENTRADA", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<th data-col="investidor" data-col-label="Investidor" aria-sort="{{ ui.sortable_aria("investidor", sort, order) }}">{{ ui.sortable("investidor", "Investidor", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<th data-col="procuracao" data-col-label="Procurador" aria-sort="{{ ui.sortable_aria("procuracao", sort, order) }}">{{ ui.sortable("procuracao", "Procurador", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<th data-col="revisao" data-col-label="Revisão" aria-sort="{{ ui.sortable_aria("revisao", sort, order) }}">{{ ui.sortable("revisao", "Revisão", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<th data-col="debitos" data-col-label="Débitos" aria-sort="{{ ui.sortable_aria("debitos", sort, order) }}">{{ ui.sortable("debitos", "Débitos", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}<th data-col="tempo_estoque" data-col-label="ESTOQUE" aria-sort="{{ ui.sortable_aria("tempo_estoque", sort, order) }}">{{ ui.sortable("tempo_estoque", "ESTOQUE", sort, order, "/ui/veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
-    </tr></thead>
+  <table class="table--wide" data-table="veiculos">
+    {% include "_thead_veiculos.html" %}
     {% include "_linhas_veiculos.html" %}
   </table>
 </div>

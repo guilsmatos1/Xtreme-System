@@ -1,0 +1,8 @@
+{% import "_macros.html" as ui %}
+<thead id="cabecalho-linhas"{% if oob %} hx-swap-oob="true"{% endif %}><tr>
+  <th data-col="data" data-col-label="Data" aria-sort="{{ ui.sortable_aria("data", sort, order) }}">{{ ui.sortable("data", "Data", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+  <th data-col="tipo" data-col-label="Tipo" aria-sort="{{ ui.sortable_aria("tipo", sort, order) }}">{{ ui.sortable("tipo", "Tipo", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+  <th data-col="descricao" data-col-label="Descrição" aria-sort="{{ ui.sortable_aria("descricao", sort, order) }}">{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+  <th data-col="valor" data-col-label="Valor" aria-sort="{{ ui.sortable_aria("valor", sort, order) }}">{{ ui.sortable("valor", "Valor", sort, order, "/ui/investidores/" ~ investidor_id ~ "/lancamentos") }}</th>
+  {% if is_admin(user) %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
+</tr></thead>

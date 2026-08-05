@@ -16,11 +16,7 @@
 
 <div class="table-wrap">
   <table class="table--wide" data-table="perfis">
-    <thead><tr>
-      <th data-col="nome" data-col-label="Nome" aria-sort="{{ ui.sortable_aria("nome", sort, order) }}">{{ ui.sortable("nome", "Nome", sort, order, "/ui/perfis") }}</th>
-      <th data-col="paginas" data-col-label="Páginas">Páginas</th>
-      <th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>
-    </tr></thead>
+    {% include "_thead_perfis.html" %}
     {% include "_linhas_perfis.html" %}
   </table>
 </div>

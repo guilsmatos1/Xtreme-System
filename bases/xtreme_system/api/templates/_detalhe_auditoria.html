@@ -29,17 +29,17 @@
           <dd>{{ reg.registro_id if reg.registro_id is not none else '—' }}</dd>
         </div>
       </dl>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)">
-        <div class="modal-section">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s-4)">
+        <div class="modal-section" style="min-width:0">
           <h4>Antes</h4>
           {% if antes_json %}
-          <pre style="max-height:320px;overflow:auto;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ antes_json }}</pre>
+          <pre style="max-width:100%;max-height:320px;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ antes_json }}</pre>
           {% else %}<span class="page-head__subtitle">—</span>{% endif %}
         </div>
-        <div class="modal-section">
+        <div class="modal-section" style="min-width:0">
           <h4>Depois</h4>
           {% if depois_json %}
-          <pre style="max-height:320px;overflow:auto;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ depois_json }}</pre>
+          <pre style="max-width:100%;max-height:320px;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;background:var(--surface-2);border-radius:var(--r);padding:var(--s-3)">{{ depois_json }}</pre>
           {% else %}<span class="page-head__subtitle">—</span>{% endif %}
         </div>
       </div>

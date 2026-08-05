@@ -9,7 +9,7 @@
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost" href="/ui/custos-veiculos/exportar?q={{ q | urlencode }}&search_column={{ search_column | urlencode }}">
-      {{ ui.icon("inbox") }} Exportar dados
+      {{ ui.icon("inbox") }} Exportar
     </a>
     {% if is_admin(user) %}
     <button class="btn btn--primary" data-testid="custos-veiculos-create" hx-get="/ui/custos-veiculos/novo" hx-target="#modal" hx-swap="innerHTML">
@@ -57,18 +57,7 @@
 
 <div class="table-wrap">
   <table class="table--wide" data-table="custos-veiculos">
-    {% set sort_qs = "&q=" ~ (q | urlencode) ~ "&search_column=" ~ (search_column | urlencode) %}
-    <thead>
-      <tr>
-        <th data-col="data" data-col-label="Data/Hora" aria-sort="{{ ui.sortable_aria("data", sort, order) }}">{{ ui.sortable("data", "Data/Hora", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
-        <th data-col="veiculo" data-col-label="Veículo" aria-sort="{{ ui.sortable_aria("veiculo", sort, order) }}">{{ ui.sortable("veiculo", "Veículo", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
-        <th data-col="placa" data-col-label="Placa" aria-sort="{{ ui.sortable_aria("placa", sort, order) }}">{{ ui.sortable("placa", "Placa", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
-        <th data-col="categoria" data-col-label="Categoria" aria-sort="{{ ui.sortable_aria("categoria", sort, order) }}">{{ ui.sortable("categoria", "Categoria", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
-        {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}<th data-col="valor" data-col-label="Valor" aria-sort="{{ ui.sortable_aria("valor", sort, order) }}">{{ ui.sortable("valor", "Valor", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>{% endif %}
-        <th data-col="descricao" data-col-label="Descrição" aria-sort="{{ ui.sortable_aria("descricao", sort, order) }}">{{ ui.sortable("descricao", "Descrição", sort, order, "/ui/custos-veiculos", extra_qs=sort_qs) }}</th>
-        {% if pode_operacao(user, 'custos-veiculos', 'editar') or pode_operacao(user, 'custos-veiculos', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
-      </tr>
-    </thead>
+    {% include "_thead_custos_veiculos.html" %}
     {% include "_linhas_custos_veiculos.html" %}
   </table>
 </div>

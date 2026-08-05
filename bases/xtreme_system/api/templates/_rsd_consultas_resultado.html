@@ -64,7 +64,7 @@
         <td class="cell-mono" data-col="duracao">{{ (r.duracao_ms ~ ' ms') if r.duracao_ms is not none else '—' }}</td>
         <td class="col-actions" data-col="acoes" data-col-fixed>
           <button class="btn btn--ghost btn--sm"
-                  hx-get="/ui/rsd/consultas/{{ r.id }}/detalhe" hx-target="#modal" hx-swap="innerHTML"
+                  hx-get="/consultas/{{ r.id }}/detalhe" hx-target="#modal" hx-swap="innerHTML"
                   title="Ver detalhes" aria-label="Ver detalhes da consulta {{ r.id }}">
             {{ ui.icon("file") }}
           </button>
@@ -95,10 +95,10 @@
   </span>
   <div style="display:flex;gap:var(--s-2)">
     <button class="btn btn--ghost" {{ '' if tem_anterior else 'disabled' }}
-            hx-get="/ui/rsd/consultas?{{ filtros_qs }}{{ sep }}offset={{ offset_ant }}&limit={{ limit }}"
+            hx-get="/consultas?{{ filtros_qs }}{{ sep }}offset={{ offset_ant }}&limit={{ limit }}"
             hx-target="#rsd-consultas-resultado">Anterior</button>
     <button class="btn btn--ghost" {{ '' if tem_proximo else 'disabled' }}
-            hx-get="/ui/rsd/consultas?{{ filtros_qs }}{{ sep }}offset={{ proximo_offset }}&limit={{ limit }}"
+            hx-get="/consultas?{{ filtros_qs }}{{ sep }}offset={{ proximo_offset }}&limit={{ limit }}"
             hx-target="#rsd-consultas-resultado">Próxima</button>
   </div>
 </div>

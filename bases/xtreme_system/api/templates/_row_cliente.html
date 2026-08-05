@@ -12,8 +12,8 @@
       <button class="btn btn--ghost btn--sm action-user" hx-get="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/veiculos" hx-target="#modal" hx-swap="innerHTML" aria-label="{{ vehicles_label or 'Veículos' }} de {{ c.nome }}">{{ ui.icon("vehicles") }}</button>
       {% endif %}
       {% if pode_editar %}
-      {% include "_action_cliente_documentos.html" %}
       <button class="btn btn--ghost btn--sm action-edit" hx-get="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/editar" hx-target="#modal" hx-swap="innerHTML" aria-label="Editar {{ c.nome }}">{{ ui.icon("edit") }}</button>
+      {% include "_action_cliente_documentos.html" %}
       {% endif %}
       {% if pode_excluir %}
       <button class="btn btn--ghost btn--sm btn--danger action-delete" hx-post="{{ route_prefix or '/ui/clientes' }}/{{ c.id }}/excluir" hx-target="#linhas" hx-swap="outerHTML" hx-confirm="Excluir o cliente {{ c.nome }}?" aria-label="Excluir {{ c.nome }}">{{ ui.icon("trash") }}</button>

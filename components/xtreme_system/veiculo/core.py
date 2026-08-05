@@ -4,6 +4,7 @@ import re
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, func
@@ -86,6 +87,38 @@ def normalizar_renavam(value: str | None) -> str | None:
     return renavam
 
 
+def _trim_texto_obrigatorio(value: Any) -> Any:
+    if isinstance(value, str):
+        value = value.strip()
+    if not value:
+        raise ValueError("Campo obrigatório")
+    return value
+
+
+ANO_MINIMO = 1950
+
+
+def _validar_faixa_ano(value: Any) -> Any:
+    if value is None or not isinstance(value, int | str):
+        return value
+    try:
+        ano = int(value)
+    except (TypeError, ValueError):
+        return value
+    ano_maximo = datetime.now(UTC).year + 1
+    if not ANO_MINIMO <= ano <= ano_maximo:
+        raise ValueError(f"Ano deve estar entre {ANO_MINIMO} e {ano_maximo}")
+    return value
+
+
+def _normalizar_uf(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.strip().upper()
+    return value or None
+
+
 class Veiculo(Base):
     __tablename__ = "veiculo"
     __table_args__ = (CheckConstraint("preco > 0", name="ck_veiculo_preco_positive"),)
@@ -145,6 +178,18 @@ class VeiculoCreate(BaseModel):
     revisao: bool = False
     investidor_id: int
 
+    @field_validator("ano", mode="before")
+    @classmethod
+    def _validar_ano(cls, value: Any) -> Any:
+        _ = cls
+        return _validar_faixa_ano(value)
+
+    @field_validator("proprietario_uf", mode="before")
+    @classmethod
+    def _normalizar_uf(cls, value: Any) -> Any:
+        _ = cls
+        return _normalizar_uf(value)
+
     @field_validator("placa", mode="before")
     @classmethod
     def _normalizar_placa(cls, value: str) -> str:
@@ -162,6 +207,18 @@ class VeiculoCreate(BaseModel):
     def _normalizar_renavam(cls, value: str | None) -> str | None:
         _ = cls
         return normalizar_renavam(value)
+
+    @field_validator("modelo", "cor", mode="before")
+    @classmethod
+    def _validar_obrigatorio(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto_obrigatorio(value)
+
+    @field_validator("preco", mode="before")
+    @classmethod
+    def _normalizar_preco(cls, value: Any) -> Any:
+        _ = cls
+        return crud.parse_decimal_br(value)
 
 
 class VeiculoUpdate(BaseModel):
@@ -184,6 +241,18 @@ class VeiculoUpdate(BaseModel):
     revisao: bool | None = None
     investidor_id: int | None = None
 
+    @field_validator("ano", mode="before")
+    @classmethod
+    def _validar_ano(cls, value: Any) -> Any:
+        _ = cls
+        return _validar_faixa_ano(value)
+
+    @field_validator("proprietario_uf", mode="before")
+    @classmethod
+    def _normalizar_uf(cls, value: Any) -> Any:
+        _ = cls
+        return _normalizar_uf(value)
+
     @field_validator("placa", mode="before")
     @classmethod
     def _normalizar_placa(cls, value: str | None) -> str | None:
@@ -201,6 +270,20 @@ class VeiculoUpdate(BaseModel):
     def _normalizar_renavam(cls, value: str | None) -> str | None:
         _ = cls
         return normalizar_renavam(value)
+
+    @field_validator("modelo", "cor", mode="before")
+    @classmethod
+    def _validar_obrigatorio(cls, value: Any) -> Any:
+        _ = cls
+        if value is None:
+            return None
+        return _trim_texto_obrigatorio(value)
+
+    @field_validator("preco", mode="before")
+    @classmethod
+    def _normalizar_preco(cls, value: Any) -> Any:
+        _ = cls
+        return crud.parse_decimal_br(value)
 
 
 class VeiculoRead(BaseModel):

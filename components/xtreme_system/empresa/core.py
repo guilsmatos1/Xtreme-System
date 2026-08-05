@@ -1,10 +1,22 @@
 """Dados cadastrais da empresa (configurações)."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
 from xtreme_system.database.core import Base
+
+_CAMPOS_TEXTO = (
+    "nome",
+    "endereco",
+    "bairro",
+    "cidade",
+    "uf",
+    "cep",
+    "telefone",
+    "cnpj",
+    "signatario",
+)
 
 _CONFIG_ID = 1
 
@@ -36,6 +48,18 @@ class EmpresaConfigUpdate(BaseModel):
     telefone: str = ""
     cnpj: str = ""
     signatario: str = ""
+
+    @field_validator(*_CAMPOS_TEXTO, mode="before")
+    @classmethod
+    def _normalizar_texto(cls, value: object) -> object:
+        _ = cls
+        return crud.trim_texto(value)
+
+    @field_validator("uf", mode="before")
+    @classmethod
+    def _normalizar_uf(cls, value: object) -> object:
+        _ = cls
+        return value.strip().upper() if isinstance(value, str) else value
 
 
 def get_config(session: Session) -> EmpresaConfig:
