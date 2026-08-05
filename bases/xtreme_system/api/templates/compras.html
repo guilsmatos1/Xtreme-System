@@ -26,7 +26,7 @@
 {% if pode_ver_campo(user, 'compras', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "STATUS"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'placa') %}{% set _ = search_colunas.append({"key": "placa", "label": "Placa"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'veiculo') %}{% set _ = search_colunas.append({"key": "modelo", "label": "Veículo"}) %}{% endif %}
-{% if pode_ver_campo(user, 'compras', 'valor_compra') %}{% set _ = search_colunas.append({"key": "valor", "label": "Valor"}) %}{% endif %}
+{% if pode_ver_campo(user, 'compras', 'valor_compra') %}{% set _ = search_colunas.append({"key": "valor", "label": "VALOR DE COMPRA"}) %}{% endif %}
 {% if pode_ver_campo(user, 'compras', 'observacoes') %}{% set _ = search_colunas.append({"key": "observacoes", "label": "Observações"}) %}{% endif %}
 
 <div class="toolbar" id="busca-compras">

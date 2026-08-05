@@ -3,11 +3,11 @@
   {% if pode_ver_campo(user, 'consignacoes', 'data_consignacao') %}<td data-col="data">{{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'proprietario') %}<td class="cell-strong" data-col="proprietario">{{ c.cliente.nome }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'documento_proprietario') %}<td data-col="documento">{{ c.cliente.documento | formatar_documento }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'consignacoes', 'status') %}<td data-col="status"><span class="badge badge--plain {% if c.status.value == 'vendida' %}badge--success{% elif c.status.value == 'cancelada' or c.status.value == 'devolvida' %}badge--danger{% else %}badge--warning{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'status') %}<td data-col="status"><span class="badge badge--plain {% if c.status.value == 'vendida' %}badge--info{% elif c.status.value == 'cancelada' or c.status.value == 'devolvida' %}badge--danger{% else %}badge--success{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'placa') %}<td data-col="placa">{{ c.veiculo.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}<td data-col="modelo">{{ c.veiculo.modelo }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(c.valor_venda) }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'consignacoes', 'comissao_percentual') %}<td class="cell-num" data-col="comissao">{{ c.comissao_percentual if c.comissao_percentual is not none else "-" }}{% if c.comissao_percentual is not none %}%{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'valor_proprietario') %}<td class="cell-num cell-strong" data-col="valor_proprietario">{{ ui.moeda(c.valor_proprietario) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'usuario') %}<td data-col="usuario">{{ (c.usuario.nome or c.usuario.username) if c.usuario else "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}<td data-col="observacoes">{{ c.observacoes or "-" }}</td>{% endif %}
   {% set pode_abrir_contrato = pode_operacao(user, 'consignacoes', 'abrir_contrato') %}

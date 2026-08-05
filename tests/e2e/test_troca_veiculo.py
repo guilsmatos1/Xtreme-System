@@ -32,10 +32,8 @@ def _abrir_passo_troca(page: Page, live_server_url: str) -> None:
     page.get_by_test_id("venda-wizard-vehicle-select").select_option(
         label="ABC1234 — Onix"
     )
-    page.get_by_test_id("venda-wizard-next").click()
-
-    page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
     page.get_by_test_id("venda-wizard-next").click()
 
 
@@ -46,31 +44,29 @@ def test_desligar_troca_limpa_estado_do_cadastro_inline(
     _login(page, live_server_url)
     _abrir_passo_troca(page, live_server_url)
 
-    checkbox = page.locator("#houve-troca")
+    select = page.locator("#houve-troca")
     bloco = page.locator("#novo-veiculo-troca-campos")
     placa = page.locator('input[name="veic_troca_placa"]')
     modo_novo = page.locator("#veiculo-troca-novo")
 
-    checkbox.check()
-    page.get_by_role("button", name="Cadastrar novo veículo").click()
+    select.select_option("true")
     expect(bloco).to_be_visible()
+    expect(placa).to_be_enabled()
     placa.fill("RST4C56")
     expect(modo_novo).to_have_value("1")
 
-    checkbox.uncheck()
+    select.select_option("false")
 
     # Some da tela, para de ser enviado, e o valor digitado é descartado.
     expect(bloco).not_to_be_visible()
     expect(modo_novo).to_have_value("0")
     expect(placa).to_have_value("")
-    expect(page.locator("#veiculo-troca-input")).to_have_value("")
-    expect(page.locator("#veiculo-troca-search")).to_have_value("")
 
-    # Religar não deve trazer o cadastro inline de volta sozinho: o usuário
-    # precisa pedir "Cadastrar novo veículo" outra vez.
-    checkbox.check()
-    expect(bloco).not_to_be_visible()
-    expect(modo_novo).to_have_value("0")
+    # Religar mostra novamente o cadastro novo.
+    select.select_option("true")
+    expect(bloco).to_be_visible()
+    expect(placa).to_have_value("")
+    expect(modo_novo).to_have_value("1")
 
 
 @pytest.mark.e2e
@@ -80,12 +76,11 @@ def test_campos_da_troca_so_aparecem_com_a_troca_ligada(
     _login(page, live_server_url)
     _abrir_passo_troca(page, live_server_url)
 
-    busca = page.locator("#veiculo-troca-input")
-    cadastrar = page.get_by_role("button", name="Cadastrar novo veículo")
+    cadastro = page.locator("#novo-veiculo-troca-campos")
 
-    expect(busca).not_to_be_visible()
-    expect(cadastrar).not_to_be_visible()
+    expect(cadastro).not_to_be_visible()
+    expect(page.locator("#veiculo-troca-input")).to_have_count(0)
+    expect(page.get_by_role("button", name="Cadastrar novo veículo")).to_have_count(0)
 
-    page.locator("#houve-troca").check()
-    expect(busca).to_be_visible()
-    expect(cadastrar).to_be_visible()
+    page.locator("#houve-troca").select_option("true")
+    expect(cadastro).to_be_visible()

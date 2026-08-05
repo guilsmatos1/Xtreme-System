@@ -206,6 +206,17 @@ def ids_by_venda_ids(session: Session, venda_ids: list[int]) -> dict[int, int]:
     return {row.venda_id: row.id for row in rows}
 
 
+def veiculo_ids_fechados(session: Session) -> set[int]:
+    if not _schema_disponivel(session):
+        return set()
+    rows = (
+        session.query(Venda.veiculo_id)
+        .join(FechamentoVenda, FechamentoVenda.venda_id == Venda.id)
+        .all()
+    )
+    return {row.veiculo_id for row in rows}
+
+
 def list_all(
     session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[FechamentoVenda]:

@@ -53,7 +53,7 @@ def _status_partial(
     status_id: str = "rsd-status",
     status_code: int = 200,
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "_rsd_status.html",
         {
@@ -64,6 +64,12 @@ def _status_partial(
         },
         status_code=status_code,
     )
+    # Este endpoint atualiza só o status parcial do RSD dentro do modal, que
+    # deve continuar aberto. Sem isto, o middleware global
+    # (_htmx_write_feedback) adiciona HX-Trigger: close-modal a qualquer POST
+    # 2xx sem HX-Trigger próprio, e o cliente fecha #modal.
+    response.headers["HX-Trigger"] = "{}"
+    return response
 
 
 def _placa_para_puxar_dados(placa: str, vei_placa: str) -> str:
@@ -136,7 +142,7 @@ def ui_rsd_puxar_dados(
         campos_aplicados=campos,
         sucesso=True,
     )
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "_rsd_status.html",
         {
@@ -147,6 +153,10 @@ def ui_rsd_puxar_dados(
             "status_id": _normalize_status_id(rsd_status_id),
         },
     )
+    # Ver comentário em _status_partial: este POST atualiza o status parcial
+    # dentro do modal, que deve continuar aberto.
+    response.headers["HX-Trigger"] = "{}"
+    return response
 
 
 @router.post("/ui/rsd/consulta-unitaria")
@@ -296,7 +306,6 @@ LIMIT_MAX = 200
 
 
 class FiltroRsdConsulta(PeriodoFiltro):
-    tipo: rsd.TipoConsultaRsd | None = None
     placa: TextoFiltro = None
     usuario_id: IdFiltro = None
     sucesso: Annotated[bool | None, BeforeValidator(vazio_para_none)] = None
@@ -335,8 +344,6 @@ def _filtros_qs(f: FiltroRsdConsultaPagina) -> dict[str, Any]:
         "data_de": data_de.isoformat(),
         "data_ate": data_ate.isoformat(),
     }
-    if f.tipo is not None:
-        filtros["tipo"] = f.tipo.value
     if f.placa:
         filtros["placa"] = f.placa
     if f.usuario_id is not None:
@@ -351,7 +358,6 @@ def _ctx_consultas(
 ) -> dict[str, Any]:
     registros = rsd.listar_consultas(
         session,
-        tipo=f.tipo,
         placa=f.placa,
         usuario_id=f.usuario_id,
         sucesso=f.sucesso,
@@ -362,7 +368,6 @@ def _ctx_consultas(
     )
     total = rsd.count_consultas(
         session,
-        tipo=f.tipo,
         placa=f.placa,
         usuario_id=f.usuario_id,
         sucesso=f.sucesso,
@@ -374,7 +379,6 @@ def _ctx_consultas(
         "registros": registros,
         "nomes_usuarios": _nomes_usuarios(session, registros),
         "usuarios": usuario.list_all(session),
-        "f_tipo": f.tipo,
         "f_placa": f.placa,
         "f_usuario_id": f.usuario_id,
         "f_sucesso": f.sucesso,

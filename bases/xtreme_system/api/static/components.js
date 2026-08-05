@@ -209,116 +209,39 @@
       };
     });
 
-    /* Troca de veículo no formulário de venda.
-
-       Estado real, depois de destrinchar o JS que estava inline:
-         ativo      = checkbox "Houve troca de veículo?"
-         veiculoId  = id resolvido pelo typeahead (reference.js é quem escreve
-                      o hidden; aqui só lemos, via evento referencechange)
-         modoNovo   = usuário optou por cadastrar um veículo que não existe
-
-       Derivações:
-         campos [data-troca] e o aviso "Cadastrar novo veículo" <- visíveis sse ativo
-         bloco de cadastro inline <- visível sse ativo && !veiculoId && modoNovo
-         hidden veiculo_troca_novo <- exatamente a visibilidade do bloco acima,
-                                      que é o que o servidor precisa saber
-
-       A visibilidade é declarativa (x-show). Habilitar/limpar os campos do
-       bloco inline continua imperativo, mas centralizado aqui: sao ~12 campos
-       e o comportamento original limpa valores so em parte das transicoes. */
-    Alpine.data("trocaVeiculo", function (ativoInicial, modoNovoInicial) {
+    /* Cadastro do veículo novo da troca no wizard de nova venda. */
+    Alpine.data("trocaVeiculoNovo", function (ativoInicial) {
       return {
         ativo: !!ativoInicial,
-        modoNovo: String(modoNovoInicial) === "1",
-        veiculoId: "",
-        // Mesma razão do wizard/modalFoco: aoBuscar/aoResolverReferencia vêm
-        // do @input do campo de busca e cadastrarNovo do @click do botão, e
-        // nessas expressões $el é o próprio elemento do evento — buscar o
-        // hidden dentro dele não acha nada.
         raiz: null,
 
         init: function () {
           this.raiz = this.$el;
-          var hidden = this.hiddenId();
-          this.veiculoId = hidden ? hidden.value : "";
           this.$watch("ativo", this.aplicar.bind(this));
-          this.$watch("veiculoId", this.aplicar.bind(this));
-          this.$watch("modoNovo", this.aplicar.bind(this));
           this.aplicar();
         },
 
-        hiddenId: function () {
-          return this.raiz.querySelector("#veiculo-troca-search");
+        normalizarAtivo: function (valor) {
+          this.ativo = valor === true || String(valor) === "true" || String(valor) === "1";
         },
 
-        busca: function () {
-          return this.raiz.querySelector("#veiculo-troca-input");
-        },
-
-        // Fonte da verdade da UI e do que vai para o servidor.
         get mostrarNovos() {
-          return this.ativo && !this.veiculoId && this.modoNovo;
+          return this.ativo;
         },
 
         get modoNovoEnviado() {
-          return this.mostrarNovos ? "1" : "0";
-        },
-
-        // reference.js limpa o hidden no "input" antes de disparar
-        // referencechange (que so vem depois do fetch), entao os dois eventos
-        // precisam ser observados para o estado nao ficar defasado.
-        aoBuscar: function () {
-          var hidden = this.hiddenId();
-          if (hidden) hidden.value = "";
-          this.veiculoId = "";
-          this.preencherPlaca();
-        },
-
-        aoResolverReferencia: function () {
-          var hidden = this.hiddenId();
-          this.veiculoId = hidden ? hidden.value : "";
-        },
-
-        cadastrarNovo: function () {
-          var hidden = this.hiddenId();
-          if (hidden) hidden.value = "";
-          this.veiculoId = "";
-          this.modoNovo = true;
-          this.preencherPlaca();
-        },
-
-        // Adianta a placa digitada na busca, sem sobrescrever o que o usuario
-        // ja tiver corrigido no formulario de cadastro.
-        preencherPlaca: function () {
-          if (!this.modoNovo) return;
-          var placa = this.raiz.querySelector("#veic-troca-placa");
-          var busca = this.busca();
-          if (placa && busca && !placa.value) {
-            placa.value = busca.value.trim().toUpperCase();
-          }
+          return this.ativo ? "1" : "0";
         },
 
         aplicar: function () {
           var mostrar = this.mostrarNovos;
-          // O original so zera valores ao desligar a troca ou ao escolher um
-          // veiculo existente; ao apenas recolher o bloco, preserva o digitado.
-          var limpar = !this.ativo || !!this.veiculoId;
           var campos = this.raiz.querySelectorAll(
             "[data-novo-veiculo-troca] input, [data-novo-veiculo-troca] select"
           );
           Array.prototype.forEach.call(campos, function (campo) {
             campo.disabled = !mostrar;
-            if (!mostrar && limpar) campo.value = "";
+            if (!mostrar) campo.value = "";
           });
-
-          if (!this.ativo) {
-            var hidden = this.hiddenId();
-            var busca = this.busca();
-            if (hidden) hidden.value = "";
-            if (busca) busca.value = "";
-            this.veiculoId = "";
-            this.modoNovo = false;
-          }
         },
       };
     });
@@ -598,7 +521,7 @@
 
         abrirConfirmacao: function (pergunta, callback) {
           var store = Alpine.store("confirmacao");
-          store.pergunta = pergunta;
+          store.pergunta = String(pergunta || "").replace(/\\n/g, "\n");
           store.callback = callback;
           store.aberto = true;
           this.$nextTick(function () {

@@ -11,9 +11,14 @@
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
-          <label class="field">
+          <label class="field field--full">
             <span class="field__label">Nome *</span>
             <input class="input" name="nome" data-testid="cliente-form-name" value="{{ dados.get('nome', cliente.nome if cliente else '') }}" required autofocus>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Documento (CPF/CNPJ) *</span>
+            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ dados.get('documento', cliente.documento if cliente else '') }}" required x-mask:dynamic="$maskDocumento($input)">
           </label>
 
           <label class="field">
@@ -26,18 +31,13 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ dados.get('documento', cliente.documento if cliente else '') }}" required x-mask:dynamic="$maskDocumento($input)">
+            <span class="field__label">Telefone *</span>
+            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ dados.get('telefone', cliente.telefone if cliente and cliente.telefone else '') or '' }}" x-mask:dynamic="$maskTelefone($input)" required>
           </label>
-
 
           <label class="field">
             <span class="field__label">Email</span>
             <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ dados.get('email', cliente.email if cliente and cliente.email else '') or '' }}">
-          </label>
-          <label class="field">
-            <span class="field__label">Telefone</span>
-            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ dados.get('telefone', cliente.telefone if cliente and cliente.telefone else '') or '' }}" x-mask:dynamic="$maskTelefone($input)">
           </label>
 
           <hr class="form-grid__divider">

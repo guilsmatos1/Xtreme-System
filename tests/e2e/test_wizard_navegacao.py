@@ -43,12 +43,15 @@ def test_wizard_venda_mostra_salvar_apenas_no_ultimo_passo(
     page.get_by_test_id("venda-wizard-vehicle-select").select_option(
         label="ABC1234 — Onix"
     )
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
+    proximo.click()
     proximo.click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
     page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
     proximo.click()
 
-    # Último passo (4 de 4): "Salvar" aparece e "Próximo" some.
+    # Último passo (5 de 5): "Salvar" aparece e "Próximo" some.
     expect(salvar).to_be_visible()
     expect(proximo).not_to_be_visible()

@@ -89,38 +89,37 @@ _EnviarContratoDep = Annotated[
 ]
 
 
-def _investidor_padrao_id(investidores: list[investidor.Investidor]) -> int | None:
-    for inv in investidores:
-        if inv.nome.strip().lower() == "xtreme":
+_INVESTIDOR_CONSIGNADO = "Consignado"
+
+
+def _investidor_consignado_id(session: Session, actor_id: int | None = None) -> int:
+    for inv in investidor.list_all(session):
+        if inv.nome.strip().lower() == _INVESTIDOR_CONSIGNADO.lower():
             return inv.id
-    return None
+    return investidor.create(
+        session,
+        investidor.InvestidorCreate(nome=_INVESTIDOR_CONSIGNADO),
+        actor_id,
+    ).id
 
 
 def _ctx_form_consignacao(session: Session) -> dict[str, Any]:
-    investidores = investidor.list_all(session)
     hoje = datetime.now(UTC).date()
     return {
         "clientes": cliente.list_all(session),
         "data_atual": hoje.isoformat(),
-        "data_vencimento_padrao": hoje.replace(year=hoje.year + 1).isoformat(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos": list(veiculo.TipoVeiculo),
-        "investidores": investidores,
-        "investidor_padrao_id": _investidor_padrao_id(investidores),
         "idempotency_key": uuid4().hex,
     }
 
 
 def _parse_consignacao_form(form: Any) -> dict[str, Any]:
     data = dict(form)
-    if data.get("comissao_percentual") == "":
-        data["comissao_percentual"] = None
     if data.get("observacoes") == "":
         data["observacoes"] = None
     if not data.get("data_consignacao"):
         data["data_consignacao"] = str(datetime.now(UTC).date())
-    if data.get("data_vencimento") == "":
-        data["data_vencimento"] = None
     return data
 
 
@@ -321,6 +320,8 @@ async def _criar_consignacao(  # noqa: PLR0911
     veiculo_obj, novo_veiculo_data, erro = _resolver_veiculo(session, form)
     if erro:
         return _erro_consignacao(request, session, user, erro, dados_form)
+    if novo_veiculo_data is not None:
+        novo_veiculo_data.investidor_id = _investidor_consignado_id(session, user.id)
 
     novo_cliente_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
@@ -477,11 +478,8 @@ register_crud_ui_routes(
             ),
             "data": SortField("criado_em", consignacao.Consignacao.criado_em),
             "valor": SortField("valor_venda", consignacao.Consignacao.valor_venda),
-            "comissao": SortField(
-                "comissao_percentual", consignacao.Consignacao.comissao_percentual
-            ),
-            "vencimento": SortField(
-                "data_vencimento", consignacao.Consignacao.data_vencimento
+            "valor_proprietario": SortField(
+                "valor_proprietario", consignacao.Consignacao.valor_proprietario
             ),
             "status": SortField("status", consignacao.Consignacao.status),
             "observacoes": SortField(
@@ -536,19 +534,11 @@ register_crud_ui_routes(
                 export=lambda c: f"{c.valor_venda:.2f}" if c.valor_venda else "",
             ),
             ColumnSpec(
-                "comissao_percentual",
-                "Comissão (%)",
-                field="comissao_percentual",
+                "valor_proprietario",
+                "Valor do Proprietário",
+                field="valor_proprietario",
                 export=lambda c: (
-                    f"{c.comissao_percentual:.2f}" if c.comissao_percentual else ""
-                ),
-            ),
-            ColumnSpec(
-                "data_vencimento",
-                "Vencimento",
-                field="data_vencimento",
-                export=lambda c: (
-                    c.data_vencimento.isoformat() if c.data_vencimento else ""
+                    f"{c.valor_proprietario:.2f}" if c.valor_proprietario else ""
                 ),
             ),
             ColumnSpec(

@@ -2,16 +2,18 @@
 
 from decimal import Decimal
 from typing import Annotated, Any
+from urllib.parse import parse_qs, urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Query as SAQuery
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_types import ListingSpec, SortField
-from xtreme_system.api.crud_ui.helpers import current_list_state
+from xtreme_system.api.crud_types import ListingSpec, ListState, SortField
+from xtreme_system.api.crud_ui.helpers import LIST_LIMIT_MAX, current_list_state
 from xtreme_system.api.crud_ui.query import query_list
 from xtreme_system.api.crud_ui.responses import (
     conflict_form_response,
@@ -50,6 +52,7 @@ from xtreme_system.cliente import core as cliente
 from xtreme_system.compra import core as compra
 from xtreme_system.crud import core as crud
 from xtreme_system.custo_veiculo import core as custo_veiculo
+from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.imagem_documento_cliente import core as imagem_documento_cliente
 from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
@@ -136,27 +139,67 @@ def _ctx_lista_veiculos(
     }
 
 
-_VEICULOS_LISTING = ListingSpec(
-    searchable=True,
-    source="query",
-    query_func=veiculo.query,
-    search_query_func=veiculo.search_query,
-    sort_fields={
-        "modelo": SortField("modelo", veiculo.Veiculo.modelo),
-        "placa": SortField("placa", veiculo.Veiculo.placa),
-        "tipo": SortField("tipo", veiculo.Veiculo.tipo),
-        "ano": SortField("ano", veiculo.Veiculo.ano),
-        "km": SortField("km", veiculo.Veiculo.km),
-        "preco": SortField("preco", veiculo.Veiculo.preco),
-        "status": SortField("status", veiculo.Veiculo.status),
-        "tipo_entrada": SortField("tipo_entrada", veiculo.Veiculo.tipo_entrada),
-        "revisao": SortField("revisao", veiculo.Veiculo.revisao),
-        "investidor": SortField("investidor", investidor.Investidor.nome),
-        "procuracao": SortField("procuracao", veiculo.Veiculo.procuracao),
-        "debitos": SortField("debitos", _DEBITOS_SORT_SQL),
-        "tempo_estoque": SortField("criado_em", veiculo.Veiculo.criado_em),
-    },
-)
+def _sem_fechamento_param(request: Request) -> bool:
+    current_url = request.headers.get("HX-Current-URL")
+    if current_url:
+        query_params = {
+            key: values[-1]
+            for key, values in parse_qs(
+                urlsplit(current_url).query, keep_blank_values=True
+            ).items()
+        }
+    else:
+        query_params = dict(request.query_params)
+    return query_params.get("sem_fechamento", "1") != "0"
+
+
+def _query_sem_fechamento(session: Session) -> SAQuery[veiculo.Veiculo]:
+    fechados = fechamento_venda.veiculo_ids_fechados(session)
+    query = veiculo.query(session)
+    if fechados:
+        query = query.filter(veiculo.Veiculo.id.notin_(fechados))
+    return query
+
+
+def _search_query_sem_fechamento(
+    session: Session, term: str, column: str | None = None
+) -> SAQuery[veiculo.Veiculo]:
+    fechados = fechamento_venda.veiculo_ids_fechados(session)
+    query = veiculo.search_query(session, term, column=column)
+    if fechados:
+        query = query.filter(veiculo.Veiculo.id.notin_(fechados))
+    return query
+
+
+def _veiculos_listing(sem_fechamento: bool) -> ListingSpec[veiculo.Veiculo]:
+    return ListingSpec(
+        searchable=True,
+        source="query",
+        query_func=_query_sem_fechamento if sem_fechamento else veiculo.query,
+        search_query_func=(
+            _search_query_sem_fechamento if sem_fechamento else veiculo.search_query
+        ),
+        sort_fields=_VEICULOS_SORT_FIELDS,
+    )
+
+
+_VEICULOS_SORT_FIELDS: dict[str, SortField[veiculo.Veiculo]] = {
+    "modelo": SortField("modelo", veiculo.Veiculo.modelo),
+    "placa": SortField("placa", veiculo.Veiculo.placa),
+    "tipo": SortField("tipo", veiculo.Veiculo.tipo),
+    "ano": SortField("ano", veiculo.Veiculo.ano),
+    "km": SortField("km", veiculo.Veiculo.km),
+    "preco": SortField("preco", veiculo.Veiculo.preco),
+    "status": SortField("status", veiculo.Veiculo.status),
+    "tipo_entrada": SortField("tipo_entrada", veiculo.Veiculo.tipo_entrada),
+    "revisao": SortField("revisao", veiculo.Veiculo.revisao),
+    "investidor": SortField("investidor", investidor.Investidor.nome),
+    "procuracao": SortField("procuracao", veiculo.Veiculo.procuracao),
+    "debitos": SortField("debitos", _DEBITOS_SORT_SQL),
+    "tempo_estoque": SortField("criado_em", veiculo.Veiculo.criado_em),
+}
+
+_VEICULOS_LISTING = _veiculos_listing(sem_fechamento=True)
 
 
 register_crud_ui_routes(
@@ -241,12 +284,63 @@ register_crud_ui_routes(
         pagina="veiculos",
     ),
     routes=CrudUIRouteConfig(
+        register_list=False,
         register_create=False,
         register_update=False,
         register_edit=False,
         register_delete=False,
     ),
 )
+
+
+@router.get("/ui/veiculos")
+def _listar_veiculos(
+    request: Request,
+    session: SessionDep,
+    user: UIUser,
+    q: str = "",
+    sort: str = "",
+    order: str = "asc",
+    search_column: str = "",
+    sem_fechamento: bool = True,
+    limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> HTMLResponse:
+    state = ListState(
+        q=q,
+        sort=sort,
+        order=order,
+        search_column=search_column,
+        limit=limit,
+        offset=offset,
+    )
+    listing = _veiculos_listing(sem_fechamento)
+    veiculos = query_list(session, veiculo, listing=listing, state=state)
+    template = (
+        "_linhas_veiculos.html"
+        if request.headers.get("HX-Request")
+        else "veiculos.html"
+    )
+    return list_response(
+        templates,
+        request,
+        template,
+        user=user,
+        list_key="veiculos",
+        lista=veiculos,
+        ctx_list={
+            **_ctx_lista_veiculos(session, veiculos),
+            "sem_fechamento": "1" if sem_fechamento else "0",
+        },
+        sort=sort or listing.default_sort,
+        order=order if sort else listing.default_order,
+        q=q,
+        search_column=search_column,
+        limit=limit,
+        offset=offset,
+        filter_col="sem_fechamento" if not sem_fechamento else "",
+        filter_val="0" if not sem_fechamento else "",
+    )
 
 
 register_reference_lookup_routes(
@@ -317,11 +411,28 @@ def _detalhe_veiculo(
     )
 
 
+def _ctx_lista_veiculos_com_filtro(
+    sem_fechamento: bool,
+) -> Any:
+    def _ctx(session: Session, veiculos: list[veiculo.Veiculo]) -> dict[str, Any]:
+        return {
+            **_ctx_lista_veiculos(session, veiculos),
+            "sem_fechamento": "1" if sem_fechamento else "0",
+        }
+
+    return _ctx
+
+
 @router.post("/ui/veiculos/{item_id}/excluir")
 def _excluir_veiculo(
     item_id: int, request: Request, session: SessionDep, user: _ExcluirDep
 ) -> HTMLResponse:
     obj = found(veiculo.get(session, item_id), "Veículo")
+    sem_fechamento = _sem_fechamento_param(request)
+    listing = _veiculos_listing(sem_fechamento)
+    ctx_list = _ctx_lista_veiculos_com_filtro(sem_fechamento)
+    filter_col = "sem_fechamento" if not sem_fechamento else ""
+    filter_val = "0" if not sem_fechamento else ""
     try:
         delete_with_hook(
             veiculo,
@@ -341,10 +452,12 @@ def _excluir_veiculo(
                 "_linhas_veiculos.html",
                 user=user,
                 list_key="veiculos",
-                ctx_list=_ctx_lista_veiculos,
-                listing=_VEICULOS_LISTING,
+                ctx_list=ctx_list,
+                listing=listing,
                 erro=delete_conflict_detail("Veículo"),
                 status_code=409,
+                filter_col=filter_col,
+                filter_val=filter_val,
             )
 
         return rollback_integrity_error_response(session, build_conflict_response)
@@ -356,8 +469,10 @@ def _excluir_veiculo(
         "_linhas_veiculos.html",
         user=user,
         list_key="veiculos",
-        ctx_list=_ctx_lista_veiculos,
-        listing=_VEICULOS_LISTING,
+        ctx_list=ctx_list,
+        listing=listing,
+        filter_col=filter_col,
+        filter_val=filter_val,
     )
 
 
@@ -365,7 +480,9 @@ def _ok_veiculo(
     request: Request, session: Session, user: usuario.Usuario
 ) -> HTMLResponse:
     state = current_list_state(request)
-    veiculos = query_list(session, veiculo, listing=_VEICULOS_LISTING, state=state)
+    sem_fechamento = _sem_fechamento_param(request)
+    listing = _veiculos_listing(sem_fechamento)
+    veiculos = query_list(session, veiculo, listing=listing, state=state)
     return list_response(
         templates,
         request,
@@ -373,7 +490,7 @@ def _ok_veiculo(
         user=user,
         list_key="veiculos",
         lista=veiculos,
-        ctx_list=_ctx_lista_veiculos(session, veiculos),
+        ctx_list=_ctx_lista_veiculos_com_filtro(sem_fechamento)(session, veiculos),
         sort=state.sort,
         order=state.order,
         q=state.q,
@@ -381,26 +498,8 @@ def _ok_veiculo(
         limit=state.limit or 50,
         offset=state.offset,
         success=True,
-    )
-
-
-def _erro_veiculo(
-    request: Request,
-    session: Session,
-    user: usuario.Usuario,
-    msg: str,
-    veiculo_id: int | None = None,
-) -> HTMLResponse:
-    return error_response(
-        templates,
-        request,
-        "_form_veiculo.html",
-        ctx_form=_ctx_form_veiculo(session, veiculo_id),
-        item_key="veiculo",
-        item=None,
-        erro=msg,
-        status_code=400,
-        user=user,
+        filter_col="sem_fechamento" if not sem_fechamento else "",
+        filter_val="0" if not sem_fechamento else "",
     )
 
 
@@ -432,6 +531,7 @@ async def _atualizar_veiculo(
                 "veiculo": obj,
                 "user": user,
                 "erro": msg,
+                "dados": dados_form,
             },
             status_code=400,
         )
@@ -443,8 +543,17 @@ async def _atualizar_veiculo(
             try:
                 debitos = Decimal(crud.parse_decimal_br(debitos_raw))
             except Exception:
-                return _erro_veiculo(
-                    request, session, user, "Débitos inválidos", item_id
+                return error_response(
+                    templates,
+                    request,
+                    "_form_veiculo.html",
+                    ctx_form=_ctx_form_veiculo(session, obj.id),
+                    item_key="veiculo",
+                    item=obj,
+                    erro="Débitos inválidos",
+                    status_code=400,
+                    user=user,
+                    dados=dados_form,
                 )
 
     try:

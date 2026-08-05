@@ -87,6 +87,7 @@ class CrudUIReferenceConfig:
 # pylint: disable=too-many-instance-attributes
 @dataclass(frozen=True)
 class CrudUIRouteConfig:
+    register_list: bool = True
     register_create: bool = True
     register_update: bool = True
     register_edit: bool = True

@@ -114,21 +114,22 @@ def register_crud_ui_routes(
         ctx_form=behavior.ctx_form,
         item_key=resource.item_key,
     )
-    register_list_route(
-        app,
-        templates,
-        module,
-        prefix,
-        config=CrudUIListRouteConfig(
-            list_key=resource.list_key,
-            list_template=templates_config.list_template,
-            list_partial_template=templates_config.list_partial_template,
-            listing=listing,
-            ctx_list=ctx_list,
-            columns=export.columns,
-            pagina=export.pagina,
-        ),
-    )
+    if routes.register_list:
+        register_list_route(
+            app,
+            templates,
+            module,
+            prefix,
+            config=CrudUIListRouteConfig(
+                list_key=resource.list_key,
+                list_template=templates_config.list_template,
+                list_partial_template=templates_config.list_partial_template,
+                listing=listing,
+                ctx_list=ctx_list,
+                columns=export.columns,
+                pagina=export.pagina,
+            ),
+        )
     register_export_route(
         app,
         module,

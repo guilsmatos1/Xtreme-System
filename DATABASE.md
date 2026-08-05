@@ -300,10 +300,9 @@ Registro de consignações de veículos.
 | `usuario_id` | `INTEGER` | Sim | - | FK → `usuario.id` (SET NULL), indexado |
 | `idempotency_key` | `VARCHAR(64)` | Sim | - | Chave única para evitar duplicidades, indexado |
 | `data_consignacao` | `DATE` | Não | - | |
-| `data_vencimento` | `DATE` | Sim | - | |
 | `criado_em` | `DATETIME` | Não | `now()` | |
 | `valor_venda` | `NUMERIC(12,2)` | Não | - | Validado pela aplicação como `> 0` |
-| `comissao_percentual` | `NUMERIC(5,2)` | Sim | - | Entre 0 e 100% |
+| `valor_proprietario` | `NUMERIC(12,2)` | Não | - | Validado pela aplicação como `> 0` |
 | `observacoes` | `VARCHAR` | Sim | - | |
 | `status` | `statusconsignacao` | Não | `ativa` | `ativa`, `vendida`, `devolvida`, `cancelada` |
 

@@ -1,7 +1,7 @@
 {% import "_macros.html" as ui %}
 {% set dados = dados or {} %}
 <div class="modal" x-on:click.self="fecharComConfirmacao()">
-  <div class="modal__panel{% if not veiculo %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mv-title">
+  <div class="modal__panel modal__panel--wizard" role="dialog" aria-modal="true" aria-labelledby="mv-title">
     <div class="modal__head">
       <h3 id="mv-title">{{ 'Editar veículo' if veiculo else 'Novo veículo' }}</h3>
       <button class="icon-btn" type="button" aria-label="Fechar"
@@ -9,126 +9,136 @@
     </div>
     <form hx-post="/ui/veiculos{% if veiculo %}/{{ veiculo.id }}{% endif %}" hx-target="#modal" hx-swap="innerHTML"
           hx-encoding="multipart/form-data" enctype="multipart/form-data"
-          {% if not veiculo %}id="form-novo-veiculo" x-data="wizard({{ dados.get('wizard_step', 1) }})"{% endif %}>
+          id="form-{{ 'editar' if veiculo else 'novo' }}-veiculo" x-data="wizard({{ dados.get('wizard_step', 1) }})">
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
 
         {% if veiculo %}
-        <div class="form-grid">
-          {% if pode_ver_campo(user, 'veiculos', 'status') %}
-          <label class="field">
-            <span class="field__label">Estado *</span>
-            <select class="select" name="status" required>
-              <option value="disponivel"{% if veiculo.status.value == "disponivel" %} selected{% endif %}>Disponível</option>
-              <option value="indisponivel"{% if veiculo.status.value != "disponivel" %} selected{% endif %}>Indisponível</option>
-            </select>
-          </label>
+        {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
+        <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
+        {% set passo_atual = dados.get('wizard_step', 1)|int %}
+        <div class="stepper">
+          {% for rotulo in ["Identificação", "Documentação", "Outros"] %}
+          {% if not loop.first %}
+          <div class="stepper__connector{% if passo_atual > loop.index - 1 %} is-done{% endif %}"
+               :class="{ 'is-done': step > {{ loop.index - 1 }} }"></div>
           {% endif %}
+          <div class="stepper__item{% if passo_atual == loop.index %} is-active{% elif passo_atual > loop.index %} is-done{% endif %}"
+               :class="{ 'is-active': step === {{ loop.index }}, 'is-done': step > {{ loop.index }} }">
+            <span class="stepper__num">{{ loop.index }}</span>
+            <span class="stepper__label">{{ rotulo }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <hr class="form-grid__divider">
 
-          <hr class="form-grid__divider">
-
+        <fieldset class="wizard-step form-grid{% if passo_atual == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }">
           {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
             <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ veiculo.placa }}" required autofocus style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
+            <input class="input" name="placa" value="{{ dados.get('placa', veiculo.placa) }}" required autofocus style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>{% endif %}
           {% if pode_operacao(user, 'veiculos', 'editar') %}
           {{ ui.rsd_actions(inline=True) }}
           {% endif %}
-
           {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field">
             <span class="field__label">Modelo *</span>
-            <input class="input" name="modelo" value="{{ veiculo.modelo }}" required>
+            <input class="input" name="modelo" value="{{ dados.get('modelo', veiculo.modelo) }}" required>
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
             <span class="field__label">Tipo *</span>
             <select class="select" name="tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if veiculo.tipo == t %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('tipo', veiculo.tipo.value) == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
             </select>
           </label>{% endif %}
-
           {% if pode_ver_campo(user, 'veiculos', 'marca') %}<label class="field">
             <span class="field__label">Marca</span>
-            <input class="input" name="marca" value="{{ veiculo.marca or '' }}">
+            <input class="input" name="marca" value="{{ dados.get('marca', veiculo.marca or '') }}">
           </label>{% endif %}
           <label class="field">
             <span class="field__label">Cor *</span>
-            <input class="input" name="cor" value="{{ veiculo.cor }}" required>
+            <input class="input" name="cor" value="{{ dados.get('cor', veiculo.cor) }}" required>
           </label>
-
           {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
             <span class="field__label">Ano *</span>
-            <input class="input" name="ano" type="number" value="{{ veiculo.ano }}" required>
+            <input class="input" name="ano" type="text" inputmode="numeric" maxlength="4" value="{{ dados.get('ano', veiculo.ano) }}" required x-mask="9999">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<label class="field">
             <span class="field__label">Chassi</span>
-            <input class="input" name="chassi" value="{{ veiculo.chassi or '' }}">
+            <input class="input" name="chassi" value="{{ dados.get('chassi', veiculo.chassi or '') }}">
           </label>{% endif %}
+        </fieldset>
 
+        <fieldset class="wizard-step form-grid{% if passo_atual == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<label class="field">
             <span class="field__label">RENAVAM</span>
-            <input class="input" name="renavam" value="{{ veiculo.renavam or '' }}">
+            <input class="input" name="renavam" value="{{ dados.get('renavam', veiculo.renavam or '') }}">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<label class="field">
             <span class="field__label">Proprietário Registrado</span>
-            <input class="input" name="proprietario_registrado" value="{{ veiculo.proprietario_registrado or '' }}">
+            <input class="input" name="proprietario_registrado" value="{{ dados.get('proprietario_registrado', veiculo.proprietario_registrado or '') }}">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<label class="field">
             <span class="field__label">Documento do Proprietário</span>
-            <input class="input" name="proprietario_documento" value="{{ veiculo.proprietario_documento or '' }}">
+            <input class="input" name="proprietario_documento" value="{{ dados.get('proprietario_documento', veiculo.proprietario_documento or '') }}">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<label class="field">
             <span class="field__label">UF do Proprietário</span>
-            <input class="input" name="proprietario_uf" value="{{ veiculo.proprietario_uf or '' }}" maxlength="2" style="text-transform:uppercase">
+            <input class="input" name="proprietario_uf" value="{{ dados.get('proprietario_uf', veiculo.proprietario_uf or '') }}" maxlength="2" style="text-transform:uppercase">
           </label>{% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
+            <span class="field__label">Procurador</span>
+            <input class="input" name="procuracao" value="{{ dados.get('procuracao', veiculo.procuracao or '') }}">
+          </label>{% endif %}
+        </fieldset>
 
-          <hr class="form-grid__divider">
-
+        <fieldset class="wizard-step form-grid{% if passo_atual == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
+          {% if pode_ver_campo(user, 'veiculos', 'status') %}
+          <label class="field">
+            <span class="field__label">Status *</span>
+            <select class="select" name="status" required>
+              <option value="disponivel"{% if dados.get('status', veiculo.status.value) == "disponivel" %} selected{% endif %}>Disponível</option>
+              <option value="indisponivel"{% if dados.get('status', veiculo.status.value) != "disponivel" %} selected{% endif %}>Indisponível</option>
+            </select>
+          </label>
+          {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'preco') %}
           <label class="field">
-            <span class="field__label">Preço Anunciado (R$) *</span>
-            <input class="input" name="preco" data-testid="veiculo-edit-preco" type="text" inputmode="decimal" value="{{ veiculo.preco }}" required>
+            <span class="field__label">Preço anunciado (R$)</span>
+            <input class="input" name="preco" data-testid="veiculo-edit-preco" type="text" inputmode="decimal" value="{{ dados.get('preco', veiculo.preco) }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
-            <span class="field__label">Quilometragem</span>
-            <input class="input" name="km" type="number" value="{{ veiculo.km or '' }}">
+            <span class="field__label">Quilometragem *</span>
+            <input class="input" name="km" type="number" value="{{ dados.get('km', veiculo.km or '') }}" required>
           </label>{% endif %}
-
           {% if pode_ver_campo(user, 'veiculos', 'investidor') %}
           <label class="field">
             <span class="field__label">Investidor *</span>
             <input class="input" id="investidor-input" name="investidor_label" list="investidores-list"
                    placeholder="Buscar por nome" required
-                   value="{{ veiculo.investidor.nome if veiculo.investidor else '' }}"
+                   value="{{ dados.get('investidor_label', veiculo.investidor.nome if veiculo.investidor else '') }}"
                    data-reference-url="/ui/veiculos/referencias/investidores"
-                   data-selected-id="{{ veiculo.investidor_id }}">
-            <input id="investidor-search" name="investidor_id" type="hidden" value="{{ veiculo.investidor_id }}">
+                   data-selected-id="{{ dados.get('investidor_id', veiculo.investidor_id) }}">
+            <input id="investidor-search" name="investidor_id" type="hidden" value="{{ dados.get('investidor_id', veiculo.investidor_id) }}">
             <datalist id="investidores-list"></datalist>
           </label>
           {% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
-            <span class="field__label">Procurador</span>
-            <input class="input" name="procuracao" value="{{ veiculo.procuracao or '' }}">
-          </label>{% endif %}
-
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
-          {% set debitos_veiculo = debitos_por_veiculo.get(veiculo.id) if debitos_por_veiculo else none %}
           <label class="field">
-            <span class="field__label">Débitos (R$)</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ debitos_veiculo if debitos_veiculo is not none else '' }}">
+            <span class="field__label">Débitos do veículo (R$) *</span>
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', debitos_veiculo if debitos_veiculo is not none else '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'revisao') %}
           <label class="field">
             <span class="field__label">Revisão</span>
             <select class="select" name="revisao">
-              <option value="true"{% if veiculo.revisao %} selected{% endif %}>Sim</option>
-              <option value="false"{% if not veiculo.revisao %} selected{% endif %}>Não</option>
+              <option value="true"{% if dados.get('revisao', veiculo.revisao) in (true, 'true') %} selected{% endif %}>Sim</option>
+              <option value="false"{% if dados.get('revisao', veiculo.revisao) not in (true, 'true') %} selected{% endif %}>Não</option>
             </select>
           </label>
           {% endif %}
-
-        </div>
+        </fieldset>
         {% else %}
         <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
         <div class="wizard-steps">Passo <span x-text="step">{{ dados.get('wizard_step', 1) }}</span> de <span x-text="total">4</span></div>
@@ -168,23 +178,23 @@
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
             <span class="field__label">Ano *</span>
-            <input class="input" name="ano" type="number" value="{{ dados.get('ano', '') }}" required>
+            <input class="input" name="ano" type="text" inputmode="numeric" maxlength="4" value="{{ dados.get('ano', '') }}" required x-mask="9999">
           </label>{% endif %}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
-            <span class="field__label">Quilometragem</span>
-            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', '') }}">
+            <span class="field__label">Quilometragem *</span>
+            <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', '') }}" required>
           </label>{% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           <label class="field">
-            <span class="field__label">Preço Anunciado (R$) *</span>
+            <span class="field__label">Preço anunciado (R$)</span>
             <input class="input" name="preco" type="text" inputmode="decimal" value="{{ dados.get('preco', '') }}" required>
           </label>
           {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
           <label class="field">
-            <span class="field__label">Débitos (R$)</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}">
+            <span class="field__label">Débitos do veículo (R$) *</span>
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ dados.get('debitos', '') }}" required>
           </label>
           {% endif %}
           <label class="field">
@@ -263,13 +273,9 @@
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
-        {% if veiculo %}
-        <button type="submit" class="btn btn--primary" data-testid="veiculo-edit-save">{{ ui.icon("check") }} Salvar</button>
-        {% else %}
-        <button type="button" class="btn btn--default" x-show="step > 1" style="display:none" @click="voltar()">Voltar</button>
-        <button type="button" class="btn btn--primary" x-show="step < total" @click="proximo()">Próximo</button>
-        <button type="submit" class="btn btn--primary" x-show="step === total" style="display:none">{{ ui.icon("check") }} Salvar</button>
-        {% endif %}
+        <button type="button" class="btn btn--default" x-show="step > 1" data-testid="veiculo-wizard-back" style="display:none" @click="voltar()">Voltar</button>
+        <button type="button" class="btn btn--primary" x-show="step < total" data-testid="veiculo-wizard-next" @click="proximo()">Próximo</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" style="display:none" data-testid="veiculo-edit-save">{{ ui.icon("check") }} Salvar</button>
       </div>
     </form>
   </div>

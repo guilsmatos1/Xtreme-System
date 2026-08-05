@@ -154,6 +154,44 @@ def test_confirmar_fechamento_calcula_lucro_e_lancamentos(session: Session) -> N
     assert caixa.saldo(session, participante.id) == Decimal("-7200.00")
 
 
+def test_veiculo_ids_fechados_retorna_apenas_veiculos_com_venda_fechada(
+    session: Session,
+) -> None:
+    principal, _participante, venda_obj = _seed_venda(session)
+    outro_vei = veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Onix",
+            cor="Prata",
+            ano=2020,
+            placa="XYZ9Z99",
+            km=10000,
+            preco=Decimal("50000.00"),
+            investidor_id=principal.id,
+        ),
+    )
+
+    assert fechamento_venda.veiculo_ids_fechados(session) == set()
+
+    fechamento_venda.confirmar(
+        session,
+        venda_obj,
+        fechamento_venda.FechamentoVendaCreate(
+            participacoes=[
+                fechamento_venda.ParticipacaoFechamentoVendaCreate(
+                    investidor_id=principal.id, percentual=Decimal("100")
+                ),
+            ]
+        ),
+        usuario_id=None,
+    )
+
+    fechados = fechamento_venda.veiculo_ids_fechados(session)
+    assert venda_obj.veiculo_id in fechados
+    assert outro_vei.id not in fechados
+
+
 def test_confirmar_fechamento_distribui_residuo_de_arredondamento(
     session: Session,
 ) -> None:

@@ -146,6 +146,15 @@ def _preparar_veiculo_troca(
     if erro:
         nested_writes.rollback(session)
         return None, VendaErro(mensagem=erro, dados=dados_form)
+    if novo_veiculo_troca_data is not None:
+        veiculo_principal_id = str(form.get("veiculo_id") or "").strip()
+        if veiculo_principal_id:
+            try:
+                veiculo_principal = veiculo.get(session, int(veiculo_principal_id))
+            except ValueError:
+                veiculo_principal = None
+            if veiculo_principal is not None:
+                novo_veiculo_troca_data.investidor_id = veiculo_principal.investidor_id
     novo_veiculo_troca_obj, conflito = criar_aninhado_ou_resposta_conflito(
         session,
         novo_veiculo_troca_data,

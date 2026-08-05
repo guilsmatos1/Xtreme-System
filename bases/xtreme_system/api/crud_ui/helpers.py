@@ -133,6 +133,8 @@ def delete_list_response(
     listing: ListingSpec[Any],
     erro: str | None = None,
     status_code: int = 200,
+    filter_col: str = "",
+    filter_val: str = "",
 ) -> HTMLResponse:
     state = current_list_state(request)
     lista = query_list(session, module, listing=listing, state=state)
@@ -152,6 +154,8 @@ def delete_list_response(
         offset=state.offset,
         erro=erro,
         status_code=status_code,
+        filter_col=filter_col,
+        filter_val=filter_val,
     )
 
 

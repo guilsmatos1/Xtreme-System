@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html.parser
+import json
 import re
 from collections.abc import Callable
 from typing import Any
@@ -471,14 +473,47 @@ def test_ui_puxar_dados_com_mock(
     _salvar_config_rsd(client)
     _patch_client_from_config(monkeypatch)
 
-    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
+    # HX-Request ativa o middleware _htmx_write_feedback; sem HX-Trigger
+    # próprio ele fecharia o modal antes do JS aplicar data-rsd-campos.
+    resp = client.post(
+        "/ui/rsd/puxar-dados",
+        data={"placa": "TCM9G85"},
+        headers={"HX-Request": "true"},
+    )
     assert resp.status_code == 200
-    assert "Dados carregados" in resp.text
+    assert "Dados carregados do RSD." in resp.text
     assert "alert--success" in resp.text
-    assert "data-rsd-campos=" in resp.text
     assert "ONIX 10MT LT2" in resp.text
     assert "CHEV/ONIX 10MT LT2" not in resp.text
     assert "<script>" not in resp.text
+
+    # |tojson|e deixa aspas cruas no atributo (Markup); o browser só lê "{".
+    # forceescape garante JSON parseável via getAttribute / HTML parser.
+    class _CamposAttr(html.parser.HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.value: str | None = None
+
+        def handle_starttag(
+            self, _tag: str, attrs: list[tuple[str, str | None]]
+        ) -> None:
+            if self.value is not None:
+                return
+            found = dict(attrs).get("data-rsd-campos")
+            if found is not None:
+                self.value = found
+
+    parser = _CamposAttr()
+    parser.feed(resp.text)
+    assert parser.value is not None
+    campos = json.loads(parser.value)
+    assert campos.get("modelo") == "ONIX 10MT LT2"
+    assert campos.get("marca") == "CHEV"
+    assert len(parser.value) > 2  # não só "{"
+
+    trigger = json.loads(resp.headers["HX-Trigger"])
+    assert "htmx:close-modal" not in trigger
+    assert "htmx:toast" not in trigger
 
 
 def test_ui_puxar_dados_timeout_retorna_feedback_htmx(

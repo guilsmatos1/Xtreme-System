@@ -1,7 +1,7 @@
 {% import "_macros.html" as ui %}
 {% set status_id = status_id or "rsd-status" %}
 <div id="{{ status_id }}" class="field field--full rsd-status"
-     {% if campos %}data-rsd-campos="{{ campos | tojson | e }}"{% endif %}
+     {% if campos %}data-rsd-campos="{{ campos | tojson | forceescape }}"{% endif %}
      {% if unitaria and not unitaria.is_terminal %}
      hx-get="/ui/rsd/dossie/{{ unitaria.dossie_id }}/status?rsd_status_id={{ status_id }}"
      hx-trigger="every 3s" hx-swap="outerHTML"

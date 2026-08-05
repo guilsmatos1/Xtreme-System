@@ -22,14 +22,6 @@
       <input class="input" type="date" name="data_ate" value="{{ f_data_ate or '' }}">
     </label>
     <label class="field">
-      <span class="field__label">Tipo</span>
-      <select class="select" name="tipo">
-        <option value="">Todos</option>
-        <option value="puxar_dados" {{ 'selected' if f_tipo and f_tipo.value == 'puxar_dados' }}>Puxar dados</option>
-        <option value="unitaria" {{ 'selected' if f_tipo and f_tipo.value == 'unitaria' }}>Consulta unitária</option>
-      </select>
-    </label>
-    <label class="field">
       <span class="field__label">Placa</span>
       <input class="input" type="text" name="placa" value="{{ f_placa or '' }}" maxlength="100">
     </label>

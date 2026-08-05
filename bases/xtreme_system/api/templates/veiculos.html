@@ -58,6 +58,16 @@
       <span class="filter-badge">{{ search_column }}</span>
       {% endif %}
     </div>
+    <div class="filter-separator"></div>
+    <div class="filter-control">
+      <label class="filter-label">{{ ui.icon("filter") }} Fechamento:</label>
+      <select class="input filter-select" name="sem_fechamento"
+              hx-get="/ui/veiculos" hx-trigger="change" hx-include="#busca-veiculos" hx-target="#linhas" hx-swap="outerHTML"
+              aria-label="Filtrar por fechamento">
+        <option value="1"{% if sem_fechamento != '0' %} selected{% endif %}>Sem fechamento</option>
+        <option value="0"{% if sem_fechamento == '0' %} selected{% endif %}>Todos</option>
+      </select>
+    </div>
   </div>
 </div>
 

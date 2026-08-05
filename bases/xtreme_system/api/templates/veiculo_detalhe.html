@@ -12,7 +12,7 @@
 
 <div class="page-head">
   <div class="page-head__title">
-    <h1>{{ veiculo.modelo }} {% if pode_ver_campo(user, 'veiculos', 'placa') %}<span class="cell-mono">{{ veiculo.placa }}</span>{% endif %}</h1>
+    <h1>{{ veiculo.modelo }}</h1>
     <p class="page-head__subtitle" style="display:flex; gap:var(--s-2); margin-top:var(--s-2)">
       {% if pode_ver_campo(user, 'veiculos', 'tipo') %}{{ ui.tipo_badge(veiculo.tipo) }}{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'status') %}{{ ui.status_badge(veiculo.status) }}{% endif %}
@@ -96,7 +96,7 @@
     {% if compra_atual %}
     <dl class="details-list">
       <div><dt>Nome</dt><dd>{{ compra_atual.cliente.nome }}</dd></div>
-      <div><dt>Documento</dt><dd>{{ compra_atual.cliente.documento }}</dd></div>
+      <div><dt>Documento</dt><dd>{{ compra_atual.cliente.documento | formatar_documento }}</dd></div>
       <div><dt>Tipo</dt><dd>{{ compra_atual.cliente.tipo.value | replace("_", " ") | title }}</dd></div>
       <div><dt>Telefone</dt><dd>{{ compra_atual.cliente.telefone or "-" }}</dd></div>
       <div><dt>Email</dt><dd>{{ compra_atual.cliente.email or "-" }}</dd></div>

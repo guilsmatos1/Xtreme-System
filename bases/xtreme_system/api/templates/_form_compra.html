@@ -30,14 +30,14 @@
 
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
-            <span class="field__label">Valor da compra *</span>
+            <span class="field__label">Valor do veículo (R$) *</span>
             <input class="input" name="valor_compra" data-testid="compra-edit-value" type="text" inputmode="decimal" value="{{ compra.valor_compra }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
-            <span class="field__label">Débitos do veículo</span>
-            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ compra.debitos if compra.debitos is not none else '0,00' }}">
+            <span class="field__label">Débitos do veículo (R$) *</span>
+            <input class="input" name="debitos" type="text" inputmode="decimal" value="{{ compra.debitos if compra.debitos is not none else '0,00' }}" required>
           </label>
           {% endif %}
 
@@ -79,6 +79,7 @@
               {% endfor %}
             </select>
           </label>
+          <hr class="form-grid__divider">
           <label x-show="!clienteExistente" class="field field--full">
             <span class="field__label">Nome *</span>
             <input class="input" name="cli_nome" data-testid="compra-wizard-client-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
@@ -88,8 +89,8 @@
             <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Tipo</span>
-            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente">
+            <span class="field__label">Tipo *</span>
+            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente" required>
               {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
             </select>
           </label>
@@ -132,7 +133,8 @@
             <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
           </label>
           {{ ui.rsd_actions("vei_", "rsd-status-compra", true) }}
-          <label class="field field--full">
+          <hr class="form-grid__divider">
+          <label class="field">
             <span class="field__label">Modelo *</span>
             <input class="input" name="vei_modelo" data-testid="compra-wizard-vehicle-model" data-novo-veiculo value="{{ dados.get('vei_modelo', '') }}" required>
           </label>
@@ -153,7 +155,7 @@
           </label>
           <label class="field">
             <span class="field__label">Ano *</span>
-            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="number" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required>
+            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="text" inputmode="numeric" maxlength="4" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required x-mask="9999">
           </label>
           <label class="field">
             <span class="field__label">Chassi</span>
@@ -163,16 +165,16 @@
             <span class="field__label">RENAVAM</span>
             <input class="input" name="vei_renavam" data-novo-veiculo value="{{ dados.get('vei_renavam', '') }}">
           </label>
-          <label class="field field--full">
-            <span class="field__label">Proprietário Registrado</span>
+          <label class="field">
+            <span class="field__label">Proprietário registrado</span>
             <input class="input" name="vei_proprietario_registrado" data-novo-veiculo value="{{ dados.get('vei_proprietario_registrado', '') }}">
           </label>
           <label class="field">
-            <span class="field__label">Documento do Proprietário</span>
+            <span class="field__label">Documento do proprietário</span>
             <input class="input" name="vei_proprietario_documento" data-novo-veiculo value="{{ dados.get('vei_proprietario_documento', '') }}">
           </label>
           <label class="field">
-            <span class="field__label">UF do Proprietário</span>
+            <span class="field__label">UF do proprietário</span>
             <input class="input" name="vei_proprietario_uf" data-novo-veiculo value="{{ dados.get('vei_proprietario_uf', '') }}" maxlength="2" style="text-transform:uppercase">
           </label>
           {% endif %}
@@ -187,14 +189,14 @@
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'valor_compra') %}
           <label class="field">
-            <span class="field__label">Valor da compra *</span>
+            <span class="field__label">Valor do veículo (R$)</span>
             <input class="input" name="valor_compra" data-testid="compra-wizard-purchase-value" type="text" inputmode="decimal" value="{{ dados.get('valor_compra', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'debitos') %}
           <label class="field">
-            <span class="field__label">Débitos do veículo</span>
-            <input class="input" name="debitos" data-testid="compra-wizard-vehicle-debts" type="text" inputmode="decimal" value="{{ dados.get('debitos', '0,00') }}">
+            <span class="field__label">Débitos do veículo (R$) *</span>
+            <input class="input" name="debitos" data-testid="compra-wizard-vehicle-debts" type="text" inputmode="decimal" value="{{ dados.get('debitos', '0,00') }}" required>
           </label>
           {% endif %}
         </fieldset>
@@ -209,8 +211,8 @@
             </select>
           </label>
           <label class="field">
-            <span class="field__label">Quilometragem</span>
-            <input class="input" name="vei_km" data-testid="compra-wizard-vehicle-mileage" type="number" data-novo-veiculo value="{{ dados.get('vei_km', '') }}">
+            <span class="field__label">Quilometragem *</span>
+            <input class="input" name="vei_km" data-testid="compra-wizard-vehicle-mileage" type="number" data-novo-veiculo value="{{ dados.get('vei_km', '') }}" required>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'compras', 'observacoes') %}

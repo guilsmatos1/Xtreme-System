@@ -48,6 +48,17 @@ def test_wizard_venda_nao_avanca_com_campos_obrigatorios_vazios(
     page.get_by_test_id("venda-wizard-next").click()
     assert _passo_ativo(page) == "2", "não avançou com o passo 1 completo"
 
+    page.get_by_test_id("venda-wizard-vehicle-select").select_option(
+        label="ABC1234 — Onix"
+    )
+    page.get_by_test_id("venda-wizard-next").click()
+    assert _passo_ativo(page) == "2", "avançou sem quilometragem e débitos"
+
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
+    page.get_by_test_id("venda-wizard-next").click()
+    assert _passo_ativo(page) == "3", "não avançou com quilometragem e débitos"
+
 
 @pytest.mark.e2e
 def test_wizard_compra_nao_avanca_com_campos_obrigatorios_vazios(

@@ -37,9 +37,7 @@ class Consignacao(Base):
     __table_args__ = (
         CheckConstraint("valor_venda > 0", name="ck_consignacao_valor_venda_positive"),
         CheckConstraint(
-            "comissao_percentual IS NULL OR "
-            "(comissao_percentual >= 0 AND comissao_percentual <= 100)",
-            name="ck_consignacao_comissao_range",
+            "valor_proprietario > 0", name="ck_consignacao_valor_proprietario_positive"
         ),
     )
 
@@ -57,10 +55,9 @@ class Consignacao(Base):
         String(64), unique=True, index=True
     )
     data_consignacao: Mapped[date] = mapped_column(Date)
-    data_vencimento: Mapped[date | None] = mapped_column(Date)
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     valor_venda: Mapped[Decimal] = mapped_column(Numeric(12, 2))
-    comissao_percentual: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    valor_proprietario: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     observacoes: Mapped[str | None]
     status: Mapped[StatusConsignacao] = mapped_column(
         default=StatusConsignacao.ativa,
@@ -81,13 +78,12 @@ class ConsignacaoCreate(BaseModel):
     usuario_id: int | None = None
     idempotency_key: str | None = None
     data_consignacao: date = Field(default_factory=date.today)
-    data_vencimento: date | None = None
     valor_venda: Decimal = Field(gt=0)
-    comissao_percentual: Decimal | None = Field(default=None, ge=0, le=100)
+    valor_proprietario: Decimal = Field(gt=0)
     observacoes: str | None = None
     status: StatusConsignacao = StatusConsignacao.ativa
 
-    @field_validator("valor_venda", "comissao_percentual", mode="before")
+    @field_validator("valor_venda", "valor_proprietario", mode="before")
     @classmethod
     def _normalizar_valores(cls, value: object) -> object:
         _ = cls
@@ -98,13 +94,12 @@ class ConsignacaoUpdate(BaseModel):
     cliente_id: int | None = None
     veiculo_id: int | None = None
     data_consignacao: date | None = None
-    data_vencimento: date | None = None
     valor_venda: Decimal | None = Field(default=None, gt=0)
-    comissao_percentual: Decimal | None = Field(default=None, ge=0, le=100)
+    valor_proprietario: Decimal | None = Field(default=None, gt=0)
     observacoes: str | None = None
     status: StatusConsignacao | None = None
 
-    @field_validator("valor_venda", "comissao_percentual", mode="before")
+    @field_validator("valor_venda", "valor_proprietario", mode="before")
     @classmethod
     def _normalizar_valores(cls, value: object) -> object:
         _ = cls
@@ -119,10 +114,9 @@ class ConsignacaoRead(BaseModel):
     veiculo: VeiculoRead
     usuario: UsuarioRead | None
     data_consignacao: date
-    data_vencimento: date | None
     criado_em: datetime
     valor_venda: Decimal
-    comissao_percentual: Decimal | None
+    valor_proprietario: Decimal
     observacoes: str | None
     status: StatusConsignacao
 

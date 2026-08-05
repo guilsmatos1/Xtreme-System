@@ -86,14 +86,14 @@ def test_admin_lista_consignacoes_com_paginacao(client: TestClient) -> None:
             "cliente_id": cliente_id,
             "veiculo_id": veiculo_id,
             "valor_venda": "45000.00",
-            "comissao_percentual": "5.00",
+            "valor_proprietario": "42750.00",
         },
         headers=headers,
     )
     assert resp.status_code == 201
     data = resp.json()
     assert data["valor_venda"] == "45000.00"
-    assert data["comissao_percentual"] == "5.00"
+    assert data["valor_proprietario"] == "42750.00"
     assert data["status"] == "ativa"
 
     resp_list = client.get("/consignacoes", headers=headers)

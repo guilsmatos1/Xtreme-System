@@ -444,6 +444,92 @@ def test_ui_veiculos_kpis_contam_todo_o_estoque(
     assert "Anterior" in segunda_pagina.text
 
 
+def test_ui_veiculos_lista_oculta_por_padrao_veiculos_com_fechamento(
+    make_client: Callable[..., TestClient],
+) -> None:
+    def seed(session: Session) -> None:
+        inv = investidor.create(
+            session, investidor.InvestidorCreate(nome="Investidor Fechamento")
+        )
+        cli = cliente.create(
+            session,
+            cliente.ClienteCreate(
+                nome="Comprador",
+                documento="98765432100",
+                tipo=cliente.TipoCliente.pessoa_fisica,
+            ),
+        )
+        vei_fechado = veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Fechado",
+                cor="Preto",
+                ano=2022,
+                placa="FEC1234",
+                km=20000,
+                preco=45000,
+                investidor_id=inv.id,
+            ),
+        )
+        veiculo.create(
+            session,
+            veiculo.VeiculoCreate(
+                tipo=veiculo.TipoVeiculo.carro,
+                modelo="Aberto",
+                cor="Branco",
+                ano=2023,
+                placa="ABE1234",
+                km=5000,
+                preco=55000,
+                investidor_id=inv.id,
+            ),
+        )
+        venda_obj = venda.create(
+            session,
+            venda.VendaCreate(
+                cliente_id=cli.id,
+                veiculo_id=vei_fechado.id,
+                data_venda="2026-07-02",
+                valor_venda=55000,
+                debitos=0,
+                forma_pagamento="a_vista",
+                parcelas=1,
+                status=venda.StatusVenda.concluido,
+                pagamento_pendente=False,
+            ),
+        )
+        fechamento_venda.confirmar(
+            session,
+            venda_obj,
+            fechamento_venda.FechamentoVendaCreate(
+                participacoes=[
+                    fechamento_venda.ParticipacaoFechamentoVendaCreate(
+                        investidor_id=inv.id, percentual=Decimal("100")
+                    ),
+                ]
+            ),
+            usuario_id=None,
+        )
+
+    local_client = make_client(
+        usuarios=[("admin", usuario.Papel.admin)],
+        invoke_post_commit=True,
+        seed=seed,
+    )
+    _login_admin(local_client)
+
+    pagina = local_client.get("/ui/veiculos")
+    assert pagina.status_code == 200
+    assert "Aberto" in pagina.text
+    assert "Fechado" not in pagina.text
+
+    pagina_todos = local_client.get("/ui/veiculos?sem_fechamento=0")
+    assert pagina_todos.status_code == 200
+    assert "Aberto" in pagina_todos.text
+    assert "Fechado" in pagina_todos.text
+
+
 def test_ui_veiculos_lista_com_km_vazio(
     make_client: Callable[..., TestClient],
 ) -> None:
@@ -1629,10 +1715,13 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
 
     assert resp.status_code == 200
     assert 'name="houve_troca"' in resp.text
-    assert 'id="cadastrar-veiculo-troca"' in resp.text
-    assert "Cadastrar novo veículo" in resp.text
-    assert 'data-reference-list="veiculos-troca-list"' not in resp.text
-    assert re.search(r'id="veiculo-troca-input"[^>]*data-reference-autoload', resp.text)
+    assert 'id="veiculo-troca-input"' not in resp.text
+    assert 'id="cadastrar-veiculo-troca"' not in resp.text
+    assert 'id="veiculo-troca-search"' not in resp.text
+    assert "Quilometragem *</span>" in resp.text
+    assert re.search(r'name="km"[^>]*required', resp.text)
+    assert "Débitos do veículo *</span>" in resp.text
+    assert re.search(r'name="debitos"[^>]*required', resp.text)
     assert resp.text.count('name="veic_troca_tipo" required') == 1
     for campo in (
         "veic_troca_placa",
@@ -1725,7 +1814,8 @@ def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
 
     assert resp.status_code == 400
     assert "Placa já cadastrada" in resp.text
-    assert 'name="houve_troca" value="1" type="checkbox" checked' in resp.text
+    assert '<select class="select" id="houve-troca" name="houve_troca"' in resp.text
+    assert '<option :value="true" selected>Sim</option>' in resp.text
     assert 'name="veiculo_troca_novo" value="1"' in resp.text
     assert 'name="veic_troca_placa" value="ABC1234"' in resp.text
     assert client.get("/vendas", headers=headers).json() == []

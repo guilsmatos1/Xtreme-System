@@ -116,6 +116,9 @@ def test_modal_veiculo_editar_atualiza_preco(page: Page, live_server_url: str) -
     linha.get_by_role("button", name="Editar Onix").click()
 
     expect(page.get_by_role("dialog", name="Editar veículo")).to_be_visible()
+    page.get_by_test_id("veiculo-wizard-next").click()
+    page.get_by_test_id("veiculo-wizard-next").click()
+
     preco = page.get_by_test_id("veiculo-edit-preco")
     preco.fill("")
     preco.fill("90000")
@@ -142,6 +145,9 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
     page.get_by_test_id("venda-wizard-vehicle-select").select_option(
         label="ABC1234 — Onix"
     )
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
+    page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
@@ -173,16 +179,11 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
     page.get_by_test_id("venda-wizard-vehicle-select").select_option(
         label="ABC1234 — Onix"
     )
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
     page.get_by_test_id("venda-wizard-next").click()
 
-    page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
-    page.get_by_test_id("venda-wizard-next").click()
-
-    page.locator("#houve-troca").check()
-    cadastrar = page.get_by_role("button", name="Cadastrar novo veículo")
-    expect(cadastrar).to_be_visible()
-    cadastrar.click()
+    page.locator("#houve-troca").select_option("true")
 
     page.locator('select[name="veic_troca_tipo"]').select_option("carro")
     page.locator('input[name="veic_troca_placa"]').fill("TRC1234")
@@ -193,6 +194,11 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
     page.locator('select[name="veic_troca_investidor_id"]').select_option(
         label="Investidor A"
     )
+    page.get_by_test_id("venda-wizard-next").click()
+
+    page.get_by_test_id("venda-wizard-value").fill("130000")
+    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-save").click()
 
     expect(page.get_by_role("dialog", name="Nova venda")).not_to_be_visible()
@@ -204,7 +210,7 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
 
 
 @pytest.mark.e2e
-def test_modal_venda_troca_veiculo_existente_desabilita_cadastro_inline(
+def test_modal_venda_troca_exibe_apenas_cadastro_de_veiculo_novo(
     page: Page, live_server_url: str
 ) -> None:
     _login(page, live_server_url)
@@ -218,28 +224,18 @@ def test_modal_venda_troca_veiculo_existente_desabilita_cadastro_inline(
     vehicle_select = page.get_by_test_id("venda-wizard-vehicle-select")
     expect(vehicle_select).to_be_visible()
     vehicle_select.select_option(label="ABC1234 — Onix")
-    page.get_by_test_id("venda-wizard-next").click()
-    page.get_by_test_id("venda-wizard-value").fill("130000")
-    page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
     page.get_by_test_id("venda-wizard-next").click()
 
-    page.locator("#houve-troca").check()
-    busca = page.locator("#veiculo-troca-input")
-    busca.fill("ABC1234")
-    opcao = page.locator('#veiculos-troca-list option[value="ABC1234 — Onix"]')
-    expect(opcao).to_have_count(1)
-    busca.evaluate(
-        """(input) => {
-            input.value = 'ABC1234 — Onix';
-            input.dispatchEvent(new Event('change', {bubbles: true}));
-        }"""
-    )
-
-    expect(page.locator("#veiculo-troca-search")).to_have_value("1")
+    expect(page.locator("#veiculo-troca-input")).to_have_count(0)
+    expect(page.get_by_role("button", name="Cadastrar novo veículo")).to_have_count(0)
     expect(page.locator("#novo-veiculo-troca-campos")).not_to_be_visible()
-    expect(page.locator('input[name="veic_troca_placa"]')).to_be_disabled()
-    expect(page.get_by_role("button", name="Carregar mais")).to_have_count(0)
-    expect(page.get_by_role("button", name="Cadastrar novo veículo")).to_be_visible()
+
+    page.locator("#houve-troca").select_option("true")
+    expect(page.locator("#novo-veiculo-troca-campos")).to_be_visible()
+    expect(page.locator('input[name="veic_troca_placa"]')).to_be_enabled()
+    expect(page.locator("#veiculo-troca-novo")).to_have_value("1")
 
 
 def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
@@ -255,6 +251,9 @@ def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
     page.get_by_test_id("venda-wizard-vehicle-select").select_option(
         label="ABC1234 — Onix"
     )
+    page.locator('input[name="km"]').fill("12000")
+    page.locator('input[name="debitos"]').fill("0")
+    page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
@@ -281,6 +280,9 @@ def test_modal_venda_editar_atualiza_valor(page: Page, live_server_url: str) -> 
     valor = page.get_by_test_id("venda-edit-value")
     valor.fill("")
     valor.fill("140000")
+
+    page.get_by_test_id("venda-wizard-next").click()
+    page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-edit-save").click()
 
     expect(page.get_by_role("dialog", name="Editar venda")).not_to_be_visible()
