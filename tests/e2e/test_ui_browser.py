@@ -122,6 +122,7 @@ def test_modal_veiculo_editar_atualiza_preco(page: Page, live_server_url: str) -
     preco = page.get_by_test_id("veiculo-edit-preco")
     preco.fill("")
     preco.fill("90000")
+    page.locator('input[name="debitos"]').fill("0")
     page.get_by_test_id("veiculo-edit-save").click()
 
     expect(page.get_by_role("dialog", name="Editar veículo")).not_to_be_visible()
@@ -194,6 +195,7 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
     page.locator('select[name="veic_troca_investidor_id"]').select_option(
         label="Investidor A"
     )
+    page.locator('input[name="valor_diferenca"]').fill("30000")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
@@ -619,6 +621,7 @@ def test_modal_veiculos_vinculados_cliente_sem_historico(
     documento = form_cliente.get_by_test_id("cliente-form-document")
     nome.fill("Cliente Sem Veiculos")
     documento.fill("55566677788")
+    form_cliente.get_by_test_id("cliente-form-phone").fill("11955555555")
     expect(nome).to_have_value("Cliente Sem Veiculos")
     expect(documento).to_have_value("555.666.777-88")
     form_cliente.get_by_test_id("cliente-form-type").select_option(
@@ -652,6 +655,7 @@ def test_modal_auditoria_detalhe_mostra_registro(
     documento = form_cliente.get_by_test_id("cliente-form-document")
     nome.fill("Cliente Auditoria")
     documento.fill("66677788899")
+    form_cliente.get_by_test_id("cliente-form-phone").fill("11966666666")
     expect(nome).to_have_value("Cliente Auditoria")
     expect(documento).to_have_value("666.777.888-99")
     form_cliente.get_by_test_id("cliente-form-type").select_option(

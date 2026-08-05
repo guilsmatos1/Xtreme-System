@@ -32,6 +32,9 @@ def test_campo_referencia_carrega_apos_swap_htmx(
         page.locator('#investidores-list option[value="Investidor A"]')
     ).to_have_count(1)
 
+    page.get_by_test_id("veiculo-wizard-next").click()
+    page.get_by_test_id("veiculo-wizard-next").click()
+
     # E selecionar o rótulo precisa preencher o hidden com o id correspondente.
     investidor_input = page.locator("#investidor-input")
     investidor_input.fill("Investidor A")

@@ -130,8 +130,8 @@
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field field--full">
-            <span class="field__label">Valor da diferença (R$) *</span>
-            <input class="input" name="valor_diferenca" type="text" inputmode="decimal" value="{{ dados.get('valor_diferenca', venda.valor_diferenca if venda.valor_diferenca is not none else '') }}" required>
+            <span class="field__label">Valor da diferença (R$){% if venda.veiculo_troca_id %} *{% endif %}</span>
+            <input class="input" name="valor_diferenca" type="text" inputmode="decimal" value="{{ dados.get('valor_diferenca', venda.valor_diferenca if venda.valor_diferenca is not none else '') }}"{% if venda.veiculo_troca_id %} required{% endif %}>
           </label>
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
@@ -299,8 +299,8 @@
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }"
-                  x-data="trocaVeiculoNovo({{ 1 if dados.get('houve_troca', True) in (true, 'true', '1', 'on', 1, True) else 0 }})">
-          {% set houve_troca_atual = dados.get('houve_troca', True) in (true, 'true', '1', 'on', 1, True) %}
+                  x-data="trocaVeiculoNovo({{ 1 if dados.get('houve_troca', False) in (true, 'true', '1', 'on', 1, True) else 0 }})">
+          {% set houve_troca_atual = dados.get('houve_troca', False) in (true, 'true', '1', 'on', 1, True) %}
           {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') or pode_ver_campo(user, 'vendas', 'valor_diferenca') %}
           <label class="field field--full">
             <span class="field__label">Houve troca de veículo?</span>
