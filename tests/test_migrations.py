@@ -1,12 +1,87 @@
+import base64
+import hashlib
+import importlib.util
 import os
+from pathlib import Path
+from types import ModuleType
+from unittest.mock import patch
 
 import pytest
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
-from sqlalchemy import JSON
+from alembic.operations import Operations
+from cryptography.fernet import Fernet
+from sqlalchemy import JSON, create_engine, text
+from sqlalchemy.engine import Connection
 
 from tests.database import create_test_engine
 from xtreme_system.database.core import Base
+
+
+def _load_rsd_encryption_migration() -> ModuleType:
+    path = (
+        Path(__file__).parents[1]
+        / "alembic/versions/a3b4c5d6e7f8_encrypt_rsd_config_senha.py"
+    )
+    spec = importlib.util.spec_from_file_location("rsd_encryption_migration", path)
+    assert spec is not None
+    assert spec.loader is not None
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    return migration
+
+
+def _run_rsd_encryption_upgrade(migration: ModuleType, connection: Connection) -> None:
+    context = MigrationContext.configure(connection)
+    with patch.object(migration, "op", Operations(context)):
+        migration.upgrade()
+
+
+def test_rsd_encryption_migration_allows_empty_database_without_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("RSD_ENCRYPTION_KEY", raising=False)
+    engine = create_engine("sqlite://")
+    migration = _load_rsd_encryption_migration()
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("CREATE TABLE rsd_config (id INTEGER PRIMARY KEY, senha VARCHAR)")
+            )
+            _run_rsd_encryption_upgrade(migration, connection)
+    finally:
+        engine.dispose()
+
+
+def test_rsd_encryption_migration_loads_key_from_dotenv(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.delenv("RSD_ENCRYPTION_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    encryption_seed = "migration-test-secret"
+    (tmp_path / ".env").write_text(f"RSD_ENCRYPTION_KEY={encryption_seed}\n")
+    engine = create_engine("sqlite://")
+    migration = _load_rsd_encryption_migration()
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("CREATE TABLE rsd_config (id INTEGER PRIMARY KEY, senha VARCHAR)")
+            )
+            connection.execute(
+                text("INSERT INTO rsd_config (id, senha) VALUES (1, 'plain-password')")
+            )
+            _run_rsd_encryption_upgrade(migration, connection)
+            encrypted = connection.execute(
+                text("SELECT senha FROM rsd_config WHERE id = 1")
+            ).scalar_one()
+    finally:
+        engine.dispose()
+
+    key = Fernet(
+        base64.urlsafe_b64encode(hashlib.sha256(encryption_seed.encode()).digest())
+    )
+    assert key.decrypt(encrypted.encode()) == b"plain-password"
 
 
 def _compare_server_default(

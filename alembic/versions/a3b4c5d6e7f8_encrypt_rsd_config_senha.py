@@ -7,12 +7,12 @@ Create Date: 2026-08-04 15:00:00.000000
 """
 import base64
 import hashlib
-import os
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 from cryptography.fernet import Fernet, InvalidToken
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # revision identifiers, used by Alembic.
@@ -22,8 +22,14 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+class _MigrationSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    rsd_encryption_key: str | None = None
+
+
 def _fernet() -> Fernet:
-    secret = os.environ.get("RSD_ENCRYPTION_KEY")
+    secret = _MigrationSettings().rsd_encryption_key
     if not secret:
         raise RuntimeError(
             "RSD_ENCRYPTION_KEY não configurada — necessária para recodificar "
@@ -38,9 +44,12 @@ def upgrade() -> None:
     rsd_config = sa.table(
         "rsd_config", sa.column("id", sa.Integer()), sa.column("senha", sa.String())
     )
-    fernet = _fernet()
     connection = op.get_bind()
-    for row in connection.execute(sa.select(rsd_config.c.id, rsd_config.c.senha)):
+    rows = connection.execute(sa.select(rsd_config.c.id, rsd_config.c.senha)).all()
+    if not rows:
+        return
+    fernet = _fernet()
+    for row in rows:
         if not row.senha:
             continue
         try:
@@ -60,9 +69,12 @@ def downgrade() -> None:
     rsd_config = sa.table(
         "rsd_config", sa.column("id", sa.Integer()), sa.column("senha", sa.String())
     )
-    fernet = _fernet()
     connection = op.get_bind()
-    for row in connection.execute(sa.select(rsd_config.c.id, rsd_config.c.senha)):
+    rows = connection.execute(sa.select(rsd_config.c.id, rsd_config.c.senha)).all()
+    if not rows:
+        return
+    fernet = _fernet()
+    for row in rows:
         if not row.senha:
             continue
         try:

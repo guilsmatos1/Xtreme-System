@@ -171,7 +171,6 @@ name = "Components must not import from the API base layer"
 type = "forbidden"
 source_modules = ["xtreme_system"]
 forbidden_modules = ["xtreme_system.api"]
-ignore_imports = ["xtreme_system.api -> xtreme_system.api.*"]
 
 [[tool.importlinter.contracts]]
 name = "CRUD must not import upload-file"
