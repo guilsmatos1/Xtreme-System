@@ -5,26 +5,37 @@ consulta unitária cria um dossiê e faz poll em /dossie/<id>/status/;
 puxar dados usa POST /atpv/puxar-dados/ (JSON).
 """
 
+# The RSD integration intentionally centralizes the HTTP lifecycle and cache
+# coordination in this module. Keep these structural warnings local to this
+# boundary; behavior-specific lint checks remain enabled.
+# pylint: disable=protected-access,too-many-instance-attributes,too-many-lines,too-many-boolean-expressions
+
 from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
+import ipaddress
+import os
 import re
+import socket
+import threading
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from datetime import time as dtime
 from enum import StrEnum
 from functools import lru_cache
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
 import structlog
 from cryptography.fernet import Fernet, InvalidToken
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, func, select
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.auditoria.core import auditar, snapshot
@@ -33,11 +44,37 @@ from xtreme_system.database.core import Base, SessionLocal
 
 logger = structlog.get_logger(__name__)
 
+_CONFIG_ID = 1
+_DEFAULT_BASE_HOST = "lojas.rsdsistema.com.br"
+_DEFAULT_BASE_URL = f"https://{_DEFAULT_BASE_HOST}"
+_ALLOWED_RSD_PORTS = frozenset({443})
+_FERNET_TOKEN_PREFIX = "gAAAAA"  # noqa: S105 — marcador do formato Fernet
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     rsd_encryption_key: str
+    rsd_allowed_hosts: str = _DEFAULT_BASE_HOST
+
+    @field_validator("rsd_encryption_key")
+    @classmethod
+    def validate_encryption_key(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) < 32:
+            raise ValueError("RSD_ENCRYPTION_KEY deve ter pelo menos 32 caracteres")
+        if len(set(normalized)) < 8:
+            raise ValueError("RSD_ENCRYPTION_KEY não possui entropia suficiente")
+        if normalized.lower() in {
+            "your-rsd-encryption-key-change-this-in-production",
+            "change-me",
+            "changeme",
+        } or normalized.lower().startswith(("your-", "change-")):
+            raise ValueError("RSD_ENCRYPTION_KEY não pode usar um placeholder")
+        auth_secret = os.environ.get("AUTH_SECRET_KEY", "").strip()
+        if auth_secret and normalized == auth_secret:
+            raise ValueError("RSD_ENCRYPTION_KEY deve ser diferente da chave de auth")
+        return normalized
 
 
 @lru_cache
@@ -45,11 +82,20 @@ def get_settings() -> Settings:
     return Settings()
 
 
+def validate_startup_settings() -> None:
+    """Fail startup before any RSD credential can be written or used."""
+    get_settings()
+
+
 @lru_cache
 def _get_fernet() -> Fernet:
+    return _fernet_for_secret(get_settings().rsd_encryption_key)
+
+
+def _fernet_for_secret(secret: str) -> Fernet:
     # Chave arbitrária -> chave Fernet válida (32 bytes url-safe base64), para
     # não exigir que RSD_ENCRYPTION_KEY já venha nesse formato específico.
-    digest = hashlib.sha256(get_settings().rsd_encryption_key.encode("utf-8")).digest()
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
     return Fernet(base64.urlsafe_b64encode(digest))
 
 
@@ -64,23 +110,25 @@ def _decriptar_senha(valor: str) -> str:
         return ""
     try:
         return _get_fernet().decrypt(valor.encode("ascii")).decode("utf-8")
-    except InvalidToken:
-        # Valor gravado em texto plano antes desta feature — mantém
-        # funcionando até a próxima atualização de config recodificar.
-        return valor
+    except (InvalidToken, TypeError, UnicodeError, ValueError) as exc:
+        logger.warning("rsd_decriptar_senha_falhou_chave_invalida")
+        raise RsdEncryptionError(
+            "A senha RSD não pode ser decriptada. Verifique a chave de criptografia "
+            "e solicite intervenção administrativa."
+        ) from exc
 
 
-_CONFIG_ID = 1
-_DEFAULT_BASE_URL = "https://lojas.rsdsistema.com.br"
 _LOGIN_PATH = "/accounts/login/"
 _UNITARIA_PATH = "/dossie/unitaria/"
+_ATPV_NOVA_PATH = "/atpv/nova/"
 _PUXAR_DADOS_PATH = "/atpv/puxar-dados/"
 _CSRF_RE = re.compile(r'name="csrfmiddlewaretoken"\s+value="([^"]+)"')
 _DOSSIE_ID_RE = re.compile(r"/dossie/(\d+)/?")
 _POLL_INTERVAL_S = 2.0
 _POLL_TIMEOUT_S = 120.0
+_POLL_MAX_ERROS_CONSECUTIVOS = 3
 _HTTP_TIMEOUT_S = 30.0
-_SESSION_EXPIRED_STATUS_CODES = frozenset({301, 302, 303, 307, 308, 401, 403})
+_MSG_PORTAL_MAX_LEN = 300
 
 
 class RsdError(Exception):
@@ -91,8 +139,24 @@ class RsdNotConfiguredError(RsdError):
     """Credenciais RSD ainda não configuradas."""
 
 
+class RsdEncryptionError(RsdError):
+    """A credencial persistida não pode ser aberta com a chave atual."""
+
+
+class RsdConfigError(RsdError):
+    """A configuração do cliente RSD viola os limites de segurança."""
+
+
 class RsdAuthError(RsdError):
     """Falha de login (credenciais ou CSRF)."""
+
+
+class RsdCapabilityError(RsdError):
+    """A conta autenticou, mas não pode usar uma capacidade RSD."""
+
+
+class RsdClientRetiredError(RsdError):
+    """O cliente cacheado foi invalidado durante uma troca de configuração."""
 
 
 class RsdTimeoutError(RsdError):
@@ -101,6 +165,87 @@ class RsdTimeoutError(RsdError):
 
 class RsdConsultaError(RsdError):
     """Portal retornou erro na consulta."""
+
+
+def _allowed_rsd_hosts() -> frozenset[str]:
+    raw = os.environ.get("RSD_ALLOWED_HOSTS", _DEFAULT_BASE_HOST)
+    hosts = frozenset(item.strip().lower() for item in raw.split(",") if item.strip())
+    if not hosts:
+        raise RsdConfigError("RSD_ALLOWED_HOSTS deve conter ao menos um host.")
+    return hosts
+
+
+def _validate_resolved_addresses(host: str, port: int) -> None:
+    # `.test` é reservado para endpoints de teste e não é resolvível por DNS;
+    # ele é permitido apenas quando explicitamente incluído na allowlist.
+    if host.endswith(".test"):
+        return
+    try:
+        addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    except OSError as exc:
+        raise RsdConfigError(
+            "Não foi possível resolver o host permitido do portal RSD."
+        ) from exc
+    if not addresses:
+        raise RsdConfigError("O host do portal RSD não possui endereço resolvido.")
+    for _family, _socktype, _proto, _canonname, sockaddr in addresses:
+        address = ipaddress.ip_address(sockaddr[0])
+        if (
+            address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_reserved
+            or address.is_multicast
+            or address.is_unspecified
+        ):
+            raise RsdConfigError(
+                "O host do portal RSD resolve para um destino de rede não permitido."
+            )
+
+
+def _validate_rsd_url(value: str, *, redirect: bool = False) -> str:
+    raw = (value or "").strip()
+    try:
+        parts = urlsplit(raw)
+        port = parts.port
+    except ValueError as exc:
+        raise RsdConfigError("A URL base do RSD é inválida.") from exc
+    host = (parts.hostname or "").lower().rstrip(".")
+    if parts.scheme.lower() != "https":
+        raise RsdConfigError("A URL do RSD deve usar HTTPS.")
+    if not host or parts.username is not None or parts.password is not None:
+        raise RsdConfigError("A URL do RSD não pode conter usuário ou senha.")
+    if parts.fragment:
+        raise RsdConfigError("A URL do RSD não pode conter fragmento.")
+    if host not in _allowed_rsd_hosts():
+        raise RsdConfigError("O host da URL do RSD não está na allowlist.")
+    if _is_ip_literal(host):
+        raise RsdConfigError("A URL do RSD não pode usar um IP literal.")
+    if port is not None and port not in _ALLOWED_RSD_PORTS:
+        raise RsdConfigError("A porta da URL do RSD não é permitida.")
+    if not redirect and (parts.path not in {"", "/"} or parts.query):
+        raise RsdConfigError("A URL base do RSD deve apontar para a raiz do portal.")
+    _validate_resolved_addresses(host, port or 443)
+    netloc = host if port in (None, 443) else f"{host}:{port}"
+    path = parts.path.rstrip("/") if not redirect else parts.path or "/"
+    return urlunsplit(("https", netloc, path, parts.query if redirect else "", ""))
+
+
+def _is_ip_literal(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return True
+
+
+def _validated_redirect(url: str, response: httpx.Response) -> str | None:
+    if response.status_code not in {301, 302, 303, 307, 308}:
+        return None
+    location = response.headers.get("Location")
+    if not location:
+        raise RsdConsultaError("O portal RSD devolveu um redirecionamento inválido.")
+    return _validate_rsd_url(urljoin(url, location), redirect=True)
 
 
 class RsdConfig(Base):
@@ -112,12 +257,26 @@ class RsdConfig(Base):
     base_url: Mapped[str] = mapped_column(
         default=_DEFAULT_BASE_URL, server_default=_DEFAULT_BASE_URL
     )
+    revogada: Mapped[bool] = mapped_column(default=False, server_default="false")
+    status: Mapped[str] = mapped_column(
+        default="saved_unverified", server_default="saved_unverified"
+    )
+    ultimo_teste_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ultimo_teste_erro: Mapped[str | None] = mapped_column(Text)
+    ultimo_teste_fingerprint: Mapped[str | None]
 
 
 class RsdConfigUpdate(BaseModel):
     email: str = ""
     senha: str = ""
     base_url: str = _DEFAULT_BASE_URL
+    teste_prova: str = ""
+
+
+class RsdCredentialStatus(StrEnum):
+    saved_unverified = "saved_unverified"
+    verified = "verified"
+    failed = "failed"
 
 
 class TipoConsultaRsd(StrEnum):
@@ -187,19 +346,133 @@ def get_config(session: Session) -> RsdConfig:
 
 
 def configurado(config: RsdConfig) -> bool:
-    return bool(config.email.strip() and config.senha)
+    return bool(not config.revogada and config.email.strip() and config.senha)
+
+
+def _credential_fingerprint(email: str, senha: str, base_url: str) -> str:
+    base = base_url.strip().rstrip("/") or _DEFAULT_BASE_URL
+    material = "\x00".join((email.strip(), senha, base))
+    return hmac.new(
+        get_settings().rsd_encryption_key.encode("utf-8"),
+        material.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def credential_fingerprint(*, email: str, senha: str, base_url: str) -> str:
+    """Fingerprint opaco usado para vincular um teste ao mesmo rascunho."""
+    return _credential_fingerprint(email, senha, base_url)
+
+
+def _emitir_teste_prova(*, fingerprint: str, testado_em: datetime) -> str:
+    timestamp = str(int(testado_em.timestamp()))
+    payload = f"{timestamp}.{fingerprint}"
+    assinatura = hmac.new(
+        get_settings().rsd_encryption_key.encode("utf-8"),
+        payload.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    return f"{payload}.{assinatura}"
+
+
+def emitir_teste_prova(*, email: str, senha: str, base_url: str) -> str:
+    """Cria uma prova assinada para o botão Salvar após teste aprovado."""
+    return _emitir_teste_prova(
+        fingerprint=_credential_fingerprint(email, senha, base_url),
+        testado_em=datetime.now(UTC),
+    )
+
+
+def _validar_teste_prova(
+    *, prova: str, fingerprint: str, agora: datetime
+) -> datetime | None:
+    try:
+        timestamp, prova_fingerprint, assinatura = prova.split(".", 2)
+        testado_em = datetime.fromtimestamp(int(timestamp), tz=UTC)
+    except (ValueError, TypeError, OverflowError):
+        return None
+    payload = f"{timestamp}.{prova_fingerprint}"
+    esperada = hmac.new(
+        get_settings().rsd_encryption_key.encode("utf-8"),
+        payload.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    if (
+        not hmac.compare_digest(prova_fingerprint, fingerprint)
+        or not hmac.compare_digest(assinatura, esperada)
+        or agora - testado_em > timedelta(minutes=10)
+        or testado_em - agora > timedelta(minutes=1)
+    ):
+        return None
+    return testado_em
+
+
+def _erro_teste_sanitizado(erro: Exception) -> str:
+    if isinstance(erro, RsdAuthError):
+        return "Falha de autenticação: o portal rejeitou as credenciais informadas."
+    if isinstance(erro, RsdTimeoutError):
+        return "Falha de disponibilidade: o portal RSD não respondeu a tempo."
+    return "Falha de disponibilidade: não foi possível verificar o portal RSD."
+
+
+def mensagem_teste(erro: Exception) -> str:
+    """Mensagem segura para a interface, sem detalhes do portal externo."""
+    return _erro_teste_sanitizado(erro)
+
+
+def senha_config(config: RsdConfig) -> str:
+    """Obtém a senha ativa apenas para operações internas do fluxo de teste."""
+    return _decriptar_senha(config.senha)
+
+
+def status_config(config: RsdConfig) -> RsdCredentialStatus:
+    if not configurado(config):
+        return RsdCredentialStatus.saved_unverified
+    try:
+        return RsdCredentialStatus(
+            config.status or RsdCredentialStatus.saved_unverified
+        )
+    except (TypeError, ValueError):
+        return RsdCredentialStatus.saved_unverified
 
 
 def atualizar_config(
     session: Session, data: RsdConfigUpdate, actor_id: int | None = None
 ) -> RsdConfig:
     config = get_config(session)
+    base = _validate_rsd_url(data.base_url or _DEFAULT_BASE_URL)
     antes = snapshot(config)
-    config.email = data.email.strip()
+    senha_anterior = _decriptar_senha(config.senha)
+    fingerprint_anterior = _credential_fingerprint(
+        config.email, senha_anterior, config.base_url or _DEFAULT_BASE_URL
+    )
+    email = data.email.strip()
+    senha = data.senha or senha_anterior
+    fingerprint = _credential_fingerprint(email, senha, base)
+    testado_em = _validar_teste_prova(
+        prova=data.teste_prova, fingerprint=fingerprint, agora=datetime.now(UTC)
+    )
+    mesma_credencial = (
+        configurado(config)
+        and hmac.compare_digest(fingerprint_anterior, fingerprint)
+        and status_config(config) == RsdCredentialStatus.verified
+    )
+    config.email = email
     if data.senha:
         config.senha = _encriptar_senha(data.senha)
-    base = (data.base_url or _DEFAULT_BASE_URL).strip().rstrip("/")
     config.base_url = base or _DEFAULT_BASE_URL
+    config.revogada = False
+    if testado_em is not None or mesma_credencial:
+        config.status = RsdCredentialStatus.verified.value
+        if testado_em is not None:
+            config.ultimo_teste_em = testado_em
+            config.ultimo_teste_erro = None
+            config.ultimo_teste_fingerprint = fingerprint
+    else:
+        config.status = RsdCredentialStatus.saved_unverified.value
+        config.ultimo_teste_em = None
+        config.ultimo_teste_erro = None
+        config.ultimo_teste_fingerprint = None
     session.flush()
     session.refresh(config)
     auditar(
@@ -212,17 +485,229 @@ def atualizar_config(
         dados_depois=snapshot(config),
     )
     crud.flush(session)
+    invalidar_client_cache()
     return config
 
 
+def registrar_teste_config(
+    session: Session,
+    *,
+    email: str,
+    senha: str,
+    base_url: str,
+    sucesso: bool,
+    erro: Exception | None = None,
+    testado_em: datetime | None = None,
+) -> RsdConfig | None:
+    """Atualiza o último teste somente quando ele corresponde à config ativa."""
+    config = get_config(session)
+    senha_ativa = _decriptar_senha(config.senha)
+    fingerprint = _credential_fingerprint(email, senha, base_url)
+    ativo = _credential_fingerprint(config.email, senha_ativa, config.base_url)
+    if not configurado(config) or not hmac.compare_digest(fingerprint, ativo):
+        return None
+    config.status = (
+        RsdCredentialStatus.verified.value
+        if sucesso
+        else RsdCredentialStatus.failed.value
+    )
+    config.ultimo_teste_em = testado_em or datetime.now(UTC)
+    config.ultimo_teste_fingerprint = fingerprint
+    config.ultimo_teste_erro = (
+        None if sucesso or erro is None else _erro_teste_sanitizado(erro)
+    )
+    session.flush()
+    return config
+
+
+def registrar_teste_config_persistente(
+    *,
+    email: str,
+    senha: str,
+    base_url: str,
+    sucesso: bool,
+    erro: Exception | None = None,
+    testado_em: datetime | None = None,
+) -> None:
+    """Persiste o resultado de um teste que já liberou a sessão do request."""
+    session = SessionLocal()
+    try:
+        registrar_teste_config(
+            session,
+            email=email,
+            senha=senha,
+            base_url=base_url,
+            sucesso=sucesso,
+            erro=erro,
+            testado_em=testado_em,
+        )
+        session.commit()
+    except Exception:
+        session.rollback()
+        logger.warning("rsd_estado_teste_nao_persistido", exc_info=True)
+    finally:
+        session.close()
+
+
+def revogar_config(session: Session, actor_id: int | None = None) -> RsdConfig:
+    """Remove a credencial RSD e invalida qualquer sessão em memória."""
+    config = get_config(session)
+    antes = snapshot(config)
+    config.email = ""
+    config.senha = ""
+    config.base_url = _DEFAULT_BASE_URL
+    config.revogada = True
+    session.flush()
+    session.refresh(config)
+    auditar(
+        session,
+        actor_id=actor_id,
+        tabela="rsd_config",
+        tipo_acao="REVOKE",
+        registro_id=config.id,
+        dados_antes=antes,
+        dados_depois=snapshot(config),
+    )
+    crud.flush(session)
+    invalidar_client_cache()
+    return config
+
+
+def recriptografar_config(
+    session: Session, chave_anterior: str, actor_id: int | None = None
+) -> RsdConfig:
+    """Recifra a credencial com a chave atual dentro da transação do chamador."""
+    config = get_config(session)
+    if not config.senha:
+        return config
+    try:
+        senha = _fernet_for_secret(chave_anterior).decrypt(config.senha.encode("ascii"))
+        nova_senha = _get_fernet().encrypt(senha).decode("ascii")
+    except (InvalidToken, TypeError, UnicodeError, ValueError) as exc:
+        raise RsdEncryptionError(
+            "A senha RSD não pode ser recifrada com a chave anterior fornecida."
+        ) from exc
+    antes = snapshot(config)
+    config.senha = nova_senha
+    session.flush()
+    session.refresh(config)
+    auditar(
+        session,
+        actor_id=actor_id,
+        tabela="rsd_config",
+        tipo_acao="UPDATE",
+        registro_id=config.id,
+        dados_antes=antes,
+        dados_depois=snapshot(config),
+    )
+    crud.flush(session)
+    invalidar_client_cache()
+    return config
+
+
+_CLIENT_CACHE_TTL_S = 300.0
+_CLIENT_CACHE_MAX_SIZE = 4
+
+
+@dataclass
+class _CachedClient:
+    client: RsdClient
+    touched_at: float
+
+
+_client_cache: dict[str, _CachedClient] = {}
+_client_cache_lock = threading.Lock()
+
+
+def _client_cache_key(config: RsdConfig) -> str:
+    # `config.senha` é o ciphertext gravado, não a senha em texto plano —
+    # serve como parte da chave sem expor segredo em memória duplicada.
+    return f"{config.base_url or _DEFAULT_BASE_URL}|{config.email}|{config.senha}"
+
+
 def client_from_config(config: RsdConfig) -> RsdClient:
+    """Devolve um `RsdClient` com sessão reaproveitada entre requests.
+
+    Antes, cada rota criava um cliente novo e o `with` fechava a conexão ao
+    fim do request, descartando cookies/CSRF — isso forçava um login
+    completo a cada chamada (inclusive a cada 3s durante o poll do dossiê).
+    Agora o cliente fica em cache por config, mantendo a sessão Django viva
+    entre requests; `ensure_login`/o wrapper de request continuam cobrindo
+    o caso de sessão expirada no portal.
+    """
     if not configurado(config):
         raise RsdNotConfiguredError("Configure e-mail e senha do RSD em Configurações.")
+    base_url = _validate_rsd_url(config.base_url or _DEFAULT_BASE_URL)
+    key = _client_cache_key(config)
+    agora = time.monotonic()
+    expirados: list[RsdClient] = []
+    with _client_cache_lock:
+        for cache_key, entry in list(_client_cache.items()):
+            if agora - entry.touched_at > _CLIENT_CACHE_TTL_S:
+                entry.client._retire()  # noqa: SLF001
+                expirados.append(entry.client)
+                del _client_cache[cache_key]
+        cached_entry: _CachedClient | None = _client_cache.get(key)
+        if cached_entry is None:
+            if len(_client_cache) >= _CLIENT_CACHE_MAX_SIZE:
+                chave_antiga, antigo = min(
+                    _client_cache.items(), key=lambda item: item[1].touched_at
+                )
+                antigo.client._retire()  # noqa: SLF001
+                expirados.append(antigo.client)
+                del _client_cache[chave_antiga]
+            # Decripta antes de construir o cliente para falhar fechado, mas
+            # não mantém a senha em nenhum atributo do objeto cacheado.
+            senha_inicial = _decriptar_senha(config.senha)
+            client = RsdClient(
+                base_url=base_url,
+                email=config.email.strip(),
+                senha="",
+            )
+            del senha_inicial
+            client._clear_password_after_login = True  # noqa: SLF001
+            client._credential_provider = (  # noqa: SLF001
+                lambda: _decriptar_senha(config.senha)
+            )
+            client.open()
+            _client_cache[key] = _CachedClient(client=client, touched_at=agora)
+        else:
+            client = cached_entry.client
+            cached_entry.touched_at = agora
+    for old_client in expirados:
+        old_client.close()
+    return client
+
+
+def client_from_values(
+    *, email: str, senha: str, base_url: str, config: RsdConfig
+) -> RsdClient:
+    """`RsdClient` efêmero a partir de valores de formulário ainda não salvos.
+
+    Usado por "Testar conexão": campo vazio cai para o valor já persistido
+    em `config` (mesma semântica de `atualizar_config`). Não passa pelo
+    cache de `client_from_config` — o chamador é responsável por abrir e
+    fechar o client.
+    """
+    base_final = _validate_rsd_url(base_url or config.base_url or _DEFAULT_BASE_URL)
+    email_final = (email or config.email).strip()
+    senha_final = senha or _decriptar_senha(config.senha)
+    if not email_final or not senha_final:
+        raise RsdNotConfiguredError("Configure e-mail e senha do RSD em Configurações.")
     return RsdClient(
-        base_url=config.base_url or _DEFAULT_BASE_URL,
-        email=config.email,
-        senha=_decriptar_senha(config.senha),
+        base_url=base_final or _DEFAULT_BASE_URL, email=email_final, senha=senha_final
     )
+
+
+def invalidar_client_cache() -> None:
+    """Fecha e descarta clientes RSD em cache — chamado ao trocar config."""
+    with _client_cache_lock:
+        clientes = [entry.client for entry in _client_cache.values()]
+        for client in clientes:
+            client._retire()  # noqa: SLF001
+        _client_cache.clear()
+    for client in clientes:
+        client.close()
 
 
 _PAYLOAD_CREDENCIAL_KEYS = {"senha", "password", "email"}
@@ -417,9 +902,17 @@ class RsdClient:
     senha: str
     _client: httpx.Client | None = None
     _csrf: str | None = None
+    _credential_provider: Callable[[], str] | None = field(
+        default=None, repr=False, compare=False
+    )
+    _clear_password_after_login: bool = field(default=False, repr=False, compare=False)
+    _retired: bool = field(default=False, repr=False, compare=False)
+    _lock: threading.RLock = field(
+        default_factory=threading.RLock, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
-        self.base_url = self.base_url.rstrip("/")
+        self.base_url = _validate_rsd_url(self.base_url)
 
     def __enter__(self) -> RsdClient:
         self.open()
@@ -429,23 +922,36 @@ class RsdClient:
         self.close()
 
     def open(self) -> None:
-        if self._client is None:
-            self._client = httpx.Client(
-                base_url=self.base_url,
-                timeout=_HTTP_TIMEOUT_S,
-                follow_redirects=False,
-                headers={"User-Agent": "xtreme-system-rsd/1.0"},
-            )
+        with self._lock:
+            if self._retired:
+                raise RsdClientRetiredError("A sessão RSD foi invalidada.")
+            if self._client is None:
+                self._client = httpx.Client(
+                    base_url=self.base_url,
+                    timeout=_HTTP_TIMEOUT_S,
+                    follow_redirects=False,
+                    headers={"User-Agent": "xtreme-system-rsd/1.0"},
+                )
 
     def close(self) -> None:
-        if self._client is not None:
-            self._client.close()
-            self._client = None
+        with self._lock:
+            if self._client is not None:
+                self._client.close()
+                self._client = None
             self._csrf = None
+            self.senha = ""
+            self._credential_provider = None
+
+    def _retire(self) -> None:
+        with self._lock:
+            self._retired = True
 
     def _http(self) -> httpx.Client:
-        if self._client is None:
-            self.open()
+        with self._lock:
+            if self._retired:
+                raise RsdClientRetiredError("A sessão RSD foi invalidada.")
+            if self._client is None:
+                self.open()
         assert self._client is not None  # noqa: S101
         return self._client
 
@@ -465,38 +971,164 @@ class RsdClient:
             self._csrf = token
         return self._csrf
 
+    def _do_request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        try:
+            return self._http().request(method, url, **kwargs)
+        except httpx.TimeoutException as exc:
+            raise RsdTimeoutError(
+                "O portal RSD não respondeu a tempo. Tente novamente."
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise RsdConsultaError(
+                "Falha ao comunicar com o portal RSD. Tente novamente."
+            ) from exc
+
+    def _sessao_expirou_no_corpo(self, resp: httpx.Response) -> bool:
+        # Alguns endpoints (ex.: baixar_pdf) seguem redirect até um corpo
+        # binário — não decodificar como texto para não estourar em
+        # UnicodeDecodeError. Content-Type explícito não-textual, ou magic
+        # bytes de PDF, descartam a checagem sem tocar em resp.text.
+        ctype = resp.headers.get("Content-Type", "")
+        if (ctype and "text" not in ctype) or resp.content.startswith(b"%PDF"):
+            return False
+        try:
+            return "id_password" in resp.text
+        except UnicodeDecodeError:
+            return False
+
+    def _sessao_expirou(self, resp: httpx.Response) -> bool:
+        if resp.status_code in {401, 403}:
+            return True
+        if resp.status_code in {301, 302, 303, 307, 308}:
+            return _LOGIN_PATH in (resp.headers.get("Location") or "")
+        if resp.status_code != 200:
+            return False
+        return self._sessao_expirou_no_corpo(resp)
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        follow_redirects: bool = False,
+        retry_login: bool = True,
+        headers_factory: Callable[[], dict[str, str]] | None = None,
+        data_factory: Callable[[], Any] | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Ponto único de chamada HTTP: traduz erros de transporte para
+        `RsdError` e reloga automaticamente em caso de sessão expirada.
+
+        `headers_factory`, quando informado, é chamado de novo após o
+        relogin — os headers passados em `kwargs` podem carregar um CSRF
+        token que fica obsoleto assim que a sessão é renovada.
+        """
+        with self._lock:
+            url = _validate_rsd_url(self._url(path), redirect=True)
+
+            def _request_kwargs() -> dict[str, Any]:
+                request_kwargs = dict(kwargs)
+                if data_factory is not None:
+                    request_kwargs["data"] = data_factory()
+                if headers_factory is not None:
+                    request_kwargs["headers"] = headers_factory()
+                return request_kwargs
+
+            def _request_with_validated_redirects() -> httpx.Response:
+                current_method = method
+                current_url = url
+                for _ in range(5):
+                    resp = self._do_request(
+                        current_method,
+                        current_url,
+                        follow_redirects=False,
+                        **_request_kwargs(),
+                    )
+                    destination = _validated_redirect(current_url, resp)
+                    if destination is None:
+                        return resp
+                    if not follow_redirects:
+                        return resp
+                    response_status = resp.status_code
+                    resp.close()
+                    current_url = destination
+                    if response_status in {301, 302, 303}:
+                        current_method = "GET"
+                raise RsdConsultaError(
+                    "O portal RSD excedeu o limite de redirecionamentos."
+                )
+
+            resp = _request_with_validated_redirects()
+            if retry_login and self._sessao_expirou(resp):
+                logger.warning("rsd_sessao_expirada", method=method, path=path)
+                self.login()
+                resp = _request_with_validated_redirects()
+            return resp
+
     def login(self) -> None:
-        client = self._http()
-        login_url = self._url(_LOGIN_PATH)
-        get_resp = client.get(login_url, params={"next": _UNITARIA_PATH})
-        get_resp.raise_for_status()
-        csrf = self._extract_csrf(get_resp.text)
-        self._csrf = csrf
-        post_resp = client.post(
-            login_url,
-            data={
-                "csrfmiddlewaretoken": csrf,
-                "login": self.email,
-                "password": self.senha,
-                "next": _UNITARIA_PATH,
-            },
-            headers={
-                "Origin": self.base_url,
-                "Referer": f"{login_url}?next={_UNITARIA_PATH}",
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        )
-        if post_resp.status_code == 403:
-            raise RsdAuthError("Login rejeitado (CSRF/Origin).")
-        # Sucesso: 302 para /dossie/unitaria/; falha: 200 com formulário
-        if post_resp.status_code == 200 and "id_password" in post_resp.text:
-            raise RsdAuthError("E-mail ou senha inválidos no portal RSD.")
-        if post_resp.status_code not in (200, 302, 303):
-            raise RsdAuthError(f"Falha no login RSD (HTTP {post_resp.status_code}).")
-        if not client.cookies.get("sessionid"):
-            raise RsdAuthError("Sessão RSD não foi criada após o login.")
-        self._refresh_csrf_from_cookies()
-        logger.info("rsd_login_ok")
+        with self._lock:
+            client = self._http()
+            password = self.senha
+            if not password and self._credential_provider is not None:
+                password = self._credential_provider()
+            if not password:
+                raise RsdEncryptionError(
+                    "A senha RSD não está disponível para renovar a sessão."
+                )
+            login_url = self._url(_LOGIN_PATH)
+            try:
+                try:
+                    get_resp = client.get(login_url, params={"next": _UNITARIA_PATH})
+                    _validated_redirect(login_url, get_resp)
+                    get_resp.raise_for_status()
+                except httpx.TimeoutException as exc:
+                    raise RsdTimeoutError(
+                        "O portal RSD não respondeu a tempo ao abrir a página de login."
+                    ) from exc
+                except httpx.HTTPError as exc:
+                    raise RsdAuthError(
+                        "Falha ao acessar a página de login do portal RSD."
+                    ) from exc
+                csrf = self._extract_csrf(get_resp.text)
+                self._csrf = csrf
+                try:
+                    post_resp = client.post(
+                        login_url,
+                        data={
+                            "csrfmiddlewaretoken": csrf,
+                            "login": self.email,
+                            "password": password,
+                            "next": _UNITARIA_PATH,
+                        },
+                        headers={
+                            "Origin": self.base_url,
+                            "Referer": f"{login_url}?next={_UNITARIA_PATH}",
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                    )
+                except httpx.TimeoutException as exc:
+                    raise RsdTimeoutError(
+                        "O portal RSD não respondeu a tempo ao efetuar login."
+                    ) from exc
+                except httpx.HTTPError as exc:
+                    raise RsdAuthError("Falha ao enviar login ao portal RSD.") from exc
+                _validated_redirect(login_url, post_resp)
+                if post_resp.status_code == 403:
+                    raise RsdAuthError("Login rejeitado (CSRF/Origin).")
+                # Sucesso: 302 para /dossie/unitaria/; falha: 200 com formulário
+                if post_resp.status_code == 200 and "id_password" in post_resp.text:
+                    raise RsdAuthError("E-mail ou senha inválidos no portal RSD.")
+                if post_resp.status_code not in (200, 302, 303):
+                    raise RsdAuthError(
+                        f"Falha no login RSD (HTTP {post_resp.status_code})."
+                    )
+                if not client.cookies.get("sessionid"):
+                    raise RsdAuthError("Sessão RSD não foi criada após o login.")
+                self._refresh_csrf_from_cookies()
+                logger.info("rsd_login_ok", email=self.email)
+            finally:
+                if self._clear_password_after_login:
+                    self.senha = ""
 
     def ensure_login(self) -> None:
         if self._http().cookies.get("sessionid") and self._csrf:
@@ -515,37 +1147,46 @@ class RsdClient:
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
+    def _refresh_unitaria_csrf(self) -> str:
+        page = self._request("GET", _UNITARIA_PATH, follow_redirects=True)
+        csrf = self._extract_csrf(page.text)
+        self._csrf = csrf
+        return csrf
+
+    def _check_capability(
+        self, *, label: str, path: str, markers: tuple[str, ...]
+    ) -> None:
+        response = self._request("GET", path, follow_redirects=True)
+        if response.status_code >= 400 or not all(
+            marker in response.text for marker in markers
+        ):
+            raise RsdCapabilityError(
+                f"A conta RSD não tem permissão ou acesso para {label}."
+            )
+
     def testar_conexao(self) -> None:
         self.login()
-
-    def _post_puxar_dados(self, placa: str, headers: dict[str, str]) -> httpx.Response:
-        try:
-            return self._http().post(
-                self._url(_PUXAR_DADOS_PATH),
-                data={"placa": placa},
-                headers=headers,
-            )
-        except httpx.TimeoutException as exc:
-            raise RsdTimeoutError(
-                "O portal RSD não respondeu a tempo ao puxar os dados. Tente novamente."
-            ) from exc
+        self._check_capability(
+            label="puxar dados",
+            path=_ATPV_NOVA_PATH,
+            markers=('name="placa"',),
+        )
+        self._check_capability(
+            label="consulta unitária",
+            path=_UNITARIA_PATH,
+            markers=('class="dossie-form"', 'name="placa"'),
+        )
 
     def puxar_dados(self, placa: str) -> PuxarDadosResult:
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa para puxar dados.")
-        try:
-            headers = self._csrf_headers("/atpv/nova/")
-            resp = self._post_puxar_dados(placa_norm, headers)
-            if resp.status_code in _SESSION_EXPIRED_STATUS_CODES:
-                # Sessão expirou — reloga uma vez
-                self.login()
-                headers = self._csrf_headers("/atpv/nova/")
-                resp = self._post_puxar_dados(placa_norm, headers)
-        except httpx.HTTPError as exc:
-            raise RsdConsultaError(
-                "Falha ao consultar o portal RSD. Tente novamente."
-            ) from exc
+        resp = self._request(
+            "POST",
+            _PUXAR_DADOS_PATH,
+            data={"placa": placa_norm},
+            headers_factory=lambda: self._csrf_headers("/atpv/nova/"),
+        )
         if resp.status_code >= 400:
             raise RsdConsultaError(_msg_http(resp, "Falha ao puxar dados no RSD."))
         try:
@@ -570,27 +1211,16 @@ class RsdClient:
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa ou chassi para consultar.")
-        # CSRF fresco da própria página unitária
-        page = self._http().get(self._url(_UNITARIA_PATH), follow_redirects=True)
-        if page.status_code == 200 and "id_password" in page.text:
-            self.login()
-            page = self._http().get(self._url(_UNITARIA_PATH), follow_redirects=True)
-        page.raise_for_status()
-        csrf = self._extract_csrf(page.text)
-        self._csrf = csrf
-        resp = self._http().post(
-            self._url(_UNITARIA_PATH),
-            data={
-                "csrfmiddlewaretoken": csrf,
+        self.ensure_login()
+        resp = self._request(
+            "POST",
+            _UNITARIA_PATH,
+            data_factory=lambda: {
+                "csrfmiddlewaretoken": self._refresh_unitaria_csrf(),
                 "fonte": "be",
                 "placa": placa_norm,
             },
-            headers={
-                "Origin": self.base_url,
-                "Referer": self._url(_UNITARIA_PATH),
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            follow_redirects=False,
+            headers_factory=lambda: self._csrf_headers(_UNITARIA_PATH),
         )
         if resp.status_code not in (302, 303):
             raise RsdConsultaError(
@@ -599,8 +1229,13 @@ class RsdClient:
         location = resp.headers.get("Location") or ""
         match = _DOSSIE_ID_RE.search(location)
         if not match:
+            # Não repassa o Location cru ao usuário — é detalhe interno do
+            # portal; fica só no log técnico.
+            logger.warning(
+                "rsd_iniciar_unitaria_redirect_inesperado", location=location
+            )
             raise RsdConsultaError(
-                f"Redirect inesperado da consulta unitária: {location or '(vazio)'}"
+                "Falha ao iniciar consulta unitária: redirect inesperado do portal."
             )
         return int(match.group(1))
 
@@ -640,8 +1275,11 @@ class RsdClient:
         )
 
     def _fetch_status_once(self, dossie_id: int) -> dict[str, Any]:
-        status_url = self._url(f"/dossie/{dossie_id}/status/")
-        resp = self._http().get(status_url, headers={"Accept": "application/json"})
+        resp = self._request(
+            "GET",
+            f"/dossie/{dossie_id}/status/",
+            headers={"Accept": "application/json"},
+        )
         if resp.status_code >= 400:
             raise RsdConsultaError(
                 _msg_http(resp, f"Falha ao consultar status do dossiê {dossie_id}.")
@@ -661,8 +1299,23 @@ class RsdClient:
     def _poll_status(self, dossie_id: int, *, timeout_s: float) -> dict[str, Any]:
         deadline = time.monotonic() + timeout_s
         last: dict[str, Any] = {}
+        erros_consecutivos = 0
         while time.monotonic() < deadline:
-            last = self._fetch_status_once(dossie_id)
+            try:
+                last = self._fetch_status_once(dossie_id)
+            except RsdError as exc:
+                erros_consecutivos += 1
+                logger.warning(
+                    "rsd_poll_falha_transitoria",
+                    dossie_id=dossie_id,
+                    tentativa=erros_consecutivos,
+                    erro=str(exc),
+                )
+                if erros_consecutivos >= _POLL_MAX_ERROS_CONSECUTIVOS:
+                    raise
+                time.sleep(_POLL_INTERVAL_S)
+                continue
+            erros_consecutivos = 0
             if last.get("is_terminal") or last.get("status") in {
                 "done",
                 "error",
@@ -676,10 +1329,7 @@ class RsdClient:
 
     def baixar_pdf(self, dossie_id: int) -> bytes:
         self.ensure_login()
-        resp = self._http().get(
-            self._url(f"/dossie/{dossie_id}/pdf/"),
-            follow_redirects=True,
-        )
+        resp = self._request("GET", f"/dossie/{dossie_id}/pdf/", follow_redirects=True)
         if resp.status_code >= 400:
             raise RsdConsultaError(
                 _msg_http(resp, f"Falha ao baixar PDF do dossiê {dossie_id}.")
@@ -727,7 +1377,13 @@ def _msg_http(resp: httpx.Response, fallback: str) -> str:
     try:
         data = resp.json()
         if isinstance(data, dict) and data.get("erro"):
-            return str(data["erro"])
+            msg = str(data["erro"])
+            if len(msg) > _MSG_PORTAL_MAX_LEN:
+                logger.warning(
+                    "rsd_mensagem_portal_truncada", tamanho_original=len(msg)
+                )
+                msg = msg[:_MSG_PORTAL_MAX_LEN].rstrip() + "…"
+            return msg
     except ValueError:
         pass
     return f"{fallback} (HTTP {resp.status_code})."

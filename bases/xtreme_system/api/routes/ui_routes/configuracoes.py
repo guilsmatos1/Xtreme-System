@@ -8,12 +8,21 @@ from typing import Annotated
 from uuid import uuid4
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, File, Form, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.deps import SessionDep, UIAdmin, templates
+from xtreme_system.api.deps import SessionDep, UIAdmin, templates, validar_csrf
 from xtreme_system.api.routes.ui_routes.upload_files import (
     remover_upload,
     uploaded_file_path,
@@ -44,15 +53,26 @@ logger = structlog.get_logger(__name__)
 
 @router.get("/ui/configuracoes")
 def ui_configuracoes(
-    request: Request, session: SessionDep, user: UIAdmin
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    aba: Annotated[str, Query()] = "banco",
 ) -> HTMLResponse:
-    return _pagina_empresa(
+    mensagem = {
+        "rsd-salvo": "Configurações RSD salvas.",
+    }.get(request.cookies.get("ui_flash") or "")
+    aba = aba if aba in {"banco", "whatsapp", "rsd", "tema", "empresa"} else "banco"
+    response = _pagina_empresa(
         request,
         session,
         user,
         empresa.get_config(session),
-        aba="banco",
+        aba=aba,
+        sucesso=mensagem,
     )
+    if request.cookies.get("ui_flash"):
+        response.delete_cookie("ui_flash", path="/")
+    return response
 
 
 @router.post("/ui/configuracoes")
@@ -94,29 +114,47 @@ def ui_configuracoes_rsd_salvar(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
+    _csrf: Annotated[None, Depends(validar_csrf)],
     email: Annotated[str, Form()] = "",
     senha: Annotated[str, Form()] = "",
     base_url: Annotated[str, Form()] = "",
-) -> HTMLResponse:
+    rsd_teste_prova: Annotated[str, Form()] = "",
+) -> Response:
     atual = rsd.get_config(session)
-    config_rsd = rsd.atualizar_config(
-        session,
-        rsd.RsdConfigUpdate(
-            email=email,
-            senha=senha or atual.senha,
-            base_url=base_url or atual.base_url,
-        ),
-        user.id,
+    try:
+        rsd.atualizar_config(
+            session,
+            rsd.RsdConfigUpdate(
+                email=email,
+                # Campo vazio = manter a senha atual; `atualizar_config` já cobre
+                # esse caso (só reencripta quando `senha` vem preenchida).
+                senha=senha,
+                base_url=base_url or atual.base_url,
+                teste_prova=rsd_teste_prova,
+            ),
+            user.id,
+        )
+    except rsd.RsdError as exc:
+        return _pagina_empresa(
+            request,
+            session,
+            user,
+            empresa.get_config(session),
+            config_rsd=atual,
+            erro=str(exc),
+            aba="rsd",
+            status_code=400,
+        )
+    response = RedirectResponse("/ui/configuracoes?aba=rsd", status_code=303)
+    response.set_cookie(
+        "ui_flash",
+        "rsd-salvo",
+        max_age=60,
+        httponly=True,
+        samesite="lax",
+        path="/",
     )
-    return _pagina_empresa(
-        request,
-        session,
-        user,
-        empresa.get_config(session),
-        config_rsd=config_rsd,
-        sucesso="Configurações RSD salvas.",
-        aba="rsd",
-    )
+    return response
 
 
 @router.post("/ui/configuracoes/rsd/teste")
@@ -124,39 +162,109 @@ def ui_configuracoes_rsd_teste(
     request: Request,
     session: SessionDep,
     user: UIAdmin,
+    _csrf: Annotated[None, Depends(validar_csrf)],
+    email: Annotated[str, Form()] = "",
+    senha: Annotated[str, Form()] = "",
+    base_url: Annotated[str, Form()] = "",
 ) -> HTMLResponse:
+    """Testa com os valores do formulário (ainda não salvos), não com o que
+    já está persistido — ver docs/analise-erros-rsd.md sobre o botão testar
+    conexão silenciosamente ignorar e-mail/senha recém-digitados."""
     config_rsd = rsd.get_config(session)
     config_wa = whatsapp.get_config(session)
     config_empresa = empresa.get_config(session)
+    config_rsd_form = rsd.RsdConfig(
+        id=config_rsd.id,
+        email=email.strip(),
+        base_url=base_url.strip() or config_rsd.base_url,
+        # O rascunho nunca carrega nem renderiza a senha digitada.
+        senha="",
+        revogada=False,
+    )
     try:
-        client = rsd.client_from_config(config_rsd)
-    except rsd.RsdNotConfiguredError as exc:
+        client = rsd.client_from_values(
+            email=email, senha=senha, base_url=base_url, config=config_rsd
+        )
+    except rsd.RsdError as exc:
+        if request.headers.get("HX-Request"):
+            return _rsd_teste_resultado(
+                request,
+                sucesso=False,
+                erro=rsd.mensagem_teste(exc),
+                teste_prova="",
+            )
         return _pagina_empresa(
             request,
             session,
             user,
             config_empresa,
             config=config_wa,
-            config_rsd=config_rsd,
+            config_rsd=config_rsd_form,
             erro=str(exc),
             aba="rsd",
             status_code=400,
+            rsd_testado=True,
+            rsd_teste_erro=rsd.mensagem_teste(exc),
         )
+    # `perfil` é relationship, não coluna — detach_request_session só
+    # pré-carrega colunas (`state.mapper.column_attrs`). O template
+    # renderizado abaixo (nav de base.html) acessa `user.perfil` via
+    # `pode_acessar`; sem isto, gera DetachedInstanceError depois que a
+    # sessão já foi fechada.
+    _ = user.perfil
     detach_request_session(request, keep=(user, config_rsd, config_wa, config_empresa))
     try:
-        with client:
-            client.testar_conexao()
+        client.open()
+        client.testar_conexao()
     except rsd.RsdError as exc:
+        logger.warning("rsd_teste_conexao_falhou", erro=str(exc))
+        rsd.registrar_teste_config_persistente(
+            email=email,
+            senha=senha or rsd.senha_config(config_rsd),
+            base_url=base_url or config_rsd.base_url,
+            sucesso=False,
+            erro=exc,
+        )
+        resultado = _rsd_teste_resultado(
+            request,
+            sucesso=False,
+            erro=rsd.mensagem_teste(exc),
+            teste_prova="",
+        )
+        if request.headers.get("HX-Request"):
+            return resultado
         return _pagina_empresa(
             request,
             session,
             user,
             config_empresa,
             config=config_wa,
-            config_rsd=config_rsd,
+            config_rsd=config_rsd_form,
             erro=str(exc),
             aba="rsd",
             status_code=400,
+            rsd_testado=True,
+            rsd_teste_erro=rsd.mensagem_teste(exc),
+        )
+    finally:
+        client.close()
+    rsd.registrar_teste_config_persistente(
+        email=email,
+        senha=senha or rsd.senha_config(config_rsd),
+        base_url=base_url or config_rsd.base_url,
+        sucesso=True,
+    )
+    teste_prova = rsd.emitir_teste_prova(
+        email=email,
+        senha=senha or rsd.senha_config(config_rsd),
+        base_url=base_url or config_rsd.base_url,
+    )
+    if request.headers.get("HX-Request"):
+        return _rsd_teste_resultado(
+            request,
+            sucesso=True,
+            erro=None,
+            teste_prova=teste_prova,
         )
     return _pagina_empresa(
         request,
@@ -164,8 +272,29 @@ def ui_configuracoes_rsd_teste(
         user,
         config_empresa,
         config=config_wa,
+        config_rsd=config_rsd_form,
+        sucesso="Conexão com o portal RSD OK. Salve para ativar a configuração.",
+        aba="rsd",
+        rsd_testado=True,
+        rsd_teste_prova=teste_prova,
+    )
+
+
+@router.post("/ui/configuracoes/rsd/revogar")
+def ui_configuracoes_rsd_revogar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    _csrf: Annotated[None, Depends(validar_csrf)],
+) -> HTMLResponse:
+    config_rsd = rsd.revogar_config(session, user.id)
+    return _pagina_empresa(
+        request,
+        session,
+        user,
+        empresa.get_config(session),
         config_rsd=config_rsd,
-        sucesso="Conexão com o portal RSD OK.",
+        sucesso="Credencial RSD revogada e removida.",
         aba="rsd",
     )
 
@@ -223,8 +352,12 @@ def _pagina_empresa(
     sucesso: str | None = None,
     aba: str = "empresa",
     status_code: int = 200,
+    limpar_senha_rsd: bool = False,
+    rsd_testado: bool = False,
+    rsd_teste_erro: str | None = None,
+    rsd_teste_prova: str = "",
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "configuracoes.html",
         {
@@ -235,8 +368,41 @@ def _pagina_empresa(
             "erro": erro,
             "sucesso": sucesso,
             "aba": aba,
+            "rsd_senha_salva": limpar_senha_rsd,
+            "rsd_testado": rsd_testado,
+            "rsd_teste_erro": rsd_teste_erro,
+            "rsd_teste_prova": rsd_teste_prova,
+            "rsd_ok": rsd.configurado(config_rsd or rsd.get_config(session)),
+            "rsd_status": rsd.status_config(
+                config_rsd or rsd.get_config(session)
+            ).value,
         },
         status_code=status_code,
+    )
+    # Sem isto, o botão "Voltar" do navegador pode restaurar do bfcache o
+    # snapshot da página anterior ao último save (credenciais/dados velhos),
+    # em vez de refazer o GET — ver docs/agents ou o achado do bug de RSD
+    # "email salvo não aparece ao voltar".
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+def _rsd_teste_resultado(
+    request: Request,
+    *,
+    sucesso: bool,
+    erro: str | None,
+    teste_prova: str,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "_rsd_test_result.html",
+        {
+            "sucesso": sucesso,
+            "erro": erro,
+            "teste_prova": teste_prova,
+        },
+        status_code=200 if sucesso else 400,
     )
 
 

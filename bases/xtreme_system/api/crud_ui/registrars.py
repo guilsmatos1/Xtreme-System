@@ -434,7 +434,7 @@ def register_edit_route(
         user: Annotated[usuario.Usuario, Depends(dep)],
     ) -> HTMLResponse:
         obj = found(module.get(session, item_id), config.label)
-        return form_response(
+        response = form_response(
             form.templates,
             request,
             form.form_template,
@@ -443,6 +443,8 @@ def register_edit_route(
             item=obj,
             user=user,
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 def register_create_route(

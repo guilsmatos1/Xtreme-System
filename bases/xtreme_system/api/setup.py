@@ -3,6 +3,7 @@
 import json
 import math
 import os
+import secrets
 import time
 import uuid
 from collections import deque
@@ -29,6 +30,7 @@ from jwt import InvalidTokenError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from xtreme_system.api.deps import (
+    CSRF_COOKIE,
     NaoAdminError,
     NaoAutenticadoError,
     NaoAutorizadoError,
@@ -47,6 +49,7 @@ from xtreme_system.database.core import (
 )
 from xtreme_system.database.rate_limit import DatabaseRateLimiterStore, RateLimiterStore
 from xtreme_system.logging.core import configure_logging
+from xtreme_system.rsd import core as rsd
 from xtreme_system.upload_file.authorization import pode_acessar_upload
 
 configure_logging()
@@ -70,7 +73,12 @@ _ROTAS_ISENTAS_RATE_LIMIT = {
     "/openapi.json",
 }
 _CORS_ALLOWED_METHODS = ["GET", "POST", "PATCH", "DELETE"]
-_CORS_ALLOWED_HEADERS = ["Authorization", "Content-Type"]
+_CORS_ALLOWED_HEADERS = [
+    "Authorization",
+    "Content-Type",
+    "X-CSRFToken",
+    "X-CSRF-Token",
+]
 
 
 def _trusted_proxy_networks() -> list[IPv4Network | IPv6Network]:
@@ -201,6 +209,22 @@ async def _htmx_write_feedback(
         and "HX-Trigger" not in response.headers
     ):
         response.headers["HX-Trigger"] = json.dumps(_HTMX_SUCCESS_EVENTS)
+    return response
+
+
+async def _csrf_cookie(request: Request, call_next: Callable[[Request], Any]) -> Any:
+    token = request.cookies.get(CSRF_COOKIE) or secrets.token_urlsafe(32)
+    request.state.csrf_token = token
+    response = await call_next(request)
+    if CSRF_COOKIE not in request.cookies:
+        response.set_cookie(
+            CSRF_COOKIE,
+            token,
+            httponly=False,
+            samesite="lax",
+            secure=request.url.scheme == "https",
+            path="/",
+        )
     return response
 
 
@@ -443,7 +467,10 @@ def create_app(
         allow_headers=_CORS_ALLOWED_HEADERS,
     )
     application.middleware("http")(_htmx_write_feedback)
+    application.middleware("http")(_csrf_cookie)
     application.router.on_startup.append(_warn_proxy_headers_without_trusted_proxies)
+    application.router.on_startup.append(rsd.validate_startup_settings)
+    application.router.on_shutdown.append(rsd.invalidar_client_cache)
     application.middleware("http")(_database_session)
     application.middleware("http")(_database_restore_guard)
     application.middleware("http")(_request_context)

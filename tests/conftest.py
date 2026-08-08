@@ -19,8 +19,11 @@ from xtreme_system.usuario import core as usuario
 def pytest_configure() -> None:
     # Garante segredo JWT em ambientes sem .env (ex.: pre-commit, CI) antes
     # do lru_cache de get_settings() ser populado por qualquer rota de login.
-    os.environ.setdefault("AUTH_SECRET_KEY", "test-secret-key")
-    os.environ.setdefault("RSD_ENCRYPTION_KEY", "test-rsd-encryption-key")
+    os.environ.setdefault("AUTH_SECRET_KEY", "test-auth-secret-key-0123456789abcdef")
+    os.environ.setdefault(
+        "RSD_ENCRYPTION_KEY", "test-rsd-encryption-key-0123456789abcdef"
+    )
+    os.environ.setdefault("RSD_ALLOWED_HOSTS", "lojas.rsdsistema.com.br,rsd.test")
     os.environ.setdefault("RATE_LIMIT_STORE", "memory")
     if not os.environ.get("TEST_DATABASE_URL") and not os.environ.get(
         "XTREME_ALLOW_SQLITE_TEST_DB"

@@ -67,12 +67,18 @@ sudo -u "$DEPLOY_USER" /home/"$DEPLOY_USER"/.local/bin/uv sync
 # 6. Criar arquivo .env se não existir
 if [ ! -f "$DEPLOY_PATH/.env" ]; then
     echo "⚙️ Criando arquivo .env..."
-    cat > "$DEPLOY_PATH/.env" << 'EOF'
+    auth_secret_value="$(openssl rand -hex 32)"
+    rsd_encryption_key_value="$(openssl rand -hex 32)"
+    cat > "$DEPLOY_PATH/.env" << EOF
 # Database
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme
 
 # Auth
-AUTH_SECRET_KEY=your-secret-key-here-change-this
+AUTH_SECRET_KEY=$auth_secret_value
+
+# RSD (gere um valor diferente da AUTH_SECRET_KEY)
+RSD_ENCRYPTION_KEY=$rsd_encryption_key_value
+RSD_ALLOWED_HOSTS=lojas.rsdsistema.com.br
 
 # Environment
 ENVIRONMENT=production

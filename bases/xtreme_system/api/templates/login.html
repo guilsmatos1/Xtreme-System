@@ -28,6 +28,7 @@
       {% if erro %}{{ ui.alert(erro) }}{% endif %}
 
       <form method="post" action="/ui/login">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <label class="field">
           <span class="field__label">Usuário</span>
           <input class="input" name="username" data-testid="login-username" placeholder="seu.usuario" required autofocus autocomplete="username">

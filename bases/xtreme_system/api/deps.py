@@ -1,8 +1,11 @@
 """Dependências compartilhadas: sessão, autenticação (Bearer/cookie) e templates."""
 
+import hmac
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlsplit
 
 from fastapi import Cookie, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -30,10 +33,15 @@ templates.env.globals["arquivo_disponivel"] = arquivo_disponivel
 templates.env.filters["formatar_documento"] = cliente.formatar_documento
 templates.env.filters["formatar_telefone"] = cliente.formatar_telefone
 
+CSRF_COOKIE = "csrf_token"
+CSRF_FIELD = "csrf_token"
+
 SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 __all__ = [
+    "CSRF_COOKIE",
+    "CSRF_FIELD",
     "AdminUser",
     "CurrentUser",
     "DepFilter",
@@ -51,6 +59,7 @@ __all__ = [
     "require_operacao",
     "require_ui_admin",
     "templates",
+    "validar_csrf",
 ]
 
 
@@ -63,6 +72,53 @@ def found[T](obj: T | None, nome: str) -> T:
     if obj is None:
         raise HTTPException(status_code=404, detail=f"{nome} não encontrado")
     return obj
+
+
+def _origens_csrf_permitidas(request: Request) -> set[str]:
+    configured = {
+        origin.strip().rstrip("/")
+        for origin in os.environ.get("CORS_ORIGINS", "").split(",")
+        if origin.strip() and origin.strip() != "*"
+    }
+    configured.add(f"{request.url.scheme}://{request.url.netloc}")
+    return configured
+
+
+def _origem_header_permitida(request: Request) -> bool:
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
+    candidate = origin or referer
+    if not candidate:
+        return True
+    if origin == "null":
+        return False
+    try:
+        parsed = urlsplit(candidate)
+    except ValueError:
+        return False
+    if not parsed.scheme or not parsed.netloc:
+        return False
+    origem = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+    return origem in _origens_csrf_permitidas(request)
+
+
+async def validar_csrf(request: Request) -> None:
+    """Valida o double-submit token e a origem de uma escrita UI sensível."""
+    if not _origem_header_permitida(request):
+        raise HTTPException(status_code=403, detail="Origem não permitida")
+    cookie_token = request.cookies.get(CSRF_COOKIE)
+    if not cookie_token:
+        raise HTTPException(status_code=403, detail="Token CSRF inválido")
+    submitted = request.headers.get("X-CSRFToken") or request.headers.get(
+        "X-CSRF-Token"
+    )
+    if not submitted:
+        form = await request.form()
+        candidate = form.get(CSRF_FIELD)
+        if isinstance(candidate, str):
+            submitted = candidate
+    if not submitted or not hmac.compare_digest(cookie_token, submitted):
+        raise HTTPException(status_code=403, detail="Token CSRF inválido")
 
 
 # ---- Autenticação API (Bearer token) ----

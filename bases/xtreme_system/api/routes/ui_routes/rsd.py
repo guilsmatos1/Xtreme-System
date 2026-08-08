@@ -1,10 +1,12 @@
 """HTMX routes for integração RSD (puxar dados + consulta unitária)."""
 
 import json
+import time
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any, cast
 from urllib.parse import urlencode
 
+import structlog
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BeforeValidator, Field
@@ -28,12 +30,20 @@ from xtreme_system.rsd import core as rsd
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 
+logger = structlog.get_logger(__name__)
+
 router = APIRouter()
 _RSD_STATUS_IDS = {
     "rsd-status",
     "rsd-status-compra",
     "rsd-status-consignacao",
 }
+
+# Contador de falhas transitórias consecutivas por dossiê, para o poll do
+# lado do cliente tolerar blips de rede sem parar de pollar nem sobrescrever
+# o estado do dossiê a cada erro (ver atualizar_consulta_dossie).
+_POLL_TRANSIENT_MAX = 3
+_poll_falhas: dict[int, int] = {}
 
 
 def _normalize_status_id(value: str) -> str:
@@ -42,6 +52,18 @@ def _normalize_status_id(value: str) -> str:
 
 def _normalize_prefix(value: str) -> str:
     return value if value in {"", "vei_"} else ""
+
+
+def _marcar_falha_credencial(config: rsd.RsdConfig, erro: rsd.RsdError) -> None:
+    if not rsd.configurado(config):
+        return
+    rsd.registrar_teste_config_persistente(
+        email=config.email,
+        senha=rsd.senha_config(config),
+        base_url=config.base_url,
+        sucesso=False,
+        erro=erro,
+    )
 
 
 def _status_partial(
@@ -106,7 +128,7 @@ def ui_rsd_puxar_dados(
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
-    except rsd.RsdNotConfiguredError as exc:
+    except rsd.RsdError as exc:
         return _status_partial(
             request,
             erro=str(exc),
@@ -115,16 +137,22 @@ def ui_rsd_puxar_dados(
         )
 
     detach_request_session(request, keep=(user, config))
+    inicio = time.monotonic()
     try:
-        with client:
-            dados = client.puxar_dados(placa)
+        dados = client.puxar_dados(placa)
     except rsd.RsdError as exc:
+        _marcar_falha_credencial(config, exc)
+        duracao_ms = int((time.monotonic() - inicio) * 1000)
+        logger.warning(
+            "rsd_puxar_dados_falhou", placa=placa, erro=str(exc), duracao_ms=duracao_ms
+        )
         rsd.registrar_consulta(
             tipo=rsd.TipoConsultaRsd.puxar_dados,
             placa=placa,
             usuario_id=user.id,
             sucesso=False,
             erro=str(exc),
+            duracao_ms=duracao_ms,
         )
         return _status_partial(
             request,
@@ -133,6 +161,7 @@ def ui_rsd_puxar_dados(
             status_code=400,
         )
 
+    duracao_ms = int((time.monotonic() - inicio) * 1000)
     campos = rsd.mapear_para_veiculo(dados, prefix=_normalize_prefix(rsd_prefix))
     rsd.registrar_consulta(
         tipo=rsd.TipoConsultaRsd.puxar_dados,
@@ -141,6 +170,7 @@ def ui_rsd_puxar_dados(
         payload=dados.model_dump(),
         campos_aplicados=campos,
         sucesso=True,
+        duracao_ms=duracao_ms,
     )
     response = templates.TemplateResponse(
         request,
@@ -172,7 +202,7 @@ def ui_rsd_consulta_unitaria(
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
-    except rsd.RsdNotConfiguredError as exc:
+    except rsd.RsdError as exc:
         return _status_partial(
             request,
             erro=str(exc),
@@ -181,16 +211,25 @@ def ui_rsd_consulta_unitaria(
         )
 
     detach_request_session(request, keep=(user, config))
+    inicio = time.monotonic()
     try:
-        with client:
-            dossie_id = client.iniciar_unitaria(placa)
+        dossie_id = client.iniciar_unitaria(placa)
     except rsd.RsdError as exc:
+        _marcar_falha_credencial(config, exc)
+        duracao_ms = int((time.monotonic() - inicio) * 1000)
+        logger.warning(
+            "rsd_iniciar_unitaria_falhou",
+            placa=placa,
+            erro=str(exc),
+            duracao_ms=duracao_ms,
+        )
         rsd.registrar_consulta(
             tipo=rsd.TipoConsultaRsd.unitaria,
             placa=placa,
             usuario_id=user.id,
             sucesso=False,
             erro=str(exc),
+            duracao_ms=duracao_ms,
         )
         return _status_partial(
             request,
@@ -199,6 +238,7 @@ def ui_rsd_consulta_unitaria(
             status_code=400,
         )
 
+    duracao_ms = int((time.monotonic() - inicio) * 1000)
     rsd.registrar_consulta(
         tipo=rsd.TipoConsultaRsd.unitaria,
         placa=placa,
@@ -206,6 +246,7 @@ def ui_rsd_consulta_unitaria(
         sucesso=True,
         dossie_id=dossie_id,
         status_dossie="processing",
+        duracao_ms=duracao_ms,
     )
     return _status_partial(
         request,
@@ -228,7 +269,7 @@ def ui_rsd_dossie_status(
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
-    except rsd.RsdNotConfiguredError as exc:
+    except rsd.RsdError as exc:
         return _status_partial(
             request,
             erro=str(exc),
@@ -237,10 +278,34 @@ def ui_rsd_dossie_status(
         )
 
     detach_request_session(request, keep=(user, config))
+    inicio = time.monotonic()
     try:
-        with client:
-            resultado = client.status_unitaria(dossie_id)
+        resultado = client.status_unitaria(dossie_id)
     except rsd.RsdError as exc:
+        duracao_ms = int((time.monotonic() - inicio) * 1000)
+        falhas = _poll_falhas.get(dossie_id, 0) + 1
+        _poll_falhas[dossie_id] = falhas
+        logger.warning(
+            "rsd_poll_status_falhou",
+            dossie_id=dossie_id,
+            tentativa=falhas,
+            erro=str(exc),
+            duracao_ms=duracao_ms,
+        )
+        if falhas < _POLL_TRANSIENT_MAX:
+            # Erro transitório: não sobrescreve o estado já gravado do
+            # dossiê (ficaria marcado como fracassado mesmo processando
+            # normalmente no portal) e mantém o poll do cliente ativo.
+            return _status_partial(
+                request,
+                sucesso="Consulta em andamento…",
+                unitaria=rsd.UnitariaResult(
+                    dossie_id=dossie_id, status="processing", is_terminal=False
+                ),
+                status_id=rsd_status_id,
+            )
+        _poll_falhas.pop(dossie_id, None)
+        _marcar_falha_credencial(config, exc)
         rsd.atualizar_consulta_dossie(
             dossie_id=dossie_id,
             payload=None,
@@ -255,6 +320,7 @@ def ui_rsd_dossie_status(
             status_code=400,
         )
 
+    _poll_falhas.pop(dossie_id, None)
     if resultado.is_terminal:
         rsd.atualizar_consulta_dossie(
             dossie_id=dossie_id,
@@ -281,14 +347,15 @@ def ui_rsd_dossie_pdf(
     config = rsd.get_config(session)
     try:
         client = rsd.client_from_config(config)
-    except rsd.RsdNotConfiguredError as exc:
+    except rsd.RsdError as exc:
         return HTMLResponse(str(exc), status_code=400)
 
     detach_request_session(request, keep=(user, config))
     try:
-        with client:
-            pdf = client.baixar_pdf(dossie_id)
+        pdf = client.baixar_pdf(dossie_id)
     except rsd.RsdError as exc:
+        _marcar_falha_credencial(config, exc)
+        logger.warning("rsd_baixar_pdf_falhou", dossie_id=dossie_id, erro=str(exc))
         return HTMLResponse(str(exc), status_code=400)
 
     return Response(

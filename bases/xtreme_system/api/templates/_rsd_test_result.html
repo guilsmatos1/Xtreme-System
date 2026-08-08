@@ -1,0 +1,14 @@
+{% import "_macros.html" as ui %}
+{% if sucesso %}
+<div class="rsd-test-result rsd-test-result--success" role="status">
+  {{ ui.icon("check") }}
+  <span>Teste aprovado para este rascunho; ainda não salvo. Clique em “Salvar” para ativar estas credenciais.</span>
+</div>
+<input type="hidden" name="rsd_teste_prova" value="{{ teste_prova }}">
+{% else %}
+<div class="rsd-test-result rsd-test-result--error" role="alert">
+  {{ ui.icon("alert-triangle") }}
+  <span>{{ erro }}</span>
+</div>
+<input type="hidden" name="rsd_teste_prova" value="">
+{% endif %}

@@ -5,7 +5,10 @@ from __future__ import annotations
 import html.parser
 import json
 import re
-from collections.abc import Callable
+import socket
+import threading
+import time
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import httpx
@@ -13,6 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from xtreme_system.api.routes.ui_routes import rsd as rsd_routes
 from xtreme_system.auditoria.core import Auditoria
 from xtreme_system.database.core import SessionLocal
 from xtreme_system.perfil import core as perfil
@@ -103,6 +107,16 @@ def _puxar_dados(request: httpx.Request) -> httpx.Response:
     )
 
 
+@_route("GET", "/atpv/nova/")
+def _atpv_nova(_request: httpx.Request) -> httpx.Response:
+    return httpx.Response(
+        200,
+        text=(
+            '<form action="/atpv/puxar-dados/" name="puxar"><input name="placa"></form>'
+        ),
+    )
+
+
 @_route("GET", "/dossie/unitaria/")
 def _unitaria_get(_request: httpx.Request) -> httpx.Response:
     return httpx.Response(200, text=_unitaria_html())
@@ -157,6 +171,13 @@ def _fake_client_cls(transport: httpx.MockTransport) -> type[rsd.RsdClient]:
             )
 
     return _FakeClient
+
+
+@pytest.fixture(autouse=True)
+def _reset_rsd_client_cache() -> Iterator[None]:
+    """Evita client HTTP em cache vazar entre testes (ver client_from_config)."""
+    yield
+    rsd.invalidar_client_cache()
 
 
 @pytest.fixture
@@ -359,14 +380,608 @@ def test_puxar_dados_falha_de_conexao_vira_erro_da_integracao() -> None:
         follow_redirects=False,
     )
 
-    with client, pytest.raises(rsd.RsdConsultaError, match="Falha ao consultar"):
+    with client, pytest.raises(rsd.RsdConsultaError, match="Falha ao comunicar"):
         client.puxar_dados("TCM9G85")
+
+
+def test_iniciar_unitaria_falha_de_conexao_vira_erro_da_integracao() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/dossie/unitaria/":
+            raise httpx.ConnectError("portal indisponível", request=request)
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client, pytest.raises(rsd.RsdConsultaError, match="Falha ao comunicar"):
+        client.iniciar_unitaria("TCM9G85")
+
+
+def test_iniciar_unitaria_reloga_apos_sessao_expirada() -> None:
+    unitaria_gets = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal unitaria_gets
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/dossie/unitaria/":
+            unitaria_gets += 1
+            # Sessão expirada na 1a tentativa: portal devolve a própria
+            # página de login (200) em vez do formulário da unitária.
+            if unitaria_gets == 1:
+                return httpx.Response(200, text=_login_html())
+            return httpx.Response(200, text=_unitaria_html())
+        if request.method == "POST" and request.url.path == "/dossie/unitaria/":
+            return httpx.Response(302, headers={"Location": "/dossie/351/"})
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        dossie_id = client.iniciar_unitaria("TCM9G85")
+
+    assert dossie_id == 351
+    assert unitaria_gets == 2
+
+
+def test_iniciar_unitaria_reconstroi_csrf_do_formulario_apos_relogin() -> None:
+    login_gets = 0
+    login_posts = 0
+    unitarias = 0
+    posts: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal login_gets, login_posts, unitarias
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            login_gets += 1
+            return httpx.Response(
+                200,
+                text=_login_html(f"login-csrf-{login_gets}"),
+                headers={"Set-Cookie": f"csrftoken=login-cookie-{login_gets}; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            login_posts += 1
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": f"sessionid=session-{login_posts}; Path=/",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/dossie/unitaria/":
+            unitarias += 1
+            return httpx.Response(
+                200, text=_unitaria_html(f"unitaria-csrf-{unitarias}")
+            )
+        if request.method == "POST" and request.url.path == "/dossie/unitaria/":
+            body = request.content.decode()
+            posts.append((request.headers.get("X-CSRFToken", ""), body))
+            if len(posts) == 1:
+                return httpx.Response(403)
+            assert posts[-1][0] == "unitaria-csrf-2"
+            assert "csrfmiddlewaretoken=unitaria-csrf-2" in posts[-1][1]
+            return httpx.Response(302, headers={"Location": "/dossie/351/"})
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        assert client.iniciar_unitaria("TCM9G85") == 351
+
+    assert login_posts == 2
+    assert unitarias == 2
+    assert len(posts) == 2
+
+
+def test_testar_conexao_rejeita_capacidade_rsd_bloqueada() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(200, text=_login_html())
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/dossie/unitaria/":
+            return httpx.Response(200, text=_unitaria_html())
+        if request.method == "GET" and request.url.path == "/atpv/nova/":
+            return httpx.Response(403, text="sem assinatura")
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client, pytest.raises(rsd.RsdCapabilityError, match="puxar dados"):
+        client.testar_conexao()
+
+
+def test_testar_conexao_valida_as_duas_capacidades_sem_criar_dossie(
+    rsd_client: rsd.RsdClient,
+) -> None:
+    with rsd_client:
+        rsd_client.testar_conexao()
+
+
+def test_status_unitaria_falha_de_conexao_vira_erro_da_integracao(
+    rsd_client: rsd.RsdClient,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/dossie/999/status/":
+            raise httpx.ConnectError("portal indisponível", request=request)
+        return _handler(request)
+
+    rsd_client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    with rsd_client:
+        rsd_client.login()
+        with pytest.raises(rsd.RsdConsultaError, match="Falha ao comunicar"):
+            rsd_client.status_unitaria(999)
+
+
+def test_status_unitaria_reloga_apos_redirect_de_sessao() -> None:
+    status_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal status_calls
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.url.path == "/dossie/351/status/":
+            status_calls += 1
+            if status_calls == 1:
+                return httpx.Response(302, headers={"Location": "/accounts/login/"})
+            return httpx.Response(
+                200,
+                json={"status": "done", "is_terminal": True, "has_consolidado": True},
+            )
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        client.login()
+        resultado = client.status_unitaria(351)
+
+    assert status_calls == 2
+    assert resultado.status == "done"
+    assert resultado.is_terminal
+
+
+def test_baixar_pdf_falha_de_conexao_vira_erro_da_integracao(
+    rsd_client: rsd.RsdClient,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/dossie/351/pdf/":
+            raise httpx.ConnectError("portal indisponível", request=request)
+        return _handler(request)
+
+    rsd_client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    with rsd_client:
+        rsd_client.login()
+        with pytest.raises(rsd.RsdConsultaError, match="Falha ao comunicar"):
+            rsd_client.baixar_pdf(351)
+
+
+def test_baixar_pdf_reloga_ao_encontrar_pagina_de_login() -> None:
+    pdf_gets = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal pdf_gets
+        if request.method == "GET" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                200,
+                text=_login_html(),
+                headers={"Set-Cookie": "csrftoken=cookie-csrf; Path=/"},
+            )
+        if request.method == "POST" and request.url.path == "/accounts/login/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": "/dossie/unitaria/",
+                    "Set-Cookie": "sessionid=sess-test; Path=/",
+                },
+            )
+        if request.url.path == "/dossie/351/pdf/":
+            pdf_gets += 1
+            if pdf_gets == 1:
+                # follow_redirects=True: portal expira sessão e devolve o
+                # HTML de login com 200 em vez do PDF.
+                return httpx.Response(200, text=_login_html())
+            return httpx.Response(
+                200,
+                content=b"%PDF-1.4 mock",
+                headers={"Content-Type": "application/pdf"},
+            )
+        return httpx.Response(404)
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test", email="loja@test.com", senha="segredo"
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+
+    with client:
+        client.login()
+        pdf = client.baixar_pdf(351)
+
+    assert pdf_gets == 2
+    assert pdf.startswith(b"%PDF")
+
+
+def test_poll_status_tolera_falhas_transitorias_e_depois_recupera(
+    rsd_client: rsd.RsdClient,
+) -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        if request.url.path == "/dossie/351/status/":
+            calls += 1
+            if calls <= 2:
+                raise httpx.ConnectError("portal indisponível", request=request)
+            return httpx.Response(
+                200,
+                json={"status": "done", "is_terminal": True, "has_consolidado": True},
+            )
+        return _handler(request)
+
+    rsd_client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    with rsd_client:
+        rsd_client.login()
+        payload = rsd_client._poll_status(351, timeout_s=30)  # noqa: SLF001
+
+    assert calls == 3
+    assert payload["status"] == "done"
+
+
+def test_poll_status_desiste_apos_falhas_consecutivas_persistentes(
+    rsd_client: rsd.RsdClient,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/dossie/351/status/":
+            raise httpx.ConnectError("portal indisponível", request=request)
+        return _handler(request)
+
+    rsd_client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    with rsd_client:
+        rsd_client.login()
+        with pytest.raises(rsd.RsdConsultaError, match="Falha ao comunicar"):
+            rsd_client._poll_status(351, timeout_s=30)  # noqa: SLF001
+
+
+def test_decriptar_senha_avisa_quando_ciphertext_nao_decripta(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    avisos: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        rsd.logger, "warning", lambda event, **kw: avisos.append({"event": event, **kw})
+    )
+    # Tem cara de token Fernet (prefixo gAAAAA) mas não decripta com a
+    # chave atual — deve ser tratado como chave rotacionada, não senha
+    # legada em texto plano.
+    valor = "gAAAAA-token-invalido-para-a-chave-atual"
+
+    with pytest.raises(rsd.RsdEncryptionError):
+        rsd._decriptar_senha(valor)  # noqa: SLF001
+    assert any(
+        a["event"] == "rsd_decriptar_senha_falhou_chave_invalida" for a in avisos
+    )
+    assert valor not in repr(avisos)
+
+
+def test_decriptar_senha_legado_texto_plano_nao_avisa(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    avisos: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        rsd.logger, "warning", lambda event, **kw: avisos.append({"event": event, **kw})
+    )
+
+    with pytest.raises(rsd.RsdEncryptionError):
+        rsd._decriptar_senha("senha-legada-texto-plano")  # noqa: SLF001
+
+    assert avisos
 
 
 def test_client_from_config_exige_credenciais(db_session: Session) -> None:
     config = rsd.get_config(db_session)
     with pytest.raises(rsd.RsdNotConfiguredError):
         rsd.client_from_config(config)
+
+
+@pytest.mark.parametrize(
+    "target_url",
+    [
+        "http://lojas.rsdsistema.com.br",
+        "https://localhost",
+        "https://127.0.0.1",
+        "https://usuario:senha@lojas.rsdsistema.com.br",
+        "https://atacante.example",
+        "https://lojas.rsdsistema.com.br:8443",
+    ],
+)
+def test_client_from_values_rejeita_destinos_de_url_inseguros(
+    target_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = rsd.RsdConfig(email="loja@test.com", senha="not-used")
+    monkeypatch.setattr(
+        rsd,
+        "RsdClient",
+        lambda **_kwargs: pytest.fail("cliente não deve ser construído"),
+    )
+
+    with pytest.raises(rsd.RsdConfigError):
+        rsd.client_from_values(
+            email="loja@test.com",
+            senha="segredo",
+            base_url=target_url,
+            config=config,
+        )
+
+
+def test_client_from_values_rejeita_dns_privado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RSD_ALLOWED_HOSTS", "portal.interno.example")
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [
+            (2, 1, 6, "", ("10.0.0.8", 443)),
+        ],
+    )
+    config = rsd.RsdConfig(email="loja@test.com", senha="not-used")
+
+    with pytest.raises(rsd.RsdConfigError, match="destino"):
+        rsd.client_from_values(
+            email="loja@test.com",
+            senha="segredo",
+            base_url="https://portal.interno.example",
+            config=config,
+        )
+
+
+def test_redirect_externo_e_bloqueado_antes_de_nova_requisicao() -> None:
+    chamadas = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal chamadas
+        chamadas += 1
+        return httpx.Response(
+            302, headers={"Location": "https://atacante.example/roubar"}
+        )
+
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        follow_redirects=False,
+    )
+
+    with client, pytest.raises(rsd.RsdConfigError):
+        client._request("GET", "/dossie/351/pdf/", follow_redirects=True)  # noqa: SLF001
+
+    assert chamadas == 1
+
+
+def test_ciphertext_invalido_nao_constroi_cliente(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = rsd.RsdConfig(email="loja@test.com", senha="gAAAAA-token-de-outra-chave")
+    monkeypatch.setattr(
+        rsd,
+        "RsdClient",
+        lambda **_kwargs: pytest.fail("cliente não deve ser construído"),
+    )
+    monkeypatch.setattr(
+        httpx,
+        "Client",
+        lambda **_kwargs: pytest.fail("transporte HTTP não deve ser criado"),
+    )
+
+    with pytest.raises(rsd.RsdEncryptionError):
+        rsd.client_from_config(config)
+
+
+def test_revogar_config_apaga_banco_cache_e_audita(db_session: Session) -> None:
+    admin = usuario.Usuario(
+        username="revoker", senha_hash="x", papel=usuario.Papel.admin
+    )
+    db_session.add(admin)
+    db_session.flush()
+    config = rsd.atualizar_config(
+        db_session,
+        rsd.RsdConfigUpdate(email="loja@test.com", senha="segredo"),
+        actor_id=admin.id,
+    )
+    client = rsd.client_from_config(config)
+
+    revogada = rsd.revogar_config(db_session, admin.id)
+
+    assert revogada.email == ""
+    assert revogada.senha == ""
+    assert revogada.revogada
+    assert client._client is None  # noqa: SLF001
+    with pytest.raises(rsd.RsdNotConfiguredError):
+        rsd.client_from_config(revogada)
+    audit = (
+        db_session.query(Auditoria)
+        .filter_by(tabela="rsd_config", tipo_acao="REVOKE")
+        .order_by(Auditoria.id.desc())
+        .first()
+    )
+    assert audit is not None
+
+
+def test_csrf_invalido_bloqueia_salvar_rsd_antes_da_integracao(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_ui(client)
+    monkeypatch.setattr(
+        rsd,
+        "RsdClient",
+        lambda **_kwargs: pytest.fail("RSD não deve ser chamado"),
+    )
+
+    response = client.post(
+        "/ui/configuracoes/rsd",
+        data={
+            "email": "loja@test.com",
+            "senha": "segredo",
+            "base_url": "https://rsd.test",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_csrf_valido_e_origem_invalida_e_rejeitada(client: TestClient) -> None:
+    _login_ui(client)
+    token = str(client.cookies.get("csrf_token"))
+    response = client.post(
+        "/ui/configuracoes/rsd/teste",
+        data={
+            "email": "loja@test.com",
+            "senha": "segredo",
+            "base_url": "https://rsd.test",
+            "csrf_token": token,
+        },
+        headers={"Origin": "https://atacante.example"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_settings_rejeita_chave_rsd_fraca_ou_igual_a_auth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared = "a1b2c3d4" * 8
+    monkeypatch.setenv("AUTH_SECRET_KEY", shared)
+    with pytest.raises(ValueError, match="diferente"):
+        rsd.Settings(rsd_encryption_key=shared)
+    with pytest.raises(ValueError, match="entropia"):
+        rsd.Settings(rsd_encryption_key="x" * 32)
+
+
+def test_cache_expira_cliente_ocioso(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = rsd.atualizar_config(
+        db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo")
+    )
+    agora = 10_000.0
+    monkeypatch.setattr(time, "monotonic", lambda: agora)
+    primeiro = rsd.client_from_config(config)
+    agora += rsd._CLIENT_CACHE_TTL_S + 1  # noqa: SLF001
+    segundo = rsd.client_from_config(config)
+
+    assert segundo is not primeiro
+    assert primeiro._client is None  # noqa: SLF001
 
 
 def test_atualizar_config_mascara_senha_na_auditoria(db_session: Session) -> None:
@@ -392,6 +1007,98 @@ def test_atualizar_config_mascara_senha_na_auditoria(db_session: Session) -> Non
     assert depois.get("senha") == "***"
 
 
+def test_client_from_config_reaproveita_client_entre_chamadas(
+    db_session: Session,
+) -> None:
+    config = rsd.atualizar_config(
+        db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo123")
+    )
+
+    primeiro = rsd.client_from_config(config)
+    segundo = rsd.client_from_config(config)
+
+    assert primeiro is segundo
+
+
+def test_invalidar_client_cache_fecha_clients_em_cache(db_session: Session) -> None:
+    config = rsd.atualizar_config(
+        db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo123")
+    )
+    client = rsd.client_from_config(config)
+    assert getattr(client, "_client", None) is not None
+
+    rsd.invalidar_client_cache()
+
+    assert client._client is None  # noqa: SLF001
+    novo_client = rsd.client_from_config(config)
+    assert novo_client is not client
+
+
+def test_client_cacheado_invalidado_nao_reabre_sessao_antiga(
+    db_session: Session,
+) -> None:
+    config = rsd.atualizar_config(
+        db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo123")
+    )
+    antigo = rsd.client_from_config(config)
+
+    rsd.invalidar_client_cache()
+
+    with pytest.raises(rsd.RsdClientRetiredError):
+        antigo._http()  # noqa: SLF001
+
+
+def test_invalidacao_aguarda_consulta_em_voo_antes_de_fechar_cliente(
+    db_session: Session,
+) -> None:
+    config = rsd.atualizar_config(
+        db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo123")
+    )
+    client = rsd.client_from_config(config)
+    entrou_no_portal = threading.Event()
+    liberar_portal = threading.Event()
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        entrou_no_portal.set()
+        assert liberar_portal.wait(timeout=2)
+        return httpx.Response(
+            200,
+            json={"placa": "TCM9G85", "marca_modelo": "CHEV/ONIX"},
+        )
+
+    assert client._client is not None  # noqa: SLF001
+    client._client.close()  # noqa: SLF001
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    client._client.cookies.set("sessionid", "sess-test")  # noqa: SLF001
+    client._csrf = "csrf-test"  # noqa: SLF001
+    resultado: list[rsd.PuxarDadosResult] = []
+
+    worker = threading.Thread(
+        target=lambda: resultado.append(client.puxar_dados("TCM9G85"))
+    )
+    worker.start()
+    assert entrou_no_portal.wait(timeout=2)
+
+    invalidador = threading.Thread(target=rsd.invalidar_client_cache)
+    invalidador.start()
+    time.sleep(0.02)
+    assert invalidador.is_alive()
+
+    liberar_portal.set()
+    worker.join(timeout=2)
+    invalidador.join(timeout=2)
+
+    assert not worker.is_alive()
+    assert not invalidador.is_alive()
+    assert resultado[0].marca_modelo == "CHEV/ONIX"
+    assert client._client is None  # noqa: SLF001
+
+
 def test_atualizar_config_criptografa_senha_em_repouso(db_session: Session) -> None:
     config = rsd.atualizar_config(
         db_session, rsd.RsdConfigUpdate(email="a@b.com", senha="segredo123")
@@ -399,7 +1106,7 @@ def test_atualizar_config_criptografa_senha_em_repouso(db_session: Session) -> N
     assert config.senha != "segredo123"
 
     client = rsd.client_from_config(config)
-    assert client.senha == "segredo123"
+    assert client.senha == ""
 
 
 @pytest.fixture
@@ -417,15 +1124,224 @@ def _login_ui(client: TestClient) -> None:
 
 
 def _salvar_config_rsd(client: TestClient) -> None:
+    csrf_token = client.cookies.get("csrf_token")
+    assert csrf_token
     resp = client.post(
         "/ui/configuracoes/rsd",
         data={
             "email": "loja@test.com",
             "senha": "segredo",
             "base_url": "https://rsd.test",
+            "csrf_token": csrf_token,
         },
     )
     assert resp.status_code == 200
+
+
+def test_salvar_config_rsd_duas_vezes_sem_reenviar_senha_nao_reencripta(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Re-salvar só o e-mail (senha em branco = 'manter atual') não pode
+    repassar o ciphertext já salvo pra `atualizar_config` como se fosse a
+    senha em texto puro — isso reencriptaria o ciphertext e corromperia a
+    senha a cada re-save (ver docs/analise-erros-rsd.md)."""
+    chamadas: list[rsd.RsdConfigUpdate] = []
+    original = rsd.atualizar_config
+
+    def _fake_atualizar_config(
+        session: Session, data: rsd.RsdConfigUpdate, actor_id: int | None = None
+    ) -> rsd.RsdConfig:
+        chamadas.append(data)
+        return original(session, data, actor_id)
+
+    monkeypatch.setattr(rsd, "atualizar_config", _fake_atualizar_config)
+
+    _login_ui(client)
+    _salvar_config_rsd(client)  # 1a vez: email + senha
+
+    resp = client.post(
+        "/ui/configuracoes/rsd",
+        data={"email": "novo@test.com", "senha": "", "base_url": "https://rsd.test"},
+        headers={"X-CSRFToken": str(client.cookies.get("csrf_token"))},
+    )
+    assert resp.status_code == 200
+
+    assert len(chamadas) == 2
+    # Senha em branco no formulário deve chegar em branco em atualizar_config
+    # (que já sabe manter a atual) — não como o ciphertext salvo antes.
+    assert chamadas[1].senha == ""
+
+
+def test_ui_teste_conexao_usa_valores_do_formulario_nao_do_banco(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """O botão 'Testar conexão' deve testar o que está no formulário, não a
+    config já persistida (que pode estar vazia/desatualizada)."""
+    _login_ui(client)
+    # Nada foi salvo ainda — config no banco está vazia.
+    recebido: dict[str, str] = {}
+
+    class _CapturaClient:
+        def __init__(self, *, base_url: str, email: str, senha: str) -> None:
+            recebido["base_url"] = base_url
+            recebido["email"] = email
+            recebido["senha"] = senha
+
+        def open(self) -> None:
+            return None
+
+        def close(self) -> None:
+            return None
+
+        def testar_conexao(self) -> None:
+            return None
+
+    monkeypatch.setattr(rsd, "RsdClient", _CapturaClient)
+
+    resp = client.post(
+        "/ui/configuracoes/rsd/teste",
+        data={
+            "email": "digitado@test.com",
+            "senha": "senha-digitada",
+            "base_url": "https://rsd.test",
+        },
+        headers={"X-CSRFToken": str(client.cookies.get("csrf_token"))},
+    )
+
+    assert resp.status_code == 200
+    assert "Conexão com o portal RSD OK." in resp.text
+    assert 'value="digitado@test.com"' in resp.text
+    assert 'value="https://rsd.test"' in resp.text
+    assert "Conexão testada, ainda não salva" in resp.text
+    assert "senha-digitada" not in resp.text
+    assert recebido == {
+        "base_url": "https://rsd.test",
+        "email": "digitado@test.com",
+        "senha": "senha-digitada",
+    }
+
+
+@pytest.mark.parametrize(
+    "erro",
+    [
+        rsd.RsdAuthError("E-mail ou senha inválidos no portal RSD."),
+        rsd.RsdTimeoutError("O portal RSD não respondeu a tempo. Tente novamente."),
+    ],
+    ids=["autenticacao", "timeout"],
+)
+def test_ui_teste_conexao_com_erro_preserva_rascunho_sem_expor_senha(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    erro: rsd.RsdError,
+) -> None:
+    class _ErroClient:
+        def open(self) -> None:
+            return None
+
+        def close(self) -> None:
+            return None
+
+        def testar_conexao(self) -> None:
+            raise erro
+
+    _login_ui(client)
+    monkeypatch.setattr(
+        rsd,
+        "client_from_values",
+        lambda **_kwargs: _ErroClient(),
+    )
+
+    resp = client.post(
+        "/ui/configuracoes/rsd/teste",
+        data={
+            "email": "rascunho@test.com",
+            "senha": "senha-super-secreta",
+            "base_url": "https://rsd.test",
+            "csrf_token": str(client.cookies.get("csrf_token")),
+        },
+    )
+
+    assert resp.status_code == 400
+    assert 'value="rascunho@test.com"' in resp.text
+    assert 'value="https://rsd.test"' in resp.text
+    assert "senha-super-secreta" not in resp.text
+    assert str(erro) in resp.text
+
+
+def test_ui_teste_conexao_sem_config_salva_e_sem_form_da_erro_configuracao(
+    client: TestClient,
+) -> None:
+    _login_ui(client)
+    resp = client.post(
+        "/ui/configuracoes/rsd/teste",
+        data={"csrf_token": str(client.cookies.get("csrf_token"))},
+    )
+    assert resp.status_code == 400
+    assert "Configure" in resp.text or "configur" in resp.text.lower()
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/ui/configuracoes/rsd",
+        "/ui/configuracoes/rsd/teste",
+        "/ui/configuracoes/rsd/revogar",
+    ],
+)
+@pytest.mark.parametrize("username", [None, "func"], ids=["anonimo", "funcionario"])
+def test_rotas_de_credenciais_rsd_bloqueiam_acesso_sem_admin(
+    make_client: Callable[..., TestClient],
+    monkeypatch: pytest.MonkeyPatch,
+    path: str,
+    username: str | None,
+) -> None:
+    def _side_effect(**_kwargs: object) -> None:
+        pytest.fail("rota de credencial não deve produzir side effect")
+
+    monkeypatch.setattr(rsd, "atualizar_config", _side_effect)
+    monkeypatch.setattr(rsd, "client_from_values", _side_effect)
+    monkeypatch.setattr(rsd, "revogar_config", _side_effect)
+
+    client = make_client(
+        usuarios=[("func", usuario.Papel.funcionario)] if username else None
+    )
+    if username:
+        _login_ui_as(client, username)
+
+    response = client.post(
+        path,
+        data={"csrf_token": str(client.cookies.get("csrf_token"))},
+        follow_redirects=False,
+    )
+
+    if username is None:
+        assert response.status_code in (302, 303)
+        assert "/ui/login" in response.headers.get("location", "")
+    else:
+        assert response.status_code == 403
+
+
+def _login_ui_as(client: TestClient, username: str) -> None:
+    response = client.post(
+        "/ui/login",
+        data={"username": username, "password": "senha"},
+        follow_redirects=False,
+    )
+    assert response.status_code in (200, 302, 303)
+
+
+def test_admin_pode_revogar_credencial_rsd_pela_rota(client: TestClient) -> None:
+    _login_ui(client)
+    _salvar_config_rsd(client)
+
+    response = client.post(
+        "/ui/configuracoes/rsd/revogar",
+        data={"csrf_token": str(client.cookies.get("csrf_token"))},
+    )
+
+    assert response.status_code == 200
+    assert "Credencial RSD revogada e removida." in response.text
+    assert "Integração não configurada" in response.text
 
 
 def _patch_client_from_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -710,6 +1626,77 @@ def test_ui_consulta_unitaria_registra_consulta(
     assert atualizacoes[0]["dossie_id"] == 351
     assert atualizacoes[0]["status_dossie"] == "done"
     assert atualizacoes[0]["sucesso"] is True
+
+
+def test_ui_dossie_status_erro_transitorio_nao_zera_estado_e_continua_poll(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Um blip de rede no poll não deve sobrescrever o dossiê nem parar o
+    polling do lado do cliente (achados #3 e #7 da análise)."""
+    rsd_routes._poll_falhas.clear()  # noqa: SLF001
+
+    atualizacoes: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        rsd, "atualizar_consulta_dossie", lambda **kwargs: atualizacoes.append(kwargs)
+    )
+
+    class _FlakyClient:
+        def __enter__(self) -> _FlakyClient:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def status_unitaria(self, _dossie_id: int) -> rsd.UnitariaResult:
+            raise rsd.RsdConsultaError("Falha ao comunicar com o portal RSD.")
+
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    monkeypatch.setattr(rsd, "client_from_config", lambda _config: _FlakyClient())
+
+    resp = client.get("/ui/rsd/dossie/351/status")
+
+    assert resp.status_code == 200
+    assert "hx-trigger" in resp.text
+    assert not atualizacoes
+
+    rsd_routes._poll_falhas.clear()  # noqa: SLF001
+
+
+def test_ui_dossie_status_desiste_apos_falhas_persistentes(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rsd_routes._poll_falhas.clear()  # noqa: SLF001
+
+    atualizacoes: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        rsd, "atualizar_consulta_dossie", lambda **kwargs: atualizacoes.append(kwargs)
+    )
+
+    class _AlwaysFailsClient:
+        def __enter__(self) -> _AlwaysFailsClient:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def status_unitaria(self, _dossie_id: int) -> rsd.UnitariaResult:
+            raise rsd.RsdConsultaError("Falha ao comunicar com o portal RSD.")
+
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    monkeypatch.setattr(rsd, "client_from_config", lambda _config: _AlwaysFailsClient())
+
+    for _ in range(rsd_routes._POLL_TRANSIENT_MAX - 1):  # noqa: SLF001
+        resp = client.get("/ui/rsd/dossie/351/status")
+        assert resp.status_code == 200
+
+    resp_final = client.get("/ui/rsd/dossie/351/status")
+    assert resp_final.status_code == 400
+    assert len(atualizacoes) == 1
+    assert atualizacoes[0]["sucesso"] is False
+
+    rsd_routes._poll_falhas.clear()  # noqa: SLF001
 
 
 def test_ui_consulta_unitaria_com_mock(

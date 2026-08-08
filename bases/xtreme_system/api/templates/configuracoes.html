@@ -3,7 +3,8 @@
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
 {% set configurado = config.evolution_api_url and config.evolution_instance %}
-{% set rsd_ok = config_rsd.email and config_rsd.senha %}
+{% set rsd_ok = rsd_ok if rsd_ok is defined else (config_rsd.email and config_rsd.senha and not config_rsd.revogada) %}
+{% set rsd_status = rsd_status if rsd_status is defined else "saved_unverified" %}
 {% set aba_ativa = aba or "banco" %}
 
 <div class="page-head">
@@ -18,40 +19,48 @@
 
 <div class="settings-tabs">
   <input class="settings-tabs__input" type="radio" name="settings-tab"
-         id="tab-banco" {% if aba_ativa == "banco" %}checked{% endif %}>
+         id="tab-banco" tabindex="-1" aria-hidden="true" {% if aba_ativa == "banco" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
-         id="tab-whatsapp" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
+         id="tab-whatsapp" tabindex="-1" aria-hidden="true" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
-         id="tab-rsd" {% if aba_ativa == "rsd" %}checked{% endif %}>
+         id="tab-rsd" tabindex="-1" aria-hidden="true" {% if aba_ativa == "rsd" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
-         id="tab-tema" {% if aba_ativa == "tema" %}checked{% endif %}>
+         id="tab-tema" tabindex="-1" aria-hidden="true" {% if aba_ativa == "tema" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
-         id="tab-empresa" {% if aba_ativa == "empresa" %}checked{% endif %}>
+         id="tab-empresa" tabindex="-1" aria-hidden="true" {% if aba_ativa == "empresa" %}checked{% endif %}>
 
   <div class="settings-layout">
     <nav class="settings-nav" role="tablist" aria-label="Seções de configurações">
-      <label class="settings-nav__item" for="tab-banco" role="tab">
+      <label class="settings-nav__item" id="settings-tab-banco" for="tab-banco" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'banco' else 'false' }}" aria-controls="settings-panel-banco"
+             tabindex="{{ '0' if aba_ativa == 'banco' else '-1' }}">
         <span class="settings-nav__icon">{{ ui.icon("database") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">Backup</span>
           <span class="settings-nav__desc">Exportar ou restaurar dados</span>
         </span>
       </label>
-      <label class="settings-nav__item" for="tab-tema" role="tab">
+      <label class="settings-nav__item" id="settings-tab-tema" for="tab-tema" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'tema' else 'false' }}" aria-controls="settings-panel-tema"
+             tabindex="{{ '0' if aba_ativa == 'tema' else '-1' }}">
         <span class="settings-nav__icon">{{ ui.icon("sun") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">Tema</span>
           <span class="settings-nav__desc">Claro ou escuro</span>
         </span>
       </label>
-      <label class="settings-nav__item" for="tab-empresa" role="tab">
+      <label class="settings-nav__item" id="settings-tab-empresa" for="tab-empresa" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'empresa' else 'false' }}" aria-controls="settings-panel-empresa"
+             tabindex="{{ '0' if aba_ativa == 'empresa' else '-1' }}">
         <span class="settings-nav__icon">{{ ui.icon("building") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">Empresa</span>
           <span class="settings-nav__desc">Dados cadastrais</span>
         </span>
       </label>
-      <label class="settings-nav__item" for="tab-whatsapp" role="tab">
+      <label class="settings-nav__item" id="settings-tab-whatsapp" for="tab-whatsapp" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'whatsapp' else 'false' }}" aria-controls="settings-panel-whatsapp"
+             tabindex="{{ '0' if aba_ativa == 'whatsapp' else '-1' }}">
         <span class="settings-nav__icon">{{ ui.icon("megaphone") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">
@@ -62,20 +71,24 @@
           <span class="settings-nav__desc">{{ "Conectado" if configurado else "Não configurado" }}</span>
         </span>
       </label>
-      <label class="settings-nav__item" for="tab-rsd" role="tab">
+      <label class="settings-nav__item" id="settings-tab-rsd" for="tab-rsd" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'rsd' else 'false' }}" aria-controls="settings-panel-rsd"
+             tabindex="{{ '0' if aba_ativa == 'rsd' else '-1' }}">
         <span class="settings-nav__icon">{{ ui.icon("search") }}</span>
         <span class="settings-nav__text">
           <span class="settings-nav__title">
             RSD
-            <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if rsd_ok }}"
-                  title="{{ 'Conectado' if rsd_ok else 'Pendente' }}"></span>
+            <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if rsd_status == 'verified' }}"
+                  title="{{ 'Verificado' if rsd_status == 'verified' else 'Teste pendente' }}"></span>
           </span>
-          <span class="settings-nav__desc">{{ "Conectado" if rsd_ok else "Não configurado" }}</span>
+          <span class="settings-nav__desc">
+            {% if rsd_status == "verified" %}Verificado{% elif rsd_ok %}Teste pendente{% else %}Não configurado{% endif %}
+          </span>
         </span>
       </label>
     </nav>
 
-    <section class="settings-tabs__panel settings-tabs__panel--banco">
+    <section id="settings-panel-banco" class="settings-tabs__panel settings-tabs__panel--banco" role="tabpanel" aria-labelledby="settings-tab-banco">
       <div class="settings-panel-head">
         <h2>Backup e migração</h2>
         <p class="page-head__subtitle">Exporte ou restaure os dados do sistema.</p>
@@ -123,7 +136,7 @@
       </div>
     </section>
 
-    <section class="settings-tabs__panel settings-tabs__panel--whatsapp">
+    <section id="settings-panel-whatsapp" class="settings-tabs__panel settings-tabs__panel--whatsapp" role="tabpanel" aria-labelledby="settings-tab-whatsapp">
       <div class="settings-panel-head">
         <h2>Notificações de vendas</h2>
         <p class="page-head__subtitle">
@@ -210,7 +223,7 @@
       </form>
     </section>
 
-    <section class="settings-tabs__panel settings-tabs__panel--rsd">
+    <section id="settings-panel-rsd" class="settings-tabs__panel settings-tabs__panel--rsd" role="tabpanel" aria-labelledby="settings-tab-rsd">
       <div class="settings-panel-head">
         <h2>Portal RSD</h2>
         <p class="page-head__subtitle">
@@ -218,26 +231,58 @@
         </p>
       </div>
 
-      <div class="connection-status {{ 'connection-status--ok' if rsd_ok else 'connection-status--pending' }}">
+      <div class="connection-status {{ 'connection-status--ok' if rsd_status == 'verified' and not rsd_testado else 'connection-status--pending' }}">
         <span class="connection-status__icon">{{ ui.icon("search") }}</span>
         <div class="connection-status__text">
-          <strong>{{ "Integração conectada" if rsd_ok else "Integração não configurada" }}</strong>
-          <span>
-            {% if rsd_ok %}
+            <strong>
+              {% if rsd_testado and not rsd_teste_erro %}
+                Conexão testada, ainda não salva
+              {% elif rsd_status == "verified" %}
+                Conexão verificada em {{ config_rsd.ultimo_teste_em.strftime("%d/%m/%Y às %H:%M") if config_rsd.ultimo_teste_em else "data não disponível" }}
+              {% elif rsd_status == "failed" %}
+                Último teste falhou
+              {% elif rsd_ok %}
+                Credenciais salvas — teste pendente
+              {% else %}
+                Integração não configurada
+              {% endif %}
+            </strong>
+            <span>
+            {% if rsd_testado and rsd_teste_erro %}
+              {{ rsd_teste_erro }}
+            {% elif rsd_testado %}
+              Os valores digitados foram testados. Salve para ativar a configuração.
+            {% elif rsd_status == "verified" %}
               Conta <code>{{ config_rsd.email }}</code> pronta para consultas.
+            {% elif rsd_status == "failed" %}
+              {{ config_rsd.ultimo_teste_erro or "O último teste não conseguiu verificar a conexão." }}
+            {% elif rsd_ok %}
+              Teste a conexão para confirmar e ativar o uso operacional.
             {% else %}
               Informe e-mail e senha do portal lojas.rsdsistema.com.br.
             {% endif %}
           </span>
         </div>
-        {% if rsd_ok %}
-        <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
+        {% if rsd_testado and not rsd_teste_erro %}
+        <span class="badge badge--neutral">Testado (não salvo)</span>
+        {% elif rsd_status == "verified" %}
+        <span class="badge badge--success">{{ ui.icon("check") }} Verificado</span>
+        {% elif rsd_status == "failed" %}
+        <span class="badge badge--danger">{{ ui.icon("alert-triangle") }} Teste falhou</span>
+        {% elif rsd_ok %}
+        <span class="badge badge--neutral">Teste pendente</span>
         {% else %}
         <span class="badge badge--neutral">Não configurado</span>
         {% endif %}
       </div>
 
-      <form method="post" action="/ui/configuracoes/rsd" class="card card--pad settings-form">
+      <form id="rsd-config-form" method="post" action="/ui/configuracoes/rsd" class="card card--pad settings-form"
+            x-data="{ testando: false }"
+            x-on:submit="if ($event.submitter && $event.submitter.formAction.endsWith('/teste')) { testando = true }"
+            x-on:rsd-test-finished="testando = false"
+            x-on:input="if ($event.target.name !== 'rsd_teste_prova') $refs.rsdTesteProva.value = ''">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <input type="hidden" name="rsd_teste_prova" x-ref="rsdTesteProva" value="{{ rsd_teste_prova }}">
         <div class="modal-section">
           <h4>{{ ui.icon("link") }} Credenciais</h4>
           <div class="form-grid">
@@ -248,8 +293,9 @@
             </label>
             <label class="field field--full">
               <span class="field__label">Senha</span>
-              <span class="field-password" x-data="campoSenha">
-                <input class="input" name="senha" :type="visivel ? 'text' : 'password'"
+              <span class="field-password" x-data="campoSenha"
+                    {% if rsd_senha_salva %}x-init="$refs.senha.value = ''"{% endif %}>
+                <input class="input" name="senha" x-ref="senha" :type="visivel ? 'text' : 'password'"
                        placeholder="•••••••• (deixe vazio para manter a senha atual)"
                        autocomplete="new-password">
                 <button type="button" class="field-password__toggle" :class="{ 'is-visible': visivel }"
@@ -266,16 +312,39 @@
             </label>
           </div>
         </div>
+        <div id="rsd-test-result" class="rsd-test-result-slot" aria-live="polite" aria-atomic="true">
+          {% if rsd_testado and rsd_teste_erro %}
+          <div class="rsd-test-result rsd-test-result--error" role="alert">{{ ui.icon("alert-triangle") }} <span>{{ rsd_teste_erro }}</span></div>
+          {% elif rsd_testado %}
+          <div class="rsd-test-result rsd-test-result--success" role="status">{{ ui.icon("check") }} <span>Teste aprovado para este rascunho; ainda não salvo. Clique em “Salvar” para ativar estas credenciais.</span></div>
+          {% endif %}
+        </div>
+        <span id="rsd-test-progress" class="rsd-test-progress htmx-indicator" role="status" aria-live="polite">
+          {{ ui.icon("refresh") }} Validando credenciais… isso pode levar alguns segundos.
+        </span>
         <div class="field settings-actions settings-actions--split">
-          <button class="btn btn--default" type="submit" formaction="/ui/configuracoes/rsd/teste">
+          <button class="btn btn--default" type="submit" formaction="/ui/configuracoes/rsd/teste"
+                  x-bind:disabled="testando" hx-post="/ui/configuracoes/rsd/teste" hx-target="#rsd-test-result"
+                  hx-swap="innerHTML" hx-include="closest form" hx-indicator="#rsd-test-progress"
+                  hx-disabled-elt="this, closest form .btn--primary" hx-on::before-request="this.form.setAttribute('aria-busy', 'true')"
+                  hx-on::after-request="this.form.setAttribute('aria-busy', 'false'); this.form.dispatchEvent(new CustomEvent('rsd-test-finished', { bubbles: true }))">
             {{ ui.icon("refresh") }} Testar conexão
           </button>
-          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar</button>
+          <button class="btn btn--primary" type="submit" x-bind:disabled="testando">
+            {{ ui.icon("check") }} Salvar
+          </button>
         </div>
       </form>
+      {% if rsd_ok %}
+      <form method="post" action="/ui/configuracoes/rsd/revogar" class="settings-actions"
+            onsubmit="return confirm('Remover as credenciais RSD? As consultas RSD deixarão de funcionar até uma nova configuração.')">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <button class="btn btn--danger" type="submit">{{ ui.icon("trash") }} Remover credenciais RSD</button>
+      </form>
+      {% endif %}
     </section>
 
-    <section class="settings-tabs__panel settings-tabs__panel--empresa">
+    <section id="settings-panel-empresa" class="settings-tabs__panel settings-tabs__panel--empresa" role="tabpanel" aria-labelledby="settings-tab-empresa">
       <div class="settings-panel-head">
         <h2>Dados da empresa</h2>
         <p class="page-head__subtitle">Informações cadastrais usadas em documentos e contratos.</p>
@@ -362,7 +431,7 @@
       </div>
     </section>
 
-    <section class="settings-tabs__panel settings-tabs__panel--tema">
+    <section id="settings-panel-tema" class="settings-tabs__panel settings-tabs__panel--tema" role="tabpanel" aria-labelledby="settings-tab-tema">
       <div class="settings-panel-head">
         <h2>Tema</h2>
         <p class="page-head__subtitle">Escolha entre o tema claro e escuro.</p>

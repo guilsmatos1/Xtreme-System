@@ -29,19 +29,30 @@ createdb -O postgres xtreme          # database usada na DATABASE_URL
 ```bash
 uv sync              # instala dependências
 make hooks           # instala git hooks (uv run pre-commit install)
-cp .env.example .env # DATABASE_URL + AUTH_SECRET_KEY (veja abaixo)
+cp .env.example .env # preencha DATABASE_URL e os dois segredos abaixo
 make migrate         # aplica migrations do Alembic
 ```
 
 ### Chave de autenticação
 
-Gere a chave JWT:
+Gere a chave JWT e uma chave RSD diferente:
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Preencha `AUTH_SECRET_KEY` no `.env` com o valor gerado.
+Use um valor novo para `AUTH_SECRET_KEY` e outro para `RSD_ENCRYPTION_KEY`. A
+segunda cifra `rsd_config.senha` em repouso; não use o valor de exemplo nem
+registre essas chaves no repositório. Em produção, prefira um secret manager.
+
+Ao rotacionar `RSD_ENCRYPTION_KEY`, faça backup do banco, defina a chave nova e
+injete a anterior apenas em `RSD_ENCRYPTION_KEY_PREVIOUS`; execute
+`uv run python scripts/rotate-rsd-key.py`, que recifra a configuração em uma
+transação e grava a alteração na auditoria. Valide o acesso antes de remover a
+chave antiga. A chave anterior não é usada como fallback durante requests.
+Uma chave ausente, curta ou placeholder impede o startup para evitar cifrar
+novas credenciais com material fraco. O host do portal também é limitado por
+`RSD_ALLOWED_HOSTS` e aceita apenas HTTPS/porta 443.
 
 ### Usuário admin padrão
 

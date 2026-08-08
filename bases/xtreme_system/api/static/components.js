@@ -17,6 +17,44 @@
 (function () {
   "use strict";
 
+  /* As configurações usam radios como estado de renderização para manter o
+     CSS simples, mas a interface pública é um tablist real. O foco roving e
+     as setas seguem o padrão WAI-ARIA sem deixar o radio invisível no fluxo
+     de teclado. */
+  function iniciarTabsConfiguracoes() {
+    document.querySelectorAll('.settings-nav[role="tablist"]').forEach(function (list) {
+      if (list.dataset.tabsReady) return;
+      list.dataset.tabsReady = "true";
+      var tabs = Array.from(list.querySelectorAll('[role="tab"]'));
+      function selecionar(tab, focar) {
+        var radio = document.getElementById(tab.getAttribute("for"));
+        if (!radio) return;
+        radio.checked = true;
+        tabs.forEach(function (item) {
+          var ativo = item === tab;
+          item.setAttribute("aria-selected", ativo ? "true" : "false");
+          item.setAttribute("tabindex", ativo ? "0" : "-1");
+        });
+        if (focar) tab.focus();
+      }
+      tabs.forEach(function (tab, index) {
+        tab.addEventListener("click", function () { selecionar(tab, false); });
+        tab.addEventListener("keydown", function (event) {
+          if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          var proximo = index;
+          if (event.key === "ArrowRight" || event.key === "ArrowDown") proximo = (index + 1) % tabs.length;
+          if (event.key === "ArrowLeft" || event.key === "ArrowUp") proximo = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === "Home") proximo = 0;
+          if (event.key === "End") proximo = tabs.length - 1;
+          selecionar(tabs[proximo], true);
+        });
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", iniciarTabsConfiguracoes);
+
   document.addEventListener("alpine:init", function () {
     /* Estado do diálogo de confirmação, num store (não em appShell) porque
        #modal precisa lê-lo para desligar o próprio x-trap enquanto o
