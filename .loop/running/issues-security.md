@@ -1,196 +1,377 @@
 # Improvement opportunities
 
-- **Generated:** 2026-08-05T19:00:22-03:00
-- **Total:** 3
+- **Generated:** 2026-08-07T13:54:20-03:00
+- **Total:** 6
 
-## imp-20260805-001 — Tornar exportação uma operação explícita do Perfil
+## imp-20260807-001 — Restringir a URL RSD para impedir SSRF e envio de credenciais
+
+- **Impact:** High
+- **Category:** Input validation and boundaries
+- **Estimated effort:** Medium
+- **Priority:** high
+- **Risk level:** high
+- **Tags:** security, rsd, ssrf, credentials, url-validation
+- **Files affected:** `components/xtreme_system/rsd/core.py`, `bases/xtreme_system/api/routes/ui_routes/configuracoes.py`, `bases/xtreme_system/api/templates/configuracoes.html`, `tests/test_rsd.py`
+- **Related opportunities:** None
+
+### Location
+
+`components/xtreme_system/rsd/core.py:274` — `client_from_values`
+
+```python
+    cache de `client_from_config` — o chamador é responsável por abrir e
+    fechar o client.
+    """
+    email_final = (email or config.email).strip()
+    senha_final = senha or _decriptar_senha(config.senha)
+    base_final = (base_url or config.base_url or _DEFAULT_BASE_URL).strip().rstrip("/")
+    if not email_final or not senha_final:
+        raise RsdNotConfiguredError("Configure e-mail e senha do RSD em Configurações.")
+    return RsdClient(
+        base_url=base_final or _DEFAULT_BASE_URL, email=email_final, senha=senha_final
+    )
+```
+
+### Description
+
+`base_url` vem do formulário e é aceita sem validar esquema, host, porta, redirecionamentos ou destino de rede. O login seguinte envia e-mail e senha ao endereço resultante. Um administrador enganado, uma sessão administrativa comprometida ou uma requisição forjada pode apontar o cliente para um host atacante ou serviço interno.
+
+### Why it matters
+
+Além de SSRF contra a rede acessível ao servidor, a funcionalidade transforma o próprio teste de conexão em um canal de exfiltração das credenciais RSD. O risco é maior porque a senha persistida pode ser reutilizada quando o campo do formulário chega vazio.
+
+### Concrete fix
+
+Remover a URL base da UI se só existe um portal oficial. Se ambientes alternativos são necessários, validar no servidor uma allowlist explícita de hosts HTTPS e portas, rejeitar userinfo, fragmentos, IPs literais e destinos privados/loopback após resolução DNS, e bloquear redirects para fora da allowlist. Não iniciar nenhuma chamada antes dessa validação.
+
+### Domain details
+
+#### Security tests
+
+- Rejeitar HTTP, localhost, IP privado, link-local, userinfo e host fora da allowlist.
+- Revalidar cada destino após redirect e resolução DNS.
+- Confirmar que nenhuma tentativa rejeitada instancia ou abre o cliente HTTP.
+
+### Self-critique
+
+- **Confidence:** 10/10
+- **Uncertain:** No
+- **Strengths:**
+  - A origem não confiável e o uso como destino do cliente estão no mesmo caminho de código.
+  - O template confirma que o administrador pode editar livremente o valor.
+- **Weaknesses:**
+  - Não foi inspecionada a segmentação de rede do ambiente de produção; ela pode reduzir destinos alcançáveis, mas não impede envio para a internet.
+- **Suggested checks:**
+  - Inventariar endpoints RSD legítimos de homologação antes de definir a allowlist.
+
+## imp-20260807-002 — Falhar de forma segura quando a chave não decriptar a senha
+
+- **Impact:** High
+- **Category:** Secrets and sensitive data
+- **Estimated effort:** Medium
+- **Priority:** high
+- **Risk level:** high
+- **Tags:** security, encryption, key-rotation, fail-closed
+- **Files affected:** `components/xtreme_system/rsd/core.py`, `alembic/versions/`, `tests/test_rsd.py`, `README.md`
+- **Related opportunities:** imp-20260807-005
+
+### Location
+
+`components/xtreme_system/rsd/core.py:67` — `_decriptar_senha`
+
+```python
+    try:
+        return _get_fernet().decrypt(valor.encode("ascii")).decode("utf-8")
+    except InvalidToken:
+        if valor.startswith(_FERNET_TOKEN_PREFIX):
+            # O valor tem cara de ciphertext Fernet mas não decripta com a
+            # chave atual — provável RSD_ENCRYPTION_KEY rotacionada/errada,
+            # não senha legada em texto plano. Isso costuma se disfarçar de
+            # "E-mail ou senha inválidos" no portal; loga para diagnóstico.
+            logger.warning("rsd_decriptar_senha_falhou_chave_invalida")
+        # Caso contrário: valor gravado em texto plano antes desta feature —
+        # mantém funcionando até a próxima atualização de config recodificar.
+        return valor
+```
+
+### Description
+
+Quando um token Fernet não pode ser aberto com a chave atual, a função apenas registra aviso e devolve o próprio ciphertext como se fosse a senha. O fluxo então o envia ao portal externo, produzindo um erro de autenticação enganoso e propagando material cifrado desnecessariamente.
+
+### Why it matters
+
+Uma chave rotacionada, ausente ou incorreta deveria interromper o uso do segredo. Continuar mascara falhas operacionais, dificulta recuperação e viola o princípio de falhar fechado para credenciais protegidas.
+
+### Concrete fix
+
+Ao reconhecer formato cifrado inválido, lançar uma exceção específica de configuração/criptação e nunca construir o cliente. Manter compatibilidade com texto plano legado apenas por uma migração versionada e temporária, não por fallback permanente em runtime. Adotar rotação com chave atual e chaves anteriores identificadas por versão.
+
+### Domain details
+
+#### Acceptance criteria
+
+- Ciphertext inválido nunca é enviado em uma requisição de login.
+- A UI informa que a chave de criptografia/configuração precisa de intervenção administrativa, sem mostrar o token.
+- A rotação recriptografa dados existentes de forma transacional e auditável.
+
+### Self-critique
+
+- **Confidence:** 10/10
+- **Uncertain:** No
+- **Strengths:**
+  - O retorno inseguro está explícito e um teste atual confirma esse comportamento.
+- **Weaknesses:**
+  - O formato legado em texto plano pode ainda existir em instalações que não aplicaram a migração; a remoção exige plano de compatibilidade.
+- **Suggested checks:**
+  - Consultar, sem registrar valores, quantas linhas atuais não possuem formato Fernet válido.
+
+## imp-20260807-003 — Implementar revogação completa da credencial armazenada
 
 - **Impact:** Medium
-- **Category:** Authorization
+- **Category:** Secrets and sensitive data
 - **Estimated effort:** Medium
 - **Priority:** high
 - **Risk level:** medium
-- **Tags:** authorization, export, data-exposure, perfis
-- **Files affected:** `components/xtreme_system/perfil/policy.py`, `bases/xtreme_system/api/crud_ui/registrars.py`, `bases/xtreme_system/api/routes/ui_routes/investidores.py`, `bases/xtreme_system/api/routes/ui_routes/lancamentos.py`, templates de listagem
+- **Tags:** security, credentials, revocation, data-retention
+- **Files affected:** `components/xtreme_system/rsd/core.py`, `bases/xtreme_system/api/routes/ui_routes/configuracoes.py`, `bases/xtreme_system/api/templates/configuracoes.html`, `tests/test_rsd.py`
 - **Related opportunities:** None
 
 ### Location
 
-`bases/xtreme_system/api/crud_ui/registrars.py:343` — `register_export_route._exportar`
+`components/xtreme_system/rsd/core.py:205` — `atualizar_config`
 
 ```python
-    @app.get(f"{prefix}/exportar")
-    def _exportar(session: SessionDep, user: UIUser, q: str = "") -> Response:
-        lista = query_list(
-            session, module, listing=config.listing, state=ListState(q=q)
-        )
-        if config.columns is not None:
-            export_columns: list[tuple[ColumnSpec[EntityT], Any]] = []
-            for column in config.columns:
-                export_value = column.export
-                if export_value is None or (
-                    config.pagina is not None
-                    and column.field is not None
+def atualizar_config(
+    session: Session, data: RsdConfigUpdate, actor_id: int | None = None
+) -> RsdConfig:
+    config = get_config(session)
+    antes = snapshot(config)
+    config.email = data.email.strip()
+    if data.senha:
+        config.senha = _encriptar_senha(data.senha)
+    base = (data.base_url or _DEFAULT_BASE_URL).strip().rstrip("/")
+    config.base_url = base or _DEFAULT_BASE_URL
 ```
 
 ### Description
 
-O catálogo de `OPERACOES` não contém `exportar` para nenhuma página. As rotas CSV exigem apenas `UIUser`, que garante a página, mas não chama `require_operacao`. Assim, um perfil com acesso de leitura e zero operações permitidas ainda pode baixar os dados visíveis em massa. O mesmo padrão ocorre na exportação de Investidores e dos lançamentos do Investidor.
+O contrato trata senha vazia exclusivamente como “preservar o valor atual” e não existe operação separada para apagá-la. Assim, mesmo que o e-mail seja removido, o segredo cifrado permanece no banco e pode continuar no cliente global em memória até invalidação.
 
 ### Why it matters
 
-Exportar reduz muito a barreira para replicar ou retirar dados financeiros e cadastrais. A filtragem de campos protege campos já marcados como ocultos, mas não substitui a decisão de quem pode fazer extração em lote.
+Credenciais suspeitas ou desativadas precisam ser eliminadas para reduzir retenção e impedir reativação acidental. Sem revogação, o sistema não atende ao ciclo mínimo de criação, uso, rotação e remoção de segredo.
 
 ### Concrete fix
 
-Adicionar `exportar` ao catálogo de cada página que oferece CSV; modelar a operação no `CrudUIExportConfig` e fazer a rota depender de `require_operacao(pagina, "exportar")`. Aplicar a mesma exigência às rotas manuais de Investidores e lançamentos, e ocultar os links quando a operação não for permitida.
+Adicionar uma operação administrativa explícita e auditada que zere e-mail e senha, redefina a URL, invalide e feche todos os clientes cacheados e marque a configuração como revogada. Exigir confirmação e não reutilizar o POST genérico de atualização.
 
 ### Domain details
 
-#### Acceptance criteria
+#### Security tests
 
-- Um usuário com a página, mas sem `exportar`, recebe 403 nas rotas CSV e não vê o link.
-- Um usuário com `exportar` recebe somente as colunas que o Perfil permite ver.
-- Administradores preservam o comportamento atual.
-
-#### Suggested tests
-
-- Cobrir uma exportação gerada pelo registrar e as duas exportações manuais de Investidores.
+- Confirmar que banco, cache e respostas não mantêm o segredo após revogação.
+- Confirmar que consultas subsequentes falham como “não configurado”.
+- Confirmar que usuário não administrador recebe 403.
 
 ### Self-critique
 
-- **Confidence:** 9/10
+- **Confidence:** 9.5/10
 - **Uncertain:** No
-- **Strengths:** A rota e o catálogo foram verificados; a dependência `UIUser` só exige acesso à página.
-- **Weaknesses:** Não foi executada uma requisição autenticada de ponta a ponta nesta análise.
-- **Suggested checks:** Criar um Perfil de leitura sem operações e confirmar as respostas 403 após a mudança.
+- **Strengths:**
+  - O modelo de atualização e a ausência de rota de remoção foram verificados.
+- **Weaknesses:**
+  - Objetos Python e backups anteriores não podem ser apagados retroativamente pela ação proposta.
+- **Suggested checks:**
+  - Definir política de retenção/rotação para backups que contenham `rsd_config`.
 
-## imp-20260805-002 — Separar consulta RSD da permissão de editar Veículos
+## imp-20260807-004 — Proteger os POSTs de credenciais com token CSRF
 
 - **Impact:** Medium
-- **Category:** Authorization
-- **Estimated effort:** Low
+- **Category:** Transport and configuration
+- **Estimated effort:** Medium
 - **Priority:** medium
 - **Risk level:** medium
-- **Tags:** authorization, rsd, external-service, perfis
-- **Files affected:** `components/xtreme_system/perfil/policy.py`, `bases/xtreme_system/api/routes/ui_routes/rsd.py`, templates dos formulários de veículo/compra/consignação
+- **Tags:** security, csrf, cookie-auth, configuration
+- **Files affected:** `bases/xtreme_system/api/templates/configuracoes.html`, `bases/xtreme_system/api/routes/ui_routes/configuracoes.py`, `bases/xtreme_system/api/routes/ui_routes/auth.py`, `bases/xtreme_system/api/setup.py`, `tests/test_rsd.py`
 - **Related opportunities:** None
 
 ### Location
 
-`bases/xtreme_system/api/routes/ui_routes/rsd.py:86` — `ui_rsd_puxar_dados`
+`bases/xtreme_system/api/templates/configuracoes.html:240` — formulário de credenciais RSD
 
-```python
-@router.post("/ui/rsd/puxar-dados")
-def ui_rsd_puxar_dados(
-    request: Request,
-    session: SessionDep,
-    user: Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))],
-    placa: Annotated[str, Form()] = "",
-    vei_placa: Annotated[str, Form()] = "",
-    rsd_prefix: Annotated[str, Form()] = "",
-    rsd_status_id: Annotated[str, Form()] = "rsd-status",
-) -> HTMLResponse:
-    try:
-        placa = _placa_para_puxar_dados(placa, vei_placa)
+```html
+      <form method="post" action="/ui/configuracoes/rsd" class="card card--pad settings-form">
+        <div class="modal-section">
+          <h4>{{ ui.icon("link") }} Credenciais</h4>
+          <div class="form-grid">
+            <label class="field field--full">
+              <span class="field__label">E-mail</span>
+              <input class="input" name="email" type="email" placeholder="loja@email.com"
+                     value="{{ config_rsd.email }}" autocomplete="off">
+            </label>
+            <label class="field field--full">
+              <span class="field__label">Senha</span>
 ```
 
 ### Description
 
-`puxar-dados`, consulta unitária, acompanhamento e download do dossiê RSD dependem todos de `veiculos:editar`. Não há uma operação RSD no formulário de Perfis. Portanto, não é possível autorizar uma pessoa a consultar o serviço externo sem também dar poder de alterar veículos — nem revogar o RSD de alguém que ainda precisa editar o cadastro.
+Os POSTs de salvar e testar dependem do cookie `access_token`, mas o formulário não possui token CSRF e as rotas não validam origem/token. `SameSite=Lax` no cookie reduz ataques cross-site clássicos, porém não protege cenários same-site, subdomínio comprometido ou mudanças futuras na política do cookie.
 
 ### Why it matters
 
-RSD consulta um serviço externo, produz dossiês e pode ter custo, limite de uso ou dados mais sensíveis do que a edição rotineira do veículo. Misturar essas capacidades impede a aplicação do menor privilégio.
+O endpoint altera e usa segredos e, combinado com a URL editável, pode ser induzido a autenticar contra um destino escolhido. Operações dessa sensibilidade não deveriam depender apenas do comportamento SameSite do navegador.
 
 ### Concrete fix
 
-Criar `consultar_rsd` em `OPERACOES["veiculos"]`, trocar as quatro dependências RSD para essa operação e usar o mesmo predicado para exibir os controles de RSD. Manter `editar` exigido somente se a ação também persistir alterações no veículo.
+Emitir token CSRF ligado à sessão, incluí-lo em todos os formulários/headers HTMX e validá-lo em POST, PUT, PATCH e DELETE. Como defesa adicional, rejeitar `Origin`/`Referer` fora das origens configuradas. Manter `SameSite`, `HttpOnly` e `Secure` como camadas independentes.
 
 ### Domain details
 
-#### Acceptance criteria
+#### Security tests
 
-- O Perfil permite conceder `consultar_rsd` sem `editar`.
-- Sem `consultar_rsd`, todos os endpoints RSD retornam 403.
-- Editores sem `consultar_rsd` continuam editando veículos, mas não conseguem iniciar, acompanhar ou baixar dossiês.
-
-### Self-critique
-
-- **Confidence:** 9/10
-- **Uncertain:** No
-- **Strengths:** Todos os endpoints RSD relevantes usam o mesmo predicado `veiculos:editar`.
-- **Weaknesses:** A decisão comercial de delegar RSD é necessária; hoje o acoplamento pode ter sido intencional.
-- **Suggested checks:** Confirmar se cada consulta RSD tem custo ou limite contratado antes de priorizar como controle obrigatório.
-
-## imp-20260805-003 — Dar controles próprios para visualizar e enviar documentos de Cliente
-
-- **Impact:** Medium
-- **Category:** Authorization
-- **Estimated effort:** Low
-- **Priority:** medium
-- **Risk level:** medium
-- **Tags:** authorization, documents, cliente, pii, perfis
-- **Files affected:** `components/xtreme_system/perfil/policy.py`, `bases/xtreme_system/api/routes/ui_routes/clientes.py`, `bases/xtreme_system/api/templates/_modal_documentos_cliente.html`
-- **Related opportunities:** None
-
-### Location
-
-`bases/xtreme_system/api/routes/ui_routes/clientes.py:155` — configuração `cliente_documentos`
-
-```python
-        upload_dir=_get_uploads_cliente_dir,
-        url_prefix=lambda item_id: f"/static/uploads/clientes/{item_id}/documentos",
-        create_fn=callback_from(globals(), "imagem_documento_cliente.create"),
-        schema=imagem_documento_cliente.ImagemDocumentoClienteCreate,
-        fk_field="cliente_id",
-        delete_fn=callback_from(globals(), "imagem_documento_cliente.delete"),
-        upload_field="documentos",
-        get_dependency=_EditarClienteDep,
-        upload_dependency=_EditarClienteDep,
-        delete_dependency=_ExcluirDocumentoDep,
-    ),
-)
-```
-
-### Description
-
-O Perfil tem apenas `clientes:excluir_documento`. Abrir a modal e enviar documentos dependem de `clientes:editar`, de modo que não há como conceder ou revogar acesso a documentos de identificação separadamente da edição completa do Cliente. O catálogo já usa operações distintas para abrir/enviar/excluir comprovantes, contratos, imagens e procurações em outras páginas.
-
-### Why it matters
-
-Documentos de Cliente normalmente contêm PII. A política atual obriga conceder escrita ampla no cadastro para uma tarefa documental, ou impede uma pessoa de anexar/ver documentos quando ela não deveria editar outros dados do Cliente.
-
-### Concrete fix
-
-Adicionar `abrir_documentos` e `enviar_documentos` em `OPERACOES["clientes"]`; configurar as dependências GET e POST da rota de anexos com essas operações e manter `excluir_documento` separado. Condicionar os controles da modal às três permissões.
-
-### Domain details
-
-#### Acceptance criteria
-
-- Abertura, envio e exclusão de documentos têm permissões independentes no formulário de Perfis.
-- Um usuário com somente `abrir_documentos` pode listar documentos, mas não enviar, excluir nem editar o Cliente.
-- Os controles de outras mídias mantêm seus contratos atuais.
+- POST autenticado sem token ou com token inválido retorna 403 e não chama o RSD.
+- Token válido funciona em formulário convencional e HTMX.
+- Origem não permitida é rejeitada antes de processar credenciais.
 
 ### Self-critique
 
 - **Confidence:** 8/10
+- **Uncertain:** Yes
+- **Strengths:**
+  - A ausência de token no formulário e a autenticação por cookie foram verificadas.
+- **Weaknesses:**
+  - `SameSite=Lax` reduz bastante a exploração cross-site comum; o impacto depende da topologia de domínios e de conteúdo same-site não confiável.
+- **Suggested checks:**
+  - Mapear subdomínios e origens same-site atendidos em produção antes de fechar a severidade.
+
+## imp-20260807-005 — Rejeitar chaves de criptografia padrão e documentar rotação
+
+- **Impact:** Medium
+- **Category:** Transport and configuration
+- **Estimated effort:** Low
+- **Priority:** high
+- **Risk level:** medium
+- **Tags:** security, secret-management, startup-validation, documentation
+- **Files affected:** `.env.example`, `components/xtreme_system/rsd/core.py`, `README.md`, `tests/test_rsd.py`
+- **Related opportunities:** imp-20260807-002
+
+### Location
+
+`.env.example:1` — configuração de segredos
+
+```dotenv
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/xtreme
+# Opcional: usado se DATABASE_URL (ex.: container Docker) estiver inacessivel na
+# inicializacao. Ex.: postgres local via brew, sem senha.
+# DATABASE_URL_FALLBACK=postgresql+psycopg://postgres@localhost:5432/xtreme
+AUTH_SECRET_KEY=your-secret-key-minimum-32-bytes-long-change-this-in-production
+# Usada para cifrar a senha do portal RSD em repouso (rsd_config.senha).
+# Trocar exige recodificar as linhas existentes — ver alembic a3b4c5d6e7f8.
+RSD_ENCRYPTION_KEY=your-rsd-encryption-key-change-this-in-production
+LOG_LEVEL=INFO
+LOG_JSON=false
+```
+
+### Description
+
+O arquivo de exemplo contém uma chave RSD pública e previsível, e `Settings` apenas exige que alguma string exista. O README ensina a gerar `AUTH_SECRET_KEY`, mas não estabelece geração, validação de placeholder, custódia ou rotação para `RSD_ENCRYPTION_KEY`.
+
+### Why it matters
+
+Uma instalação que copie o exemplo sem trocar a chave cifra todas as senhas com material conhecido. Nesse cenário, acesso ao banco é suficiente para recuperar as credenciais do portal.
+
+### Concrete fix
+
+Rejeitar em startup o placeholder conhecido e chaves abaixo de um requisito mínimo; documentar geração criptograficamente segura, armazenamento no secret manager e procedimento de rotação transacional. Preferir injetar a chave fora do `.env` em produção.
+
+### Domain details
+
+#### Acceptance criteria
+
+- Produção não inicia com placeholder ou chave fraca.
+- O setup gera valores independentes para autenticação e criptografia RSD.
+- A documentação descreve backup e rotação sem perda das credenciais existentes.
+
+### Self-critique
+
+- **Confidence:** 9/10
 - **Uncertain:** No
-- **Strengths:** A rota de anexos e o catálogo de operações foram verificados; o contraste com as outras mídias está explícito na política.
-- **Weaknesses:** Não foram revisados requisitos legais que possam exigir restringir ainda mais a visualização dos arquivos estáticos.
-- **Suggested checks:** Confirmar se os arquivos em `/static/uploads/clientes/` precisam também de entrega autenticada antes de ampliar delegação.
+- **Strengths:**
+  - O placeholder e a ausência de validação específica foram verificados.
+- **Weaknesses:**
+  - Deployments existentes podem já injetar uma chave forte por infraestrutura externa.
+- **Suggested checks:**
+  - Auditar somente a presença/força, nunca o valor, das variáveis nos ambientes implantados.
+
+## imp-20260807-006 — Limitar a permanência da senha em texto claro no cache global
+
+- **Impact:** Medium
+- **Category:** Secrets and sensitive data
+- **Estimated effort:** Medium
+- **Priority:** medium
+- **Risk level:** medium
+- **Tags:** security, memory, cache, plaintext-secret, concurrency
+- **Files affected:** `components/xtreme_system/rsd/core.py`, `bases/xtreme_system/api/setup.py`, `tests/test_rsd.py`
+- **Related opportunities:** None
+
+### Location
+
+`components/xtreme_system/rsd/core.py:251` — `client_from_config`
+
+```python
+    key = _client_cache_key(config)
+    with _client_cache_lock:
+        client = _client_cache.get(key)
+        if client is None:
+            client = RsdClient(
+                base_url=config.base_url or _DEFAULT_BASE_URL,
+                email=config.email,
+                senha=_decriptar_senha(config.senha),
+            )
+            client.open()
+            _client_cache[key] = client
+        return client
+```
+
+### Description
+
+O cache global guarda um `RsdClient` que mantém a senha decriptada em um atributo por toda a vida do processo ou até uma alteração de configuração. Não há TTL, limite, limpeza por inatividade ou fechamento registrado no shutdown da aplicação.
+
+### Why it matters
+
+O reaproveitamento de sessão reduz logins, mas amplia a janela em que dumps de memória, introspecção acidental ou falhas adjacentes podem encontrar o segredo em claro. O mesmo objeto mutável também é compartilhado entre handlers concorrentes.
+
+### Concrete fix
+
+Dar TTL curto e tamanho máximo ao cache, registrar fechamento no lifespan da aplicação e remover a senha do objeto após estabelecer/renovar sessão, recuperando-a de um provedor controlado somente quando necessário. Serializar login/renovação por cliente ou usar sessões isoladas por request quando a segurança superar o ganho de performance.
+
+### Domain details
+
+#### Security tests
+
+- Cliente ocioso expira e é fechado.
+- Shutdown fecha todos os clientes.
+- Alteração/revogação remove imediatamente clientes antigos.
+- Renovações concorrentes não misturam cookies e CSRF.
+
+### Self-critique
+
+- **Confidence:** 8.5/10
+- **Uncertain:** Yes
+- **Strengths:**
+  - A decriptação antes de inserir no cache global está explícita.
+  - Não foi encontrado hook de shutdown ou política de expiração.
+- **Weaknesses:**
+  - Strings Python não oferecem apagamento seguro garantido; a redução de permanência diminui, mas não elimina resíduos de memória.
+- **Suggested checks:**
+  - Medir frequência real de login para escolher TTL sem degradar o portal.
 
 ## Discarded candidates
 
-### Páginas administrativas ausentes de Perfis
+### Remover o e-mail do log `rsd_login_ok`
 
-Dashboard, DRE, Usuários, Perfis, Auditoria e Configurações estão explicitamente fora do mapeamento de páginas e suas rotas exigem `UIAdmin`. Isso parece uma decisão deliberada de administração, não uma lacuna acidental.
+Descartado por impacto baixo: e-mail é dado pessoal, mas não segredo de autenticação por si só; a política central de logs deve decidir a minimização de PII de forma consistente.
 
-### Lançamentos manuais de Investidor
+### Adicionar rate limit específico ao teste RSD
 
-Leitura e exportação dos lançamentos acompanham a página Investidores, enquanto criar, editar e excluir exigem `UIAdmin`. Pode virar uma capacidade de Perfil se o negócio quiser delegar caixa, mas o código não sugere que o fluxo deva deixar de ser administrativo.
-
-### Botão de novo Cliente condicionado a administrador
-
-`clientes:cadastrar` já existe e a rota o aplica; apenas o botão em `clientes.html` usa `is_admin(user)`. É uma inconsistência de interface, não um recurso ausente do sistema de acesso.
+Descartado nesta análise porque já existe rate limit geral por usuário autenticado. Um limite mais estreito pode ser útil operacionalmente, mas faltam evidências de abuso ou lockout do portal.
