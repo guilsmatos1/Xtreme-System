@@ -169,7 +169,6 @@ def test_gerar_pdf_segue_secoes_do_modelo() -> None:
     )
     for rotulo in (
         "Recebemos de:",
-        "CNH:",
         "Telefone 2:",
         "No. Chassi:",
         "Opcionais:",
@@ -180,6 +179,8 @@ def test_gerar_pdf_segue_secoes_do_modelo() -> None:
         "De acordo,",
     ):
         assert rotulo in texto
+    assert "RG:" not in texto
+    assert "CNH:" not in texto
 
 
 def test_gerar_pdf_com_logo_mantem_cabecalho(tmp_path: Path) -> None:

@@ -10,6 +10,7 @@ import structlog
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BeforeValidator, Field
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.deps import (
@@ -25,7 +26,7 @@ from xtreme_system.api.routes.ui_routes.filters import (
     TextoFiltro,
     vazio_para_none,
 )
-from xtreme_system.database.core import detach_request_session
+from xtreme_system.database.core import SessionLocal, detach_request_session
 from xtreme_system.rsd import core as rsd
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -37,6 +38,7 @@ _RSD_STATUS_IDS = {
     "rsd-status",
     "rsd-status-compra",
     "rsd-status-consignacao",
+    "rsd-status-veiculo",
 }
 
 # Contador de falhas transitórias consecutivas por dossiê, para o poll do
@@ -185,6 +187,137 @@ def ui_rsd_puxar_dados(
     )
     # Ver comentário em _status_partial: este POST atualiza o status parcial
     # dentro do modal, que deve continuar aberto.
+    response.headers["HX-Trigger"] = "{}"
+    return response
+
+
+def _aplicar_campos_no_veiculo(
+    veiculo_id: int, campos: dict[str, Any], actor_id: int
+) -> None:
+    """Grava os campos vindos do RSD no veículo, em sessão própria.
+
+    A rota chama `detach_request_session` antes da chamada ao portal (ver
+    docs/agents/transactions-rollbacks.md), então quando o resultado chega não
+    há mais sessão do request para gravar — mesmo motivo pelo qual
+    `rsd.registrar_consulta` abre a sua. Diferente dela, aqui a exceção sobe:
+    uma falha de gravação precisa virar alerta para o usuário, não log silencioso.
+    """
+    session = SessionLocal()
+    try:
+        obj = found(veiculo.get(session, veiculo_id), "Veículo")
+        veiculo.update(session, obj, veiculo.VeiculoUpdate(**campos), actor_id=actor_id)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@router.post("/ui/rsd/veiculos/{veiculo_id}/atualizar")
+def ui_rsd_atualizar_veiculo(
+    veiculo_id: int,
+    request: Request,
+    session: SessionDep,
+    user: Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))],
+) -> Response:
+    """Puxa os dados do RSD pela placa do veículo e grava no próprio registro.
+
+    Diferente de `ui_rsd_puxar_dados`, que devolve os campos para o JS preencher
+    um formulário aberto, aqui a escrita é server-side: é a ação de um clique na
+    página de detalhes, onde não há formulário para submeter depois.
+    """
+    obj = found(veiculo.get(session, veiculo_id), "Veículo")
+    try:
+        placa = _placa_para_puxar_dados(obj.placa or "", "")
+    except ValueError as exc:
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id="rsd-status-veiculo",
+            status_code=400,
+        )
+
+    config = rsd.get_config(session)
+    try:
+        client = rsd.client_from_config(config)
+    except rsd.RsdError as exc:
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id="rsd-status-veiculo",
+            status_code=400,
+        )
+
+    detach_request_session(request, keep=(user, config, obj))
+    inicio = time.monotonic()
+    try:
+        dados = client.puxar_dados(placa)
+    except rsd.RsdError as exc:
+        _marcar_falha_credencial(config, exc)
+        duracao_ms = int((time.monotonic() - inicio) * 1000)
+        logger.warning(
+            "rsd_atualizar_veiculo_falhou",
+            veiculo_id=obj.id,
+            placa=placa,
+            erro=str(exc),
+            duracao_ms=duracao_ms,
+        )
+        rsd.registrar_consulta(
+            tipo=rsd.TipoConsultaRsd.puxar_dados,
+            placa=placa,
+            veiculo_id=obj.id,
+            usuario_id=user.id,
+            sucesso=False,
+            erro=str(exc),
+            duracao_ms=duracao_ms,
+        )
+        return _status_partial(
+            request,
+            erro=str(exc),
+            status_id="rsd-status-veiculo",
+            status_code=400,
+        )
+
+    duracao_ms = int((time.monotonic() - inicio) * 1000)
+    campos = rsd.mapear_para_veiculo(dados)
+    try:
+        _aplicar_campos_no_veiculo(obj.id, campos, user.id)
+    except IntegrityError:
+        logger.warning("rsd_atualizar_veiculo_conflito", veiculo_id=obj.id, placa=placa)
+        rsd.registrar_consulta(
+            tipo=rsd.TipoConsultaRsd.puxar_dados,
+            placa=placa,
+            veiculo_id=obj.id,
+            usuario_id=user.id,
+            payload=dados.model_dump(),
+            campos_aplicados=campos,
+            sucesso=False,
+            erro="conflito ao gravar dados do RSD",
+            duracao_ms=duracao_ms,
+        )
+        return _status_partial(
+            request,
+            erro="Os dados retornados pelo RSD conflitam com outro veículo já "
+            "cadastrado. Nada foi alterado.",
+            status_id="rsd-status-veiculo",
+            status_code=400,
+        )
+
+    rsd.registrar_consulta(
+        tipo=rsd.TipoConsultaRsd.puxar_dados,
+        placa=placa,
+        veiculo_id=obj.id,
+        usuario_id=user.id,
+        payload=dados.model_dump(),
+        campos_aplicados=campos,
+        sucesso=True,
+        duracao_ms=duracao_ms,
+    )
+    response = Response(status_code=204)
+    response.headers["HX-Refresh"] = "true"
+    # Ver comentário em _status_partial: sem HX-Trigger próprio o middleware
+    # global (_htmx_write_feedback) injeta toast + close-modal neste POST.
     response.headers["HX-Trigger"] = "{}"
     return response
 

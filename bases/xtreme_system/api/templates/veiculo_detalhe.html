@@ -20,13 +20,24 @@
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost btn--sm" href="/ui/veiculos" aria-label="Voltar para veículos">{{ ui.icon("arrow-left") }} Voltar</a>
+    {% if pode_editar and veiculo.placa %}
+    <button class="btn btn--info" type="button"
+            hx-post="/ui/rsd/veiculos/{{ veiculo.id }}/atualizar"
+            hx-target="#rsd-status-veiculo" hx-swap="outerHTML"
+            hx-disabled-elt="this"
+            hx-indicator="#rsd-status-veiculo-indicator"
+            hx-confirm="Atualizar os dados deste veículo com o RSD? Os campos retornados serão sobrescritos.">
+      {{ ui.icon("refresh") }} Atualizar pelo RSD
+    </button>
+    <span id="rsd-status-veiculo-indicator" class="htmx-indicator muted">Consultando…</span>
+    {% endif %}
     {% if pode_editar %}
     <button class="btn btn--default" hx-get="/ui/veiculos/{{ veiculo.id }}/editar" hx-target="#modal" hx-swap="innerHTML">{{ ui.icon("edit") }} Editar</button>
     {% endif %}
   </div>
 </div>
 
-<div id="detail-alert"></div>
+<div id="rsd-status-veiculo" class="rsd-status" aria-live="polite"></div>
 
 <section class="stats" aria-label="Resumo do veículo">
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}

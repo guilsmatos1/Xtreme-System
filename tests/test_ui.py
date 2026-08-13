@@ -1720,6 +1720,7 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
 
     assert resp.status_code == 200
     assert 'name="houve_troca"' in resp.text
+    assert '<option value="false" selected>Não</option>' in resp.text
     assert 'id="veiculo-troca-input"' not in resp.text
     assert 'id="cadastrar-veiculo-troca"' not in resp.text
     assert 'id="veiculo-troca-search"' not in resp.text
@@ -1820,7 +1821,7 @@ def test_ui_criar_venda_troca_placa_ja_cadastrada_retorna_erro(
     assert resp.status_code == 400
     assert "Placa já cadastrada" in resp.text
     assert '<select class="select" id="houve-troca" name="houve_troca"' in resp.text
-    assert '<option :value="true" selected>Sim</option>' in resp.text
+    assert '<option value="true" selected>Sim</option>' in resp.text
     assert 'name="veiculo_troca_novo" value="1"' in resp.text
     assert 'name="veic_troca_placa" value="ABC1234"' in resp.text
     assert client.get("/vendas", headers=headers).json() == []

@@ -212,8 +212,6 @@ def _bloco_comprador(pdf: FPDF, cliente_obj: "Cliente") -> None:
     _grid(
         pdf,
         (f"**CPF:** {formatar_documento(cliente_obj.documento)}", 0.34),
-        ("**RG:**", 0.33),
-        ("**CNH:**", 0.33),
     )
     _grid(
         pdf,

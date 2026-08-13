@@ -309,8 +309,8 @@
           <label class="field field--full">
             <span class="field__label">Houve troca de veículo?</span>
             <select class="select" id="houve-troca" name="houve_troca" x-model="ativo" x-on:change="normalizarAtivo($event.target.value)">
-              <option :value="true"{% if houve_troca_atual %} selected{% endif %}>Sim</option>
-              <option :value="false"{% if not houve_troca_atual %} selected{% endif %}>Não</option>
+              <option value="true"{% if houve_troca_atual %} selected{% endif %}>Sim</option>
+              <option value="false"{% if not houve_troca_atual %} selected{% endif %}>Não</option>
             </select>
             </label>
             {% endif %}
