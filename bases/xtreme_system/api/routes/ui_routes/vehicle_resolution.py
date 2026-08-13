@@ -42,16 +42,12 @@ def resolver_veiculo_inline(
                 "chassi": str(form.get(f"{prefix}chassi") or "").strip() or None,
                 "renavam": str(form.get(f"{prefix}renavam") or "").strip() or None,
                 "preco": preco,
-                "proprietario_registrado": str(
-                    form.get(f"{prefix}proprietario_registrado") or ""
+                "proprietario_atual": str(
+                    form.get(f"{prefix}proprietario_atual") or ""
                 ).strip()
                 or None,
                 "proprietario_documento": str(
                     form.get(f"{prefix}proprietario_documento") or ""
-                ).strip()
-                or None,
-                "proprietario_uf": str(
-                    form.get(f"{prefix}proprietario_uf") or ""
                 ).strip()
                 or None,
                 "investidor_id": form.get(f"{prefix}investidor_id") or 0,

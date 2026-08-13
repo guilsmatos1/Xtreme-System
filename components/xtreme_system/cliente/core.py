@@ -76,6 +76,20 @@ def _trim_texto_obrigatorio(value: Any) -> Any:
     return value
 
 
+def _trim_texto_uppercase(value: Any) -> Any:
+    value = _trim_texto(value)
+    if isinstance(value, str):
+        return value.upper()
+    return value
+
+
+def _trim_texto_obrigatorio_uppercase(value: Any) -> Any:
+    value = _trim_texto_obrigatorio(value)
+    if isinstance(value, str):
+        return value.upper()
+    return value
+
+
 def _digits(value: str | None) -> str | None:
     if value is None:
         return None
@@ -133,6 +147,16 @@ def normalizar_cep(value: str | None) -> str | None:
     return cep
 
 
+def formatar_cep(value: str | None) -> str:
+    """00000-000."""
+    digitos = _digits(value)
+    if digitos is None:
+        return "-"
+    if len(digitos) == _CEP_LENGTH:
+        return f"{digitos[:5]}-{digitos[5:]}"
+    return value or "-"
+
+
 def normalizar_estado(value: str | None) -> str | None:
     estado = _trim_str(value)
     if estado is None:
@@ -147,8 +171,8 @@ def normalizar_email(value: str | None) -> str | None:
     email = _trim_str(value)
     if email is None:
         return None
-    email = email.lower()
-    if not _EMAIL_RE.fullmatch(email):
+    email = email.upper()
+    if not _EMAIL_RE.fullmatch(email.lower()):
         raise EmailClienteInvalidoError
     return email
 
@@ -174,6 +198,7 @@ class Cliente(Base):
     tipo: Mapped[TipoCliente]
     email: Mapped[str | None]
     telefone: Mapped[str | None]
+    telefone2: Mapped[str | None]
     endereco: Mapped[str | None]
     bairro: Mapped[str | None]
     cidade: Mapped[str | None]
@@ -192,6 +217,7 @@ class ClienteCreate(BaseModel):
     tipo: TipoCliente
     email: str | None = None
     telefone: str | None = None
+    telefone2: str | None = None
     endereco: str | None = None
     bairro: str | None = None
     cidade: str | None = None
@@ -203,7 +229,7 @@ class ClienteCreate(BaseModel):
     @classmethod
     def _normalizar_nome(cls, value: Any) -> Any:
         _ = cls
-        return _trim_texto_obrigatorio(value)
+        return _trim_texto_obrigatorio_uppercase(value)
 
     @field_validator("documento", mode="before")
     @classmethod
@@ -223,7 +249,19 @@ class ClienteCreate(BaseModel):
         _ = cls
         return normalizar_telefone(value)
 
-    @field_validator("endereco", "bairro", "cidade", "profissao", mode="before")
+    @field_validator("telefone2", mode="before")
+    @classmethod
+    def _normalizar_telefone2(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_telefone(value)
+
+    @field_validator("endereco", "bairro", "cidade", mode="before")
+    @classmethod
+    def _normalizar_endereco(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto_uppercase(value)
+
+    @field_validator("profissao", mode="before")
     @classmethod
     def _normalizar_texto_opcional(cls, value: Any) -> Any:
         _ = cls
@@ -253,6 +291,7 @@ class ClienteUpdate(BaseModel):
     tipo: TipoCliente | None = None
     email: str | None = None
     telefone: str | None = None
+    telefone2: str | None = None
     endereco: str | None = None
     bairro: str | None = None
     cidade: str | None = None
@@ -264,7 +303,7 @@ class ClienteUpdate(BaseModel):
     @classmethod
     def _normalizar_nome(cls, value: Any) -> Any:
         _ = cls
-        return _trim_texto_obrigatorio(value)
+        return _trim_texto_obrigatorio_uppercase(value)
 
     @field_validator("documento", mode="before")
     @classmethod
@@ -284,7 +323,19 @@ class ClienteUpdate(BaseModel):
         _ = cls
         return normalizar_telefone(value)
 
-    @field_validator("endereco", "bairro", "cidade", "profissao", mode="before")
+    @field_validator("telefone2", mode="before")
+    @classmethod
+    def _normalizar_telefone2(cls, value: str | None) -> str | None:
+        _ = cls
+        return normalizar_telefone(value)
+
+    @field_validator("endereco", "bairro", "cidade", mode="before")
+    @classmethod
+    def _normalizar_endereco(cls, value: Any) -> Any:
+        _ = cls
+        return _trim_texto_uppercase(value)
+
+    @field_validator("profissao", mode="before")
     @classmethod
     def _normalizar_texto_opcional(cls, value: Any) -> Any:
         _ = cls
@@ -321,6 +372,7 @@ class ClienteRead(BaseModel):
     tipo: TipoCliente
     email: str | None
     telefone: str | None
+    telefone2: str | None
     endereco: str | None
     bairro: str | None
     cidade: str | None
@@ -332,7 +384,12 @@ class ClienteRead(BaseModel):
 def list_all(
     session: Session, *, limit: int | None = None, offset: int = 0
 ) -> list[Cliente]:
-    return crud.list_all(session, Cliente, limit=limit, offset=offset)
+    q = session.query(Cliente).order_by(Cliente.nome)
+    if limit is not None:
+        q = q.limit(limit)
+    if offset:
+        q = q.offset(offset)
+    return list(q.all())
 
 
 def query(session: Session) -> Query[Cliente]:

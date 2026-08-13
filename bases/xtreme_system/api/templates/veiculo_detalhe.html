@@ -65,6 +65,11 @@
       {% if pode_ver_campo(user, 'veiculos', 'marca') %}<div><dt>Marca</dt><dd>{{ veiculo.marca or "-" }}</dd></div>{% endif %}
       <div><dt>Cor</dt><dd>{{ veiculo.cor }}</dd></div>
       {% if pode_ver_campo(user, 'veiculos', 'ano') %}<div><dt>Ano</dt><dd>{{ veiculo.ano }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'categoria') %}<div><dt>Categoria</dt><dd>{{ veiculo.categoria or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'especie') %}<div><dt>Espécie</dt><dd>{{ veiculo.especie or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'combustivel') %}<div><dt>Combustível</dt><dd>{{ veiculo.combustivel or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'potencia') %}<div><dt>Potência</dt><dd>{{ veiculo.potencia or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'cilindrada') %}<div><dt>Cilindrada</dt><dd>{{ veiculo.cilindrada or "-" }}</dd></div>{% endif %}
     </dl>
   </section>
 
@@ -74,10 +79,14 @@
       {% if pode_ver_campo(user, 'veiculos', 'placa') %}<div><dt>Placa</dt><dd>{{ veiculo.placa }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<div><dt>Chassi</dt><dd>{{ veiculo.chassi or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<div><dt>RENAVAM</dt><dd>{{ veiculo.renavam or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'numero_motor') %}<div><dt>Número do Motor</dt><dd>{{ veiculo.numero_motor or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'tipo_documento') %}<div><dt>Tipo (Documento)</dt><dd>{{ veiculo.tipo_documento or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'procedencia') %}<div><dt>Procedência</dt><dd>{{ veiculo.procedencia or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'municipio') %}<div><dt>Município</dt><dd>{{ veiculo.municipio or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<div><dt>Procurador</dt><dd>{{ veiculo.procuracao or "-" }}</dd></div>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<div><dt>Proprietário Registrado</dt><dd>{{ veiculo.proprietario_registrado or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'proprietario_atual') %}<div><dt>Proprietário Atual</dt><dd>{{ veiculo.proprietario_atual or "-" }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'proprietario_anterior') %}<div><dt>Proprietário Anterior</dt><dd>{{ veiculo.proprietario_anterior or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<div><dt>Documento do Proprietário</dt><dd>{{ veiculo.proprietario_documento or "-" }}</dd></div>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<div><dt>UF do Proprietário</dt><dd>{{ veiculo.proprietario_uf or "-" }}</dd></div>{% endif %}
     </dl>
   </section>
 

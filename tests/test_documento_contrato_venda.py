@@ -49,6 +49,8 @@ def _build_cliente() -> cliente.Cliente:
     obj.tipo = cliente.TipoCliente.pessoa_fisica
     obj.telefone = "(11) 99999-0000"
     obj.endereco = "Rua das Flores, 123"
+    obj.bairro = "Jardim Paulista"
+    obj.cep = "01310-100"
     return obj
 
 
@@ -127,9 +129,13 @@ def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
     assert "Silva" in texto
     assert "Gol" in texto
     assert "Volkswagen" in texto
-    assert "12345678901" in texto
-    assert "Documento: 12345678901" in texto
+    assert "123.456.789-01" in texto
+    assert "Documento: 123.456.789-01" in texto
     assert "ABC1D23" in texto
+    assert "Bairro:" in texto
+    assert "Jardim Paulista" in texto
+    assert "99999-0000" in texto  # parênteses saem escapados no stream do PDF
+    assert "01310-100" in texto
 
 
 def test_gerar_pdf_renderiza_cabecalho_da_empresa() -> None:
@@ -150,6 +156,13 @@ def test_gerar_pdf_assinaturas_na_mesma_pagina() -> None:
     assert "De acordo," in extract_pdf_text(pdf)
 
 
+def test_gerar_pdf_cpf_do_cliente_abaixo_da_assinatura() -> None:
+    texto = extract_pdf_text(
+        documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
+    )
+    assert "CPF: 123.456.789-01" in texto
+
+
 def test_gerar_pdf_segue_secoes_do_modelo() -> None:
     texto = extract_pdf_text(
         documento_contrato_venda.gerar_pdf(_build_venda(), _build_empresa())
@@ -157,7 +170,7 @@ def test_gerar_pdf_segue_secoes_do_modelo() -> None:
     for rotulo in (
         "Recebemos de:",
         "CNH:",
-        "Telefone 3:",
+        "Telefone 2:",
         "No. Chassi:",
         "Opcionais:",
         "Forma de Pagamento",

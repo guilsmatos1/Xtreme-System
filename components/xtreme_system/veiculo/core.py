@@ -111,14 +111,6 @@ def _validar_faixa_ano(value: Any) -> Any:
     return value
 
 
-def _normalizar_uf(value: Any) -> Any:
-    if value is None:
-        return None
-    if isinstance(value, str):
-        value = value.strip().upper()
-    return value or None
-
-
 class Veiculo(Base):
     __tablename__ = "veiculo"
     __table_args__ = (CheckConstraint("preco > 0", name="ck_veiculo_preco_positive"),)
@@ -132,12 +124,21 @@ class Veiculo(Base):
     placa: Mapped[str] = mapped_column(unique=True, index=True)
     chassi: Mapped[str | None]
     renavam: Mapped[str | None]
+    numero_motor: Mapped[str | None]
     km: Mapped[int | None]
     preco: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     procuracao: Mapped[str | None]
-    proprietario_registrado: Mapped[str | None]
+    proprietario_atual: Mapped[str | None]
+    proprietario_anterior: Mapped[str | None]
     proprietario_documento: Mapped[str | None]
-    proprietario_uf: Mapped[str | None]
+    combustivel: Mapped[str | None]
+    tipo_documento: Mapped[str | None]
+    categoria: Mapped[str | None]
+    especie: Mapped[str | None]
+    procedencia: Mapped[str | None]
+    municipio: Mapped[str | None]
+    potencia: Mapped[str | None]
+    cilindrada: Mapped[str | None]
     status: Mapped[StatusVeiculo] = mapped_column(default=StatusVeiculo.disponivel)
     tipo_entrada: Mapped[TipoEntrada] = mapped_column(default=TipoEntrada.compra)
     revisao: Mapped[bool] = mapped_column(default=False)
@@ -167,12 +168,21 @@ class VeiculoCreate(BaseModel):
     placa: str
     chassi: str | None = None
     renavam: str | None = None
+    numero_motor: str | None = None
     km: int | None = Field(default=None, ge=0)
     preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
-    proprietario_registrado: str | None = None
+    proprietario_atual: str | None = None
+    proprietario_anterior: str | None = None
     proprietario_documento: str | None = None
-    proprietario_uf: str | None = None
+    combustivel: str | None = None
+    tipo_documento: str | None = None
+    categoria: str | None = None
+    especie: str | None = None
+    procedencia: str | None = None
+    municipio: str | None = None
+    potencia: str | None = None
+    cilindrada: str | None = None
     status: StatusVeiculo = StatusVeiculo.disponivel
     tipo_entrada: TipoEntrada = TipoEntrada.compra
     revisao: bool = False
@@ -183,12 +193,6 @@ class VeiculoCreate(BaseModel):
     def _validar_ano(cls, value: Any) -> Any:
         _ = cls
         return _validar_faixa_ano(value)
-
-    @field_validator("proprietario_uf", mode="before")
-    @classmethod
-    def _normalizar_uf(cls, value: Any) -> Any:
-        _ = cls
-        return _normalizar_uf(value)
 
     @field_validator("placa", mode="before")
     @classmethod
@@ -230,12 +234,21 @@ class VeiculoUpdate(BaseModel):
     placa: str | None = None
     chassi: str | None = None
     renavam: str | None = None
+    numero_motor: str | None = None
     km: int | None = Field(default=None, ge=0)
     preco: Decimal | None = Field(default=None, gt=0)
     procuracao: str | None = None
-    proprietario_registrado: str | None = None
+    proprietario_atual: str | None = None
+    proprietario_anterior: str | None = None
     proprietario_documento: str | None = None
-    proprietario_uf: str | None = None
+    combustivel: str | None = None
+    tipo_documento: str | None = None
+    categoria: str | None = None
+    especie: str | None = None
+    procedencia: str | None = None
+    municipio: str | None = None
+    potencia: str | None = None
+    cilindrada: str | None = None
     status: StatusVeiculo | None = None
     tipo_entrada: TipoEntrada | None = None
     revisao: bool | None = None
@@ -246,12 +259,6 @@ class VeiculoUpdate(BaseModel):
     def _validar_ano(cls, value: Any) -> Any:
         _ = cls
         return _validar_faixa_ano(value)
-
-    @field_validator("proprietario_uf", mode="before")
-    @classmethod
-    def _normalizar_uf(cls, value: Any) -> Any:
-        _ = cls
-        return _normalizar_uf(value)
 
     @field_validator("placa", mode="before")
     @classmethod
@@ -298,12 +305,21 @@ class VeiculoRead(BaseModel):
     placa: str
     chassi: str | None
     renavam: str | None
+    numero_motor: str | None
     km: int | None = None
     preco: Decimal | None
     procuracao: str | None
-    proprietario_registrado: str | None
+    proprietario_atual: str | None
+    proprietario_anterior: str | None
     proprietario_documento: str | None
-    proprietario_uf: str | None
+    combustivel: str | None
+    tipo_documento: str | None
+    categoria: str | None
+    especie: str | None
+    procedencia: str | None
+    municipio: str | None
+    potencia: str | None
+    cilindrada: str | None
     status: StatusVeiculo
     tipo_entrada: TipoEntrada
     revisao: bool
@@ -384,8 +400,10 @@ def search_query(
         "marca": Veiculo.marca,
         "chassi": Veiculo.chassi,
         "renavam": Veiculo.renavam,
+        "numero_motor": Veiculo.numero_motor,
         "procuracao": Veiculo.procuracao,
-        "proprietario_registrado": Veiculo.proprietario_registrado,
+        "proprietario_atual": Veiculo.proprietario_atual,
+        "proprietario_anterior": Veiculo.proprietario_anterior,
         "tipo": Veiculo.tipo,
         "status": Veiculo.status,
         "tipo_entrada": Veiculo.tipo_entrada,

@@ -967,12 +967,12 @@ def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
         },
     )
     assert editado.status_code == 200
-    assert "Ana Compradora" in editado.text
-    assert "São Paulo" in editado.text
+    assert "ANA COMPRADORA" in editado.text
+    assert "SÃO PAULO" in editado.text
 
     busca = client.get("/ui/clientes/todos?q=Ana")
-    assert "Ana Compradora" in busca.text
-    assert "Caio Ambos" not in busca.text
+    assert "ANA COMPRADORA" in busca.text
+    assert "CAIO AMBOS" not in busca.text
     assert 'class="cell-mono" data-col="documento">123.456.789-01' in busca.text
     assert (
         'data-col="tipo"><span class="badge badge--plain badge--info">Pessoa Fisica'
@@ -985,8 +985,8 @@ def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
         export.headers["content-disposition"] == 'attachment; filename="clientes.csv"'
     )
     assert export.text.splitlines()[0] == "ID,Nome,Documento,Tipo,Telefone,Cidade,UF"
-    assert "Ana Compradora" in export.text
-    assert "Caio Ambos" not in export.text
+    assert "ANA COMPRADORA" in export.text
+    assert "CAIO AMBOS" not in export.text
 
     modal_comprador = client.get(f"/ui/clientes/todos/{comprador_id}/veiculos")
     assert modal_comprador.status_code == 200
@@ -1000,10 +1000,10 @@ def test_ui_clientes_todos_lista_e_edita(  # noqa: PLR0915
 
     todos = client.get("/ui/clientes/todos")
     assert todos.status_code == 200
-    assert "Ana Compradora" in todos.text
-    assert "Bia Vendedora" in todos.text
-    assert "Caio Ambos" in todos.text
-    assert "Dora Sem Vinculo" in todos.text
+    assert "ANA COMPRADORA" in todos.text
+    assert "BIA VENDEDORA" in todos.text
+    assert "CAIO AMBOS" in todos.text
+    assert "DORA SEM VINCULO" in todos.text
 
     modal_todos = client.get(f"/ui/clientes/todos/{ambos_id}/veiculos")
     assert modal_todos.status_code == 200
@@ -1090,7 +1090,7 @@ def test_ui_clientes_documentos_modal_crud(client: TestClient) -> None:
         ],
     )
     assert upload.status_code == 200
-    assert "João Documento" in upload.text
+    assert "JOÃO DOCUMENTO" in upload.text
     assert "/documentos/" in upload.text
 
     match = re.search(
@@ -1257,7 +1257,8 @@ def test_ui_investidores_crud_basico(client: TestClient) -> None:
 
     criado = client.post("/ui/investidores", data={"nome": "Nova Investidora"})
     assert criado.status_code == 200
-    assert "Nova Investidora" in criado.text
+    assert "NOVA INVESTIDORA" in criado.text
+    assert "Nova Investidora" not in criado.text
     assert "cell-num" in criado.text
     assert "R$ 0,00" in criado.text
 
@@ -1420,7 +1421,7 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
         },
     )
     assert criado.status_code == 200
-    assert "Carlos Lima" in criado.text
+    assert "CARLOS LIMA" in criado.text
     assert "HB20" not in criado.text
     assert re.search(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}", criado.text)
     assert "/07/2026" not in criado.text
@@ -1681,14 +1682,14 @@ def test_ui_venda_referencias_busca_e_pagina(client: TestClient) -> None:
     primeira = client.get("/ui/vendas/referencias/clientes?q=Cliente&limit=1&offset=0")
     assert primeira.status_code == 200
     assert primeira.json()["items"] == [
-        {"id": cliente_a, "label": "Cliente A (11111111111)"}
+        {"id": cliente_a, "label": "CLIENTE A (11111111111)"}
     ]
     assert primeira.json()["has_more"] is True
 
     segunda = client.get("/ui/vendas/referencias/clientes?q=Cliente&limit=1&offset=1")
     assert segunda.status_code == 200
     assert segunda.json()["items"] == [
-        {"id": cliente_b, "label": "Cliente B (22222222222)"}
+        {"id": cliente_b, "label": "CLIENTE B (22222222222)"}
     ]
 
     veiculos = client.get("/ui/vendas/referencias/veiculos?limit=1")
@@ -2263,8 +2264,8 @@ def test_ui_vendas_busca_por_cliente_nao_duplica_resultados(
 
     busca = client.get("/ui/vendas?q=Ana")
     assert busca.status_code == 200
-    assert "Ana Busca" in busca.text
-    assert "Bia Busca" not in busca.text
+    assert "ANA BUSCA" in busca.text
+    assert "BIA BUSCA" not in busca.text
 
 
 def test_ui_vendas_sem_tabela_de_fechamento_nao_quebra(
@@ -2396,9 +2397,9 @@ def test_resolver_cliente_compartilhado_cobre_ramos_principais() -> None:
         )
         assert cliente_obj is None
         assert novo_cliente_data is not None
-        assert novo_cliente_data.nome == "Cliente Novo"
+        assert novo_cliente_data.nome == "CLIENTE NOVO"
         assert novo_cliente_data.documento == "10987654321"
-        assert novo_cliente_data.email == "novo@example.com"
+        assert novo_cliente_data.email == "NOVO@EXAMPLE.COM"
         assert erro is None
 
         _, _, erro = resolver_cliente(
@@ -2553,7 +2554,7 @@ def test_ui_nova_compra_renderiza_clientes_cadastrados(client: TestClient) -> No
     assert formulario.status_code == 200
     assert formulario.headers["cache-control"] == "no-store"
     assert (
-        f'<option value="{cliente_id}">Cliente Compra Select · 45678912301</option>'
+        f'<option value="{cliente_id}">CLIENTE COMPRA SELECT · 45678912301</option>'
         in formulario.text
     )
 
@@ -2867,8 +2868,8 @@ def test_ui_compras_busca_por_cliente_nao_duplica_resultados(
 
     busca = client.get("/ui/compras?q=Ana")
     assert busca.status_code == 200
-    assert "Ana Compra" in busca.text
-    assert "Bia Compra" not in busca.text
+    assert "ANA COMPRA" in busca.text
+    assert "BIA COMPRA" not in busca.text
 
 
 def test_ui_compras_comprovantes_modal_crud(client: TestClient) -> None:
@@ -3296,6 +3297,7 @@ def test_ui_clientes_modal_cadastro_cria_cliente(client: TestClient) -> None:
     novo = client.get("/ui/clientes/todos/novo")
     assert novo.status_code == 200
     assert 'data-testid="cliente-form-name"' in novo.text
+    assert 'data-testid="cliente-form-phone-2"' in novo.text
 
     criado = client.post(
         "/ui/clientes/todos",
@@ -3309,7 +3311,7 @@ def test_ui_clientes_modal_cadastro_cria_cliente(client: TestClient) -> None:
     )
 
     assert criado.status_code == 200
-    assert "Cliente Modal Teste" in criado.text
+    assert "CLIENTE MODAL TESTE" in criado.text
 
 
 def test_ui_clientes_modal_cadastro_preserva_erro_de_validacao(

@@ -21,6 +21,7 @@ def test_cliente_create_normaliza_dados_essenciais() -> None:
         tipo=cliente.TipoCliente.pessoa_fisica,
         email="  ANA@EXEMPLO.COM  ",
         telefone="(11) 99999-0000",
+        telefone2="(11) 98888-0000",
         endereco="  Rua A  ",
         bairro="  Centro  ",
         cidade="  São Paulo  ",
@@ -29,13 +30,14 @@ def test_cliente_create_normaliza_dados_essenciais() -> None:
         profissao="  lojista  ",
     )
 
-    assert data.nome == "Ana Cliente"
+    assert data.nome == "ANA CLIENTE"
     assert data.documento == "12345678901"
-    assert data.email == "ana@exemplo.com"
+    assert data.email == "ANA@EXEMPLO.COM"
     assert data.telefone == "11999990000"
-    assert data.endereco == "Rua A"
-    assert data.bairro == "Centro"
-    assert data.cidade == "São Paulo"
+    assert data.telefone2 == "11988880000"
+    assert data.endereco == "RUA A"
+    assert data.bairro == "CENTRO"
+    assert data.cidade == "SÃO PAULO"
     assert data.estado == "SP"
     assert data.cep == "01001000"
     assert data.profissao == "lojista"
@@ -93,6 +95,7 @@ def test_api_clientes_persiste_dados_normalizados(
             "tipo": "pessoa_fisica",
             "email": "  ANA@EXEMPLO.COM  ",
             "telefone": "(11) 99999-0000",
+            "telefone2": "(11) 98888-0000",
             "estado": "sp",
             "cep": "01001-000",
         },
@@ -102,11 +105,12 @@ def test_api_clientes_persiste_dados_normalizados(
     assert resp.status_code == 201, resp.text
     assert resp.json() == {
         "id": resp.json()["id"],
-        "nome": "Ana Cliente",
+        "nome": "ANA CLIENTE",
         "documento": "12345678901",
         "tipo": "pessoa_fisica",
-        "email": "ana@exemplo.com",
+        "email": "ANA@EXEMPLO.COM",
         "telefone": "11999990000",
+        "telefone2": "11988880000",
         "endereco": None,
         "bairro": None,
         "cidade": None,

@@ -209,7 +209,7 @@ def test_login_e_puxar_dados(rsd_client: rsd.RsdClient) -> None:
     assert mapped["cor"] == "CINZA"
     assert mapped["chassi"] == "9BGEB48A0SG190437"
     assert mapped["proprietario_documento"] == "44237309000175"
-    assert mapped["proprietario_uf"] == "SP"
+    assert "proprietario_uf" not in mapped
 
 
 def test_mapear_para_veiculo_preserva_modelo_sem_separador() -> None:

@@ -18,7 +18,7 @@
         <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
         {% set passo_atual = dados.get('wizard_step', 1)|int %}
         <div class="stepper">
-          {% for rotulo in ["Identificação", "Documentação", "Outros"] %}
+          {% for rotulo in ["Identificação", "Outros"] %}
           {% if not loop.first %}
           <div class="stepper__connector{% if passo_atual > loop.index - 1 %} is-done{% endif %}"
                :class="{ 'is-done': step > {{ loop.index - 1 }} }"></div>
@@ -69,29 +69,6 @@
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if passo_atual == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
-          {% if pode_ver_campo(user, 'veiculos', 'renavam') %}<label class="field">
-            <span class="field__label">RENAVAM</span>
-            <input class="input" name="renavam" value="{{ dados.get('renavam', veiculo.renavam or '') }}">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'proprietario_registrado') %}<label class="field">
-            <span class="field__label">Proprietário Registrado</span>
-            <input class="input" name="proprietario_registrado" value="{{ dados.get('proprietario_registrado', veiculo.proprietario_registrado or '') }}">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<label class="field">
-            <span class="field__label">Documento do Proprietário</span>
-            <input class="input" name="proprietario_documento" value="{{ dados.get('proprietario_documento', veiculo.proprietario_documento or '') }}">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'proprietario_uf') %}<label class="field">
-            <span class="field__label">UF do Proprietário</span>
-            <input class="input" name="proprietario_uf" value="{{ dados.get('proprietario_uf', veiculo.proprietario_uf or '') }}" maxlength="2" style="text-transform:uppercase">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
-            <span class="field__label">Procurador</span>
-            <input class="input" name="procuracao" value="{{ dados.get('procuracao', veiculo.procuracao or '') }}">
-          </label>{% endif %}
-        </fieldset>
-
-        <fieldset class="wizard-step form-grid{% if passo_atual == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
           {% if pode_ver_campo(user, 'veiculos', 'status') %}
           <label class="field">
             <span class="field__label">Status *</span>
@@ -138,6 +115,10 @@
             </select>
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<label class="field">
+            <span class="field__label">Procurador</span>
+            <input class="input" name="procuracao" value="{{ dados.get('procuracao', veiculo.procuracao or '') }}">
+          </label>{% endif %}
         </fieldset>
         {% else %}
         <input type="hidden" name="wizard_step" id="wizard-step" :value="step" value="{{ dados.get('wizard_step', 1) }}">
@@ -245,6 +226,10 @@
             <input class="input" name="cli_telefone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Telefone 2</span>
+            <input class="input" name="cli_telefone2" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone2', '') }}" x-mask:dynamic="$maskTelefone($input)">
+          </label>
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
             <input class="input" name="cli_email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
@@ -257,7 +242,7 @@
             <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Estado</span>
+            <span class="field__label">UF</span>
             <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">

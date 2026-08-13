@@ -11,6 +11,11 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
+from xtreme_system.cliente.core import (
+    formatar_cep,
+    formatar_documento,
+    formatar_telefone,
+)
 from xtreme_system.crud import attachment
 from xtreme_system.database.core import Base
 from xtreme_system.upload_file.core import register_upload_file_delete
@@ -206,7 +211,7 @@ def _bloco_comprador(pdf: FPDF, cliente_obj: "Cliente") -> None:
     _grid(pdf, ("**Recebemos de:**", 0.28), (cliente_obj.nome, 0.72))
     _grid(
         pdf,
-        (f"**CPF:** {cliente_obj.documento}", 0.34),
+        (f"**CPF:** {formatar_documento(cliente_obj.documento)}", 0.34),
         ("**RG:**", 0.33),
         ("**CNH:**", 0.33),
     )
@@ -219,19 +224,14 @@ def _bloco_comprador(pdf: FPDF, cliente_obj: "Cliente") -> None:
         pdf,
         (f"**Cidade:** {cliente_obj.cidade or ''}", 0.34),
         (f"**Estado:** {cliente_obj.estado or ''}", 0.33),
-        (f"**CEP:** {cliente_obj.cep or ''}", 0.33),
+        (f"**CEP:** {formatar_cep(cliente_obj.cep)}", 0.33),
     )
     _grid(
         pdf,
-        (f"**Telefone 1:** {cliente_obj.telefone or ''}", 0.34),
-        ("**Telefone 2:**", 0.33),
-        ("**Telefone 3:**", 0.33),
+        (f"**Telefone 1:** {formatar_telefone(cliente_obj.telefone)}", 0.5),
+        ("**Telefone 2:**", 0.5),
     )
-    _grid(
-        pdf,
-        (f"**Contato:** {cliente_obj.telefone or ''}", 0.34),
-        (f"**E-mail:** {cliente_obj.email or ''}", 0.66),
-    )
+    _grid(pdf, (f"**E-mail:** {cliente_obj.email or ''}", 1.0))
     pdf.ln(4)
 
 
@@ -242,9 +242,8 @@ def _bloco_veiculo(pdf: FPDF, venda_obj: "Venda") -> None:
         (
             f"A importância de **{_moeda(venda_obj.valor_venda)}** como pagamento da"
             " venda do veículo:",
-            0.6,
+            1.0,
         ),
-        (f"**Ano/Modelo: {veiculo_obj.ano}**", 0.4),
     )
     pdf.ln(2)
     _grid(
@@ -252,6 +251,7 @@ def _bloco_veiculo(pdf: FPDF, venda_obj: "Venda") -> None:
         (f"**Fabricante:** {veiculo_obj.marca or ''}", 0.34),
         (f"**Veículo:** {veiculo_obj.modelo}", 0.66),
     )
+    _grid(pdf, (f"**Ano:** {veiculo_obj.ano}", 1.0))
     _grid(
         pdf,
         (f"**Placa:** {veiculo_obj.placa}", 0.34),
@@ -319,7 +319,7 @@ def _bloco_pagamento(pdf: FPDF, venda_obj: "Venda") -> None:
     pdf.cell(
         0,
         5,
-        f"Documento: {venda_obj.cliente.documento}",
+        f"Documento: {formatar_documento(venda_obj.cliente.documento)}",
         new_x=XPos.LMARGIN,
         new_y=YPos.NEXT,
     )
@@ -381,8 +381,14 @@ def _assinaturas(
         (f"    {venda_obj.cliente.nome}", 0.5),
         (f"{empresa_config.signatario or empresa_config.nome}", 0.5),
     )
-    if empresa_config.cnpj:
-        _grid(pdf, ("", 0.5), (f"CNPJ: {empresa_config.cnpj}", 0.5))
+    linha_cliente = (
+        f"    CPF: {formatar_documento(venda_obj.cliente.documento)}"
+        if venda_obj.cliente.documento
+        else ""
+    )
+    linha_empresa = f"CNPJ: {empresa_config.cnpj}" if empresa_config.cnpj else ""
+    if linha_cliente or linha_empresa:
+        _grid(pdf, (linha_cliente, 0.5), (linha_empresa, 0.5))
 
 
 def gerar_pdf(

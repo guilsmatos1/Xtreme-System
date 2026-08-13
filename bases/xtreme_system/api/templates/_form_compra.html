@@ -99,6 +99,10 @@
             <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required x-mask:dynamic="$maskTelefone($input)">
           </label>
           <label x-show="!clienteExistente" class="field">
+            <span class="field__label">Telefone 2</span>
+            <input class="input" name="cli_telefone2" data-testid="compra-wizard-client-phone-2" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone2', '') }}" x-mask:dynamic="$maskTelefone($input)">
+          </label>
+          <label x-show="!clienteExistente" class="field">
             <span class="field__label">Email</span>
             <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
           </label>
@@ -120,7 +124,7 @@
             <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
           </label>
           <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Estado</span>
+            <span class="field__label">UF</span>
             <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
           </label>
           {% endif %}
@@ -166,16 +170,12 @@
             <input class="input" name="vei_renavam" data-novo-veiculo value="{{ dados.get('vei_renavam', '') }}">
           </label>
           <label class="field">
-            <span class="field__label">Proprietário registrado</span>
-            <input class="input" name="vei_proprietario_registrado" data-novo-veiculo value="{{ dados.get('vei_proprietario_registrado', '') }}">
+            <span class="field__label">Proprietário atual</span>
+            <input class="input" name="vei_proprietario_atual" data-novo-veiculo value="{{ dados.get('vei_proprietario_atual', '') }}">
           </label>
           <label class="field">
             <span class="field__label">Documento do proprietário</span>
             <input class="input" name="vei_proprietario_documento" data-novo-veiculo value="{{ dados.get('vei_proprietario_documento', '') }}">
-          </label>
-          <label class="field">
-            <span class="field__label">UF do proprietário</span>
-            <input class="input" name="vei_proprietario_uf" data-novo-veiculo value="{{ dados.get('vei_proprietario_uf', '') }}" maxlength="2" style="text-transform:uppercase">
           </label>
           {% endif %}
         </fieldset>

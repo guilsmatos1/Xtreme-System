@@ -41,6 +41,7 @@ def resolver_cliente(
                 "documento": documento,
                 "tipo": form.get("cli_tipo") or "pessoa_fisica",
                 "telefone": str(form.get("cli_telefone") or "").strip() or None,
+                "telefone2": str(form.get("cli_telefone2") or "").strip() or None,
                 "email": str(form.get("cli_email") or "").strip() or None,
                 "endereco": str(form.get("cli_endereco") or "").strip() or None,
                 "cidade": str(form.get("cli_cidade") or "").strip() or None,

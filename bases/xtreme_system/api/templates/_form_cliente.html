@@ -36,6 +36,11 @@
           </label>
 
           <label class="field">
+            <span class="field__label">Telefone 2</span>
+            <input class="input" name="telefone2" data-testid="cliente-form-phone-2" value="{{ dados.get('telefone2', cliente.telefone2 if cliente and cliente.telefone2 else '') or '' }}" x-mask:dynamic="$maskTelefone($input)">
+          </label>
+
+          <label class="field">
             <span class="field__label">Email</span>
             <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ dados.get('email', cliente.email if cliente and cliente.email else '') or '' }}">
           </label>
@@ -61,7 +66,7 @@
             <input class="input" name="cidade" value="{{ dados.get('cidade', cliente.cidade if cliente and cliente.cidade else '') or '' }}">
           </label>
           <label class="field">
-            <span class="field__label">Estado</span>
+            <span class="field__label">UF</span>
             <input class="input" name="estado" maxlength="2" value="{{ dados.get('estado', cliente.estado if cliente and cliente.estado else '') or '' }}">
           </label>
         </div>

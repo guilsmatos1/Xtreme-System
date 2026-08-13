@@ -1359,11 +1359,9 @@ def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[st
     if dados.renavam:
         out[f"{prefix}renavam"] = dados.renavam
     if dados.nome_proprietario:
-        out[f"{prefix}proprietario_registrado"] = dados.nome_proprietario
+        out[f"{prefix}proprietario_atual"] = dados.nome_proprietario
     if dados.cpf_cnpj:
         out[f"{prefix}proprietario_documento"] = dados.cpf_cnpj
-    if dados.uf:
-        out[f"{prefix}proprietario_uf"] = dados.uf
     if dados.placa:
         out[f"{prefix}placa"] = dados.placa
     return out

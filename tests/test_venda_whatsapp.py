@@ -145,7 +145,7 @@ def test_criar_venda_dispara_notificacao(
     assert resp.status_code == 201
     assert envio_concluido.wait(timeout=1)
     assert len(mensagens) == 1
-    assert "João Silva" in mensagens[0]
+    assert "JOÃO SILVA" in mensagens[0]
     assert "Gol" in mensagens[0]
 
 
@@ -278,7 +278,7 @@ def test_notificacao_usa_template_customizado(
 
     assert resp.status_code == 201
     assert envio_concluido.wait(timeout=1)
-    assert mensagens == ["Venda para João Silva no valor de R$ 40000.00"]
+    assert mensagens == ["Venda para JOÃO SILVA no valor de R$ 40000.00"]
 
 
 def test_notificacao_ignora_placeholder_desconhecido(
@@ -303,4 +303,4 @@ def test_notificacao_ignora_placeholder_desconhecido(
 
     assert resp.status_code == 201
     assert envio_concluido.wait(timeout=1)
-    assert mensagens == ["Olá João Silva, código {inexistente}"]
+    assert mensagens == ["Olá JOÃO SILVA, código {inexistente}"]

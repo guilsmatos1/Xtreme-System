@@ -136,7 +136,7 @@ def test_admin_cria_venda(client: TestClient) -> None:
     assert data["status"] == "pendente"
     assert data["cliente_id"] == cliente_id
     assert data["veiculo_id"] == veiculo_id
-    assert data["cliente"]["nome"] == "João Silva"
+    assert data["cliente"]["nome"] == "JOÃO SILVA"
     assert data["veiculo"]["modelo"] == "Gol"
     assert data["vendedor"]["username"] == "admin"
 
@@ -321,7 +321,7 @@ def test_api_json_respeita_perfil_em_veiculos_e_vendas(
     assert vendas_resp.status_code == 200
     assert "valor_venda" not in vendas_resp.json()[0]
     assert "valor_entrada" not in vendas_resp.json()[0]
-    assert vendas_resp.json()[0]["cliente"]["nome"] == "João Silva"
+    assert vendas_resp.json()[0]["cliente"]["nome"] == "JOÃO SILVA"
 
 
 def test_admin_lista_vendas(client: TestClient) -> None:

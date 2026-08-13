@@ -240,7 +240,7 @@ async def ui_investidor_criar(
     request: Request, session: SessionDep, user: UIAdmin
 ) -> HTMLResponse:
     form = await request.form()
-    nome = str(form.get("nome") or "").strip()
+    nome = str(form.get("nome") or "").strip().upper()
     if not nome:
         return templates.TemplateResponse(
             request,

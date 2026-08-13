@@ -365,7 +365,7 @@ def _compra_com_comprovante(url: str) -> Compra:
         km=None,
         preco=Decimal("10000.00"),
         procuracao=None,
-        proprietario_registrado=None,
+        proprietario_atual=None,
         tipo_entrada=TipoEntrada.compra,
         investidor=investidor,
     )
