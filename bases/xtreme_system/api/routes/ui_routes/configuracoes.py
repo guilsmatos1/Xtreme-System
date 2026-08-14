@@ -119,6 +119,7 @@ def ui_configuracoes_rsd_salvar(
     senha: Annotated[str, Form()] = "",
     base_url: Annotated[str, Form()] = "",
     rsd_teste_prova: Annotated[str, Form()] = "",
+    modo_atualizacao: Annotated[str, Form()] = rsd.ModoAtualizacaoRsd.crlv.value,
 ) -> Response:
     atual = rsd.get_config(session)
     try:
@@ -131,6 +132,7 @@ def ui_configuracoes_rsd_salvar(
                 senha=senha,
                 base_url=base_url or atual.base_url,
                 teste_prova=rsd_teste_prova,
+                modo_atualizacao=modo_atualizacao,
             ),
             user.id,
         )

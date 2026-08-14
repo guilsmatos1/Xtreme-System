@@ -310,6 +310,17 @@
               <input class="input" name="base_url" placeholder="https://lojas.rsdsistema.com.br"
                      value="{{ config_rsd.base_url }}" autocomplete="off">
             </label>
+            <label class="field field--full">
+              <span class="field__label">Fonte de "Atualizar dados" do veículo</span>
+              <select class="input" name="modo_atualizacao">
+                <option value="crlv" {% if config_rsd.modo_atualizacao != "atpv" %}selected{% endif %}>
+                  CRLV completo (consulta unitária + PDF do dossiê — mais lento, traz categoria, espécie, combustível, potência, cilindrada, nº do motor, procedência, município e proprietário anterior)
+                </option>
+                <option value="atpv" {% if config_rsd.modo_atualizacao == "atpv" %}selected{% endif %}>
+                  ATPV (consulta rápida — não traz categoria, espécie, combustível, potência, cilindrada, nº do motor, procedência e proprietário anterior)
+                </option>
+              </select>
+            </label>
           </div>
         </div>
         <div id="rsd-test-result" class="rsd-test-result-slot" aria-live="polite" aria-atomic="true">

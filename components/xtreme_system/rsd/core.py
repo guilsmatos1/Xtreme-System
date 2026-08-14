@@ -27,6 +27,7 @@ from datetime import UTC, date, datetime, timedelta
 from datetime import time as dtime
 from enum import StrEnum
 from functools import lru_cache
+from io import BytesIO
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
@@ -41,6 +42,8 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -287,6 +290,19 @@ def _validated_redirect(url: str, response: httpx.Response) -> str | None:
     return _validate_rsd_url(urljoin(url, location), redirect=True)
 
 
+class ModoAtualizacaoRsd(StrEnum):
+    """Fonte usada pelo botão "Atualizar dados" do veículo.
+
+    `atpv` é a rota /atpv/puxar-dados/: síncrona e rápida, mas o portal nunca
+    devolve categoria/espécie/combustível/potência/cilindrada/nº do motor/
+    procedência/município/proprietário anterior por ela — só o CRLV completo
+    (via consulta unitária + PDF do dossiê) tem esses campos.
+    """
+
+    atpv = "atpv"
+    crlv = "crlv"
+
+
 class RsdConfig(Base):
     __tablename__ = "rsd_config"
 
@@ -303,6 +319,10 @@ class RsdConfig(Base):
     ultimo_teste_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ultimo_teste_erro: Mapped[str | None] = mapped_column(Text)
     ultimo_teste_fingerprint: Mapped[str | None]
+    modo_atualizacao: Mapped[str] = mapped_column(
+        default=ModoAtualizacaoRsd.crlv.value,
+        server_default=ModoAtualizacaoRsd.crlv.value,
+    )
 
 
 class RsdConfigUpdate(BaseModel):
@@ -310,6 +330,7 @@ class RsdConfigUpdate(BaseModel):
     senha: str = ""
     base_url: str = _DEFAULT_BASE_URL
     teste_prova: str = ""
+    modo_atualizacao: str = ModoAtualizacaoRsd.crlv.value
 
 
 class RsdCredentialStatus(StrEnum):
@@ -415,6 +436,10 @@ class PuxarDadosResult(BaseModel):
             "nome_proprietario_anterior",
         ),
     )
+    # Só o CRLV (`extrair_crlv`) preenche isto — o campo "Tipo" do documento
+    # ("AUTOMÓVEL"/"MOTOCICLETA"/...) é um sinal melhor que espécie/categoria
+    # para `_tipo_do_veiculo`, quando disponível.
+    tipo_veiculo: str | None = None
 
     @field_validator("potencia", "cilindrada", "numero_motor", "renavam", mode="before")
     @classmethod
@@ -588,6 +613,8 @@ def atualizar_config(
         config.senha = _encriptar_senha(data.senha)
     config.base_url = base or _DEFAULT_BASE_URL
     config.revogada = False
+    if data.modo_atualizacao in {m.value for m in ModoAtualizacaoRsd}:
+        config.modo_atualizacao = data.modo_atualizacao
     if testado_em is not None or mesma_credencial:
         config.status = RsdCredentialStatus.verified.value
         if testado_em is not None:
@@ -1533,6 +1560,28 @@ class RsdClient:
             raise RsdConsultaError("Resposta do portal não é um PDF.")
         return resp.content
 
+    def puxar_dados_crlv(
+        self, placa: str, *, poll_timeout_s: float = _POLL_TIMEOUT_S
+    ) -> tuple[PuxarDadosResult, int]:
+        """Modo CRLV de `ModoAtualizacaoRsd`: consulta unitária + PDF do dossiê.
+
+        Mais lento que `puxar_dados` (síncrono, mas com polling embutido —
+        ver `consultar_unitaria_be`) porque não existe endpoint JSON com os
+        campos completos do CRLV. Devolve também o `dossie_id` para auditoria
+        em `RsdConsulta`.
+        """
+        resultado = self.consultar_unitaria_be(placa, poll_timeout_s=poll_timeout_s)
+        if resultado.status == "error":
+            raise RsdConsultaError(
+                resultado.error or "Falha na consulta unitária do RSD."
+            )
+        if not resultado.has_consolidado:
+            raise RsdConsultaError(
+                "O RSD não retornou um dossiê consolidado para esta placa."
+            )
+        pdf = self.baixar_pdf(resultado.dossie_id)
+        return extrair_crlv(pdf), resultado.dossie_id
+
 
 _ESPECIES_MOTO = ("motocicleta", "motoneta", "ciclomotor", "triciclo", "quadriciclo")
 
@@ -1693,7 +1742,11 @@ def _tipo_do_veiculo(dados: PuxarDadosResult) -> str | None:
     Sem sinal reconhecível devolve `None` — melhor deixar o campo como está
     do que classificar errado um veículo já cadastrado.
     """
-    texto = f"{dados.especie or ''} {dados.categoria or ''}".strip().lower()
+    texto = (
+        (f"{dados.tipo_veiculo or ''} {dados.especie or ''} {dados.categoria or ''}")
+        .strip()
+        .lower()
+    )
     if not texto:
         return None
     if any(termo in texto for termo in _ESPECIES_MOTO):
@@ -1738,6 +1791,114 @@ def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[st
     if tipo:
         out[f"{prefix}tipo"] = tipo
     return out
+
+
+# Rótulos do PDF "PESQUISA BASE ESTADUAL" (dossiê da consulta unitária), na
+# ordem em que aparecem no documento. Servem de âncora para o regex de
+# extração abaixo E como lista de fronteiras entre campos, já que o texto
+# extraído do PDF não preserva espaço nem quebra de linha de forma confiável
+# entre um rótulo e o próximo (ex.: "Renavam00116195010").
+_CRLV_ROTULOS: dict[str, str] = {
+    "placa": "Placa",
+    "renavam": "Renavam",
+    "chassi": "Chassi",
+    "numero_motor": "N° do Motor",
+    "emissao_crv": "Emissão CRV",
+    "marca_modelo": "Marca/Modelo",
+    "ano": "Ano",
+    "cor": "Cor",
+    "combustivel": "Combustível",
+    "tipo_veiculo": "Tipo",
+    "categoria": "Categoria",
+    "especie": "Espécie",
+    "procedencia": "Procedência",
+    "municipio": "Município",
+    "potencia": "Potência",
+    "cilindrada": "Cilindrada",
+    "nome_proprietario": "Nome do Proprietário",
+    "cpf_cnpj": "CPF/CNPJ",
+    "proprietario_anterior": "Proprietário Anterior",
+}
+
+# "11 - PRETA", "2 - GASOLINA", "7075 - SAO BERNARDO DO CAMPO": o CRLV
+# prefixa vários campos com o código da tabela Denatran. Guardamos só o
+# texto — é o que o resto do sistema (busca, exibição) já espera.
+_CRLV_CODIGO_PREFIXO_RE = re.compile(r"^\d+\s*-\s*")
+
+
+def _crlv_extrair_campo(
+    texto: str, rotulo: str, todos_rotulos: list[str]
+) -> str | None:
+    outros = sorted((r for r in todos_rotulos if r != rotulo), key=len, reverse=True)
+    fronteira = "|".join(re.escape(r) for r in outros)
+    padrao = rf"{re.escape(rotulo)}\s*[:\-]?\s*(.+?)(?=\s*(?:{fronteira})|\n|$)"
+    match = re.search(padrao, texto)
+    if not match:
+        return None
+    valor = match.group(1).strip()
+    return valor or None
+
+
+def _crlv_sem_codigo(valor: str | None) -> str | None:
+    if valor is None:
+        return None
+    return _CRLV_CODIGO_PREFIXO_RE.sub("", valor).strip() or None
+
+
+def _crlv_ano_modelo(valor: str | None) -> int | None:
+    """De "2008/2009" (fabricação/modelo) usa o ano modelo — convenção do mercado."""
+    if not valor:
+        return None
+    ultimo = valor.split("/")[-1].strip()
+    return int(ultimo) if ultimo.isdigit() else None
+
+
+def extrair_crlv(conteudo_pdf: bytes) -> PuxarDadosResult:
+    """Extrai os campos do veículo a partir do PDF do dossiê (consulta unitária).
+
+    A rota /atpv/puxar-dados/ nunca devolve categoria/espécie/combustível/
+    potência/cilindrada/nº do motor/procedência/município/proprietário
+    anterior (ver `ModoAtualizacaoRsd`) — esses campos só existem no CRLV
+    completo, que o portal só entrega como PDF do dossiê consolidado. Não há
+    OCR aqui: o PDF gerado pelo RSD tem texto embutido, não é imagem
+    escaneada.
+    """
+    try:
+        leitor = PdfReader(BytesIO(conteudo_pdf))
+        texto = "\n".join(pagina.extract_text() or "" for pagina in leitor.pages)
+    except PdfReadError as exc:
+        raise RsdConsultaError("Não foi possível ler o PDF do CRLV.") from exc
+    if not texto.strip():
+        raise RsdConsultaError("O PDF do CRLV veio sem texto extraível.")
+    rotulos = list(_CRLV_ROTULOS.values())
+    valores = {
+        campo: _crlv_extrair_campo(texto, rotulo, rotulos)
+        for campo, rotulo in _CRLV_ROTULOS.items()
+    }
+    dados: dict[str, Any] = {
+        "placa": valores.get("placa") or "",
+        "renavam": valores.get("renavam"),
+        "chassi": valores.get("chassi"),
+        "numero_motor": valores.get("numero_motor"),
+        "marca_modelo": _crlv_sem_codigo(valores.get("marca_modelo")),
+        "ano": _crlv_ano_modelo(valores.get("ano")),
+        "cor": _crlv_sem_codigo(valores.get("cor")),
+        "combustivel": _crlv_sem_codigo(valores.get("combustivel")),
+        "tipo_veiculo": _crlv_sem_codigo(valores.get("tipo_veiculo")),
+        "categoria": _crlv_sem_codigo(valores.get("categoria")),
+        "especie": _crlv_sem_codigo(valores.get("especie")),
+        "procedencia": valores.get("procedencia"),
+        "municipio": _crlv_sem_codigo(valores.get("municipio")),
+        "potencia": valores.get("potencia"),
+        "cilindrada": valores.get("cilindrada"),
+        "nome_proprietario": valores.get("nome_proprietario"),
+        "cpf_cnpj": re.sub(r"\D", "", valores.get("cpf_cnpj") or "") or None,
+        "proprietario_anterior": valores.get("proprietario_anterior"),
+    }
+    try:
+        return PuxarDadosResult.model_validate(dados)
+    except ValidationError as exc:
+        raise RsdConsultaError("Não foi possível interpretar o CRLV do RSD.") from exc
 
 
 def _normalizar_placa(value: str) -> str:

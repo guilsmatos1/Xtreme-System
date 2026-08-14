@@ -289,8 +289,18 @@ def ui_rsd_atualizar_veiculo(
     session.commit()
     detach_request_session(request, keep=(user, config, obj))
     inicio = time.monotonic()
+    modo = config.modo_atualizacao
+    tipo_consulta = (
+        rsd.TipoConsultaRsd.unitaria
+        if modo == rsd.ModoAtualizacaoRsd.crlv
+        else rsd.TipoConsultaRsd.puxar_dados
+    )
+    dossie_id: int | None = None
     try:
-        dados = client.puxar_dados(placa)
+        if modo == rsd.ModoAtualizacaoRsd.crlv:
+            dados, dossie_id = client.puxar_dados_crlv(placa)
+        else:
+            dados = client.puxar_dados(placa)
     except rsd.RsdError as exc:
         _marcar_falha_credencial(config, exc)
         duracao_ms = int((time.monotonic() - inicio) * 1000)
@@ -298,11 +308,12 @@ def ui_rsd_atualizar_veiculo(
             "rsd_atualizar_veiculo_falhou",
             veiculo_id=obj.id,
             placa=placa,
+            modo=modo,
             duracao_ms=duracao_ms,
             **rsd.contexto_log(exc),
         )
         rsd.registrar_consulta(
-            tipo=rsd.TipoConsultaRsd.puxar_dados,
+            tipo=tipo_consulta,
             placa=placa,
             veiculo_id=obj.id,
             usuario_id=user.id,
@@ -324,7 +335,7 @@ def ui_rsd_atualizar_veiculo(
     except IntegrityError:
         logger.warning("rsd_atualizar_veiculo_conflito", veiculo_id=obj.id, placa=placa)
         rsd.registrar_consulta(
-            tipo=rsd.TipoConsultaRsd.puxar_dados,
+            tipo=tipo_consulta,
             placa=placa,
             veiculo_id=obj.id,
             usuario_id=user.id,
@@ -332,6 +343,7 @@ def ui_rsd_atualizar_veiculo(
             campos_aplicados=campos,
             sucesso=False,
             erro="conflito ao gravar dados do RSD",
+            dossie_id=dossie_id,
             duracao_ms=duracao_ms,
         )
         return _status_partial(
@@ -343,13 +355,14 @@ def ui_rsd_atualizar_veiculo(
         )
 
     rsd.registrar_consulta(
-        tipo=rsd.TipoConsultaRsd.puxar_dados,
+        tipo=tipo_consulta,
         placa=placa,
         veiculo_id=obj.id,
         usuario_id=user.id,
         payload=dados.model_dump(),
         campos_aplicados=campos,
         sucesso=True,
+        dossie_id=dossie_id,
         duracao_ms=duracao_ms,
     )
     response = Response(status_code=204)

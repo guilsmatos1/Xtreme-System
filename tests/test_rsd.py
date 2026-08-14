@@ -9,6 +9,7 @@ import socket
 import threading
 import time
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -154,11 +155,16 @@ def _status(_request: httpx.Request) -> httpx.Response:
     )
 
 
+_CRLV_PDF_EXEMPLO = (
+    Path(__file__).parent / "fixtures" / "rsd_crlv_exemplo.pdf"
+).read_bytes()
+
+
 @_route("GET", "/dossie/351/pdf/")
 def _pdf(_request: httpx.Request) -> httpx.Response:
     return httpx.Response(
         200,
-        content=b"%PDF-1.4 mock",
+        content=_CRLV_PDF_EXEMPLO,
         headers={"Content-Type": "application/pdf"},
     )
 
@@ -357,6 +363,41 @@ def test_mapear_para_veiculo_ignora_campos_ausentes() -> None:
     """Chave ausente preserva o valor gravado — não vira string vazia."""
     mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(placa="TCM9G85"))
     assert set(mapped) == {"placa"}
+
+
+def test_extrair_crlv_le_pdf_real_do_dossie() -> None:
+    """Regressão do parser de texto contra um PDF real do RSD (não é OCR:
+    o dossiê tem texto embutido). Ver ModoAtualizacaoRsd.crlv."""
+    caminho = Path(__file__).parent / "fixtures" / "rsd_crlv_exemplo.pdf"
+    dados = rsd.extrair_crlv(caminho.read_bytes())
+    assert dados.placa == "EGB3E24"
+    assert dados.renavam == "00116195010"
+    assert dados.chassi == "3VWME61K39M015685"
+    assert dados.numero_motor == "CCC037373"
+    assert dados.marca_modelo == "I/VW JETTA"
+    assert dados.ano == 2009  # ano modelo (fabricação/modelo = 2008/2009)
+    assert dados.cor == "PRETA"
+    assert dados.combustivel == "GASOLINA"
+    assert dados.tipo_veiculo == "AUTOMÓVEL"
+    assert dados.categoria == "PARTICULAR"
+    assert dados.especie == "PASSAGEIRO"
+    assert dados.procedencia == "IMPORTADA"
+    assert dados.municipio == "SAO BERNARDO DO CAMPO"
+    assert dados.potencia == "170 CV"
+    assert dados.cilindrada == "2480 cm³"
+    assert dados.nome_proprietario == "ROSEMARI RAMOS DA SILVA MATOS"
+    assert dados.cpf_cnpj == "14918312861"
+    assert dados.proprietario_anterior == "FELIPE DE SA OLIVEIRA GUSTAVO"
+
+    mapped = rsd.mapear_para_veiculo(dados)
+    assert mapped["marca"] == "VOLKSWAGEN"
+    assert mapped["modelo"] == "JETTA"
+    assert mapped["tipo"] == "carro"
+
+
+def test_extrair_crlv_rejeita_pdf_ilegivel() -> None:
+    with pytest.raises(rsd.RsdConsultaError, match="ler o PDF"):
+        rsd.extrair_crlv(b"nao e um pdf")
 
 
 def test_puxar_dados_preserva_chaves_desconhecidas_no_payload() -> None:
@@ -1276,7 +1317,7 @@ def _login_ui(client: TestClient) -> None:
     assert resp.status_code in (200, 302, 303)
 
 
-def _salvar_config_rsd(client: TestClient) -> None:
+def _salvar_config_rsd(client: TestClient, *, modo_atualizacao: str = "atpv") -> None:
     csrf_token = client.cookies.get("csrf_token")
     assert csrf_token
     resp = client.post(
@@ -1286,6 +1327,7 @@ def _salvar_config_rsd(client: TestClient) -> None:
             "senha": "segredo",
             "base_url": "https://rsd.test",
             "csrf_token": csrf_token,
+            "modo_atualizacao": modo_atualizacao,
         },
     )
     assert resp.status_code == 200
@@ -2025,6 +2067,82 @@ def test_ui_rsd_atualizar_veiculo_move_proprietario_para_anterior(
     assert reconsultado is not None
     assert reconsultado.proprietario_atual == "XTREME MOTORS LTDA"
     assert reconsultado.proprietario_anterior == "DONO ANTIGO"
+
+
+def _seed_veiculo_crlv(session: Session) -> None:
+    """Veículo com a placa do PDF de exemplo em tests/fixtures (modo CRLV)."""
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor RSD"))
+    veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Modelo Antigo",
+            marca="MARCA ANTIGA",
+            cor="PRETO",
+            ano=2010,
+            placa="EGB3E24",
+            proprietario_atual="DONO ANTIGO",
+            investidor_id=inv.id,
+        ),
+    )
+    session.commit()
+
+
+@pytest.fixture
+def veiculo_crlv_client(make_client: Callable[..., TestClient]) -> TestClient:
+    return make_client(
+        usuarios=[("admin", usuario.Papel.admin)], seed=_seed_veiculo_crlv
+    )
+
+
+def test_ui_rsd_atualizar_veiculo_modo_crlv_grava_campos_do_pdf(
+    veiculo_crlv_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Modo CRLV (padrão) preenche os campos que o /atpv/puxar-dados/ nunca
+    devolve — categoria, espécie, combustível, potência, cilindrada, nº do
+    motor, procedência, município e proprietário anterior — extraindo-os do
+    PDF real do dossiê (tests/fixtures/rsd_crlv_exemplo.pdf)."""
+    _login_ui(veiculo_crlv_client)
+    _salvar_config_rsd(veiculo_crlv_client, modo_atualizacao="crlv")
+    _patch_client_from_config(monkeypatch)
+    item = _veiculo_por_placa("EGB3E24")
+    assert item is not None
+
+    resp = veiculo_crlv_client.post(
+        f"/ui/rsd/veiculos/{item.id}/atualizar",
+        headers={"HX-Request": "true"},
+    )
+
+    assert resp.status_code == 204
+    assert resp.headers["HX-Refresh"] == "true"
+
+    atualizado = _veiculo_por_placa("EGB3E24")
+    assert atualizado is not None
+    assert atualizado.marca == "VOLKSWAGEN"
+    assert atualizado.modelo == "JETTA"
+    assert atualizado.ano == 2009  # ano modelo (fabricação/modelo = 2008/2009)
+    assert atualizado.cor == "PRETA"
+    assert atualizado.chassi == "3VWME61K39M015685"
+    assert atualizado.renavam == "00116195010"
+    assert atualizado.tipo == veiculo.TipoVeiculo.carro
+    assert atualizado.proprietario_atual == "ROSEMARI RAMOS DA SILVA MATOS"
+    assert atualizado.proprietario_documento == "14918312861"
+    # Campos que /atpv/puxar-dados/ nunca retorna (ver ModoAtualizacaoRsd):
+    assert atualizado.categoria == "PARTICULAR"
+    assert atualizado.especie == "PASSAGEIRO"
+    assert atualizado.combustivel == "GASOLINA"
+    assert atualizado.potencia == "170 CV"
+    assert atualizado.cilindrada == "2480 cm³"
+    assert atualizado.numero_motor == "CCC037373"
+    assert atualizado.procedencia == "IMPORTADA"
+    assert atualizado.municipio == "SAO BERNARDO DO CAMPO"
+    assert atualizado.proprietario_anterior == "FELIPE DE SA OLIVEIRA GUSTAVO"
+
+    registro = _ultima_consulta(placa="EGB3E24")
+    assert registro is not None
+    assert registro.sucesso is True
+    assert registro.tipo == rsd.TipoConsultaRsd.unitaria
+    assert registro.dossie_id == 351
 
 
 def test_ui_rsd_atualizar_veiculo_sem_config(veiculo_client: TestClient) -> None:
