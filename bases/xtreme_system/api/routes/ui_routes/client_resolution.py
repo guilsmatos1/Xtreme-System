@@ -44,6 +44,8 @@ def resolver_cliente(
                 "telefone2": str(form.get("cli_telefone2") or "").strip() or None,
                 "email": str(form.get("cli_email") or "").strip() or None,
                 "endereco": str(form.get("cli_endereco") or "").strip() or None,
+                "complemento": str(form.get("cli_complemento") or "").strip() or None,
+                "bairro": str(form.get("cli_bairro") or "").strip() or None,
                 "cidade": str(form.get("cli_cidade") or "").strip() or None,
                 "estado": str(form.get("cli_estado") or "").strip() or None,
                 "cep": str(form.get("cli_cep") or "").strip() or None,

@@ -1,0 +1,80 @@
+{% macro campos_cliente(dados, tipos, prefix='', test_prefix='cliente-form', cliente=None, tipo_required=true, wizard=false) %}
+  {% set nome_value = dados.get(prefix ~ 'nome', cliente.nome if cliente else '') %}
+  {% set tipo_value = dados.get(prefix ~ 'tipo', cliente.tipo.value if cliente else '') %}
+  {% set documento_value = dados.get(prefix ~ 'documento', cliente.documento if cliente else '') %}
+  {% set email_value = dados.get(prefix ~ 'email', cliente.email if cliente and cliente.email else '') or '' %}
+  {% set telefone_value = dados.get(prefix ~ 'telefone', cliente.telefone if cliente and cliente.telefone else '') or '' %}
+  {% set telefone2_value = dados.get(prefix ~ 'telefone2', cliente.telefone2 if cliente and cliente.telefone2 else '') or '' %}
+  {% set cep_value = dados.get(prefix ~ 'cep', cliente.cep if cliente and cliente.cep else '') or '' %}
+  {% set endereco_value = dados.get(prefix ~ 'endereco', cliente.endereco if cliente and cliente.endereco else '') or '' %}
+  {% set complemento_value = dados.get(prefix ~ 'complemento', cliente.complemento if cliente and cliente.complemento else '') or '' %}
+  {% set bairro_value = dados.get(prefix ~ 'bairro', cliente.bairro if cliente and cliente.bairro else '') or '' %}
+  {% set cidade_value = dados.get(prefix ~ 'cidade', cliente.cidade if cliente and cliente.cidade else '') or '' %}
+  {% set estado_value = dados.get(prefix ~ 'estado', cliente.estado if cliente and cliente.estado else '') or '' %}
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Nome *</span>
+    <input class="input" name="{{ prefix }}nome" data-testid="{{ test_prefix }}-name"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% else %} autofocus{% endif %} value="{{ nome_value }}" required>
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Tipo{% if tipo_required %} *{% endif %}</span>
+    <select class="select" name="{{ prefix }}tipo" data-testid="{{ test_prefix }}-type"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %}{% if tipo_required %} required{% endif %}>
+      {% for t in tipos %}
+      <option value="{{ t.value }}"{% if tipo_value == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Documento (CPF/CNPJ) *</span>
+    <input class="input" name="{{ prefix }}documento" data-testid="{{ test_prefix }}-document"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ documento_value }}" required x-mask:dynamic="$maskDocumento($input)">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Email</span>
+    <input class="input" name="{{ prefix }}email" type="email" data-testid="{{ test_prefix }}-email"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ email_value }}">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Telefone 1 *</span>
+    <input class="input" name="{{ prefix }}telefone" data-testid="{{ test_prefix }}-phone"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ telefone_value }}" x-mask:dynamic="$maskTelefone($input)" required>
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Telefone 2</span>
+    <input class="input" name="{{ prefix }}telefone2" data-testid="{{ test_prefix }}-phone-2"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ telefone2_value }}" x-mask:dynamic="$maskTelefone($input)">
+  </label>
+
+  <hr class="form-grid__divider"{% if wizard %} x-show="!clienteExistente"{% endif %}>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">CEP</span>
+    <input class="input" name="{{ prefix }}cep"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ cep_value }}" x-mask="99999-999">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Endereço</span>
+    <input class="input" name="{{ prefix }}endereco"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ endereco_value }}">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Complemento</span>
+    <input class="input" name="{{ prefix }}complemento"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ complemento_value }}">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Bairro</span>
+    <input class="input" name="{{ prefix }}bairro"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ bairro_value }}">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">Cidade</span>
+    <input class="input" name="{{ prefix }}cidade"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ cidade_value }}">
+  </label>
+
+  <label{% if wizard %} x-show="!clienteExistente"{% endif %} class="field">
+    <span class="field__label">UF</span>
+    <input class="input" name="{{ prefix }}estado"{% if wizard %} data-novo-cliente :disabled="!!clienteExistente"{% endif %} value="{{ estado_value }}"{% if not wizard %} maxlength="2"{% endif %}>
+  </label>
+{% endmacro %}

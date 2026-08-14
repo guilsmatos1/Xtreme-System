@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% from "_form_campos_veiculo.html" import campos_veiculo %}
 {% set dados = dados or {} %}
 <div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel modal__panel--wizard" role="dialog" aria-modal="true" aria-labelledby="mv-title">
@@ -33,39 +34,19 @@
         <hr class="form-grid__divider">
 
         <fieldset class="wizard-step form-grid{% if passo_atual == 1 %} is-active{% endif %}" data-step="1" :class="{ 'is-active': step === 1 }">
-          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ dados.get('placa', veiculo.placa) }}" required autofocus style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
-          </label>{% endif %}
-          {% if pode_operacao(user, 'veiculos', 'editar') %}
-          {{ ui.rsd_actions(inline=True) }}
-          {% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field">
-            <span class="field__label">Modelo *</span>
-            <input class="input" name="modelo" value="{{ dados.get('modelo', veiculo.modelo) }}" required>
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'tipo') %}<label class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="tipo" required>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('tipo', veiculo.tipo.value) == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'marca') %}<label class="field">
-            <span class="field__label">Marca</span>
-            <input class="input" name="marca" value="{{ dados.get('marca', veiculo.marca or '') }}">
-          </label>{% endif %}
-          <label class="field">
-            <span class="field__label">Cor *</span>
-            <input class="input" name="cor" value="{{ dados.get('cor', veiculo.cor) }}" required>
-          </label>
-          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
-            <span class="field__label">Ano *</span>
-            <input class="input" name="ano" type="text" inputmode="numeric" maxlength="4" value="{{ dados.get('ano', veiculo.ano) }}" required x-mask="9999">
-          </label>{% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'chassi') %}<label class="field">
-            <span class="field__label">Chassi</span>
-            <input class="input" name="chassi" value="{{ dados.get('chassi', veiculo.chassi or '') }}">
-          </label>{% endif %}
+          {{ campos_veiculo(
+            dados,
+            tipos,
+            veiculo=veiculo,
+            rsd_actions=(ui.rsd_actions(inline=True) if pode_operacao(user, 'veiculos', 'editar') else ''),
+            show_plate=pode_ver_campo(user, 'veiculos', 'placa'),
+            show_model=pode_ver_campo(user, 'veiculos', 'modelo'),
+            show_type=pode_ver_campo(user, 'veiculos', 'tipo'),
+            show_brand=pode_ver_campo(user, 'veiculos', 'marca'),
+            show_year=pode_ver_campo(user, 'veiculos', 'ano'),
+            show_chassi=pode_ver_campo(user, 'veiculos', 'chassi'),
+            autofocus=true
+          ) }}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if passo_atual == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
@@ -142,25 +123,19 @@
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
-          {% if pode_ver_campo(user, 'veiculos', 'placa') %}<label class="field field--full">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="placa" value="{{ dados.get('placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
-          </label>{% endif %}
-          {% if pode_operacao(user, 'veiculos', 'editar') %}
-          {{ ui.rsd_actions() }}
-          {% endif %}
-          {% if pode_ver_campo(user, 'veiculos', 'modelo') %}<label class="field field--full">
-            <span class="field__label">Modelo *</span>
-            <input class="input" name="modelo" value="{{ dados.get('modelo', '') }}" required>
-          </label>{% endif %}
-          <label class="field">
-            <span class="field__label">Cor *</span>
-            <input class="input" name="cor" value="{{ dados.get('cor', '') }}" required>
-          </label>
-          {% if pode_ver_campo(user, 'veiculos', 'ano') %}<label class="field">
-            <span class="field__label">Ano *</span>
-            <input class="input" name="ano" type="text" inputmode="numeric" maxlength="4" value="{{ dados.get('ano', '') }}" required x-mask="9999">
-          </label>{% endif %}
+          {{ campos_veiculo(
+            dados,
+            tipos,
+            rsd_actions=(ui.rsd_actions() if pode_operacao(user, 'veiculos', 'editar') else ''),
+            show_plate=pode_ver_campo(user, 'veiculos', 'placa'),
+            show_model=pode_ver_campo(user, 'veiculos', 'modelo'),
+            show_type=false,
+            show_brand=false,
+            show_year=pode_ver_campo(user, 'veiculos', 'ano'),
+            show_chassi=false,
+            plate_class='field field--full',
+            model_class='field field--full'
+          ) }}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem *</span>
             <input class="input" name="km" type="number" min="0" value="{{ dados.get('km', '') }}" required>

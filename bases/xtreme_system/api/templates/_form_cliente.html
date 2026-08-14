@@ -1,4 +1,5 @@
 {% import "_macros.html" as ui %}
+{% from "_form_campos_cliente.html" import campos_cliente %}
 {% set dados = dados or {} %}
 <div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="mc-title">
@@ -11,64 +12,7 @@
       <div class="modal__body">
         {% if erro %}{{ ui.alert(erro) }}{% endif %}
         <div class="form-grid">
-          <label class="field field--full">
-            <span class="field__label">Nome *</span>
-            <input class="input" name="nome" data-testid="cliente-form-name" value="{{ dados.get('nome', cliente.nome if cliente else '') }}" required autofocus>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="documento" data-testid="cliente-form-document" value="{{ dados.get('documento', cliente.documento if cliente else '') }}" required x-mask:dynamic="$maskDocumento($input)">
-          </label>
-
-          <label class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="tipo" data-testid="cliente-form-type" required>
-              {% for t in tipos %}
-              <option value="{{ t.value }}"{% if dados.get('tipo', cliente.tipo.value if cliente else '') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Telefone *</span>
-            <input class="input" name="telefone" data-testid="cliente-form-phone" value="{{ dados.get('telefone', cliente.telefone if cliente and cliente.telefone else '') or '' }}" x-mask:dynamic="$maskTelefone($input)" required>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Telefone 2</span>
-            <input class="input" name="telefone2" data-testid="cliente-form-phone-2" value="{{ dados.get('telefone2', cliente.telefone2 if cliente and cliente.telefone2 else '') or '' }}" x-mask:dynamic="$maskTelefone($input)">
-          </label>
-
-          <label class="field">
-            <span class="field__label">Email</span>
-            <input class="input" name="email" type="email" data-testid="cliente-form-email" value="{{ dados.get('email', cliente.email if cliente and cliente.email else '') or '' }}">
-          </label>
-
-          <hr class="form-grid__divider">
-
-          <label class="field field--full">
-            <span class="field__label">Endereço</span>
-            <input class="input" name="endereco" value="{{ dados.get('endereco', cliente.endereco if cliente and cliente.endereco else '') or '' }}">
-          </label>
-
-          <label class="field">
-            <span class="field__label">Bairro</span>
-            <input class="input" name="bairro" value="{{ dados.get('bairro', cliente.bairro if cliente and cliente.bairro else '') or '' }}">
-          </label>
-          <label class="field">
-            <span class="field__label">CEP</span>
-            <input class="input" name="cep" value="{{ dados.get('cep', cliente.cep if cliente and cliente.cep else '') or '' }}" x-mask="99999-999">
-          </label>
-
-          <label class="field">
-            <span class="field__label">Cidade</span>
-            <input class="input" name="cidade" value="{{ dados.get('cidade', cliente.cidade if cliente and cliente.cidade else '') or '' }}">
-          </label>
-          <label class="field">
-            <span class="field__label">UF</span>
-            <input class="input" name="estado" maxlength="2" value="{{ dados.get('estado', cliente.estado if cliente and cliente.estado else '') or '' }}">
-          </label>
+          {{ campos_cliente(dados, tipos, cliente=cliente) }}
         </div>
       </div>
       <div class="modal__foot">

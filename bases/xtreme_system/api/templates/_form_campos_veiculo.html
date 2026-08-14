@@ -1,0 +1,97 @@
+{% macro campos_veiculo(
+  dados,
+  tipos,
+  prefix='',
+  test_prefix='',
+  plate_id='',
+  model_class='field',
+  veiculo=None,
+  rsd_actions='',
+  show_plate=true,
+  show_model=true,
+  show_type=true,
+  show_brand=true,
+  show_color=true,
+  show_year=true,
+  show_chassi=true,
+  type_before_model=false,
+  type_empty_option=false,
+  plate_class='field',
+  autofocus=false,
+  divider_after_plate=false,
+  new_vehicle=false,
+  disabled=false
+) %}
+  {% set plate_value = dados.get(prefix ~ 'placa', veiculo.placa if veiculo else '') %}
+  {% set model_value = dados.get(prefix ~ 'modelo', veiculo.modelo if veiculo else '') %}
+  {% set type_value = dados.get(prefix ~ 'tipo', veiculo.tipo.value if veiculo else '') %}
+  {% set brand_value = dados.get(prefix ~ 'marca', veiculo.marca if veiculo and veiculo.marca else '') or '' %}
+  {% set color_value = dados.get(prefix ~ 'cor', veiculo.cor if veiculo else '') %}
+  {% set year_value = dados.get(prefix ~ 'ano', veiculo.ano if veiculo else '') %}
+  {% set chassis_value = dados.get(prefix ~ 'chassi', veiculo.chassi if veiculo and veiculo.chassi else '') or '' %}
+
+  {% if show_plate %}
+  <label class="{{ plate_class }}">
+    <span class="field__label">Placa *</span>
+    <input class="input"{% if plate_id %} id="{{ plate_id }}"{% endif %} name="{{ prefix }}placa"{% if test_prefix %} data-testid="{{ test_prefix }}-plate"{% endif %}{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ plate_value }}" required{% if autofocus %} autofocus{% endif %} style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)"{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+
+  {% if rsd_actions %}{{ rsd_actions }}{% endif %}
+  {% if divider_after_plate %}<hr class="form-grid__divider">{% endif %}
+
+  {% if type_before_model and show_type %}
+  <label class="field">
+    <span class="field__label">Tipo *</span>
+    <select class="select" name="{{ prefix }}tipo"{% if test_prefix %} data-testid="{{ test_prefix }}-type"{% endif %}{% if new_vehicle %} data-novo-veiculo{% endif %} required{% if disabled %} disabled{% endif %}>
+      {% if type_empty_option %}<option value="">Selecione</option>{% endif %}
+      {% for t in tipos %}<option value="{{ t.value }}"{% if type_value == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+
+  {% if show_model %}
+  <label class="{{ model_class }}">
+    <span class="field__label">Modelo *</span>
+    <input class="input" name="{{ prefix }}modelo"{% if test_prefix %} data-testid="{{ test_prefix }}-model"{% endif %}{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ model_value }}" required{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+
+  {% if not type_before_model and show_type %}
+  <label class="field">
+    <span class="field__label">Tipo *</span>
+    <select class="select" name="{{ prefix }}tipo"{% if test_prefix %} data-testid="{{ test_prefix }}-type"{% endif %}{% if new_vehicle %} data-novo-veiculo{% endif %} required{% if disabled %} disabled{% endif %}>
+      {% if type_empty_option %}<option value="">Selecione</option>{% endif %}
+      {% for t in tipos %}<option value="{{ t.value }}"{% if type_value == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+
+  {% if show_brand %}
+  <label class="field">
+    <span class="field__label">Marca</span>
+    <input class="input" name="{{ prefix }}marca"{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ brand_value }}"{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+
+  {% if show_color %}
+  <label class="field">
+    <span class="field__label">Cor *</span>
+    <input class="input" name="{{ prefix }}cor"{% if test_prefix %} data-testid="{{ test_prefix }}-color"{% endif %}{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ color_value }}" required{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+
+  {% if show_year %}
+  <label class="field">
+    <span class="field__label">Ano *</span>
+    <input class="input" name="{{ prefix }}ano"{% if test_prefix %} data-testid="{{ test_prefix }}-year"{% endif %} type="text" inputmode="numeric" maxlength="4"{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ year_value }}" required x-mask="9999"{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+
+  {% if show_chassi %}
+  <label class="field">
+    <span class="field__label">Chassi</span>
+    <input class="input" name="{{ prefix }}chassi"{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ chassis_value }}"{% if disabled %} disabled{% endif %}>
+  </label>
+  {% endif %}
+{% endmacro %}

@@ -1,4 +1,6 @@
 {% import "_macros.html" as ui %}
+{% from "_form_campos_cliente.html" import campos_cliente %}
+{% from "_form_campos_veiculo.html" import campos_veiculo %}
 {% set dados = dados or {} %}
 <div class="modal" x-on:click.self="fecharComConfirmacao()">
   <div class="modal__panel{% if not compra %} modal__panel--wizard{% endif %}" role="dialog" aria-modal="true" aria-labelledby="mc-title">
@@ -80,91 +82,23 @@
             </select>
           </label>
           <hr class="form-grid__divider">
-          <label x-show="!clienteExistente" class="field field--full">
-            <span class="field__label">Nome *</span>
-            <input class="input" name="cli_nome" data-testid="compra-wizard-client-name" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_nome', '') }}" required>
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Documento (CPF/CNPJ) *</span>
-            <input class="input" name="cli_documento" data-testid="compra-wizard-client-document" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_documento', '') }}" required x-mask:dynamic="$maskDocumento($input)">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="cli_tipo" data-novo-cliente :disabled="!!clienteExistente" required>
-              {% for t in tipos_cliente %}<option value="{{ t.value }}"{% if dados.get('cli_tipo') == t.value %} selected{% endif %}>{{ t.value | replace("_", " ") | title }}</option>{% endfor %}
-            </select>
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Telefone *</span>
-            <input class="input" name="cli_telefone" data-testid="compra-wizard-client-phone" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone', '') }}" required x-mask:dynamic="$maskTelefone($input)">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Telefone 2</span>
-            <input class="input" name="cli_telefone2" data-testid="compra-wizard-client-phone-2" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_telefone2', '') }}" x-mask:dynamic="$maskTelefone($input)">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Email</span>
-            <input class="input" name="cli_email" data-testid="compra-wizard-client-email" type="email" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_email', '') }}">
-          </label>
-          <hr class="form-grid__divider" x-show="!clienteExistente">
-          <label x-show="!clienteExistente" class="field field--full">
-            <span class="field__label">CEP</span>
-            <input class="input" name="cli_cep" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cep', '') }}" x-mask="99999-999">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Endereço</span>
-            <input class="input" name="cli_endereco" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_endereco', '') }}">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Complemento</span>
-            <input class="input" name="cli_complemento" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_complemento', '') }}">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">Cidade</span>
-            <input class="input" name="cli_cidade" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_cidade', '') }}">
-          </label>
-          <label x-show="!clienteExistente" class="field">
-            <span class="field__label">UF</span>
-            <input class="input" name="cli_estado" data-novo-cliente :disabled="!!clienteExistente" value="{{ dados.get('cli_estado', '') }}">
-          </label>
+          {{ campos_cliente(dados, tipos_cliente, prefix='cli_', test_prefix='compra-wizard-client', tipo_required=true, wizard=true) }}
           {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if dados.get('wizard_step', 1)|int == 2 %} is-active{% endif %}" data-step="2" :class="{ 'is-active': step === 2 }">
           {% if pode_ver_campo(user, 'compras', 'veiculo') %}
-          <label class="field field--plate">
-            <span class="field__label">Placa *</span>
-            <input class="input" name="vei_placa" data-testid="compra-wizard-vehicle-plate" data-novo-veiculo value="{{ dados.get('vei_placa', '') }}" required style="text-transform:uppercase" x-mask:dynamic="$maskPlaca($input)">
-          </label>
-          {{ ui.rsd_actions("vei_", "rsd-status-compra", true) }}
-          <hr class="form-grid__divider">
-          <label class="field">
-            <span class="field__label">Modelo *</span>
-            <input class="input" name="vei_modelo" data-testid="compra-wizard-vehicle-model" data-novo-veiculo value="{{ dados.get('vei_modelo', '') }}" required>
-          </label>
-          <label class="field">
-            <span class="field__label">Tipo *</span>
-            <select class="select" name="vei_tipo" data-novo-veiculo required>
-              <option value="">Selecione</option>
-              {% for t in tipos %}<option value="{{ t.value }}"{% if dados.get('vei_tipo') == t.value %} selected{% endif %}>{{ t.value | capitalize }}</option>{% endfor %}
-            </select>
-          </label>
-          <label class="field">
-            <span class="field__label">Marca</span>
-            <input class="input" name="vei_marca" data-novo-veiculo value="{{ dados.get('vei_marca', '') }}">
-          </label>
-          <label class="field">
-            <span class="field__label">Cor *</span>
-            <input class="input" name="vei_cor" data-testid="compra-wizard-vehicle-color" data-novo-veiculo value="{{ dados.get('vei_cor', '') }}" required>
-          </label>
-          <label class="field">
-            <span class="field__label">Ano *</span>
-            <input class="input" name="vei_ano" data-testid="compra-wizard-vehicle-year" type="text" inputmode="numeric" maxlength="4" data-novo-veiculo value="{{ dados.get('vei_ano', '') }}" required x-mask="9999">
-          </label>
-          <label class="field">
-            <span class="field__label">Chassi</span>
-            <input class="input" name="vei_chassi" data-novo-veiculo value="{{ dados.get('vei_chassi', '') }}">
-          </label>
+          {{ campos_veiculo(
+            dados,
+            tipos,
+            prefix='vei_',
+            test_prefix='compra-wizard-vehicle',
+            rsd_actions=ui.rsd_actions("vei_", "rsd-status-compra", true),
+            type_empty_option=true,
+            plate_class='field field--plate',
+            divider_after_plate=true,
+            new_vehicle=true
+          ) }}
           {% endif %}
         </fieldset>
 

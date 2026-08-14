@@ -200,6 +200,7 @@ class Cliente(Base):
     telefone: Mapped[str | None]
     telefone2: Mapped[str | None]
     endereco: Mapped[str | None]
+    complemento: Mapped[str | None]
     bairro: Mapped[str | None]
     cidade: Mapped[str | None]
     estado: Mapped[str | None]
@@ -219,6 +220,7 @@ class ClienteCreate(BaseModel):
     telefone: str | None = None
     telefone2: str | None = None
     endereco: str | None = None
+    complemento: str | None = None
     bairro: str | None = None
     cidade: str | None = None
     estado: str | None = None
@@ -255,7 +257,7 @@ class ClienteCreate(BaseModel):
         _ = cls
         return normalizar_telefone(value)
 
-    @field_validator("endereco", "bairro", "cidade", mode="before")
+    @field_validator("endereco", "complemento", "bairro", "cidade", mode="before")
     @classmethod
     def _normalizar_endereco(cls, value: Any) -> Any:
         _ = cls
@@ -293,6 +295,7 @@ class ClienteUpdate(BaseModel):
     telefone: str | None = None
     telefone2: str | None = None
     endereco: str | None = None
+    complemento: str | None = None
     bairro: str | None = None
     cidade: str | None = None
     estado: str | None = None
@@ -329,7 +332,7 @@ class ClienteUpdate(BaseModel):
         _ = cls
         return normalizar_telefone(value)
 
-    @field_validator("endereco", "bairro", "cidade", mode="before")
+    @field_validator("endereco", "complemento", "bairro", "cidade", mode="before")
     @classmethod
     def _normalizar_endereco(cls, value: Any) -> Any:
         _ = cls
