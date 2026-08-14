@@ -26,7 +26,11 @@ router = APIRouter()
 
 
 def _ctx_form_custo(session: Session) -> dict[str, Any]:
-    return {"veiculos": veiculo.list_all(session), "hoje": datetime.now(UTC).date()}
+    veiculos = sorted(
+        veiculo.list_all(session),
+        key=lambda item: (_sort_key(item.placa), _sort_key(item.modelo), item.id),
+    )
+    return {"veiculos": veiculos, "hoje": datetime.now(UTC).date()}
 
 
 def _ctx_list_custos(

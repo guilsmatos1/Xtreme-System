@@ -128,6 +128,7 @@ class Venda(Base):
     )
     valor_pendente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     datas_pagamento: Mapped[str | None]
+    valor_documento: Mapped[str | None]
 
     cliente: Mapped[Cliente] = relationship(lazy="selectin")
     veiculo: Mapped[Veiculo] = relationship(lazy="selectin", foreign_keys=[veiculo_id])
@@ -173,6 +174,7 @@ class VendaCreate(BaseModel):
     pagamento_pendente: bool = False
     valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
+    valor_documento: str | None = None
 
     @field_validator(
         "valor_venda",
@@ -220,6 +222,7 @@ class VendaUpdate(BaseModel):
     pagamento_pendente: bool = False
     valor_pendente: Decimal | None = Field(default=None, ge=0)
     datas_pagamento: str | None = None
+    valor_documento: str | None = None
 
     @field_validator(
         "valor_venda",
@@ -295,6 +298,7 @@ class VendaRead(BaseModel):
     pagamento_pendente: bool
     valor_pendente: Decimal | None
     datas_pagamento: str | None
+    valor_documento: str | None
 
 
 def list_all(
@@ -359,6 +363,7 @@ def search_query(
         "valor": Venda.valor_venda,
         "entrada": Venda.valor_entrada,
         "divida": Venda.valor_pendente,
+        "valor_documento": Venda.valor_documento,
         "pagamento": Venda.forma_pagamento,
         "parcelas": Venda.parcelas,
         "status": Venda.status,

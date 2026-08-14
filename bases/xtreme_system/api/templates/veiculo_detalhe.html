@@ -40,13 +40,13 @@
 <section class="stats" aria-label="Resumo do veículo">
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}
   <article class="card stat stat--info">
-    <div class="stat__label">{{ ui.icon("cash") }} Preço Anunciado</div>
+    <div class="stat__label">{{ ui.icon("cash") }} Preço de venda</div>
     <div class="stat__value cell-num">{% if veiculo.preco is not none %}{{ ui.moeda_sem_decimais(veiculo.preco) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'custo') %}
   <article class="card stat stat--cost">
-    <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
+    <div class="stat__label">{{ ui.icon("cash") }} Preço de custo</div>
     <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}{{ ui.moeda_sem_decimais(compra_atual.valor_compra) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
@@ -58,7 +58,7 @@
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}
   <article class="card stat stat--success">
-    <div class="stat__label">{{ ui.icon("tag") }} Tempo em Estoque</div>
+    <div class="stat__label">{{ ui.icon("tag") }} Tempo em estoque</div>
     <div class="stat__value cell-num">{{ veiculo.tempo_estoque }} dia{% if veiculo.tempo_estoque != 1 %}s{% endif %}</div>
   </article>
   {% endif %}

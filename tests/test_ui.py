@@ -346,7 +346,7 @@ def test_ui_veiculos_lista_mostra_so_preco_de_venda(
 
     assert pagina.status_code == 200
     assert 'data-col-label="Preço de Venda"' in pagina.text
-    assert 'data-col-label="Preço de Custo"' not in pagina.text
+    assert 'data-col-label="Preço de custo"' not in pagina.text
     assert 'data-col="custo"' not in pagina.text
     assert '<td class="cell-num cell-strong" data-col="preco">R$ 90.000</td>' in (
         pagina.text
@@ -365,25 +365,25 @@ def test_ui_veiculo_detalhe_mostra_preco_de_custo_da_compra(
 
     comprado = local_client.get("/ui/veiculos/1/detalhes")
     assert comprado.status_code == 200
-    assert "Preço Anunciado" in comprado.text
+    assert "Preço de venda" in comprado.text
     assert "Atualizar dados" in comprado.text
     assert "Atualizar pelo RSD" not in comprado.text
     assert "Mídia e documentos" in comprado.text
     assert re.search(
-        r"Preço Anunciado</div>\s*<div class=\"stat__value cell-num\">"
+        r"Preço de venda</div>\s*<div class=\"stat__value cell-num\">"
         r"R\$ 90\.000</div>",
         comprado.text,
     )
     # custo vem do valor da compra, não do preço anunciado
     assert re.search(
-        r"Preço de Custo</div>\s*<div class=\"stat__value cell-num\">"
+        r"Preço de custo</div>\s*<div class=\"stat__value cell-num\">"
         r"R\$ 75\.000</div>",
         comprado.text,
     )
 
     consignado = local_client.get("/ui/veiculos/2/detalhes")
     assert consignado.status_code == 200
-    assert "Preço de Custo" in consignado.text
+    assert "Preço de custo" in consignado.text
 
 
 def test_ui_perfis_novo_exibe_campo_preco_de_custo_de_veiculos(
@@ -396,7 +396,7 @@ def test_ui_perfis_novo_exibe_campo_preco_de_custo_de_veiculos(
     assert pagina.status_code == 200
     assert 'name="oculto__veiculos__custo"' in pagina.text
     assert 'name="oculto__veiculos__preco"' in pagina.text
-    assert "Preço Anunciado" in pagina.text
+    assert "Preço de venda" in pagina.text
 
 
 def test_ui_veiculos_kpis_contam_todo_o_estoque(
@@ -1152,12 +1152,10 @@ def test_ui_action_icons_cores_e_oob_de_anexos(client: TestClient) -> None:
     assert 'badge--info badge--plain">Compra<' in pagina_veiculos
     assert 'badge--warning badge--plain">Consignação<' in pagina_veiculos
     assert "btn--danger action-delete" not in pagina_veiculos
-    assert f'hx-get="/ui/veiculos/{veiculo_id}/imagens"' in pagina_veiculos
+    assert f'hx-get="/ui/veiculos/{veiculo_id}/imagens"' not in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/procuracao"' in pagina_veiculos
     assert f'hx-get="/ui/veiculos/{veiculo_id}/comprovantes"' not in pagina_veiculos
-    assert "action-image" not in _classes_do_botao(
-        pagina_veiculos, f"action-veiculo-{veiculo_id}-imagens"
-    )
+    assert f'id="action-veiculo-{veiculo_id}-imagens"' not in pagina_veiculos
     assert "action-file" not in _classes_do_botao(
         pagina_veiculos, f"action-veiculo-{veiculo_id}-procuracao"
     )
@@ -1462,6 +1460,56 @@ def test_ui_vendas_crud_basico(client: TestClient) -> None:
     assert "Carlos Lima" not in csv_resp.text
 
 
+def test_ui_criar_venda_persiste_valor_documento_como_texto(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = _criar_cliente(client, headers, "Cliente Valor Doc", "98765432110")
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "a_vista",
+            "status": "pendente",
+            "valor_documento": "Isento conforme acordo",
+        },
+    )
+
+    assert resp.status_code == 200
+    criada = client.get("/vendas", headers=headers).json()[0]
+    assert criada["valor_documento"] == "Isento conforme acordo"
+
+
+def test_ui_criar_venda_valor_documento_vazio_vira_nulo(client: TestClient) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    cliente_id = _criar_cliente(client, headers, "Cliente Valor Doc 2", "98765432111")
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        "/ui/vendas",
+        data={
+            "cliente_id": str(cliente_id),
+            "veiculo_id": str(veiculo_id),
+            "data_venda": "2026-07-09",
+            "valor_venda": "85000.00",
+            "forma_pagamento": "a_vista",
+            "status": "pendente",
+            "valor_documento": "",
+        },
+    )
+
+    assert resp.status_code == 200
+    criada = client.get("/vendas", headers=headers).json()[0]
+    assert criada["valor_documento"] is None
+
+
 def test_ui_atualizar_venda_preserva_dados_submetidos_em_erro(
     client: TestClient,
 ) -> None:
@@ -1498,6 +1546,7 @@ def test_ui_atualizar_venda_preserva_dados_submetidos_em_erro(
             "pagamento_pendente": "1",
             "valor_pendente": "100.00",
             "datas_pagamento": "10/08, 10/09",
+            "valor_documento": "Isento - art. 3o",
             "observacoes": "observações editadas",
         },
     )
@@ -1511,6 +1560,7 @@ def test_ui_atualizar_venda_preserva_dados_submetidos_em_erro(
     assert 'value="aprovado" selected' in resp.text
     assert 'value="100.00"' in resp.text
     assert 'value="10/08, 10/09"' in resp.text
+    assert 'value="Isento - art. 3o"' in resp.text
     assert "observações editadas" in resp.text
 
 
@@ -1713,6 +1763,37 @@ def test_ui_nova_venda_exibe_select_de_veiculos_sem_paginacao(
     assert 'name="veiculo_id" required' in resp.text
     assert '<option value="1">ABC1234 — Onix</option>' in resp.text
     assert 'data-reference-list="veiculos-list"' not in resp.text
+
+
+def test_ui_dropdowns_de_veiculo_sao_ordenados_por_texto_exibido(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    criado = client.post(
+        "/veiculos",
+        json={
+            "tipo": "carro",
+            "modelo": "Argo",
+            "cor": "Branco",
+            "ano": 2024,
+            "placa": "AAA0000",
+            "km": 1000,
+            "preco": "70000.00",
+            "investidor_id": investidor_id,
+        },
+        headers=headers,
+    )
+    assert criado.status_code == 201
+
+    venda = client.get("/ui/vendas/novo")
+    assert venda.status_code == 200
+    assert venda.text.index("AAA0000 — Argo") < venda.text.index("ABC1234 — Onix")
+
+    custo = client.get("/ui/custos-veiculos/novo")
+    assert custo.status_code == 200
+    assert custo.text.index("AAA0000 · Argo") < custo.text.index("ABC1234 · Onix")
 
 
 def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
@@ -2706,6 +2787,111 @@ def test_ui_compra_conflito_de_idempotencia_nao_duplica_compra_nem_caixa(
         assert lookup_calls == 2
         assert len(compra.list_all(session)) == 1
         assert len(caixa.list_all(session)) == 1
+
+
+_CAMPOS_RSD_OCULTOS = (
+    "numero_motor",
+    "proprietario_anterior",
+    "tipo_documento",
+    "categoria",
+    "especie",
+    "combustivel",
+    "procedencia",
+    "municipio",
+    "potencia",
+    "cilindrada",
+)
+
+
+def test_ui_modais_renderizam_alvos_ocultos_para_o_rsd(client: TestClient) -> None:
+    """Sem um input com o `name` certo o JS não tem onde escrever o retorno.
+
+    `aplicarCamposRsd` (components.js) resolve os campos por
+    `form.querySelector('[name=...]')`, então o alvo precisa existir no HTML
+    antes do "Puxar dados" — inclusive nos modais que não exibem o campo.
+    """
+    _login_admin(client)
+
+    modal_veiculo = client.get("/ui/veiculos/1/editar")
+    assert modal_veiculo.status_code == 200
+    for campo in _CAMPOS_RSD_OCULTOS:
+        assert f'name="{campo}"' in modal_veiculo.text
+
+    modal_compra = client.get("/ui/compras/novo")
+    assert modal_compra.status_code == 200
+    for campo in _CAMPOS_RSD_OCULTOS:
+        assert f'name="vei_{campo}"' in modal_compra.text
+
+
+def test_ui_compra_de_veiculo_novo_persiste_campos_ocultos_do_rsd(
+    client: TestClient,
+) -> None:
+    """Os campos que só existem como input oculto têm de chegar ao veículo.
+
+    O modal de compra não exibe categoria/espécie/etc; eles são preenchidos
+    pelo JS a partir do retorno do "Puxar dados" e viajam no submit. Sem o
+    mapeamento em `resolver_veiculo_inline` o dado seria descartado em
+    silêncio no momento em que o veículo é criado.
+    """
+    _login_admin(client)
+    headers = _admin_headers(client)
+    investidor_id = client.get("/investidores", headers=headers).json()[0]["id"]
+    cliente_resp = client.post(
+        "/clientes",
+        json={
+            "nome": "Vendedor RSD Oculto",
+            "documento": "45678912344",
+            "tipo": "pessoa_fisica",
+        },
+        headers=headers,
+    )
+    assert cliente_resp.status_code == 201
+
+    criado = client.post(
+        "/ui/compras",
+        data={
+            "cliente_id": str(cliente_resp.json()["id"]),
+            "vei_tipo": "carro",
+            "vei_tipo_entrada": "compra",
+            "vei_placa": "OCU1L23",
+            "vei_modelo": "Onix",
+            "vei_cor": "Cinza",
+            "vei_ano": "2025",
+            "vei_investidor_id": str(investidor_id),
+            "vei_categoria": "PARTICULAR",
+            "vei_especie": "PASSAGEIRO/AUTOMOVEL",
+            "vei_combustivel": "ALCOOL/GASOLINA",
+            "vei_potencia": "116",
+            "vei_cilindrada": "999",
+            "vei_numero_motor": "SG190437",
+            "vei_procedencia": "NACIONAL",
+            "vei_municipio": "SAO PAULO",
+            "vei_tipo_documento": "CNPJ",
+            "vei_proprietario_anterior": "DONO ANTIGO",
+            # Campo sem valor no retorno do portal não pode virar "" no banco.
+            "vei_proprietario_documento": "",
+            "data_compra": "2026-08-03",
+            "valor_compra": "73000.00",
+        },
+    )
+    assert criado.status_code == 200
+
+    veiculo_criado = next(
+        item
+        for item in client.get("/veiculos", headers=headers).json()
+        if item["placa"] == "OCU1L23"
+    )
+    assert veiculo_criado["categoria"] == "PARTICULAR"
+    assert veiculo_criado["especie"] == "PASSAGEIRO/AUTOMOVEL"
+    assert veiculo_criado["combustivel"] == "ALCOOL/GASOLINA"
+    assert veiculo_criado["potencia"] == "116"
+    assert veiculo_criado["cilindrada"] == "999"
+    assert veiculo_criado["numero_motor"] == "SG190437"
+    assert veiculo_criado["procedencia"] == "NACIONAL"
+    assert veiculo_criado["municipio"] == "SAO PAULO"
+    assert veiculo_criado["tipo_documento"] == "CNPJ"
+    assert veiculo_criado["proprietario_anterior"] == "DONO ANTIGO"
+    assert veiculo_criado["proprietario_documento"] is None
 
 
 def test_ui_compra_de_veiculo_novo_separa_preco_anunciado_do_custo(

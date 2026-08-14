@@ -78,6 +78,7 @@ def _build_venda(
     valor_diferenca: Decimal | None = None,
     valor_pendente: Decimal | None = None,
     datas_pagamento: str | None = None,
+    valor_documento: str | None = "Isento conforme acordo",
     observacoes: str | None = "Observação de teste",
 ) -> venda.Venda:
     obj = venda.Venda()
@@ -96,6 +97,7 @@ def _build_venda(
     obj.pagamento_pendente = False
     obj.valor_pendente = valor_pendente
     obj.datas_pagamento = datas_pagamento
+    obj.valor_documento = valor_documento
     obj.cliente = _build_cliente()
     obj.veiculo = _build_veiculo()
     obj.veiculo_troca = veiculo_troca
@@ -115,11 +117,21 @@ def test_gerar_pdf_campos_opcionais_nulos_nao_quebram() -> None:
         valor_diferenca=None,
         valor_pendente=None,
         datas_pagamento=None,
+        valor_documento=None,
         observacoes=None,
         veiculo_troca=None,
     )
     pdf = documento_contrato_venda.gerar_pdf(obj, _build_empresa())
     assert pdf.startswith(b"%PDF")
+
+
+def test_gerar_pdf_renderiza_valor_do_documento_como_texto() -> None:
+    texto = extract_pdf_text(
+        documento_contrato_venda.gerar_pdf(
+            _build_venda(valor_documento="Isento - art. 3o"), _build_empresa()
+        )
+    )
+    assert "Valor do Documento: Isento - art. 3o" in texto
 
 
 def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
@@ -130,7 +142,6 @@ def test_gerar_pdf_renderiza_cliente_e_veiculo() -> None:
     assert "Gol" in texto
     assert "Volkswagen" in texto
     assert "123.456.789-01" in texto
-    assert "Documento: 123.456.789-01" in texto
     assert "ABC1D23" in texto
     assert "Bairro:" in texto
     assert "Jardim Paulista" in texto

@@ -95,6 +95,37 @@ def _trim_texto_obrigatorio(value: Any) -> Any:
     return value
 
 
+# Textos livres opcionais — vários chegam apenas pelos inputs ocultos do RSD,
+# que sempre postam uma string (vazia quando o portal não devolveu o campo).
+CAMPOS_TEXTO_OPCIONAIS = (
+    "marca",
+    "numero_motor",
+    "procuracao",
+    "proprietario_atual",
+    "proprietario_anterior",
+    "proprietario_documento",
+    "combustivel",
+    "tipo_documento",
+    "categoria",
+    "especie",
+    "procedencia",
+    "municipio",
+    "potencia",
+    "cilindrada",
+)
+
+
+def _texto_opcional(value: Any) -> Any:
+    """Trata string vazia como ausência de valor.
+
+    Sem isto, um form que posta `categoria=""` gravaria "" por cima do que
+    já estava no banco — os inputs ocultos do RSD sempre enviam a chave.
+    """
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
 ANO_MINIMO = 1950
 
 
@@ -224,6 +255,12 @@ class VeiculoCreate(BaseModel):
         _ = cls
         return crud.parse_decimal_br(value)
 
+    @field_validator(*CAMPOS_TEXTO_OPCIONAIS, mode="before")
+    @classmethod
+    def _normalizar_texto_opcional(cls, value: Any) -> Any:
+        _ = cls
+        return _texto_opcional(value)
+
 
 class VeiculoUpdate(BaseModel):
     tipo: TipoVeiculo | None = None
@@ -291,6 +328,12 @@ class VeiculoUpdate(BaseModel):
     def _normalizar_preco(cls, value: Any) -> Any:
         _ = cls
         return crud.parse_decimal_br(value)
+
+    @field_validator(*CAMPOS_TEXTO_OPCIONAIS, mode="before")
+    @classmethod
+    def _normalizar_texto_opcional(cls, value: Any) -> Any:
+        _ = cls
+        return _texto_opcional(value)
 
 
 class VeiculoRead(BaseModel):

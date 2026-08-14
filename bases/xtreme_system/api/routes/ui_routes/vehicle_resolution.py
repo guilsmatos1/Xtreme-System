@@ -8,6 +8,22 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.crud_ui.responses import validation_error_detail
 from xtreme_system.veiculo import core as veiculo
 
+# Campos que só chegam ao form pelos inputs ocultos preenchidos com o retorno
+# do RSD (ver `campos_veiculo` em _form_campos_veiculo.html). Nenhum formulário
+# os exibe, mas precisam ser persistidos no veículo criado inline.
+_CAMPOS_RSD_OCULTOS = (
+    "numero_motor",
+    "proprietario_anterior",
+    "tipo_documento",
+    "categoria",
+    "especie",
+    "combustivel",
+    "procedencia",
+    "municipio",
+    "potencia",
+    "cilindrada",
+)
+
 
 def resolver_veiculo_inline(
     session: Session,
@@ -51,6 +67,10 @@ def resolver_veiculo_inline(
                 ).strip()
                 or None,
                 "investidor_id": form.get(f"{prefix}investidor_id") or 0,
+                **{
+                    campo: str(form.get(f"{prefix}{campo}") or "").strip() or None
+                    for campo in _CAMPOS_RSD_OCULTOS
+                },
             }
         )
     except ValidationError as exc:

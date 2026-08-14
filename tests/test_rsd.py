@@ -105,6 +105,14 @@ def _puxar_dados(request: httpx.Request) -> httpx.Response:
             "uf": "SP",
             "outro_estado": False,
             "origem": "novo",
+            "categoria": "PARTICULAR",
+            "especie": "PASSAGEIRO/AUTOMOVEL",
+            "combustivel": "ALCOOL/GASOLINA",
+            "potencia": "116",
+            "cilindrada": "999",
+            "numero_motor": "SG190437",
+            "procedencia": "NACIONAL",
+            "municipio": "SAO PAULO",
         },
     )
 
@@ -207,7 +215,7 @@ def test_login_e_puxar_dados(rsd_client: rsd.RsdClient) -> None:
     assert dados.ano == 2025
     mapped = rsd.mapear_para_veiculo(dados)
     assert mapped["modelo"] == "ONIX 10MT LT2"
-    assert mapped["marca"] == "CHEV"
+    assert mapped["marca"] == "CHEVROLET"
     assert mapped["cor"] == "CINZA"
     assert mapped["chassi"] == "9BGEB48A0SG190437"
     assert mapped["proprietario_documento"] == "44237309000175"
@@ -219,6 +227,149 @@ def test_mapear_para_veiculo_preserva_modelo_sem_separador() -> None:
         rsd.PuxarDadosResult(marca_modelo="MODELO SEM MARCA")
     )
     assert mapped == {"modelo": "MODELO SEM MARCA"}
+
+
+@pytest.mark.parametrize(
+    ("marca_modelo", "marca", "modelo"),
+    [
+        ("HONDA/BIZ 100 ES", "HONDA", "BIZ 100 ES"),
+        ("CHEV/ONIX", "CHEVROLET", "ONIX"),
+        ("GM/CORSA", "CHEVROLET", "CORSA"),
+        ("M.BENZ/C180", "MERCEDES-BENZ", "C180"),
+        ("  hyundai / hb20  ", "HYUNDAI", "hb20"),
+    ],
+)
+def test_mapear_para_veiculo_canoniza_marca_nacional(
+    marca_modelo: str, marca: str, modelo: str
+) -> None:
+    mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(marca_modelo=marca_modelo))
+    assert mapped["marca"] == marca
+    assert mapped["modelo"] == modelo
+    assert "procedencia" not in mapped
+
+
+@pytest.mark.parametrize(
+    ("marca_modelo", "marca", "modelo"),
+    [
+        # Marca de uma palavra: cortar no primeiro espaço bastaria.
+        ("I/VW JETTA", "VOLKSWAGEN", "JETTA"),
+        # Marca de duas palavras: só a tabela de marcas conhecidas acerta.
+        ("I/ROYAL ENFIELD HIMALAYA", "ROYAL ENFIELD", "HIMALAYA"),
+        ("IMP/HARLEY DAVIDSON IRON 883", "HARLEY-DAVIDSON", "IRON 883"),
+    ],
+)
+def test_mapear_para_veiculo_importado_separa_marca_e_marca_procedencia(
+    marca_modelo: str, marca: str, modelo: str
+) -> None:
+    """O "I/" do CRLV é procedência, não fabricante — antes virava marca="I"."""
+    mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(marca_modelo=marca_modelo))
+    assert mapped["marca"] == marca
+    assert mapped["modelo"] == modelo
+    assert mapped["procedencia"] == "Importado"
+
+
+def test_mapear_para_veiculo_importado_com_marca_desconhecida_omite_marca() -> None:
+    """Sem casar na tabela, omitir preserva a marca já gravada no veículo."""
+    mapped = rsd.mapear_para_veiculo(
+        rsd.PuxarDadosResult(marca_modelo="I/FABRICANTE NOVO XPTO")
+    )
+    assert "marca" not in mapped
+    assert mapped["modelo"] == "FABRICANTE NOVO XPTO"
+    assert mapped["procedencia"] == "Importado"
+
+
+def test_mapear_para_veiculo_procedencia_do_portal_vence_prefixo() -> None:
+    mapped = rsd.mapear_para_veiculo(
+        rsd.PuxarDadosResult(marca_modelo="I/VW JETTA", procedencia="NACIONALIZADO")
+    )
+    assert mapped["procedencia"] == "NACIONALIZADO"
+
+
+def test_mapear_para_veiculo_marca_modelo_degenerado_nao_inventa_modelo() -> None:
+    assert rsd.mapear_para_veiculo(rsd.PuxarDadosResult(marca_modelo="I/")) == {
+        "procedencia": "Importado"
+    }
+
+
+def test_mapear_para_veiculo_inclui_campos_do_documento() -> None:
+    dados = rsd.PuxarDadosResult.model_validate(
+        {
+            "placa": "TCM9G85",
+            "categoria": "PARTICULAR",
+            "especie": "PASSAGEIRO/AUTOMOVEL",
+            "combustivel": "ALCOOL/GASOLINA",
+            "potencia": 116,
+            "cilindrada": 999,
+            "numero_motor": "SG190437",
+            "procedencia": "NACIONAL",
+            "municipio": "SAO PAULO",
+            "tipo_documento": "CNPJ",
+            "proprietario_anterior": "FULANO DE TAL",
+        }
+    )
+    mapped = rsd.mapear_para_veiculo(dados)
+    assert mapped["categoria"] == "PARTICULAR"
+    assert mapped["especie"] == "PASSAGEIRO/AUTOMOVEL"
+    assert mapped["combustivel"] == "ALCOOL/GASOLINA"
+    assert mapped["numero_motor"] == "SG190437"
+    assert mapped["procedencia"] == "NACIONAL"
+    assert mapped["municipio"] == "SAO PAULO"
+    assert mapped["tipo_documento"] == "CNPJ"
+    assert mapped["proprietario_anterior"] == "FULANO DE TAL"
+    # Numéricos viram texto: as colunas do Veiculo guardam "1.0", "999 cc".
+    assert mapped["potencia"] == "116"
+    assert mapped["cilindrada"] == "999"
+
+
+def test_mapear_para_veiculo_aceita_grafias_alternativas_do_portal() -> None:
+    dados = rsd.PuxarDadosResult.model_validate(
+        {"espécie": "MOTOCICLETA", "combustível": "GASOLINA", "motor": "ABC123"}
+    )
+    mapped = rsd.mapear_para_veiculo(dados)
+    assert mapped["especie"] == "MOTOCICLETA"
+    assert mapped["combustivel"] == "GASOLINA"
+    assert mapped["numero_motor"] == "ABC123"
+
+
+@pytest.mark.parametrize(
+    ("especie", "esperado"),
+    [
+        ("PASSAGEIRO/AUTOMOVEL", "carro"),
+        ("CARGA/CAMINHONETE", "carro"),
+        ("PASSAGEIRO/MOTOCICLETA", "moto"),
+        ("PASSAGEIRO/CICLOMOTOR", "moto"),
+    ],
+)
+def test_mapear_para_veiculo_deriva_tipo_da_especie(
+    especie: str, esperado: str
+) -> None:
+    mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(especie=especie))
+    assert mapped["tipo"] == esperado
+
+
+def test_mapear_para_veiculo_omite_tipo_quando_especie_e_desconhecida() -> None:
+    """Sem sinal reconhecível é melhor não mexer no tipo já cadastrado."""
+    mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(especie="ESPECIAL/GUINDASTE"))
+    assert "tipo" not in mapped
+
+
+def test_mapear_para_veiculo_ignora_campos_ausentes() -> None:
+    """Chave ausente preserva o valor gravado — não vira string vazia."""
+    mapped = rsd.mapear_para_veiculo(rsd.PuxarDadosResult(placa="TCM9G85"))
+    assert set(mapped) == {"placa"}
+
+
+def test_puxar_dados_preserva_chaves_desconhecidas_no_payload() -> None:
+    """`extra="allow"` é o que nos deixa descobrir a grafia real de um campo.
+
+    O payload gravado em `RsdConsulta.payload` precisa mostrar chaves que
+    ainda não mapeamos, senão não há como saber que elas existem.
+    """
+    dados = rsd.PuxarDadosResult.model_validate(
+        {"placa": "TCM9G85", "campo_novo_do_portal": "VALOR"}
+    )
+    assert dados.model_dump()["campo_novo_do_portal"] == "VALOR"
+    assert "campo_novo_do_portal" not in rsd.mapear_para_veiculo(dados)
 
 
 def test_puxar_dados_reloga_apos_redirect_de_sessao() -> None:
@@ -1426,7 +1577,7 @@ def test_ui_puxar_dados_com_mock(
     assert parser.value is not None
     campos = json.loads(parser.value)
     assert campos.get("modelo") == "ONIX 10MT LT2"
-    assert campos.get("marca") == "CHEV"
+    assert campos.get("marca") == "CHEVROLET"
     assert len(parser.value) > 2  # não só "{"
 
     trigger = json.loads(resp.headers["HX-Trigger"])
@@ -1751,6 +1902,7 @@ def _seed_veiculo(session: Session) -> None:
             cor="PRETO",
             ano=2010,
             placa="TCM9G85",
+            proprietario_atual="DONO ANTIGO",
             investidor_id=inv.id,
         ),
     )
@@ -1795,13 +1947,22 @@ def test_ui_rsd_atualizar_veiculo_grava_campos(
     atualizado = _veiculo_por_placa("TCM9G85")
     assert atualizado is not None
     assert atualizado.modelo == "ONIX 10MT LT2"
-    assert atualizado.marca == "CHEV"
+    assert atualizado.marca == "CHEVROLET"
     assert atualizado.ano == 2025
     assert atualizado.cor == "CINZA"
     assert atualizado.chassi == "9BGEB48A0SG190437"
     assert atualizado.renavam == "01412830033"
     assert atualizado.proprietario_atual == "XTREME MOTORS LTDA"
     assert atualizado.proprietario_documento == "44237309000175"
+    assert atualizado.categoria == "PARTICULAR"
+    assert atualizado.especie == "PASSAGEIRO/AUTOMOVEL"
+    assert atualizado.combustivel == "ALCOOL/GASOLINA"
+    assert atualizado.potencia == "116"
+    assert atualizado.cilindrada == "999"
+    assert atualizado.numero_motor == "SG190437"
+    assert atualizado.procedencia == "NACIONAL"
+    assert atualizado.municipio == "SAO PAULO"
+    assert atualizado.tipo_documento == "CNPJ"
 
     registro = _ultima_consulta(placa="TCM9G85")
     assert registro is not None
@@ -1832,6 +1993,38 @@ def test_ui_rsd_atualizar_veiculo_preserva_campos_fora_do_retorno(
     assert atualizado is not None
     assert atualizado.status == antes_status
     assert atualizado.investidor_id == antes_investidor
+
+
+def test_ui_rsd_atualizar_veiculo_move_proprietario_para_anterior(
+    veiculo_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """O portal só devolve o dono corrente; o anterior é o que estava gravado.
+
+    A segunda consulta cobre a reconsulta do mesmo veículo: o nome não mudou,
+    então o histórico tem de permanecer intacto em vez de o dono novo se
+    duplicar nos dois campos.
+    """
+    _login_ui(veiculo_client)
+    _salvar_config_rsd(veiculo_client)
+    _patch_client_from_config(monkeypatch)
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+
+    assert (
+        veiculo_client.post(f"/ui/rsd/veiculos/{item.id}/atualizar").status_code == 204
+    )
+    atualizado = _veiculo_por_placa("TCM9G85")
+    assert atualizado is not None
+    assert atualizado.proprietario_atual == "XTREME MOTORS LTDA"
+    assert atualizado.proprietario_anterior == "DONO ANTIGO"
+
+    assert (
+        veiculo_client.post(f"/ui/rsd/veiculos/{item.id}/atualizar").status_code == 204
+    )
+    reconsultado = _veiculo_por_placa("TCM9G85")
+    assert reconsultado is not None
+    assert reconsultado.proprietario_atual == "XTREME MOTORS LTDA"
+    assert reconsultado.proprietario_anterior == "DONO ANTIGO"
 
 
 def test_ui_rsd_atualizar_veiculo_sem_config(veiculo_client: TestClient) -> None:

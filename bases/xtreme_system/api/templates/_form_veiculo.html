@@ -45,7 +45,8 @@
             show_brand=pode_ver_campo(user, 'veiculos', 'marca'),
             show_year=pode_ver_campo(user, 'veiculos', 'ano'),
             show_chassi=pode_ver_campo(user, 'veiculos', 'chassi'),
-            autofocus=true
+            autofocus=true,
+            user=user
           ) }}
         </fieldset>
 
@@ -134,7 +135,8 @@
             show_year=pode_ver_campo(user, 'veiculos', 'ano'),
             show_chassi=false,
             plate_class='field field--full',
-            model_class='field field--full'
+            model_class='field field--full',
+            user=user
           ) }}
           {% if pode_ver_campo(user, 'veiculos', 'km') %}<label class="field">
             <span class="field__label">Quilometragem *</span>

@@ -115,6 +115,12 @@
             <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', venda.datas_pagamento if venda.datas_pagamento is not none else '') }}">
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_documento') %}
+          <label class="field">
+            <span class="field__label">Valor do documento</span>
+            <input class="input" name="valor_documento" value="{{ dados.get('valor_documento', venda.valor_documento if venda.valor_documento is not none else '') }}">
+          </label>
+          {% endif %}
         </fieldset>
 
         <fieldset class="wizard-step form-grid{% if passo_atual == 3 %} is-active{% endif %}" data-step="3" :class="{ 'is-active': step === 3 }">
@@ -248,6 +254,12 @@
             <input class="input" name="datas_pagamento" placeholder="10/01, 10/02, 10/03" value="{{ dados.get('datas_pagamento', '') }}">
           </label>
           {% endif %}
+          {% if pode_ver_campo(user, 'vendas', 'valor_documento') %}
+          <label class="field">
+            <span class="field__label">Valor do documento</span>
+            <input class="input" name="valor_documento" data-testid="venda-wizard-valor-documento" value="{{ dados.get('valor_documento', '') }}">
+          </label>
+          {% endif %}
 
           {% if pode_ver_campo(user, 'vendas', 'observacoes') %}
           <label class="field field--full">
@@ -282,7 +294,8 @@
               rsd_actions=ui.rsd_actions("veic_troca_", "rsd-status-troca-2", true),
               type_before_model=true,
               divider_after_plate=true,
-              disabled=true
+              disabled=true,
+              rsd_hidden_skip=['renavam', 'proprietario_atual']
             ) }}
             <label class="field">
               <span class="field__label">Quilometragem</span>

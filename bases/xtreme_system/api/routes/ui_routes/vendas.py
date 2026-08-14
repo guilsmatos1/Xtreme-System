@@ -91,7 +91,11 @@ def _ctx_form_venda(session: Session) -> dict[str, Any]:
         "status": list(venda.StatusVenda),
         "clientes": cliente.list_all(session),
         "veiculos": _veiculos_disponiveis_query(session)
-        .order_by(veiculo.Veiculo.id)
+        .order_by(
+            veiculo.Veiculo.placa.asc(),
+            veiculo.Veiculo.modelo.asc(),
+            veiculo.Veiculo.id.asc(),
+        )
         .all(),
         "tipos_cliente": list(cliente.TipoCliente),
         "tipos_veiculo": list(veiculo.TipoVeiculo),
@@ -168,6 +172,10 @@ register_crud_ui_routes(
             "valor": SortField("valor_venda", venda.Venda.valor_venda),
             "entrada": SortField("valor_entrada", venda.Venda.valor_entrada),
             "divida": SortField("valor_pendente", venda.Venda.valor_pendente),
+            "valor_documento": SortField(
+                lambda v: _sort_key(v.valor_documento or ""),
+                venda.Venda.valor_documento,
+            ),
             "pagamento": SortField("forma_pagamento", venda.Venda.forma_pagamento),
             "parcelas": SortField("parcelas", venda.Venda.parcelas),
             "status": SortField("status", venda.Venda.status),
@@ -263,6 +271,12 @@ register_crud_ui_routes(
                 "Datas Pagamento",
                 field="datas_pagamento",
                 export=lambda v: v.datas_pagamento or "",
+            ),
+            ColumnSpec(
+                "valor_documento",
+                "Valor Documento",
+                field="valor_documento",
+                export=lambda v: v.valor_documento or "",
             ),
             ColumnSpec(
                 "forma_pagamento",

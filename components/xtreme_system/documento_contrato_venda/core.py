@@ -201,35 +201,35 @@ def _cabecalho(
         pdf.set_x(margem_original)
         # A régua nunca corta o logo, mesmo com poucos campos preenchidos.
         pdf.set_y(max(pdf.get_y(), y_logo + _ALTURA_LOGO))
-    pdf.ln(1)
+    pdf.ln(3)
     _regua(pdf)
-    pdf.ln(2)
+    pdf.ln(3)
 
 
 def _bloco_comprador(pdf: FPDF, cliente_obj: "Cliente") -> None:
     pdf.set_font("Helvetica", "", 9)
-    _grid(pdf, ("**Recebemos de:**", 0.28), (cliente_obj.nome, 0.72))
     _grid(
         pdf,
-        (f"**CPF:** {formatar_documento(cliente_obj.documento)}", 0.34),
+        (f"**Recebemos de:** {cliente_obj.nome}", 0.66),
+        (f"**CPF/CNPJ:** {formatar_documento(cliente_obj.documento)}", 0.34),
     )
     _grid(
         pdf,
-        (f"**Endereço:** {cliente_obj.endereco or ''}", 0.5),
-        (f"**Bairro:** {cliente_obj.bairro or ''}", 0.5),
+        (f"**Endereço:** {cliente_obj.endereco or ''}", 0.66),
+        (f"**Bairro:** {cliente_obj.bairro or ''}", 0.34),
     )
     _grid(
         pdf,
-        (f"**Cidade:** {cliente_obj.cidade or ''}", 0.34),
-        (f"**Estado:** {cliente_obj.estado or ''}", 0.33),
-        (f"**CEP:** {formatar_cep(cliente_obj.cep)}", 0.33),
+        (f"**Cidade:** {cliente_obj.cidade or ''}", 0.33),
+        (f"**UF:** {cliente_obj.estado or ''}", 0.33),
+        (f"**CEP:** {formatar_cep(cliente_obj.cep)}", 0.24),
     )
     _grid(
         pdf,
-        (f"**Telefone 1:** {formatar_telefone(cliente_obj.telefone)}", 0.5),
-        ("**Telefone 2:**", 0.5),
+        (f"**E-mail:** {cliente_obj.email or ''}", 0.33),
+        (f"**Telefone 1:** {formatar_telefone(cliente_obj.telefone)}", 0.33),
+        (f"**Telefone 2:** {formatar_telefone(cliente_obj.telefone2)}", 0.24),
     )
-    _grid(pdf, (f"**E-mail:** {cliente_obj.email or ''}", 1.0))
     pdf.ln(4)
 
 
@@ -246,27 +246,27 @@ def _bloco_veiculo(pdf: FPDF, venda_obj: "Venda") -> None:
     pdf.ln(2)
     _grid(
         pdf,
-        (f"**Fabricante:** {veiculo_obj.marca or ''}", 0.34),
-        (f"**Veículo:** {veiculo_obj.modelo}", 0.66),
+        (f"**Fabricante:** {veiculo_obj.marca or ''}", 0.33),
+        (f"**Veículo:** {veiculo_obj.modelo}", 0.33),
+        (f"**Ano:** {veiculo_obj.ano}", 0.24),
     )
-    _grid(pdf, (f"**Ano:** {veiculo_obj.ano}", 1.0))
     _grid(
         pdf,
-        (f"**Placa:** {veiculo_obj.placa}", 0.34),
+        (f"**Placa:** {veiculo_obj.placa}", 0.33),
         (f"**No. Chassi:** {veiculo_obj.chassi or ''}", 0.33),
-        (f"**Cor:** {veiculo_obj.cor}", 0.33),
+        (f"**Cor:** {veiculo_obj.cor}", 0.24),
     )
     km = venda_obj.km if venda_obj.km is not None else veiculo_obj.km
     _grid(
         pdf,
-        ("**No. Motor:**", 0.34),
+        ("**No. Motor:**", 0.33),
         ("**Combustível:**", 0.33),
-        (f"**Km:** {km if km is not None else ''}", 0.33),
+        (f"**Km:** {km if km is not None else ''}", 0.24),
     )
     _grid(
         pdf,
-        (f"**Renavam:** {veiculo_obj.renavam or ''}", 0.34),
-        ("**Opcionais:**", 0.66),
+        (f"**Renavam:** {veiculo_obj.renavam or ''}", 0.33),
+        ("**Opcionais:**", 0.33),
     )
     pdf.ln(4)
 
@@ -314,14 +314,14 @@ def _bloco_pagamento(pdf: FPDF, venda_obj: "Venda") -> None:
     pdf.ln(4)
 
     pdf.set_font("Helvetica", "B", 9)
+    valor_documento = venda_obj.valor_documento or ""
     pdf.cell(
         0,
         5,
-        f"Documento: {formatar_documento(venda_obj.cliente.documento)}",
+        f"Valor do Documento: {valor_documento}",
         new_x=XPos.LMARGIN,
         new_y=YPos.NEXT,
     )
-    pdf.cell(0, 5, "Valor do Documento:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     consultor = venda_obj.vendedor.nome if venda_obj.vendedor is not None else ""
     pdf.cell(
         0,

@@ -67,6 +67,7 @@ _WIZARD_NOVA = {
     "pagamento_pendente": 4,
     "valor_pendente": 4,
     "datas_pagamento": 4,
+    "valor_documento": 4,
     "observacoes": 4,
     "status": 5,
     "vendedor_id": 5,
@@ -84,6 +85,7 @@ _WIZARD_EDITAR = {
     "pagamento_pendente": 2,
     "valor_pendente": 2,
     "datas_pagamento": 2,
+    "valor_documento": 2,
     "veiculo_troca_id": 3,
     "valor_diferenca": 3,
     "observacoes": 3,
@@ -110,26 +112,25 @@ def _com_passo(
     return {**dados, "wizard_step": str(passo)}
 
 
+_CAMPOS_VAZIOS_VIRAM_NULOS = (
+    "valor_entrada",
+    "debitos",
+    "km",
+    "parcelas",
+    "observacoes",
+    "veiculo_troca_id",
+    "valor_diferenca",
+    "valor_pendente",
+    "datas_pagamento",
+    "valor_documento",
+)
+
+
 def parse_venda_form(form: Any) -> dict[str, Any]:
     data = dict(form)
-    if data.get("valor_entrada") == "":
-        data["valor_entrada"] = None
-    if data.get("debitos") == "":
-        data["debitos"] = None
-    if data.get("km") == "":
-        data["km"] = None
-    if data.get("parcelas") == "":
-        data["parcelas"] = None
-    if data.get("observacoes") == "":
-        data["observacoes"] = None
-    if data.get("veiculo_troca_id") == "":
-        data["veiculo_troca_id"] = None
-    if data.get("valor_diferenca") == "":
-        data["valor_diferenca"] = None
-    if data.get("valor_pendente") == "":
-        data["valor_pendente"] = None
-    if data.get("datas_pagamento") == "":
-        data["datas_pagamento"] = None
+    for campo in _CAMPOS_VAZIOS_VIRAM_NULOS:
+        if data.get(campo) == "":
+            data[campo] = None
     raw_pp = data.get("pagamento_pendente")
     if isinstance(raw_pp, bool):
         data["pagamento_pendente"] = raw_pp

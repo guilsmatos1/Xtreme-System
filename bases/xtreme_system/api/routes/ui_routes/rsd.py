@@ -204,6 +204,26 @@ def ui_rsd_puxar_dados(
     return response
 
 
+def _rotacionar_proprietario(
+    obj: veiculo.Veiculo, campos: dict[str, Any]
+) -> dict[str, Any]:
+    """Move o proprietário atual para "anterior" quando o RSD traz um novo.
+
+    O portal só devolve o proprietário corrente; "anterior" é conhecimento
+    nosso — é o nome que estava gravado antes desta consulta. Só rotaciona
+    quando o nome de fato mudou, para que reconsultas seguidas do mesmo
+    veículo não apaguem o histórico duplicando o nome nos dois campos.
+    Se o próprio portal devolveu um anterior, ele tem prioridade.
+    """
+    novo = str(campos.get("proprietario_atual") or "").strip()
+    atual = (obj.proprietario_atual or "").strip()
+    if not novo or not atual or campos.get("proprietario_anterior"):
+        return campos
+    if novo.casefold() == atual.casefold():
+        return campos
+    return {**campos, "proprietario_anterior": atual}
+
+
 def _aplicar_campos_no_veiculo(
     veiculo_id: int, campos: dict[str, Any], actor_id: int
 ) -> None:
@@ -218,6 +238,7 @@ def _aplicar_campos_no_veiculo(
     session = SessionLocal()
     try:
         obj = found(veiculo.get(session, veiculo_id), "Veículo")
+        campos = _rotacionar_proprietario(obj, campos)
         veiculo.update(session, obj, veiculo.VeiculoUpdate(**campos), actor_id=actor_id)
         session.commit()
     except Exception:

@@ -33,7 +33,13 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import httpx
 import structlog
 from cryptography.fernet import Fernet, InvalidToken
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    ValidationError,
+    field_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -342,7 +348,23 @@ class RsdConsulta(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+def _alias(*nomes: str) -> AliasChoices:
+    """Aceita o campo sob qualquer um dos nomes que o portal já usou.
+
+    O JSON de `puxar-dados` não tem contrato publicado e o portal varia a
+    grafia entre consultas (com/sem acento, `numero_motor` vs `motor`).
+    Declarar as variantes aqui evita perder o dado silenciosamente — o que
+    não casar com nenhum alias continua visível em `model_extra`.
+    """
+    return AliasChoices(*nomes)
+
+
 class PuxarDadosResult(BaseModel):
+    # `extra="allow"` é deliberado: chaves ainda não mapeadas sobrevivem ao
+    # `model_dump()` e ficam gravadas em `RsdConsulta.payload`, que é como
+    # descobrimos a grafia real de um campo novo sem instrumentar o portal.
+    model_config = {"extra": "allow", "populate_by_name": True}
+
     placa: str = ""
     renavam: str | None = None
     chassi: str | None = None
@@ -356,6 +378,55 @@ class PuxarDadosResult(BaseModel):
     outro_estado: bool = False
     origem: str | None = None
     erro: str | None = None
+
+    categoria: str | None = Field(
+        default=None, validation_alias=_alias("categoria", "categoria_veiculo")
+    )
+    especie: str | None = Field(
+        default=None,
+        validation_alias=_alias("especie", "espécie", "especie_veiculo"),
+    )
+    combustivel: str | None = Field(
+        default=None,
+        validation_alias=_alias("combustivel", "combustível", "tipo_combustivel"),
+    )
+    potencia: str | None = Field(
+        default=None, validation_alias=_alias("potencia", "potência", "potencia_cv")
+    )
+    cilindrada: str | None = Field(
+        default=None, validation_alias=_alias("cilindrada", "cilindradas", "cc")
+    )
+    numero_motor: str | None = Field(
+        default=None,
+        validation_alias=_alias("numero_motor", "número_motor", "motor", "n_motor"),
+    )
+    procedencia: str | None = Field(
+        default=None, validation_alias=_alias("procedencia", "procedência")
+    )
+    municipio: str | None = Field(
+        default=None,
+        validation_alias=_alias("municipio", "município", "municipio_placa"),
+    )
+    proprietario_anterior: str | None = Field(
+        default=None,
+        validation_alias=_alias(
+            "proprietario_anterior",
+            "proprietário_anterior",
+            "nome_proprietario_anterior",
+        ),
+    )
+
+    @field_validator("potencia", "cilindrada", "numero_motor", "renavam", mode="before")
+    @classmethod
+    def _numero_como_texto(cls, value: Any) -> Any:
+        """O portal manda potência/cilindrada ora como número, ora como string.
+
+        São colunas de texto no `Veiculo` (guardam "1.0", "999 cc"), então
+        normalizamos aqui — o pydantic v2 não coage int→str sozinho e a
+        consulta inteira falharia com ValidationError.
+        """
+        _ = cls
+        return str(value) if isinstance(value, int | float) else value
 
 
 class UnitariaResult(BaseModel):
@@ -1463,30 +1534,209 @@ class RsdClient:
         return resp.content
 
 
+_ESPECIES_MOTO = ("motocicleta", "motoneta", "ciclomotor", "triciclo", "quadriciclo")
+
+# Campos de texto que vêm do portal 1:1 para uma coluna de `Veiculo`.
+_CAMPOS_TEXTO_DIRETOS = (
+    "chassi",
+    "renavam",
+    "cor",
+    "tipo_documento",
+    "categoria",
+    "especie",
+    "combustivel",
+    "potencia",
+    "cilindrada",
+    "numero_motor",
+    "procedencia",
+    "municipio",
+    "proprietario_anterior",
+)
+
+
+# Prefixos que o DENATRAN usa no lugar da marca para veículo importado:
+# em "I/VW JETTA" o "I" não é fabricante, é procedência.
+_PREFIXOS_IMPORTADO = frozenset({"I", "IMP", "IMPORT", "IMPORTADO"})
+
+_PROCEDENCIA_IMPORTADO = "Importado"
+
+# Grafia do CRLV → nome canônico da marca. Serve a dois usos: expandir as
+# abreviações do documento ("CHEV" é o mesmo fabricante que alguém digita
+# como "CHEVROLET", e `marca` é coluna de busca) e, no ramo importado, saber
+# onde a marca termina e o modelo começa — daí as entradas de nome completo
+# e as de duas palavras, que um corte no primeiro espaço quebraria.
+_MARCAS_CANONICAS = {
+    "ALFA ROMEO": "ALFA ROMEO",
+    "AUDI": "AUDI",
+    "BMW": "BMW",
+    "BYD": "BYD",
+    "CAOA CHERY": "CAOA CHERY",
+    "CHERY": "CHERY",
+    "CHEV": "CHEVROLET",
+    "CHEVROLET": "CHEVROLET",
+    "CHRYSLER": "CHRYSLER",
+    "CITROEN": "CITROEN",
+    "DODGE": "DODGE",
+    "FIAT": "FIAT",
+    "FORD": "FORD",
+    "GM": "CHEVROLET",
+    "GWM": "GWM",
+    "HONDA": "HONDA",
+    "HYUNDAI": "HYUNDAI",
+    "IVECO": "IVECO",
+    "JAC": "JAC",
+    "JAGUAR": "JAGUAR",
+    "JEEP": "JEEP",
+    "KIA": "KIA",
+    "LAND ROVER": "LAND ROVER",
+    "LEXUS": "LEXUS",
+    "M.BENZ": "MERCEDES-BENZ",
+    "MBENZ": "MERCEDES-BENZ",
+    "MERCEDES BENZ": "MERCEDES-BENZ",
+    "MERCEDES-BENZ": "MERCEDES-BENZ",
+    "MINI": "MINI",
+    "MITSUBISHI": "MITSUBISHI",
+    "MMC": "MITSUBISHI",
+    "NISSAN": "NISSAN",
+    "PEUGEOT": "PEUGEOT",
+    "PORSCHE": "PORSCHE",
+    "RAM": "RAM",
+    "RANGE ROVER": "LAND ROVER",
+    "RENAULT": "RENAULT",
+    "SSANGYONG": "SSANGYONG",
+    "SUBARU": "SUBARU",
+    "TOYOTA": "TOYOTA",
+    "TROLLER": "TROLLER",
+    "VOLVO": "VOLVO",
+    "VW": "VOLKSWAGEN",
+    "VOLKSWAGEN": "VOLKSWAGEN",
+    # Motos
+    "APRILIA": "APRILIA",
+    "BENELLI": "BENELLI",
+    "CAN AM": "CAN-AM",
+    "DAFRA": "DAFRA",
+    "DUCATI": "DUCATI",
+    "HAOJUE": "HAOJUE",
+    "HARLEY DAVIDSON": "HARLEY-DAVIDSON",
+    "HUSQVARNA": "HUSQVARNA",
+    "KASINSKI": "KASINSKI",
+    "KAWASAKI": "KAWASAKI",
+    "KTM": "KTM",
+    "MV AGUSTA": "MV AGUSTA",
+    "ROYAL ENFIELD": "ROYAL ENFIELD",
+    "SHINERAY": "SHINERAY",
+    "SUNDOWN": "SUNDOWN",
+    "SUZUKI": "SUZUKI",
+    "TRAXX": "TRAXX",
+    "TRIUMPH": "TRIUMPH",
+    "YAMAHA": "YAMAHA",
+}
+
+# Maior número de palavras entre as chaves acima — limite da busca por prefixo.
+_MAX_PALAVRAS_MARCA = max(len(chave.split()) for chave in _MARCAS_CANONICAS)
+
+
+def _chave_marca(texto: str) -> str:
+    return " ".join(texto.upper().split())
+
+
+def _partir_marca_conhecida(texto: str) -> tuple[str | None, str]:
+    """Separa "VW JETTA" em marca e modelo consultando `_MARCAS_CANONICAS`.
+
+    Sem o "/" do CRLV não há sintaxe que diga onde a marca termina, só
+    conhecimento: "VW JETTA" tem marca de uma palavra e "ROYAL ENFIELD
+    HIMALAYA" de duas. Testa do prefixo mais longo para o mais curto para
+    que a marca composta ganhe da simples. Marca desconhecida devolve
+    `None` — quem chama omite o campo em vez de gravar um palpite.
+    """
+    palavras = texto.split()
+    for tamanho in range(min(_MAX_PALAVRAS_MARCA, len(palavras)), 0, -1):
+        marca = _MARCAS_CANONICAS.get(_chave_marca(" ".join(palavras[:tamanho])))
+        if marca:
+            return marca, " ".join(palavras[tamanho:])
+    return None, texto
+
+
+def _marca_modelo(texto: str) -> tuple[str | None, str | None, bool]:
+    """Quebra o `marca_modelo` do CRLV em `(marca, modelo, importado)`.
+
+    O formato é "MARCA/MODELO", mas o importado vem como "I/VW JETTA": o
+    slot da marca carrega a procedência e o fabricante real fica junto do
+    modelo. `marca` ou `modelo` em `None` significa "não sei" — quem chama
+    omite a chave e preserva o que já estava gravado no veículo.
+    """
+    marca_bruta, separador, resto = texto.partition("/")
+    marca_bruta, resto = marca_bruta.strip(), resto.strip()
+    if not separador:
+        # Sem "/" não dá para saber onde a marca acaba; o texto inteiro é o
+        # melhor palpite de modelo e a marca fica como está no veículo.
+        return None, texto.strip() or None, False
+    if not resto:
+        # "MARCA/" sem modelo: só o slot da marca é aproveitável, e mesmo
+        # ele não serve se for o prefixo de importado.
+        if _chave_marca(marca_bruta) in _PREFIXOS_IMPORTADO:
+            return None, None, True
+        return None, marca_bruta or None, False
+    if _chave_marca(marca_bruta) in _PREFIXOS_IMPORTADO:
+        marca, modelo = _partir_marca_conhecida(resto)
+        return marca, modelo or None, True
+    if not marca_bruta:
+        return None, resto, False
+    return _MARCAS_CANONICAS.get(_chave_marca(marca_bruta), marca_bruta), resto, False
+
+
+def _tipo_do_veiculo(dados: PuxarDadosResult) -> str | None:
+    """Deriva carro/moto da espécie/categoria do CRLV.
+
+    O portal não devolve o `tipo` no vocabulário do sistema (só temos
+    `carro` e `moto`), mas a espécie do documento distingue as duas famílias.
+    Sem sinal reconhecível devolve `None` — melhor deixar o campo como está
+    do que classificar errado um veículo já cadastrado.
+    """
+    texto = f"{dados.especie or ''} {dados.categoria or ''}".strip().lower()
+    if not texto:
+        return None
+    if any(termo in texto for termo in _ESPECIES_MOTO):
+        return "moto"
+    if "automovel" in texto or "automóvel" in texto or "caminhonete" in texto:
+        return "carro"
+    return None
+
+
 def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[str, Any]:
-    """Campos do formulário de veículo a partir do JSON puxar-dados."""
+    """Campos do formulário de veículo a partir do JSON puxar-dados.
+
+    Só entram no resultado os campos que o portal realmente devolveu: uma
+    chave ausente preserva o valor já gravado, em vez de apagá-lo.
+    """
     out: dict[str, Any] = {}
+    importado = False
     if dados.marca_modelo:
-        marca, separador, resto = dados.marca_modelo.partition("/")
-        out[f"{prefix}modelo"] = (
-            resto.strip() if separador and resto.strip() else dados.marca_modelo
-        )
-        if separador and marca.strip():
-            out[f"{prefix}marca"] = marca.strip()
+        marca, modelo, importado = _marca_modelo(dados.marca_modelo)
+        if modelo:
+            out[f"{prefix}modelo"] = modelo
+        if marca:
+            out[f"{prefix}marca"] = marca
     if dados.ano is not None:
         out[f"{prefix}ano"] = dados.ano
-    if dados.cor:
-        out[f"{prefix}cor"] = dados.cor
-    if dados.chassi:
-        out[f"{prefix}chassi"] = dados.chassi
-    if dados.renavam:
-        out[f"{prefix}renavam"] = dados.renavam
+    for campo in _CAMPOS_TEXTO_DIRETOS:
+        valor = getattr(dados, campo, None)
+        if valor:
+            out[f"{prefix}{campo}"] = str(valor).strip()
+    # O prefixo "I/" é a única procedência que `puxar-dados` entrega hoje —
+    # o campo `procedencia` do JSON vem sempre vazio. Só preenche se o portal
+    # não tiver dito nada: se um dia ele mandar o campo, ele é a fonte melhor.
+    if importado and not out.get(f"{prefix}procedencia"):
+        out[f"{prefix}procedencia"] = _PROCEDENCIA_IMPORTADO
     if dados.nome_proprietario:
         out[f"{prefix}proprietario_atual"] = dados.nome_proprietario
     if dados.cpf_cnpj:
         out[f"{prefix}proprietario_documento"] = dados.cpf_cnpj
     if dados.placa:
         out[f"{prefix}placa"] = dados.placa
+    tipo = _tipo_do_veiculo(dados)
+    if tipo:
+        out[f"{prefix}tipo"] = tipo
     return out
 
 

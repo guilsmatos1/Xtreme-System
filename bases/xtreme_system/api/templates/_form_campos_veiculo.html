@@ -20,7 +20,10 @@
   autofocus=false,
   divider_after_plate=false,
   new_vehicle=false,
-  disabled=false
+  disabled=false,
+  rsd_hidden=true,
+  rsd_hidden_skip=[],
+  user=None
 ) %}
   {% set plate_value = dados.get(prefix ~ 'placa', veiculo.placa if veiculo else '') %}
   {% set model_value = dados.get(prefix ~ 'modelo', veiculo.modelo if veiculo else '') %}
@@ -93,5 +96,30 @@
     <span class="field__label">Chassi</span>
     <input class="input" name="{{ prefix }}chassi"{% if new_vehicle %} data-novo-veiculo{% endif %} value="{{ chassis_value }}"{% if disabled %} disabled{% endif %}>
   </label>
+  {% endif %}
+
+  {#
+    Campos que o RSD devolve mas que nenhum formulário exibe. Sem um alvo
+    com o `name` certo, o `aplicarCamposRsd` (components.js) não teria onde
+    escrever e o dado se perderia no submit. Ficam ocultos, pré-carregados
+    com o valor já gravado para que um submit sem "Puxar dados" não apague
+    nada, e são preenchidos pelo JS quando a consulta traz valor novo.
+    `rsd_hidden_skip` exclui os que o formulário já mostra: dois inputs com
+    o mesmo `name` fariam o JS escrever no oculto e deixar o visível vazio.
+    Com `user`, respeita a visibilidade por perfil — o backend já descarta
+    esses campos em `campos_form_visiveis`, e sem o filtro aqui o valor
+    apareceria no HTML de quem não pode vê-lo.
+  #}
+  {% if rsd_hidden %}
+  {% for campo in [
+    'renavam', 'numero_motor', 'proprietario_atual', 'proprietario_documento',
+    'proprietario_anterior', 'tipo_documento', 'categoria', 'especie',
+    'combustivel', 'procedencia', 'municipio', 'potencia', 'cilindrada'
+  ] if campo not in rsd_hidden_skip
+       and (user is none or pode_ver_campo(user, 'veiculos', campo)) %}
+  <input type="hidden" name="{{ prefix }}{{ campo }}"
+         value="{{ dados.get(prefix ~ campo, (veiculo[campo] if veiculo else '') or '') }}"
+         {% if new_vehicle %}data-novo-veiculo{% endif %}>
+  {% endfor %}
   {% endif %}
 {% endmacro %}

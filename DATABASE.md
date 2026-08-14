@@ -141,6 +141,7 @@ Registro de vendas de veículos.
 | `pagamento_pendente` | `BOOLEAN` | Não | `false` | Indica se faltou parte do pagamento |
 | `valor_pendente` | `NUMERIC(12,2)` | Sim | - | Valor que ficou pendente |
 | `datas_pagamento` | `VARCHAR` | Sim | - | Datas de pagamento em texto livre |
+| `valor_documento` | `VARCHAR` | Sim | - | Valor do documento em texto livre (impresso no contrato) |
 
 ### `imagem_veiculo`
 
