@@ -269,8 +269,10 @@ def test_ui_dre_admin_renderiza_totais(client: TestClient) -> None:
 
     assert resp.status_code == 200
     assert 'id="dre-resultado"' in resp.text
-    assert "R$ 120.000,00" in resp.text
-    assert "R$ 36.000,00" in resp.text
+    assert "R$ 120.000" in resp.text
+    assert "R$ 36.000" in resp.text
+    assert "R$ 120.000,00" not in resp.text
+    assert "R$ 36.000,00" not in resp.text
     assert "01/2026" in resp.text
     assert "02/2026" in resp.text
 

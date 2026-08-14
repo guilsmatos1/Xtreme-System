@@ -8,27 +8,27 @@
 <section class="stats" aria-label="Resultado do período">
   <article class="card stat stat--success">
     <div class="stat__label">{{ ui.icon("cash") }} Receita</div>
-    <div class="stat__value cell-num">{{ ui.moeda(totais.receita) }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda_sem_decimais(totais.receita) }}</div>
     <div class="stat__hint">{{ totais.quantidade }} fechamento{{ '' if totais.quantidade == 1 else 's' }}</div>
   </article>
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("car") }} Custo dos veículos</div>
-    <div class="stat__value cell-num">{{ ui.moeda(totais.custo_veiculo) }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda_sem_decimais(totais.custo_veiculo) }}</div>
     <div class="stat__hint">preço de custo no fechamento</div>
   </article>
   <article class="card stat stat--accent">
     <div class="stat__label">{{ ui.icon("wallet") }} Custos operacionais</div>
-    <div class="stat__value cell-num">{{ ui.moeda(totais.custos_operacionais) }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda_sem_decimais(totais.custos_operacionais) }}</div>
     <div class="stat__hint">custos lançados por veículo</div>
   </article>
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("alert-triangle") }} Débitos</div>
-    <div class="stat__value cell-num">{{ ui.moeda(totais.debitos) }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda_sem_decimais(totais.debitos) }}</div>
     <div class="stat__hint">débitos abatidos na venda</div>
   </article>
   <article class="card stat {{ 'stat--success' if totais.lucro_liquido >= 0 else 'stat--warning' }}">
     <div class="stat__label">{{ ui.icon("zap") }} Lucro líquido</div>
-    <div class="stat__value cell-num">{{ ui.moeda(totais.lucro_liquido) }}</div>
+    <div class="stat__value cell-num">{{ ui.moeda_sem_decimais(totais.lucro_liquido) }}</div>
     <div class="stat__hint">margem de {{ totais.margem }}%</div>
   </article>
 </section>
@@ -51,11 +51,11 @@
       <tr>
         <td class="cell-mono" data-col="mes">{{ linha.mes.strftime('%m/%Y') }}</td>
         <td class="cell-num" data-col="fechamentos">{{ linha.quantidade }}</td>
-        <td class="cell-num" data-col="receita">{{ ui.moeda(linha.receita) }}</td>
-        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda(linha.custo_veiculo) }}</td>
-        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda(linha.custos_operacionais) }}</td>
-        <td class="cell-num" data-col="debitos">{{ ui.moeda(linha.debitos) }}</td>
-        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda(linha.lucro_liquido) }}</td>
+        <td class="cell-num" data-col="receita">{{ ui.moeda_sem_decimais(linha.receita) }}</td>
+        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda_sem_decimais(linha.custo_veiculo) }}</td>
+        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda_sem_decimais(linha.custos_operacionais) }}</td>
+        <td class="cell-num" data-col="debitos">{{ ui.moeda_sem_decimais(linha.debitos) }}</td>
+        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda_sem_decimais(linha.lucro_liquido) }}</td>
         <td class="cell-num" data-col="margem">{{ linha.margem }}%</td>
       </tr>
       {% else %}
@@ -68,11 +68,11 @@
     <tfoot><tr>
       <td class="cell-strong">Total</td>
       <td class="cell-num cell-strong">{{ totais.quantidade }}</td>
-      <td class="cell-num cell-strong">{{ ui.moeda(totais.receita) }}</td>
-      <td class="cell-num cell-strong">{{ ui.moeda(totais.custo_veiculo) }}</td>
-      <td class="cell-num cell-strong">{{ ui.moeda(totais.custos_operacionais) }}</td>
-      <td class="cell-num cell-strong">{{ ui.moeda(totais.debitos) }}</td>
-      <td class="cell-num cell-strong">{{ ui.moeda(totais.lucro_liquido) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda_sem_decimais(totais.receita) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda_sem_decimais(totais.custo_veiculo) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda_sem_decimais(totais.custos_operacionais) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda_sem_decimais(totais.debitos) }}</td>
+      <td class="cell-num cell-strong">{{ ui.moeda_sem_decimais(totais.lucro_liquido) }}</td>
       <td class="cell-num cell-strong">{{ totais.margem }}%</td>
     </tr></tfoot>
     {% endif %}
@@ -105,11 +105,11 @@
         <td class="cell-strong" data-col="veiculo">{{ f.venda.veiculo.modelo }} · {{ f.venda.veiculo.placa }}</td>
         <td data-col="investidor">{{ f.venda.veiculo.investidor.nome }}</td>
         <td data-col="vendedor">{{ f.venda.vendedor.username if f.venda.vendedor else '—' }}</td>
-        <td class="cell-num" data-col="receita">{{ ui.moeda(f.receita) }}</td>
-        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda(f.custo_veiculo) }}</td>
-        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda(f.custos_operacionais) }}</td>
-        <td class="cell-num" data-col="debitos">{{ ui.moeda(f.debitos) }}</td>
-        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda(f.lucro_liquido) }}</td>
+        <td class="cell-num" data-col="receita">{{ ui.moeda_sem_decimais(f.receita) }}</td>
+        <td class="cell-num" data-col="custo_veiculo">{{ ui.moeda_sem_decimais(f.custo_veiculo) }}</td>
+        <td class="cell-num" data-col="custos_operacionais">{{ ui.moeda_sem_decimais(f.custos_operacionais) }}</td>
+        <td class="cell-num" data-col="debitos">{{ ui.moeda_sem_decimais(f.debitos) }}</td>
+        <td class="cell-num cell-strong" data-col="lucro">{{ ui.moeda_sem_decimais(f.lucro_liquido) }}</td>
       </tr>
       {% endfor %}
     </tbody>

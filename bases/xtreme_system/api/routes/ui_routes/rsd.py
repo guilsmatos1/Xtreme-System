@@ -56,8 +56,18 @@ def _normalize_prefix(value: str) -> str:
     return value if value in {"", "vei_"} else ""
 
 
+# Só estes erros dizem algo sobre a credencial. Indisponibilidade do portal,
+# timeout ou erro de consulta não: rebaixar o status nesses casos manda o
+# operador reconfigurar um e-mail/senha que estão corretos.
+_ERROS_DE_CREDENCIAL = (
+    rsd.RsdAuthError,
+    rsd.RsdCapabilityError,
+    rsd.RsdEncryptionError,
+)
+
+
 def _marcar_falha_credencial(config: rsd.RsdConfig, erro: rsd.RsdError) -> None:
-    if not rsd.configurado(config):
+    if not isinstance(erro, _ERROS_DE_CREDENCIAL) or not rsd.configurado(config):
         return
     rsd.registrar_teste_config_persistente(
         email=config.email,
@@ -146,14 +156,17 @@ def ui_rsd_puxar_dados(
         _marcar_falha_credencial(config, exc)
         duracao_ms = int((time.monotonic() - inicio) * 1000)
         logger.warning(
-            "rsd_puxar_dados_falhou", placa=placa, erro=str(exc), duracao_ms=duracao_ms
+            "rsd_puxar_dados_falhou",
+            placa=placa,
+            duracao_ms=duracao_ms,
+            **rsd.contexto_log(exc),
         )
         rsd.registrar_consulta(
             tipo=rsd.TipoConsultaRsd.puxar_dados,
             placa=placa,
             usuario_id=user.id,
             sucesso=False,
-            erro=str(exc),
+            erro=rsd.erro_para_historico(exc),
             duracao_ms=duracao_ms,
         )
         return _status_partial(
@@ -249,6 +262,10 @@ def ui_rsd_atualizar_veiculo(
             status_code=400,
         )
 
+    # A sessão de teste pode ser compartilhada entre requests e ainda conter
+    # a gravação da configuração RSD. Fecha esse limite antes de abrir a
+    # sessão própria usada após a chamada externa, evitando lock no SQLite.
+    session.commit()
     detach_request_session(request, keep=(user, config, obj))
     inicio = time.monotonic()
     try:
@@ -260,8 +277,8 @@ def ui_rsd_atualizar_veiculo(
             "rsd_atualizar_veiculo_falhou",
             veiculo_id=obj.id,
             placa=placa,
-            erro=str(exc),
             duracao_ms=duracao_ms,
+            **rsd.contexto_log(exc),
         )
         rsd.registrar_consulta(
             tipo=rsd.TipoConsultaRsd.puxar_dados,
@@ -269,7 +286,7 @@ def ui_rsd_atualizar_veiculo(
             veiculo_id=obj.id,
             usuario_id=user.id,
             sucesso=False,
-            erro=str(exc),
+            erro=rsd.erro_para_historico(exc),
             duracao_ms=duracao_ms,
         )
         return _status_partial(
@@ -353,15 +370,15 @@ def ui_rsd_consulta_unitaria(
         logger.warning(
             "rsd_iniciar_unitaria_falhou",
             placa=placa,
-            erro=str(exc),
             duracao_ms=duracao_ms,
+            **rsd.contexto_log(exc),
         )
         rsd.registrar_consulta(
             tipo=rsd.TipoConsultaRsd.unitaria,
             placa=placa,
             usuario_id=user.id,
             sucesso=False,
-            erro=str(exc),
+            erro=rsd.erro_para_historico(exc),
             duracao_ms=duracao_ms,
         )
         return _status_partial(
@@ -422,8 +439,8 @@ def ui_rsd_dossie_status(
             "rsd_poll_status_falhou",
             dossie_id=dossie_id,
             tentativa=falhas,
-            erro=str(exc),
             duracao_ms=duracao_ms,
+            **rsd.contexto_log(exc),
         )
         if falhas < _POLL_TRANSIENT_MAX:
             # Erro transitório: não sobrescreve o estado já gravado do
@@ -444,7 +461,7 @@ def ui_rsd_dossie_status(
             payload=None,
             status_dossie=None,
             sucesso=False,
-            erro=str(exc),
+            erro=rsd.erro_para_historico(exc),
         )
         return _status_partial(
             request,
@@ -488,7 +505,9 @@ def ui_rsd_dossie_pdf(
         pdf = client.baixar_pdf(dossie_id)
     except rsd.RsdError as exc:
         _marcar_falha_credencial(config, exc)
-        logger.warning("rsd_baixar_pdf_falhou", dossie_id=dossie_id, erro=str(exc))
+        logger.warning(
+            "rsd_baixar_pdf_falhou", dossie_id=dossie_id, **rsd.contexto_log(exc)
+        )
         return HTMLResponse(str(exc), status_code=400)
 
     return Response(

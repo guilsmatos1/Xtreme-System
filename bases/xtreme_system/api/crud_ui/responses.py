@@ -1,7 +1,7 @@
 import csv
 import io
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlencode
 
@@ -13,6 +13,21 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from xtreme_system.api.crud_types import EntityT
+from xtreme_system.cliente.core import (
+    CampoClienteObrigatorioError,
+    CepClienteInvalidoError,
+    DocumentoClienteInvalidoError,
+    EmailClienteInvalidoError,
+    EstadoClienteInvalidoError,
+    TipoClienteInvalidoError,
+)
+from xtreme_system.venda.core import (
+    ERRO_PAGAMENTO_PENDENTE_DATAS_OBRIGATORIAS,
+    ERRO_PAGAMENTO_PENDENTE_VALOR_OBRIGATORIO,
+    ERRO_PAGAMENTO_SEM_PENDENCIA_COM_DATAS,
+    ERRO_PAGAMENTO_SEM_PENDENCIA_COM_VALOR,
+    ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -26,6 +41,7 @@ _LABELS = {
     "documento": "Documento",
     "email": "E-mail",
     "telefone": "Telefone",
+    "telefone2": "Telefone 2",
     "endereco": "Endereço",
     "bairro": "Bairro",
     "cidade": "Cidade",
@@ -116,6 +132,116 @@ _MSGS = {
     "value_error": "informe um valor válido",
 }
 
+_SKIP_LOC = {"body", "__root__"}
+
+_VALUE_ERROR_REWRITE: dict[str, tuple[str | None, str]] = {
+    ERRO_VALOR_ENTRADA_MAIOR_QUE_VALOR_VENDA: (
+        "valor_entrada",
+        "não pode ser maior que o valor da venda",
+    ),
+    ERRO_PAGAMENTO_PENDENTE_VALOR_OBRIGATORIO: (
+        "valor_pendente",
+        "informe um valor pendente maior que zero",
+    ),
+    ERRO_PAGAMENTO_PENDENTE_DATAS_OBRIGATORIAS: (
+        "datas_pagamento",
+        "informe as datas de pagamento",
+    ),
+    ERRO_PAGAMENTO_SEM_PENDENCIA_COM_VALOR: (
+        "pagamento_pendente",
+        "marque pagamento pendente para informar um valor pendente",
+    ),
+    ERRO_PAGAMENTO_SEM_PENDENCIA_COM_DATAS: (
+        "pagamento_pendente",
+        "marque pagamento pendente para informar as datas",
+    ),
+    str(DocumentoClienteInvalidoError()): (
+        "documento",
+        "CPF deve ter 11 dígitos (pessoa física) ou CNPJ 14 dígitos (pessoa jurídica)",
+    ),
+    str(EmailClienteInvalidoError()): (
+        "email",
+        "informe um e-mail válido",
+    ),
+    str(CepClienteInvalidoError()): (
+        "cep",
+        "informe um CEP com 8 dígitos",
+    ),
+    str(EstadoClienteInvalidoError()): (
+        "estado",
+        "informe a UF com 2 letras",
+    ),
+    str(CampoClienteObrigatorioError()): (None, "preencha este campo"),
+    str(TipoClienteInvalidoError()): ("tipo", "selecione um tipo válido"),
+}
+
+
+def _loc_field(error: Mapping[str, Any]) -> str | None:
+    for part in reversed(error.get("loc") or ()):
+        if isinstance(part, str) and part not in _SKIP_LOC:
+            return part
+    return None
+
+
+def _label_for(field: str | None) -> str | None:
+    if field is None:
+        return None
+    if field in _LABELS:
+        return _LABELS[field]
+    pretty = field.replace("_", " ").strip()
+    if not pretty:
+        return None
+    return pretty[0].upper() + pretty[1:]
+
+
+def _value_error_text(error: Mapping[str, Any]) -> str | None:
+    ctx = error.get("ctx") or {}
+    raw = ctx.get("error")
+    if raw is not None:
+        text = str(raw).strip().rstrip(".")
+        if text:
+            return text
+    msg = str(error.get("msg") or "")
+    prefix = "Value error, "
+    if msg.startswith(prefix):
+        return msg[len(prefix) :].strip().rstrip(".")
+    return None
+
+
+def _resolved_error(error: Mapping[str, Any]) -> tuple[str | None, str]:
+    field = _loc_field(error)
+    err_type = error.get("type")
+    if err_type == "value_error":
+        raw = _value_error_text(error)
+        if raw in _VALUE_ERROR_REWRITE:
+            mapped_field, friendly = _VALUE_ERROR_REWRITE[raw]
+            return field or mapped_field, friendly
+        if raw:
+            return field, raw
+    message_key = err_type if isinstance(err_type, str) else ""
+    return field, _MSGS.get(message_key, "informe um valor válido")
+
+
+def _format_line(field: str | None, message: str) -> str:
+    message = message.rstrip(".")
+    label = _label_for(field)
+    if label:
+        text = f"{label}: {message}"
+    elif message:
+        text = message[:1].upper() + message[1:]
+    else:
+        text = "Informe um valor válido"
+    return text if text.endswith(".") else f"{text}."
+
+
+def validation_error_field(exc: ValidationError) -> str | None:
+    """Return the first schema field implicated by a Pydantic error."""
+    for error in exc.errors():
+        field, _message = _resolved_error(error)
+        if field:
+            return field
+    return None
+
 
 def validation_error_detail(
     exc: ValidationError, *, campos_ocultados: set[str] | None = None
@@ -128,28 +254,20 @@ def validation_error_detail(
     """
     messages = []
     for error in exc.errors():
-        field = next(
-            (
-                part
-                for part in reversed(error.get("loc", ()))
-                if isinstance(part, str) and part in _LABELS
-            ),
-            None,
-        )
-        label = _LABELS[field] if field is not None else "Campo informado"
+        field, message = _resolved_error(error)
         campo_oculto = (
             campos_ocultados is not None
             and field is not None
             and field in campos_ocultados
         )
         if error.get("type") == "missing" and campo_oculto:
+            label = _label_for(field) or "Campo"
             messages.append(
                 f"{label}: campo obrigatório, mas seu perfil não tem permissão "
                 "para preenchê-lo. Peça a um administrador para liberar o acesso."
             )
             continue
-        message = _MSGS.get(error.get("type"), "informe um valor válido")
-        messages.append(f"{label}: {message}.")
+        messages.append(_format_line(field, message))
     return "\n".join(messages)
 
 

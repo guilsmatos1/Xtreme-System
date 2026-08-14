@@ -123,6 +123,11 @@
 {{- "R$ %s" | format("{:,.2f}".format(v) | replace(",", "@") | replace(".", ",") | replace("@", ".")) -}}
 {%- endmacro %}
 
+{% macro moeda_sem_decimais(valor) -%}
+{%- set v = valor or 0 -%}
+{{- "R$ %s" | format("{:,.0f}".format(v) | replace(",", "@") | replace(".", ",") | replace("@", ".")) -}}
+{%- endmacro %}
+
 {% macro moeda_curta(valor) -%}
 {%- set v = (valor or 0) | float -%}
 {%- if v >= 1000000 -%}

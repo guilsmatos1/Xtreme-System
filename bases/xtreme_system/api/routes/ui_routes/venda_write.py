@@ -8,7 +8,10 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from xtreme_system.api.crud_ui.responses import validation_error_detail
+from xtreme_system.api.crud_ui.responses import (
+    validation_error_detail,
+    validation_error_field,
+)
 from xtreme_system.api.routes.ui_routes.client_resolution import resolver_cliente
 from xtreme_system.api.routes.ui_routes.nested_writes import (
     NestedWrites,
@@ -36,6 +39,75 @@ class VendaErro:
     mensagem: str | None = None
     conflito: str | None = None
     dados: dict[str, Any] = field(default_factory=dict)
+
+
+_WIZARD_NOVA = {
+    "cliente_id": 1,
+    "nome": 1,
+    "documento": 1,
+    "tipo": 1,
+    "email": 1,
+    "telefone": 1,
+    "telefone2": 1,
+    "endereco": 1,
+    "cidade": 1,
+    "estado": 1,
+    "cep": 1,
+    "profissao": 1,
+    "bairro": 1,
+    "veiculo_id": 2,
+    "km": 2,
+    "debitos": 2,
+    "veiculo_troca_id": 3,
+    "valor_diferenca": 3,
+    "valor_venda": 4,
+    "valor_entrada": 4,
+    "forma_pagamento": 4,
+    "parcelas": 4,
+    "pagamento_pendente": 4,
+    "valor_pendente": 4,
+    "datas_pagamento": 4,
+    "observacoes": 4,
+    "status": 5,
+    "vendedor_id": 5,
+    "data_venda": 5,
+}
+
+_WIZARD_EDITAR = {
+    "status": 1,
+    "km": 1,
+    "valor_venda": 1,
+    "debitos": 1,
+    "valor_entrada": 2,
+    "forma_pagamento": 2,
+    "parcelas": 2,
+    "pagamento_pendente": 2,
+    "valor_pendente": 2,
+    "datas_pagamento": 2,
+    "veiculo_troca_id": 3,
+    "valor_diferenca": 3,
+    "observacoes": 3,
+}
+
+
+def _passo_wizard(campo: str | None, *, editar: bool) -> int | None:
+    if not campo:
+        return None
+    if campo.startswith("cli_"):
+        return 1
+    if campo.startswith("veic_troca_"):
+        return 3
+    tabela = _WIZARD_EDITAR if editar else _WIZARD_NOVA
+    return tabela.get(campo)
+
+
+def _com_passo(
+    dados: dict[str, Any], campo: str | None, *, editar: bool
+) -> dict[str, Any]:
+    passo = _passo_wizard(campo, editar=editar)
+    if passo is None:
+        return dados
+    return {**dados, "wizard_step": str(passo)}
 
 
 def parse_venda_form(form: Any) -> dict[str, Any]:
@@ -114,11 +186,14 @@ def _preparar_cliente(
 ) -> tuple[cliente.Cliente | None, VendaErro | None]:
     cliente_obj, novo_cliente_data, erro = resolver_cliente(session, form)
     if erro:
-        return None, VendaErro(mensagem=erro, dados=dados_form)
+        return None, VendaErro(
+            mensagem=erro, dados=_com_passo(dados_form, "cliente_id", editar=False)
+        )
     if novo_cliente_data is None:
         if cliente_obj is None:
             return None, VendaErro(
-                mensagem="Informe os dados do cliente", dados=dados_form
+                mensagem="Informe os dados do cliente",
+                dados=_com_passo(dados_form, "cliente_id", editar=False),
             )
         return cliente_obj, None
     cliente_obj, conflito = criar_aninhado_ou_resposta_conflito(
@@ -145,7 +220,10 @@ def _preparar_veiculo_troca(
     )
     if erro:
         nested_writes.rollback(session)
-        return None, VendaErro(mensagem=erro, dados=dados_form)
+        return None, VendaErro(
+            mensagem=erro,
+            dados=_com_passo(dados_form, "veiculo_troca_id", editar=False),
+        )
     if novo_veiculo_troca_data is not None:
         veiculo_principal_id = str(form.get("veiculo_id") or "").strip()
         if veiculo_principal_id:
@@ -220,6 +298,12 @@ def preparar_venda(
         data = _validar_venda(session, user, dados_venda, obj)
     except (ValidationError, HTTPException) as exc:
         nested_writes.rollback(session)
-        return VendaErro(mensagem=_validation_message(exc), dados=dados_form)
+        campo = (
+            validation_error_field(exc) if isinstance(exc, ValidationError) else None
+        )
+        return VendaErro(
+            mensagem=_validation_message(exc),
+            dados=_com_passo(dados_form, campo, editar=obj is not None),
+        )
 
     return VendaPreparada(data=data, nested_writes=nested_writes)

@@ -217,7 +217,7 @@ def ui_configuracoes_rsd_teste(
         client.open()
         client.testar_conexao()
     except rsd.RsdError as exc:
-        logger.warning("rsd_teste_conexao_falhou", erro=str(exc))
+        logger.warning("rsd_teste_conexao_falhou", **rsd.contexto_log(exc))
         rsd.registrar_teste_config_persistente(
             email=email,
             senha=senha or rsd.senha_config(config_rsd),

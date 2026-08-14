@@ -331,7 +331,7 @@ def _seed_veiculos_com_e_sem_compra(session: Session) -> None:
     )
 
 
-def test_ui_veiculos_lista_mostra_so_preco_anunciado(
+def test_ui_veiculos_lista_mostra_so_preco_de_venda(
     make_client: Callable[..., TestClient],
 ) -> None:
     """A tabela /ui/veiculos não tem coluna de custo — só o detalhe do veículo tem."""
@@ -345,10 +345,10 @@ def test_ui_veiculos_lista_mostra_so_preco_anunciado(
     pagina = local_client.get("/ui/veiculos")
 
     assert pagina.status_code == 200
-    assert 'data-col-label="Preço Anunciado"' in pagina.text
+    assert 'data-col-label="Preço de Venda"' in pagina.text
     assert 'data-col-label="Preço de Custo"' not in pagina.text
     assert 'data-col="custo"' not in pagina.text
-    assert '<td class="cell-num cell-strong" data-col="preco">R$ 90.000,00</td>' in (
+    assert '<td class="cell-num cell-strong" data-col="preco">R$ 90.000</td>' in (
         pagina.text
     )
 
@@ -366,15 +366,18 @@ def test_ui_veiculo_detalhe_mostra_preco_de_custo_da_compra(
     comprado = local_client.get("/ui/veiculos/1/detalhes")
     assert comprado.status_code == 200
     assert "Preço Anunciado" in comprado.text
+    assert "Atualizar dados" in comprado.text
+    assert "Atualizar pelo RSD" not in comprado.text
+    assert "Mídia e documentos" in comprado.text
     assert re.search(
         r"Preço Anunciado</div>\s*<div class=\"stat__value cell-num\">"
-        r"R\$ 90\.000,00</div>",
+        r"R\$ 90\.000</div>",
         comprado.text,
     )
     # custo vem do valor da compra, não do preço anunciado
     assert re.search(
         r"Preço de Custo</div>\s*<div class=\"stat__value cell-num\">"
-        r"R\$ 75\.000,00</div>",
+        r"R\$ 75\.000</div>",
         comprado.text,
     )
 
@@ -1260,7 +1263,8 @@ def test_ui_investidores_crud_basico(client: TestClient) -> None:
     assert "NOVA INVESTIDORA" in criado.text
     assert "Nova Investidora" not in criado.text
     assert "cell-num" in criado.text
-    assert "R$ 0,00" in criado.text
+    assert "R$ 0</td>" in criado.text
+    assert "R$ 0,00" not in criado.text
 
 
 def test_ui_listas_administrativas_paginam_usuarios_perfis_investidores(
@@ -1740,6 +1744,106 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
         assert re.search(
             rf'<(?:input|select)[^>]*name="{campo}"[^>]*required', resp.text
         )
+
+
+def _payload_nova_venda(
+    *,
+    cliente_id: int | str = "",
+    veiculo_id: int | str,
+    **extra: str,
+) -> dict[str, str]:
+    dados = {
+        "cliente_id": str(cliente_id),
+        "veiculo_id": str(veiculo_id),
+        "data_venda": "2026-07-09",
+        "valor_venda": "85000.00",
+        "forma_pagamento": "a_vista",
+        "parcelas": "1",
+        "status": "pendente",
+        "wizard_step": "5",
+        "km": "1000",
+        "debitos": "0",
+        "houve_troca": "false",
+        "pagamento_pendente": "false",
+    }
+    dados.update(extra)
+    return dados
+
+
+def test_ui_nova_venda_erro_pagamento_pendente_nomeia_campo_e_abre_passo(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    cliente_id = _criar_cliente(client, headers, "Cliente Pendente", "11122233355")
+
+    resp = client.post(
+        "/ui/vendas",
+        data=_payload_nova_venda(
+            cliente_id=cliente_id,
+            veiculo_id=veiculo_id,
+            pagamento_pendente="true",
+            datas_pagamento="10/08/2026",
+        ),
+    )
+
+    assert resp.status_code == 400
+    assert "Campo informado" not in resp.text
+    assert "Valor pendente: informe um valor pendente maior que zero." in resp.text
+    assert 'x-data="wizard(4)"' in resp.text
+
+
+def test_ui_nova_venda_erro_entrada_maior_que_venda_nomeia_campo_e_abre_passo(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+    cliente_id = _criar_cliente(client, headers, "Cliente Entrada", "11122233366")
+
+    resp = client.post(
+        "/ui/vendas",
+        data=_payload_nova_venda(
+            cliente_id=cliente_id,
+            veiculo_id=veiculo_id,
+            valor_venda="10000.00",
+            valor_entrada="20000.00",
+        ),
+    )
+
+    assert resp.status_code == 400
+    assert "Campo informado" not in resp.text
+    assert "Entrada: não pode ser maior que o valor da venda." in resp.text
+    assert 'x-data="wizard(4)"' in resp.text
+
+
+def test_ui_nova_venda_erro_documento_invalido_nomeia_campo_e_abre_passo(
+    client: TestClient,
+) -> None:
+    _login_admin(client)
+    headers = _admin_headers(client)
+    veiculo_id = client.get("/veiculos", headers=headers).json()[0]["id"]
+
+    resp = client.post(
+        "/ui/vendas",
+        data=_payload_nova_venda(
+            veiculo_id=veiculo_id,
+            cliente_id="",
+            cli_nome="Cliente Documento",
+            cli_documento="123",
+            cli_tipo="pessoa_fisica",
+            cli_telefone="11999999999",
+        ),
+    )
+
+    assert resp.status_code == 400
+    assert "Campo informado" not in resp.text
+    assert (
+        "Documento: CPF deve ter 11 dígitos (pessoa física) "
+        "ou CNPJ 14 dígitos (pessoa jurídica)."
+    ) in resp.text
+    assert 'x-data="wizard(1)"' in resp.text
 
 
 def test_ui_criar_venda_cadastra_veiculo_novo_na_troca(client: TestClient) -> None:
@@ -2412,7 +2516,7 @@ def test_resolver_cliente_compartilhado_cobre_ramos_principais() -> None:
                 "cli_email": "email-invalido",
             },
         )
-        assert erro == "E-mail: informe um valor válido."
+        assert erro == "E-mail: informe um e-mail válido."
 
         _, _, erro = resolver_veiculo_inline(
             session,
@@ -2523,7 +2627,7 @@ def test_ui_compras_crud_basico(client: TestClient) -> None:
     )
     assert editado.status_code == 200
     assert "ajustada" in editado.text
-    assert "R$ 83.000,00" in editado.text
+    assert "R$ 83.000</td>" in editado.text
     assert 'badge badge--plain badge--warning">' in editado.text
 
     excluido = client.post(f"/ui/compras/{compra_id}/excluir")
@@ -3089,10 +3193,10 @@ def test_ui_admin_crud_custos_veiculos_e_csv(client: TestClient) -> None:
     )
     assert criado.status_code == 200
     assert "Manutenção" in criado.text
-    assert "R$ 250,00" in criado.text
+    assert "R$ 250</td>" in criado.text
 
     pagina = client.get("/ui/custos-veiculos")
-    assert "R$ 250,00" in pagina.text
+    assert "R$ 250</td>" in pagina.text
     assert "1" in pagina.text
 
     exportado = client.get("/ui/custos-veiculos/exportar")
@@ -3119,7 +3223,7 @@ def test_ui_admin_crud_custos_veiculos_e_csv(client: TestClient) -> None:
     )
     assert editado.status_code == 200
     assert "Peças" in editado.text
-    assert "R$ 300,00" in editado.text
+    assert "R$ 300</td>" in editado.text
 
     excluido = client.post(f"/ui/custos-veiculos/{custo_id}/excluir")
     assert excluido.status_code == 200

@@ -24,7 +24,7 @@
     {% endif %}
   </td>
   {% endif %}
-  {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(v.valor_venda) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'vendas', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda_sem_decimais(v.valor_venda) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'valor_entrada') %}<td class="cell-num" data-col="entrada">{% if v.valor_entrada is not none %}{{ ui.moeda(v.valor_entrada) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'valor_pendente') %}<td class="cell-num" data-col="divida">{% if v.valor_pendente is not none and v.valor_pendente > 0 %}{{ ui.moeda(v.valor_pendente) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'vendas', 'forma_pagamento') %}<td data-col="pagamento">{{ v.forma_pagamento }}</td>{% endif %}

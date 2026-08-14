@@ -129,10 +129,35 @@ _POLL_TIMEOUT_S = 120.0
 _POLL_MAX_ERROS_CONSECUTIVOS = 3
 _HTTP_TIMEOUT_S = 30.0
 _MSG_PORTAL_MAX_LEN = 300
+# O portal embrulha falhas do backend dele ("motor") em respostas próprias,
+# às vezes com status 4xx — só a mensagem revela que a origem é upstream.
+_MOTOR_5XX_RE = re.compile(r"motor respondeu\s+(5\d\d)")
+_STATUS_UPSTREAM = frozenset({500, 502, 503, 504})
+_MSG_PORTAL_INDISPONIVEL = (
+    "O portal RSD está temporariamente indisponível para consultas. "
+    "Tente novamente em alguns minutos."
+)
+# Espera entre as tentativas; o total de tentativas é len(backoff) + 1.
+_RETRY_BACKOFF_S = (1.0, 3.0)
 
 
 class RsdError(Exception):
-    """Erro genérico da integração RSD."""
+    """Erro genérico da integração RSD.
+
+    `status_portal` e `detalhe_portal` preservam a resposta crua do RSD para
+    log e histórico, sem que ela precise virar a mensagem mostrada ao
+    operador.
+    """
+
+    def __init__(
+        self,
+        *args: object,
+        status_portal: int | None = None,
+        detalhe_portal: str | None = None,
+    ) -> None:
+        super().__init__(*args)
+        self.status_portal = status_portal
+        self.detalhe_portal = detalhe_portal
 
 
 class RsdNotConfiguredError(RsdError):
@@ -165,6 +190,14 @@ class RsdTimeoutError(RsdError):
 
 class RsdConsultaError(RsdError):
     """Portal retornou erro na consulta."""
+
+
+class RsdIndisponivelError(RsdError):
+    """O portal respondeu, mas o backend dele ("motor") falhou.
+
+    Separado de `RsdConsultaError` porque não diz nada sobre a credencial nem
+    sobre a placa consultada: é indisponibilidade momentânea do fornecedor.
+    """
 
 
 def _allowed_rsd_hosts() -> frozenset[str]:
@@ -412,12 +445,34 @@ def _erro_teste_sanitizado(erro: Exception) -> str:
         return "Falha de autenticação: o portal rejeitou as credenciais informadas."
     if isinstance(erro, RsdTimeoutError):
         return "Falha de disponibilidade: o portal RSD não respondeu a tempo."
+    if isinstance(erro, RsdIndisponivelError):
+        return "Falha de disponibilidade: o portal RSD está fora do ar."
     return "Falha de disponibilidade: não foi possível verificar o portal RSD."
 
 
 def mensagem_teste(erro: Exception) -> str:
     """Mensagem segura para a interface, sem detalhes do portal externo."""
     return _erro_teste_sanitizado(erro)
+
+
+def contexto_log(erro: Exception) -> dict[str, Any]:
+    """Campos de log que preservam a resposta crua do portal."""
+    return {
+        "erro": str(erro),
+        "erro_tipo": type(erro).__name__,
+        "status_portal": getattr(erro, "status_portal", None),
+        "detalhe_portal": getattr(erro, "detalhe_portal", None),
+    }
+
+
+def erro_para_historico(erro: Exception) -> str:
+    """Mensagem gravada em `rsd_consulta`, com o detalhe cru do portal.
+
+    A interface mostra `str(erro)` (texto tratado); o histórico guarda também
+    o que o portal respondeu, que é o que permite diagnosticar depois.
+    """
+    detalhe = getattr(erro, "detalhe_portal", None)
+    return f"{erro} [portal: {detalhe}]" if detalhe else str(erro)
 
 
 def senha_config(config: RsdConfig) -> str:
@@ -1157,11 +1212,21 @@ class RsdClient:
         self, *, label: str, path: str, markers: tuple[str, ...]
     ) -> None:
         response = self._request("GET", path, follow_redirects=True)
+        # Portal fora do ar não é falta de permissão: sem esta distinção, uma
+        # indisponibilidade rebaixa a credencial (ver _marcar_falha_credencial).
+        upstream = _erro_upstream_do_portal(response)
+        if upstream is not None:
+            raise RsdIndisponivelError(
+                _MSG_PORTAL_INDISPONIVEL,
+                status_portal=response.status_code,
+                detalhe_portal=upstream,
+            )
         if response.status_code >= 400 or not all(
             marker in response.text for marker in markers
         ):
             raise RsdCapabilityError(
-                f"A conta RSD não tem permissão ou acesso para {label}."
+                f"A conta RSD não tem permissão ou acesso para {label}.",
+                status_portal=response.status_code,
             )
 
     def testar_conexao(self) -> None:
@@ -1177,18 +1242,50 @@ class RsdClient:
             markers=('class="dossie-form"', 'name="placa"'),
         )
 
+    def _puxar_dados_resposta(self, placa_norm: str) -> httpx.Response:
+        """POST de puxar dados, repetido quando o motor do portal falha.
+
+        A consulta não altera estado no portal, então repetir é seguro — e o
+        502 do motor costuma ser um blip que a tentativa seguinte já resolve.
+        """
+        detalhe = ""
+        resp: httpx.Response | None = None
+        for tentativa in range(len(_RETRY_BACKOFF_S) + 1):
+            resp = self._request(
+                "POST",
+                _PUXAR_DADOS_PATH,
+                data={"placa": placa_norm},
+                headers_factory=lambda: self._csrf_headers(_ATPV_NOVA_PATH),
+            )
+            upstream = _erro_upstream_do_portal(resp)
+            if upstream is None:
+                return resp
+            detalhe = upstream
+            logger.warning(
+                "rsd_puxar_dados_upstream_indisponivel",
+                tentativa=tentativa + 1,
+                status=resp.status_code,
+                detalhe_portal=detalhe,
+            )
+            if tentativa < len(_RETRY_BACKOFF_S):
+                time.sleep(_RETRY_BACKOFF_S[tentativa])
+        assert resp is not None  # noqa: S101
+        raise RsdIndisponivelError(
+            _MSG_PORTAL_INDISPONIVEL,
+            status_portal=resp.status_code,
+            detalhe_portal=detalhe,
+        )
+
     def puxar_dados(self, placa: str) -> PuxarDadosResult:
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa para puxar dados.")
-        resp = self._request(
-            "POST",
-            _PUXAR_DADOS_PATH,
-            data={"placa": placa_norm},
-            headers_factory=lambda: self._csrf_headers("/atpv/nova/"),
-        )
+        resp = self._puxar_dados_resposta(placa_norm)
         if resp.status_code >= 400:
-            raise RsdConsultaError(_msg_http(resp, "Falha ao puxar dados no RSD."))
+            raise RsdConsultaError(
+                _msg_http(resp, "Falha ao puxar dados no RSD."),
+                status_portal=resp.status_code,
+            )
         try:
             payload = resp.json()
         except ValueError as exc:
@@ -1223,8 +1320,18 @@ class RsdClient:
             headers_factory=lambda: self._csrf_headers(_UNITARIA_PATH),
         )
         if resp.status_code not in (302, 303):
+            # Sem retry aqui: o POST cria um dossiê no portal, repetir
+            # duplicaria a consulta (e a cobrança) quando ela já tiver saído.
+            upstream = _erro_upstream_do_portal(resp)
+            if upstream is not None:
+                raise RsdIndisponivelError(
+                    _MSG_PORTAL_INDISPONIVEL,
+                    status_portal=resp.status_code,
+                    detalhe_portal=upstream,
+                )
             raise RsdConsultaError(
-                _msg_http(resp, "Falha ao iniciar consulta unitária.")
+                _msg_http(resp, "Falha ao iniciar consulta unitária."),
+                status_portal=resp.status_code,
             )
         location = resp.headers.get("Location") or ""
         match = _DOSSIE_ID_RE.search(location)
@@ -1281,8 +1388,16 @@ class RsdClient:
             headers={"Accept": "application/json"},
         )
         if resp.status_code >= 400:
+            upstream = _erro_upstream_do_portal(resp)
+            if upstream is not None:
+                raise RsdIndisponivelError(
+                    _MSG_PORTAL_INDISPONIVEL,
+                    status_portal=resp.status_code,
+                    detalhe_portal=upstream,
+                )
             raise RsdConsultaError(
-                _msg_http(resp, f"Falha ao consultar status do dossiê {dossie_id}.")
+                _msg_http(resp, f"Falha ao consultar status do dossiê {dossie_id}."),
+                status_portal=resp.status_code,
             )
         try:
             payload: dict[str, Any] = resp.json()
@@ -1331,8 +1446,16 @@ class RsdClient:
         self.ensure_login()
         resp = self._request("GET", f"/dossie/{dossie_id}/pdf/", follow_redirects=True)
         if resp.status_code >= 400:
+            upstream = _erro_upstream_do_portal(resp)
+            if upstream is not None:
+                raise RsdIndisponivelError(
+                    _MSG_PORTAL_INDISPONIVEL,
+                    status_portal=resp.status_code,
+                    detalhe_portal=upstream,
+                )
             raise RsdConsultaError(
-                _msg_http(resp, f"Falha ao baixar PDF do dossiê {dossie_id}.")
+                _msg_http(resp, f"Falha ao baixar PDF do dossiê {dossie_id}."),
+                status_portal=resp.status_code,
             )
         ctype = (resp.headers.get("Content-Type") or "").lower()
         if "pdf" not in ctype and not resp.content.startswith(b"%PDF"):
@@ -1369,6 +1492,24 @@ def mapear_para_veiculo(dados: PuxarDadosResult, *, prefix: str = "") -> dict[st
 
 def _normalizar_placa(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", value or "").upper()
+
+
+def _erro_upstream_do_portal(resp: httpx.Response) -> str | None:
+    """Texto cru do portal quando a falha veio do backend dele, senão `None`.
+
+    Cobre dois formatos: 5xx do próprio portal e o embrulho que ele usa para
+    o motor (status 4xx com `{"erro": "...: motor respondeu 502"}`).
+    """
+    if resp.status_code in _STATUS_UPSTREAM:
+        return _msg_http(resp, f"O portal RSD falhou (HTTP {resp.status_code}).")
+    try:
+        data = resp.json()
+    except ValueError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    msg = str(data.get("erro") or data.get("error") or "")
+    return msg if _MOTOR_5XX_RE.search(msg) else None
 
 
 def _msg_http(resp: httpx.Response, fallback: str) -> str:

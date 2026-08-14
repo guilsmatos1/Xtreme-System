@@ -8,9 +8,9 @@
 <tr id="item-{{ item.id }}">
   <td class="cell-strong" data-col="nome">{{ item.nome }}</td>
   <td class="cell-num" data-col="num_veiculos">{{ nv }}</td>
-  <td class="cell-num" data-col="total_investido">{{ ui.moeda(ta) }}</td>
-  <td class="cell-num" data-col="valor_veiculos">{{ ui.moeda(vv) }}</td>
-  <td class="cell-num" data-col="pendente" style="{{ 'color:var(--danger)' if pendente < 0 }}">{{ ui.moeda(pendente) }}</td>
+  <td class="cell-num" data-col="total_investido">{{ ui.moeda_sem_decimais(ta) }}</td>
+  <td class="cell-num" data-col="valor_veiculos">{{ ui.moeda_sem_decimais(vv) }}</td>
+  <td class="cell-num" data-col="pendente" style="{{ 'color:var(--danger)' if pendente < 0 }}">{{ ui.moeda_sem_decimais(pendente) }}</td>
   {% set pode_editar = pode_operacao(user, 'investidores', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'investidores', 'excluir') %}
   {% if pode_editar or pode_excluir or is_admin(user) %}

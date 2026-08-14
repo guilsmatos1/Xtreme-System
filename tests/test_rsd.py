@@ -19,9 +19,11 @@ from sqlalchemy.orm import Session
 from xtreme_system.api.routes.ui_routes import rsd as rsd_routes
 from xtreme_system.auditoria.core import Auditoria
 from xtreme_system.database.core import SessionLocal
+from xtreme_system.investidor import core as investidor
 from xtreme_system.perfil import core as perfil
 from xtreme_system.rsd import core as rsd
 from xtreme_system.usuario import core as usuario
+from xtreme_system.veiculo import core as veiculo
 
 
 def _login_html(csrf: str = "csrf-test-token") -> str:
@@ -1729,7 +1731,185 @@ def test_ui_pdf_com_mock(client: TestClient, monkeypatch: pytest.MonkeyPatch) ->
     assert resp.content.startswith(b"%PDF")
 
 
+# ---- Atualizar veículo pelo RSD (página de detalhes) ----
+
+
+def _seed_veiculo(session: Session) -> None:
+    """Cria investidor + veículo e commita.
+
+    O commit é obrigatório: a rota grava o veículo por `SessionLocal()` (a
+    sessão do request já foi encerrada por `detach_request_session`), então o
+    registro precisa estar visível fora da sessão do `TestClient`.
+    """
+    inv = investidor.create(session, investidor.InvestidorCreate(nome="Investidor RSD"))
+    veiculo.create(
+        session,
+        veiculo.VeiculoCreate(
+            tipo=veiculo.TipoVeiculo.carro,
+            modelo="Modelo Antigo",
+            marca="MARCA ANTIGA",
+            cor="PRETO",
+            ano=2010,
+            placa="TCM9G85",
+            investidor_id=inv.id,
+        ),
+    )
+    session.commit()
+
+
+@pytest.fixture
+def veiculo_client(make_client: Callable[..., TestClient]) -> TestClient:
+    return make_client(usuarios=[("admin", usuario.Papel.admin)], seed=_seed_veiculo)
+
+
+def _veiculo_por_placa(placa: str) -> veiculo.Veiculo | None:
+    session = SessionLocal()
+    try:
+        return veiculo.get_by_placa(session, placa)
+    finally:
+        session.close()
+
+
+def test_ui_rsd_atualizar_veiculo_grava_campos(
+    veiculo_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_ui(veiculo_client)
+    _salvar_config_rsd(veiculo_client)
+    _patch_client_from_config(monkeypatch)
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+
+    resp = veiculo_client.post(
+        f"/ui/rsd/veiculos/{item.id}/atualizar",
+        headers={"HX-Request": "true"},
+    )
+
+    assert resp.status_code == 204
+    assert resp.headers["HX-Refresh"] == "true"
+    # Sem HX-Trigger próprio o middleware _htmx_write_feedback injetaria
+    # toast + close-modal neste POST /ui/.
+    trigger = json.loads(resp.headers["HX-Trigger"])
+    assert "htmx:close-modal" not in trigger
+    assert "htmx:toast" not in trigger
+
+    atualizado = _veiculo_por_placa("TCM9G85")
+    assert atualizado is not None
+    assert atualizado.modelo == "ONIX 10MT LT2"
+    assert atualizado.marca == "CHEV"
+    assert atualizado.ano == 2025
+    assert atualizado.cor == "CINZA"
+    assert atualizado.chassi == "9BGEB48A0SG190437"
+    assert atualizado.renavam == "01412830033"
+    assert atualizado.proprietario_atual == "XTREME MOTORS LTDA"
+    assert atualizado.proprietario_documento == "44237309000175"
+
+    registro = _ultima_consulta(placa="TCM9G85")
+    assert registro is not None
+    assert registro.sucesso is True
+    assert registro.veiculo_id == item.id
+
+
+def test_ui_rsd_atualizar_veiculo_preserva_campos_fora_do_retorno(
+    veiculo_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Campos ausentes no retorno do portal não podem virar NULL.
+
+    Garante o `exclude_unset=True` de `crud.update`: o RSD não devolve `km`
+    nem `preco`, e o veículo não pode perder o que já tinha.
+    """
+    _login_ui(veiculo_client)
+    _salvar_config_rsd(veiculo_client)
+    _patch_client_from_config(monkeypatch)
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+    antes_status = item.status
+    antes_investidor = item.investidor_id
+
+    resp = veiculo_client.post(f"/ui/rsd/veiculos/{item.id}/atualizar")
+
+    assert resp.status_code == 204
+    atualizado = _veiculo_por_placa("TCM9G85")
+    assert atualizado is not None
+    assert atualizado.status == antes_status
+    assert atualizado.investidor_id == antes_investidor
+
+
+def test_ui_rsd_atualizar_veiculo_sem_config(veiculo_client: TestClient) -> None:
+    _login_ui(veiculo_client)
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+
+    resp = veiculo_client.post(f"/ui/rsd/veiculos/{item.id}/atualizar")
+
+    assert resp.status_code == 400
+    assert 'role="alert"' in resp.text
+    assert 'id="rsd-status-veiculo"' in resp.text
+    inalterado = _veiculo_por_placa("TCM9G85")
+    assert inalterado is not None
+    assert inalterado.modelo == "Modelo Antigo"
+
+
+def test_ui_rsd_atualizar_veiculo_erro_do_portal_nao_altera(
+    veiculo_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class _TimeoutClient:
+        def puxar_dados(self, _placa: str) -> rsd.PuxarDadosResult:
+            raise rsd.RsdTimeoutError(
+                "O portal RSD não respondeu a tempo ao puxar os dados. Tente novamente."
+            )
+
+    _login_ui(veiculo_client)
+    _salvar_config_rsd(veiculo_client)
+    monkeypatch.setattr(rsd, "client_from_config", lambda _config: _TimeoutClient())
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+
+    resp = veiculo_client.post(f"/ui/rsd/veiculos/{item.id}/atualizar")
+
+    assert resp.status_code == 400
+    assert "não respondeu a tempo" in resp.text
+    assert 'id="rsd-status-veiculo"' in resp.text
+
+    inalterado = _veiculo_por_placa("TCM9G85")
+    assert inalterado is not None
+    assert inalterado.modelo == "Modelo Antigo"
+    assert inalterado.marca == "MARCA ANTIGA"
+
+    registro = _ultima_consulta(placa="TCM9G85")
+    assert registro is not None
+    assert registro.sucesso is False
+    assert registro.veiculo_id == item.id
+
+
+def test_ui_rsd_atualizar_veiculo_inexistente(
+    veiculo_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _login_ui(veiculo_client)
+    _salvar_config_rsd(veiculo_client)
+    _patch_client_from_config(monkeypatch)
+
+    resp = veiculo_client.post("/ui/rsd/veiculos/999999/atualizar")
+
+    assert resp.status_code == 404
+
+
+def test_botao_atualizar_rsd_aparece_na_pagina_de_detalhes(
+    veiculo_client: TestClient,
+) -> None:
+    _login_ui(veiculo_client)
+    item = _veiculo_por_placa("TCM9G85")
+    assert item is not None
+
+    resp = veiculo_client.get(f"/ui/veiculos/{item.id}/detalhes")
+
+    assert resp.status_code == 200
+    assert f'hx-post="/ui/rsd/veiculos/{item.id}/atualizar"' in resp.text
+    assert 'id="rsd-status-veiculo"' in resp.text
+    assert "Atualizar dados" in resp.text
+
+
 def test_pagina_da_rota_rsd_mapeia_para_veiculos() -> None:
+    assert perfil.pagina_da_rota("/ui/rsd/veiculos/1/atualizar") == "veiculos"
     assert perfil.pagina_da_rota("/ui/rsd/puxar-dados") == "veiculos"
     assert perfil.pagina_da_rota("/ui/rsd/dossie/1/pdf") == "veiculos"
     assert perfil.pagina_da_rota("/consultas") == "veiculos"
@@ -1918,3 +2098,206 @@ def test_ui_rsd_consultas_detalhe_contem_payload(
     assert resp.status_code == 200
     assert "Payload do portal" in resp.text
     assert "Campos aplicados" in resp.text
+
+
+# ---- Indisponibilidade do motor do portal (502 upstream) ----
+
+
+def _motor_502_response(status: int = 409) -> httpx.Response:
+    """Resposta real do portal quando o backend dele falha."""
+    return httpx.Response(
+        status, json={"erro": "puxar_dados_atpv: motor respondeu 502"}
+    )
+
+
+def _client_com_handler(
+    handler: Callable[[httpx.Request], httpx.Response],
+) -> rsd.RsdClient:
+    client = rsd.RsdClient(
+        base_url="https://rsd.test",
+        email="loja@test.com",
+        senha="segredo",
+    )
+    client._client = httpx.Client(  # noqa: SLF001
+        base_url="https://rsd.test",
+        transport=httpx.MockTransport(handler),
+        timeout=5.0,
+        follow_redirects=False,
+    )
+    return client
+
+
+@pytest.fixture
+def _sem_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mantém a quantidade de tentativas, zera a espera entre elas."""
+    monkeypatch.setattr(rsd, "_RETRY_BACKOFF_S", (0.0, 0.0))
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_puxar_dados_retenta_quando_motor_do_portal_falha() -> None:
+    chamadas = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal chamadas
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            chamadas += 1
+            if chamadas < 3:
+                return _motor_502_response()
+            return httpx.Response(200, json={"marca_modelo": "CHEV/ONIX"})
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        dados = client.puxar_dados("TCM9G85")
+
+    assert chamadas == 3
+    assert dados.marca_modelo == "CHEV/ONIX"
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_puxar_dados_motor_indisponivel_esgota_tentativas() -> None:
+    chamadas = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal chamadas
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            chamadas += 1
+            return _motor_502_response()
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdIndisponivelError) as excinfo:
+            client.puxar_dados("TCM9G85")
+
+    assert chamadas == len(rsd._RETRY_BACKOFF_S) + 1  # noqa: SLF001
+    erro = excinfo.value
+    # A mensagem da UI não repassa o texto interno do portal…
+    assert "temporariamente indisponível" in str(erro)
+    assert "motor respondeu" not in str(erro)
+    # …mas ele fica disponível para log e histórico.
+    assert erro.status_portal == 409
+    assert erro.detalhe_portal == "puxar_dados_atpv: motor respondeu 502"
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_puxar_dados_nao_retenta_erro_de_negocio_do_portal() -> None:
+    chamadas = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal chamadas
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            chamadas += 1
+            return httpx.Response(422, json={"erro": "placa inválida"})
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdConsultaError, match="placa inválida"):
+            client.puxar_dados("FAI1L23")
+
+    assert chamadas == 1
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_puxar_dados_trata_5xx_direto_do_portal_como_indisponibilidade() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/atpv/puxar-dados/":
+            return httpx.Response(502, text="Bad Gateway")
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdIndisponivelError):
+            client.puxar_dados("TCM9G85")
+
+
+def test_testar_conexao_nao_confunde_portal_fora_do_ar_com_falta_de_permissao() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and request.url.path == "/atpv/nova/":
+            return httpx.Response(503, text="Service Unavailable")
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client, pytest.raises(rsd.RsdIndisponivelError):
+        client.testar_conexao()
+
+
+def test_erro_para_historico_preserva_texto_cru_do_portal() -> None:
+    erro = rsd.RsdIndisponivelError(
+        "O portal RSD está temporariamente indisponível para consultas.",
+        status_portal=409,
+        detalhe_portal="puxar_dados_atpv: motor respondeu 502",
+    )
+    historico = rsd.erro_para_historico(erro)
+    assert "motor respondeu 502" in historico
+    assert rsd.contexto_log(erro)["status_portal"] == 409
+    assert rsd.contexto_log(erro)["erro_tipo"] == "RsdIndisponivelError"
+
+
+def test_erro_sem_detalhe_do_portal_nao_polui_historico() -> None:
+    assert rsd.erro_para_historico(rsd.RsdConsultaError("placa inválida")) == (
+        "placa inválida"
+    )
+
+
+def test_indisponibilidade_do_portal_nao_invalida_credencial(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Portal fora do ar não diz nada sobre e-mail/senha.
+
+    Antes, qualquer RsdError rebaixava a credencial para `failed` e o
+    operador era mandado reconfigurar uma credencial correta.
+    """
+    testes: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        rsd, "registrar_teste_config_persistente", lambda **kw: testes.append(kw)
+    )
+
+    class _PortalForaDoAr:
+        def puxar_dados(self, _placa: str) -> rsd.PuxarDadosResult:
+            raise rsd.RsdIndisponivelError(
+                "O portal RSD está temporariamente indisponível para consultas.",
+                status_portal=409,
+                detalhe_portal="puxar_dados_atpv: motor respondeu 502",
+            )
+
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    monkeypatch.setattr(rsd, "client_from_config", lambda _config: _PortalForaDoAr())
+
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
+
+    assert resp.status_code == 400
+    assert testes == []
+    assert "temporariamente indisponível" in resp.text
+    assert "motor respondeu" not in resp.text
+
+
+def test_falha_de_autenticacao_continua_invalidando_credencial(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    testes: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        rsd, "registrar_teste_config_persistente", lambda **kw: testes.append(kw)
+    )
+
+    class _CredencialRejeitada:
+        def puxar_dados(self, _placa: str) -> rsd.PuxarDadosResult:
+            raise rsd.RsdAuthError("E-mail ou senha inválidos no portal RSD.")
+
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    monkeypatch.setattr(
+        rsd, "client_from_config", lambda _config: _CredencialRejeitada()
+    )
+
+    resp = client.post("/ui/rsd/puxar-dados", data={"placa": "TCM9G85"})
+
+    assert resp.status_code == 400
+    assert len(testes) == 1
+    assert testes[0]["sucesso"] is False

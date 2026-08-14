@@ -290,7 +290,7 @@ def test_modal_venda_editar_atualiza_valor(page: Page, live_server_url: str) -> 
     expect(page.get_by_role("dialog", name="Editar venda")).not_to_be_visible()
     expect(page.get_by_role("status")).to_contain_text("Alterações salvas com sucesso")
     expect(page.locator("tr", has_text="Cliente Venda Setup")).to_contain_text(
-        "R$ 140.000,00"
+        "R$ 140.000"
     )
 
 
@@ -386,7 +386,7 @@ def test_modal_compra_editar_atualiza_valor(
     expect(page.get_by_role("dialog", name="Editar compra")).not_to_be_visible()
     expect(page.get_by_role("status")).to_contain_text("Alterações salvas com sucesso")
     expect(page.locator("tr", has_text="Cliente Compra Editar")).to_contain_text(
-        "R$ 99.000,00"
+        "R$ 99.000"
     )
 
 
@@ -446,7 +446,7 @@ def test_modal_custo_veiculo_cria_e_edita_custo(
     expect(page.get_by_role("dialog", name="Novo custo")).not_to_be_visible()
     expect(page.get_by_role("status")).to_contain_text("Alterações salvas com sucesso")
     linha = page.locator("tr", has_text="Manutenção")
-    expect(linha).to_contain_text("R$ 450,00")
+    expect(linha).to_contain_text("R$ 450")
 
     linha.get_by_role("button", name="Editar custo").click()
     expect(page.get_by_role("dialog", name="Editar custo")).to_be_visible()
@@ -456,7 +456,7 @@ def test_modal_custo_veiculo_cria_e_edita_custo(
     page.get_by_test_id("custo-veiculo-form-save").click()
 
     expect(page.get_by_role("dialog", name="Editar custo")).not_to_be_visible()
-    expect(page.locator("tr", has_text="Manutenção")).to_contain_text("R$ 600,00")
+    expect(page.locator("tr", has_text="Manutenção")).to_contain_text("R$ 600")
 
 
 @pytest.mark.e2e

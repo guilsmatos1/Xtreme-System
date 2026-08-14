@@ -6,8 +6,8 @@
   {% if pode_ver_campo(user, 'consignacoes', 'status') %}<td data-col="status"><span class="badge badge--plain {% if c.status.value == 'vendida' %}badge--info{% elif c.status.value == 'cancelada' or c.status.value == 'devolvida' %}badge--danger{% else %}badge--success{% endif %}">{{ c.status.value | replace("_", " ") | title }}</span></td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'placa') %}<td data-col="placa">{{ c.veiculo.placa }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'veiculo') %}<td data-col="modelo">{{ c.veiculo.modelo }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(c.valor_venda) }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'consignacoes', 'valor_proprietario') %}<td class="cell-num cell-strong" data-col="valor_proprietario">{{ ui.moeda(c.valor_proprietario) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'valor_venda') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda_sem_decimais(c.valor_venda) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'consignacoes', 'valor_proprietario') %}<td class="cell-num cell-strong" data-col="valor_proprietario">{{ ui.moeda_sem_decimais(c.valor_proprietario) }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'usuario') %}<td data-col="usuario">{{ (c.usuario.nome or c.usuario.username) if c.usuario else "-" }}</td>{% endif %}
   {% if pode_ver_campo(user, 'consignacoes', 'observacoes') %}<td data-col="observacoes">{{ c.observacoes or "-" }}</td>{% endif %}
   {% set pode_abrir_contrato = pode_operacao(user, 'consignacoes', 'abrir_contrato') %}

@@ -4,7 +4,7 @@
   <td class="cell-strong" data-col="veiculo">{{ c.veiculo.modelo }}</td>
   <td data-col="placa">{{ c.veiculo.placa }}</td>
   <td data-col="categoria">{{ c.categoria }}</td>
-  {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda(c.valor) }}</td>{% endif %}
+  {% if pode_ver_campo(user, 'custos-veiculos', 'valor') %}<td class="cell-num cell-strong" data-col="valor">{{ ui.moeda_sem_decimais(c.valor) }}</td>{% endif %}
   <td data-col="descricao">{{ c.descricao or "-" }}</td>
   {% set pode_editar = pode_operacao(user, 'custos-veiculos', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'custos-veiculos', 'excluir') %}

@@ -26,7 +26,7 @@
 {% if pode_ver_campo(user, 'veiculos', 'ano') %}{% set _ = search_colunas.append({"key": "ano", "label": "Ano"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'km') %}{% set _ = search_colunas.append({"key": "km", "label": "KM"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'status') %}{% set _ = search_colunas.append({"key": "status", "label": "STATUS"}) %}{% endif %}
-{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = search_colunas.append({"key": "preco", "label": "Preço Anunciado"}) %}{% endif %}
+{% if pode_ver_campo(user, 'veiculos', 'preco') %}{% set _ = search_colunas.append({"key": "preco", "label": "Preço de Venda"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}{% set _ = search_colunas.append({"key": "tipo_entrada", "label": "ENTRADA"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'investidor') %}{% set _ = search_colunas.append({"key": "investidor", "label": "Investidor"}) %}{% endif %}
 {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}{% set _ = search_colunas.append({"key": "procuracao", "label": "Procurador"}) %}{% endif %}

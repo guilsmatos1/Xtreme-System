@@ -7,7 +7,7 @@
   {% if pode_ver_campo(user, 'veiculos', 'ano') %}<td class="cell-num" data-col="ano">{{ v.ano }}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'km') %}<td class="cell-num" data-col="km">{% if v.km is not none %}{{ "{:,}".format(v.km) | replace(",", ".") }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'status') %}<td data-col="status">{{ ui.status_badge(v.status) }}</td>{% endif %}
-  {% if pode_ver_campo(user, 'veiculos', 'preco') %}<td class="cell-num cell-strong" data-col="preco">{% if v.preco is not none %}{{ ui.moeda(v.preco) }}{% else %}-{% endif %}</td>{% endif %}
+  {% if pode_ver_campo(user, 'veiculos', 'preco') %}<td class="cell-num cell-strong" data-col="preco">{% if v.preco is not none %}{{ ui.moeda_sem_decimais(v.preco) }}{% else %}-{% endif %}</td>{% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tipo_entrada') %}
   <td data-col="tipo_entrada">
     {% if v.tipo_entrada.value == "compra" %}

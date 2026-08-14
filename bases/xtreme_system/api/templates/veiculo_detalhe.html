@@ -20,18 +20,16 @@
   </div>
   <div class="page-head__actions">
     <a class="btn btn--ghost btn--sm" href="/ui/veiculos" aria-label="Voltar para veículos">{{ ui.icon("arrow-left") }} Voltar</a>
-    {% if pode_editar and veiculo.placa %}
+    {% if pode_editar %}
     <button class="btn btn--info" type="button"
             hx-post="/ui/rsd/veiculos/{{ veiculo.id }}/atualizar"
             hx-target="#rsd-status-veiculo" hx-swap="outerHTML"
             hx-disabled-elt="this"
             hx-indicator="#rsd-status-veiculo-indicator"
             hx-confirm="Atualizar os dados deste veículo com o RSD? Os campos retornados serão sobrescritos.">
-      {{ ui.icon("refresh") }} Atualizar pelo RSD
+      {{ ui.icon("refresh") }} Atualizar dados
     </button>
     <span id="rsd-status-veiculo-indicator" class="htmx-indicator muted">Consultando…</span>
-    {% endif %}
-    {% if pode_editar %}
     <button class="btn btn--default" hx-get="/ui/veiculos/{{ veiculo.id }}/editar" hx-target="#modal" hx-swap="innerHTML">{{ ui.icon("edit") }} Editar</button>
     {% endif %}
   </div>
@@ -43,19 +41,19 @@
   {% if pode_ver_campo(user, 'veiculos', 'preco') %}
   <article class="card stat stat--info">
     <div class="stat__label">{{ ui.icon("cash") }} Preço Anunciado</div>
-    <div class="stat__value cell-num">{% if veiculo.preco is not none %}{{ ui.moeda(veiculo.preco) }}{% else %}-{% endif %}</div>
+    <div class="stat__value cell-num">{% if veiculo.preco is not none %}{{ ui.moeda_sem_decimais(veiculo.preco) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'custo') %}
   <article class="card stat stat--cost">
     <div class="stat__label">{{ ui.icon("cash") }} Preço de Custo</div>
-    <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}{{ ui.moeda(compra_atual.valor_compra) }}{% else %}-{% endif %}</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.valor_compra is not none %}{{ ui.moeda_sem_decimais(compra_atual.valor_compra) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
   <article class="card stat stat--warning">
     <div class="stat__label">{{ ui.icon("cash") }} Débitos</div>
-    <div class="stat__value cell-num">{% if compra_atual and compra_atual.debitos is not none %}{{ ui.moeda(compra_atual.debitos) }}{% else %}-{% endif %}</div>
+    <div class="stat__value cell-num">{% if compra_atual and compra_atual.debitos is not none %}{{ ui.moeda_sem_decimais(compra_atual.debitos) }}{% else %}-{% endif %}</div>
   </article>
   {% endif %}
   {% if pode_ver_campo(user, 'veiculos', 'tempo_estoque') %}
@@ -94,7 +92,6 @@
       {% if pode_ver_campo(user, 'veiculos', 'tipo_documento') %}<div><dt>Tipo (Documento)</dt><dd>{{ veiculo.tipo_documento or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'procedencia') %}<div><dt>Procedência</dt><dd>{{ veiculo.procedencia or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'municipio') %}<div><dt>Município</dt><dd>{{ veiculo.municipio or "-" }}</dd></div>{% endif %}
-      {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<div><dt>Procurador</dt><dd>{{ veiculo.procuracao or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'proprietario_atual') %}<div><dt>Proprietário Atual</dt><dd>{{ veiculo.proprietario_atual or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'proprietario_anterior') %}<div><dt>Proprietário Anterior</dt><dd>{{ veiculo.proprietario_anterior or "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'proprietario_documento') %}<div><dt>Documento do Proprietário</dt><dd>{{ veiculo.proprietario_documento or "-" }}</dd></div>{% endif %}
@@ -107,6 +104,7 @@
       {% if pode_ver_campo(user, 'veiculos', 'km') %}<div><dt>Quilometragem</dt><dd>{{ "{:,}".format(veiculo.km) | replace(",", ".") if veiculo.km is not none else "-" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'revisao') %}<div><dt>Revisão</dt><dd>{{ "Sim" if veiculo.revisao else "Não" }}</dd></div>{% endif %}
       {% if pode_ver_campo(user, 'veiculos', 'investidor') %}<div><dt>Investidor</dt><dd>{{ veiculo.investidor.nome }}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'procuracao') %}<div><dt>Procurador</dt><dd>{{ veiculo.procuracao or "-" }}</dd></div>{% endif %}
     </dl>
   </section>
 
@@ -123,7 +121,7 @@
       <div><dt>Endereço</dt><dd>{{ compra_atual.cliente.endereco or "-" }}</dd></div>
       <div><dt>Cidade/UF</dt><dd>{{ compra_atual.cliente.cidade or "-" }}{% if compra_atual.cliente.estado %}/{{ compra_atual.cliente.estado }}{% endif %}</dd></div>
       <div><dt>CEP</dt><dd>{{ compra_atual.cliente.cep or "-" }}</dd></div>
-      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<div><dt>Débitos</dt><dd>{% if compra_atual.debitos is not none %}{{ ui.moeda(compra_atual.debitos) }}{% else %}-{% endif %}</dd></div>{% endif %}
+      {% if pode_ver_campo(user, 'veiculos', 'debitos') %}<div><dt>Débitos</dt><dd>{% if compra_atual.debitos is not none %}{{ ui.moeda_sem_decimais(compra_atual.debitos) }}{% else %}-{% endif %}</dd></div>{% endif %}
     </dl>
     {% if documentos_vendedor %}
     <div style="margin-top:var(--s-4)">
@@ -151,7 +149,7 @@
 
 {% if pode_ver_campo(user, 'veiculos', 'debitos') %}
 <section class="card card--pad" style="margin-bottom:var(--s-4)">
-  <h2 style="margin-bottom:var(--s-4)">Custos</h2>
+  <h2 style="margin-bottom:var(--s-4)">{{ ui.icon("cash") }} Custos</h2>
   {% if custos %}
   <div class="table-wrap">
     <table class="table--wide">
@@ -166,7 +164,7 @@
         <tr>
           <td data-col="categoria">{{ c.categoria }}</td>
           <td data-col="data">{{ c.data_custo.isoformat() }}</td>
-          <td class="cell-num" data-col="valor">{{ ui.moeda(c.valor) }}</td>
+          <td class="cell-num" data-col="valor">{{ ui.moeda_sem_decimais(c.valor) }}</td>
           <td data-col="descricao">{{ c.descricao or "-" }}</td>
         </tr>
         {% endfor %}
@@ -181,7 +179,7 @@
 
 {% if pode_imagens or pode_procuracao or pode_documento %}
 <section class="card card--pad">
-  <h2 style="margin-bottom:var(--s-4)">Mídia e documentos</h2>
+  <h2 style="margin-bottom:var(--s-4)">{{ ui.icon("image") }} Mídia e documentos</h2>
   <div style="display:flex; gap:var(--s-3); flex-wrap:wrap">
     {% if pode_imagens %}
     {% include "_action_veiculo_imagens.html" %}
