@@ -50,6 +50,7 @@ def test_wizard_venda_mostra_salvar_apenas_no_ultimo_passo(
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
     page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.get_by_test_id("venda-wizard-valor-documento").fill("130000")
     proximo.click()
 
     # Último passo (5 de 5): "Salvar" aparece e "Próximo" some.

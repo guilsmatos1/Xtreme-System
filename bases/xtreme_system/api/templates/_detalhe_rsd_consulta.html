@@ -23,6 +23,12 @@
           </dd>
         </div>
         <div>
+          <dt>Modo</dt>
+          <dd>
+            {% if reg.tipo.value == 'unitaria' %}CRLV{% else %}ATPV{% endif %}
+          </dd>
+        </div>
+        <div>
           <dt>Placa</dt>
           <dd>{{ reg.placa }}</dd>
         </div>

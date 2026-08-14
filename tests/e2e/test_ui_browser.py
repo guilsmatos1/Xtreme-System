@@ -153,6 +153,7 @@ def test_modal_venda_wizard_cria_venda(page: Page, live_server_url: str) -> None
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
     page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.get_by_test_id("venda-wizard-valor-documento").fill("130000")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-save").click()
@@ -200,6 +201,7 @@ def test_modal_venda_wizard_cadastra_veiculo_novo_na_troca(
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
     page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.get_by_test_id("venda-wizard-valor-documento").fill("130000")
     page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-save").click()
 
@@ -260,6 +262,7 @@ def _criar_venda_via_wizard(page: Page, live_server_url: str) -> None:
 
     page.get_by_test_id("venda-wizard-value").fill("130000")
     page.get_by_test_id("venda-wizard-payment-method").select_option("pix")
+    page.get_by_test_id("venda-wizard-valor-documento").fill("130000")
     page.get_by_test_id("venda-wizard-next").click()
 
     page.get_by_test_id("venda-wizard-save").click()

@@ -32,6 +32,7 @@
       <th style="width:1%" data-col="id" data-col-label="ID">ID</th>
       <th data-col="data" data-col-label="Data">Data</th>
       <th data-col="tipo" data-col-label="Tipo">Tipo</th>
+      <th data-col="modo" data-col-label="Modo">Modo</th>
       <th data-col="placa" data-col-label="Placa">Placa</th>
       <th data-col="usuario" data-col-label="Usuário">Usuário</th>
       <th data-col="status" data-col-label="Status">Status</th>
@@ -49,6 +50,13 @@
           <span class="badge badge--plain badge--accent">Puxar dados</span>
           {% else %}
           <span class="badge badge--plain badge--info">Unitária</span>
+          {% endif %}
+        </td>
+        <td data-col="modo">
+          {% if r.tipo.value == 'unitaria' %}
+          <span class="badge badge--plain badge--info">CRLV</span>
+          {% else %}
+          <span class="badge badge--plain badge--accent">ATPV</span>
           {% endif %}
         </td>
         <td class="cell-strong cell-mono" data-col="placa">{{ r.placa }}</td>
@@ -77,7 +85,7 @@
         </td>
       </tr>
       {% else %}
-      <tr class="empty-row"><td colspan="9">
+      <tr class="empty-row"><td colspan="10">
         {% call ui.empty("search", "Nenhuma consulta", "Ainda não há consultas para os filtros selecionados.") %}{% endcall %}
       </td></tr>
       {% endfor %}

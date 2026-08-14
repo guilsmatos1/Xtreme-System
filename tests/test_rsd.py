@@ -2527,6 +2527,83 @@ def test_puxar_dados_trata_5xx_direto_do_portal_como_indisponibilidade() -> None
             client.puxar_dados("TCM9G85")
 
 
+def _unitaria_motor_502_html() -> str:
+    """HTML real da unitária quando o motor cai: 200 com o formulário de novo."""
+    return (
+        '<div class="alert alert-error">Motor offline ou tunnel caído: '
+        "criar_consulta_unitaria: motor respondeu 502</div>" + _unitaria_html()
+    )
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_iniciar_unitaria_retenta_quando_motor_do_portal_falha() -> None:
+    posts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.method == "POST" and request.url.path == "/dossie/unitaria/":
+            posts += 1
+            if posts < 3:
+                return httpx.Response(200, text=_unitaria_motor_502_html())
+            return httpx.Response(302, headers={"Location": "/dossie/351/"})
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        assert client.iniciar_unitaria("TCM9G85") == 351
+
+    assert posts == 3
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_iniciar_unitaria_motor_offline_em_html_vira_indisponibilidade() -> None:
+    posts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.method == "POST" and request.url.path == "/dossie/unitaria/":
+            posts += 1
+            return httpx.Response(200, text=_unitaria_motor_502_html())
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdIndisponivelError) as excinfo:
+            client.iniciar_unitaria("TCM9G85")
+
+    assert posts == len(rsd._RETRY_BACKOFF_S) + 1  # noqa: SLF001
+    erro = excinfo.value
+    assert "temporariamente indisponível" in str(erro)
+    assert "motor respondeu" not in str(erro)
+    assert erro.status_portal == 200
+    assert erro.detalhe_portal is not None
+    assert "criar_consulta_unitaria: motor respondeu 502" in erro.detalhe_portal
+
+
+@pytest.mark.usefixtures("_sem_backoff")
+def test_iniciar_unitaria_nao_retenta_erro_de_formulario() -> None:
+    posts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.method == "POST" and request.url.path == "/dossie/unitaria/":
+            posts += 1
+            return httpx.Response(
+                200, text='<ul class="errorlist"><li>Placa inválida</li></ul>'
+            )
+        return _handler(request)
+
+    client = _client_com_handler(handler)
+    with client:
+        client.login()
+        with pytest.raises(rsd.RsdConsultaError, match="Falha ao iniciar"):
+            client.iniciar_unitaria("FAI1L23")
+
+    assert posts == 1
+
+
 def test_testar_conexao_nao_confunde_portal_fora_do_ar_com_falta_de_permissao() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "GET" and request.url.path == "/atpv/nova/":

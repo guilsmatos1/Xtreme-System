@@ -256,8 +256,8 @@
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_documento') %}
           <label class="field">
-            <span class="field__label">Valor do documento</span>
-            <input class="input" name="valor_documento" data-testid="venda-wizard-valor-documento" value="{{ dados.get('valor_documento', '') }}">
+            <span class="field__label">Valor do documento *</span>
+            <input class="input" name="valor_documento" data-testid="venda-wizard-valor-documento" value="{{ dados.get('valor_documento', '') }}" required>
           </label>
           {% endif %}
 

@@ -27,6 +27,7 @@ from datetime import UTC, date, datetime, timedelta
 from datetime import time as dtime
 from enum import StrEnum
 from functools import lru_cache
+from html import unescape
 from io import BytesIO
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -141,6 +142,12 @@ _MSG_PORTAL_MAX_LEN = 300
 # O portal embrulha falhas do backend dele ("motor") em respostas próprias,
 # às vezes com status 4xx — só a mensagem revela que a origem é upstream.
 _MOTOR_5XX_RE = re.compile(r"motor respondeu\s+(5\d\d)")
+# A unitária não tem endpoint JSON: quando o motor cai, o portal responde
+# HTTP 200 com o formulário de novo e o aviso num <div class="alert alert-error">.
+_ALERTA_HTML_RE = re.compile(
+    r'<div[^>]*class="[^"]*alert-error[^"]*"[^>]*>(.*?)</div>', re.S
+)
+_TAG_HTML_RE = re.compile(r"<[^>]+>")
 _STATUS_UPSTREAM = frozenset({500, 502, 503, 504})
 _MSG_PORTAL_INDISPONIVEL = (
     "O portal RSD está temporariamente indisponível para consultas. "
@@ -1401,32 +1408,55 @@ class RsdClient:
             )
         return result
 
+    def _iniciar_unitaria_resposta(self, placa_norm: str) -> httpx.Response:
+        """POST da unitária, repetido só quando o motor do portal falhou.
+
+        Quando o motor cai, o portal devolve o formulário de novo (HTTP 200,
+        sem redirect) e nenhum dossiê é criado — repetir não duplica consulta
+        nem cobrança. Qualquer outra resposta sai na primeira tentativa.
+        """
+        resp: httpx.Response | None = None
+        detalhe = ""
+        for tentativa in range(len(_RETRY_BACKOFF_S) + 1):
+            resp = self._request(
+                "POST",
+                _UNITARIA_PATH,
+                data_factory=lambda: {
+                    "csrfmiddlewaretoken": self._refresh_unitaria_csrf(),
+                    "fonte": "be",
+                    "placa": placa_norm,
+                },
+                headers_factory=lambda: self._csrf_headers(_UNITARIA_PATH),
+            )
+            if resp.status_code in (302, 303):
+                return resp
+            upstream = _erro_upstream_do_portal(resp)
+            if upstream is None:
+                return resp
+            detalhe = upstream
+            logger.warning(
+                "rsd_iniciar_unitaria_upstream_indisponivel",
+                tentativa=tentativa + 1,
+                status=resp.status_code,
+                detalhe_portal=detalhe,
+            )
+            if tentativa < len(_RETRY_BACKOFF_S):
+                time.sleep(_RETRY_BACKOFF_S[tentativa])
+        assert resp is not None  # noqa: S101
+        raise RsdIndisponivelError(
+            _MSG_PORTAL_INDISPONIVEL,
+            status_portal=resp.status_code,
+            detalhe_portal=detalhe,
+        )
+
     def iniciar_unitaria(self, placa: str) -> int:
         """Abre um dossiê no portal e devolve o `dossie_id`, sem aguardar conclusão."""
         placa_norm = _normalizar_placa(placa)
         if not placa_norm:
             raise RsdConsultaError("Informe a placa ou chassi para consultar.")
         self.ensure_login()
-        resp = self._request(
-            "POST",
-            _UNITARIA_PATH,
-            data_factory=lambda: {
-                "csrfmiddlewaretoken": self._refresh_unitaria_csrf(),
-                "fonte": "be",
-                "placa": placa_norm,
-            },
-            headers_factory=lambda: self._csrf_headers(_UNITARIA_PATH),
-        )
+        resp = self._iniciar_unitaria_resposta(placa_norm)
         if resp.status_code not in (302, 303):
-            # Sem retry aqui: o POST cria um dossiê no portal, repetir
-            # duplicaria a consulta (e a cobrança) quando ela já tiver saído.
-            upstream = _erro_upstream_do_portal(resp)
-            if upstream is not None:
-                raise RsdIndisponivelError(
-                    _MSG_PORTAL_INDISPONIVEL,
-                    status_portal=resp.status_code,
-                    detalhe_portal=upstream,
-                )
             raise RsdConsultaError(
                 _msg_http(resp, "Falha ao iniciar consulta unitária."),
                 status_portal=resp.status_code,
@@ -1908,19 +1938,30 @@ def _normalizar_placa(value: str) -> str:
 def _erro_upstream_do_portal(resp: httpx.Response) -> str | None:
     """Texto cru do portal quando a falha veio do backend dele, senão `None`.
 
-    Cobre dois formatos: 5xx do próprio portal e o embrulho que ele usa para
-    o motor (status 4xx com `{"erro": "...: motor respondeu 502"}`).
+    Cobre três formatos: 5xx do próprio portal, o embrulho JSON que ele usa
+    para o motor (status 4xx com `{"erro": "...: motor respondeu 502"}`) e a
+    página HTML da unitária, que volta 200 com o aviso num `alert-error`.
     """
     if resp.status_code in _STATUS_UPSTREAM:
         return _msg_http(resp, f"O portal RSD falhou (HTTP {resp.status_code}).")
     try:
         data = resp.json()
     except ValueError:
-        return None
+        return _erro_upstream_no_html(resp.text)
     if not isinstance(data, dict):
         return None
     msg = str(data.get("erro") or data.get("error") or "")
     return msg if _MOTOR_5XX_RE.search(msg) else None
+
+
+def _erro_upstream_no_html(html: str) -> str | None:
+    """Aviso de motor fora do ar embutido no HTML devolvido com HTTP 200."""
+    for match in _ALERTA_HTML_RE.finditer(html):
+        texto = unescape(_TAG_HTML_RE.sub(" ", match.group(1)))
+        texto = " ".join(texto.split())
+        if _MOTOR_5XX_RE.search(texto):
+            return texto[:_MSG_PORTAL_MAX_LEN]
+    return None
 
 
 def _msg_http(resp: httpx.Response, fallback: str) -> str:

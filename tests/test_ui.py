@@ -1813,6 +1813,8 @@ def test_ui_nova_venda_exibe_cadastro_inline_de_troca_com_campos_obrigatorios(
     assert re.search(r'name="km"[^>]*required', resp.text)
     assert "Débitos do veículo (R$) *</span>" in resp.text
     assert re.search(r'name="debitos"[^>]*required', resp.text)
+    assert "Valor do documento *</span>" in resp.text
+    assert re.search(r'name="valor_documento"[^>]*required', resp.text)
     assert resp.text.count('name="veic_troca_tipo" required') == 1
     for campo in (
         "veic_troca_placa",
