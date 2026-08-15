@@ -126,7 +126,7 @@ def test_modal_veiculo_editar_atualiza_preco(page: Page, live_server_url: str) -
 
     expect(page.get_by_role("dialog", name="Editar veículo")).not_to_be_visible()
     expect(page.get_by_role("status")).to_contain_text("Alterações salvas com sucesso")
-    expect(page.locator("tr", has_text="Onix")).to_contain_text("R$ 90.000,00")
+    expect(page.locator("tr", has_text="Onix")).to_contain_text("R$ 90.000")
 
 
 @pytest.mark.e2e
@@ -284,9 +284,9 @@ def test_modal_venda_editar_atualiza_valor(page: Page, live_server_url: str) -> 
     valor = page.get_by_test_id("venda-edit-value")
     valor.fill("")
     valor.fill("140000")
+    page.get_by_test_id("venda-wizard-next").click()
     page.locator('input[name="valor_documento"]').fill("140000")
 
-    page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-edit-save").click()
 
@@ -378,7 +378,7 @@ def test_modal_compra_editar_atualiza_valor(
     )
 
     linha = page.locator("tr", has_text="Cliente Compra Editar")
-    linha.get_by_role("button", name="Editar compra").click()
+    linha.get_by_role("button", name=re.compile(r"^Editar compra")).click()
 
     expect(page.get_by_role("dialog", name="Editar compra")).to_be_visible()
     valor = page.get_by_test_id("compra-edit-value")

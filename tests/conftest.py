@@ -1,8 +1,9 @@
 import os
 from collections.abc import Callable, Iterator
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,6 +15,8 @@ from xtreme_system.api.setup import reset_rate_limiters
 from xtreme_system.database.core import get_session
 from xtreme_system.database.core import invoke_post_commit as run_post_commit_callbacks
 from xtreme_system.usuario import core as usuario
+
+_NO_REQUEST = cast(Request, None)
 
 
 def pytest_configure() -> None:
@@ -105,9 +108,18 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         if seed is not None:
             seed(session)
 
-        def override() -> Iterator[Session]:
+        def override(request: Request = _NO_REQUEST) -> Iterator[Session]:
+            # Keep the override compatible with the request-session middleware:
+            # RSD routes detach this session before opening a persistent one.
+            if request is not None and request.url.path.startswith(
+                "/ui/configuracoes/rsd"
+            ):
+                request.state.db_session = session
             yield session
-            if invoke_post_commit:
+            if (
+                request is None
+                or not getattr(request.state, "db_session_detached", False)
+            ) and invoke_post_commit:
                 session.commit()
                 run_post_commit_callbacks(session)
                 _aguardar_contratos_background()
