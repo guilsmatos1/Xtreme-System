@@ -117,7 +117,6 @@ def test_modal_veiculo_editar_atualiza_preco(page: Page, live_server_url: str) -
 
     expect(page.get_by_role("dialog", name="Editar veículo")).to_be_visible()
     page.get_by_test_id("veiculo-wizard-next").click()
-    page.get_by_test_id("veiculo-wizard-next").click()
 
     preco = page.get_by_test_id("veiculo-edit-preco")
     preco.fill("")
