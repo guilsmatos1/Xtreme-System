@@ -117,8 +117,8 @@
           {% endif %}
           {% if pode_ver_campo(user, 'vendas', 'valor_documento') %}
           <label class="field">
-            <span class="field__label">Valor do documento</span>
-            <input class="input" name="valor_documento" value="{{ dados.get('valor_documento', venda.valor_documento if venda.valor_documento is not none else '') }}">
+            <span class="field__label">Valor do documento *</span>
+            <input class="input" name="valor_documento" value="{{ dados.get('valor_documento', venda.valor_documento if venda.valor_documento is not none else '') }}" required>
           </label>
           {% endif %}
         </fieldset>

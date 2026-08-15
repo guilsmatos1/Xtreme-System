@@ -284,6 +284,7 @@ def test_modal_venda_editar_atualiza_valor(page: Page, live_server_url: str) -> 
     valor = page.get_by_test_id("venda-edit-value")
     valor.fill("")
     valor.fill("140000")
+    page.locator('input[name="valor_documento"]').fill("140000")
 
     page.get_by_test_id("venda-wizard-next").click()
     page.get_by_test_id("venda-wizard-next").click()
