@@ -655,7 +655,7 @@
     var statusEl = form.querySelector('[name="rsd_status_id"]');
     var prefix = prefixEl ? prefixEl.value : "";
     var statusId = (statusEl && statusEl.value) || "rsd-status";
-    var fieldName = prefix === "vei_" ? "vei_placa" : "placa";
+    var fieldName = prefix ? prefix + "placa" : "placa";
     var input = form.querySelector('[name="' + fieldName + '"]');
     var erro = mensagemPlacaRsd(input ? input.value : "");
     if (!erro) return;
