@@ -1,8 +1,6 @@
 name: Deploy to VPS
 
 on:
-  push:
-    branches: [main]
   workflow_run:
     workflows: ["CI"]
     types: [completed]
@@ -11,20 +9,17 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v7
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: GH_TOKEN
           script: |
             set -e
             export PATH="$HOME/.local/bin:$PATH"
@@ -34,11 +29,7 @@ jobs:
 
             echo "🔄 Pulling latest code..."
             git remote set-url origin "https://github.com/${{ github.repository }}.git"
-            if [ -n "${GH_TOKEN:-}" ]; then
-              git -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}" fetch origin
-            else
-              git fetch origin
-            fi
+            GIT_TERMINAL_PROMPT=0 git -c credential.helper= fetch --prune origin main
             git checkout main
             git reset --hard origin/main
 
@@ -50,6 +41,7 @@ jobs:
 
             echo "🔄 Restarting service..."
             sudo systemctl restart ${{ secrets.SERVICE_NAME }}
+            sudo systemctl is-active --quiet ${{ secrets.SERVICE_NAME }}
 
             echo "✅ Deployment completed successfully!"
 
