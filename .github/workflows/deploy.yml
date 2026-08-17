@@ -40,8 +40,8 @@ jobs:
             uv run alembic upgrade heads
 
             echo "🔄 Restarting service..."
-            sudo systemctl restart ${{ secrets.SERVICE_NAME }}
-            sudo systemctl is-active --quiet ${{ secrets.SERVICE_NAME }}
+            sudo -n /bin/systemctl restart ${{ secrets.SERVICE_NAME }}
+            systemctl is-active --quiet ${{ secrets.SERVICE_NAME }}
 
             echo "✅ Deployment completed successfully!"
 
