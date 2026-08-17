@@ -53,7 +53,7 @@ def _normalize_status_id(value: str) -> str:
 
 
 def _normalize_prefix(value: str) -> str:
-    return value if value in {"", "vei_"} else ""
+    return value if value in {"", "vei_", "veic_troca_"} else ""
 
 
 # Só estes erros dizem algo sobre a credencial. Indisponibilidade do portal,
@@ -106,9 +106,9 @@ def _status_partial(
     return response
 
 
-def _placa_para_puxar_dados(placa: str, vei_placa: str) -> str:
+def _placa_para_puxar_dados(placa: str) -> str:
     """Normaliza a placa do form; levanta ValueError com mensagem de UI."""
-    raw = (placa or vei_placa).strip()
+    raw = (placa or "").strip()
     if not raw:
         raise ValueError("Informe a placa para puxar dados.")
     try:
@@ -118,17 +118,17 @@ def _placa_para_puxar_dados(placa: str, vei_placa: str) -> str:
 
 
 @router.post("/ui/rsd/puxar-dados")
-def ui_rsd_puxar_dados(
+async def ui_rsd_puxar_dados(
     request: Request,
     session: SessionDep,
     user: Annotated[usuario.Usuario, Depends(require_operacao("veiculos", "editar"))],
-    placa: Annotated[str, Form()] = "",
-    vei_placa: Annotated[str, Form()] = "",
     rsd_prefix: Annotated[str, Form()] = "",
     rsd_status_id: Annotated[str, Form()] = "rsd-status",
 ) -> HTMLResponse:
+    form = await request.form()
+    placa = str(form.get(f"{rsd_prefix}placa") or "")
     try:
-        placa = _placa_para_puxar_dados(placa, vei_placa)
+        placa = _placa_para_puxar_dados(placa)
     except ValueError as exc:
         return _status_partial(
             request,
@@ -263,7 +263,7 @@ def ui_rsd_atualizar_veiculo(
     """
     obj = found(veiculo.get(session, veiculo_id), "Veículo")
     try:
-        placa = _placa_para_puxar_dados(obj.placa or "", "")
+        placa = _placa_para_puxar_dados(obj.placa or "")
     except ValueError as exc:
         return _status_partial(
             request,
