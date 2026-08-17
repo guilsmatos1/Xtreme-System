@@ -217,6 +217,7 @@ ignore_errors = false
 "components/xtreme_system/empresa" = "xtreme_system/empresa"
 "components/xtreme_system/veiculo" = "xtreme_system/veiculo"
 "components/xtreme_system/whatsapp" = "xtreme_system/whatsapp"
+"components/xtreme_system/telegram" = "xtreme_system/telegram"
 "components/xtreme_system/rsd" = "xtreme_system/rsd"
 "components/xtreme_system/imagem_veiculo" = "xtreme_system/imagem_veiculo"
 "components/xtreme_system/compra" = "xtreme_system/compra"

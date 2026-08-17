@@ -3,6 +3,7 @@
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
+from sqlalchemy import Boolean, false
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from xtreme_system.crud import core as crud
@@ -14,10 +15,14 @@ class Investidor(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     nome: Mapped[str] = mapped_column(unique=True, index=True)
+    notificar_telegram: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
 
 
 class InvestidorCreate(BaseModel):
     nome: str
+    notificar_telegram: bool = False
 
     @field_validator("nome", mode="before")
     @classmethod
@@ -28,6 +33,7 @@ class InvestidorCreate(BaseModel):
 
 class InvestidorUpdate(BaseModel):
     nome: str | None = None
+    notificar_telegram: bool | None = None
 
     @field_validator("nome", mode="before")
     @classmethod
@@ -43,6 +49,7 @@ class InvestidorRead(BaseModel):
 
     id: int
     nome: str
+    notificar_telegram: bool = False
 
 
 def list_all(

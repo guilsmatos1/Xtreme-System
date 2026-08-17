@@ -1,0 +1,12 @@
+{% import "_macros.html" as ui %}
+{% if erro %}
+<div class="rsd-test-result rsd-test-result--error" role="alert">
+  {{ ui.icon("alert-triangle") }}
+  <span>{{ erro }}</span>
+</div>
+{% else %}
+<div class="rsd-test-result rsd-test-result--success" role="status">
+  {{ ui.icon("check") }}
+  <span>Mensagem de teste enviada. Confira o chat — se ela chegou, salve para ativar.</span>
+</div>
+{% endif %}

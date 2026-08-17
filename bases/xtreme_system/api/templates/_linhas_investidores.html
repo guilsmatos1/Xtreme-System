@@ -11,6 +11,13 @@
   <td class="cell-num" data-col="total_investido">{{ ui.moeda_sem_decimais(ta) }}</td>
   <td class="cell-num" data-col="valor_veiculos">{{ ui.moeda_sem_decimais(vv) }}</td>
   <td class="cell-num" data-col="pendente" style="{{ 'color:var(--danger)' if pendente < 0 }}">{{ ui.moeda_sem_decimais(pendente) }}</td>
+  <td data-col="notificar_telegram">
+    {% if item.notificar_telegram %}
+    <span class="badge badge--success" title="Vendas deste investidor notificam o Telegram">{{ ui.icon("send") }} Ativo</span>
+    {% else %}
+    <span class="badge badge--neutral">—</span>
+    {% endif %}
+  </td>
   {% set pode_editar = pode_operacao(user, 'investidores', 'editar') %}
   {% set pode_excluir = pode_operacao(user, 'investidores', 'excluir') %}
   {% if pode_editar or pode_excluir or is_admin(user) %}
@@ -30,7 +37,7 @@
   {% endif %}
 </tr>
 {% else %}
-<tr class="empty-row"><td colspan="6">
+<tr class="empty-row"><td colspan="7">
   {% call ui.empty("inbox", "Nenhum investidor cadastrado", "Cadastre um investidor para começar.") %}{% endcall %}
 </td></tr>
 {% endfor %}

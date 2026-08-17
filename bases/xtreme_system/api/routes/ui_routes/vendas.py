@@ -54,6 +54,7 @@ from xtreme_system.documento_contrato_venda import core as documento_contrato_ve
 from xtreme_system.empresa import core as empresa
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
+from xtreme_system.telegram import core as telegram
 from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
@@ -575,6 +576,7 @@ def _criar_venda_com_hooks(
     obj = venda.create(session, data, actor_id)
     _agendar_persistencia_contrato_venda(session, obj, actor_id)
     whatsapp.notificar_venda(session, obj)
+    telegram.notificar_venda(session, obj)
     return obj
 
 

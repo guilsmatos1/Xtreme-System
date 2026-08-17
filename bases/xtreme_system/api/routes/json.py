@@ -27,6 +27,7 @@ from xtreme_system.consignacao import core as consignacao
 from xtreme_system.database.connection import get_database_target, get_engine
 from xtreme_system.fechamento_venda import core as fechamento_venda
 from xtreme_system.investidor import core as investidor
+from xtreme_system.telegram import core as telegram
 from xtreme_system.usuario import core as usuario
 from xtreme_system.veiculo import core as veiculo
 from xtreme_system.venda import core as venda
@@ -321,6 +322,14 @@ register_crud_routes(
 # ---- Vendas ----
 
 
+def _notificar_venda(
+    session: Session, obj: venda.Venda, actor_id: int | None = None
+) -> None:
+    """Dispara os canais de notificação de venda (best-effort, pós-commit)."""
+    whatsapp.notificar_venda(session, obj, actor_id)
+    telegram.notificar_venda(session, obj, actor_id)
+
+
 register_crud_routes(
     router,
     venda,
@@ -332,7 +341,7 @@ register_crud_routes(
     before_create=validate_venda_create,
     before_update=validate_venda_update,
     before_delete=recompute_vehicle_status_on_delete,
-    after_create=whatsapp.notificar_venda,
+    after_create=_notificar_venda,
     pagina="vendas",
     actor_field="vendedor_id",
 )

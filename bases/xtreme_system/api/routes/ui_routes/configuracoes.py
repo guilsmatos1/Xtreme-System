@@ -42,6 +42,7 @@ from xtreme_system.database.core import (
 from xtreme_system.empresa import core as empresa
 from xtreme_system.exportacao import core as exportacao
 from xtreme_system.rsd import core as rsd
+from xtreme_system.telegram import core as telegram
 from xtreme_system.upload_file.core import escrever_upload_atomico
 from xtreme_system.usuario import core as usuario
 from xtreme_system.whatsapp import core as whatsapp
@@ -61,7 +62,11 @@ def ui_configuracoes(
     mensagem = {
         "rsd-salvo": "Configurações RSD salvas.",
     }.get(request.cookies.get("ui_flash") or "")
-    aba = aba if aba in {"banco", "whatsapp", "rsd", "tema", "empresa"} else "banco"
+    aba = (
+        aba
+        if aba in {"banco", "whatsapp", "telegram", "rsd", "tema", "empresa"}
+        else "banco"
+    )
     response = _pagina_empresa(
         request,
         session,
@@ -106,6 +111,76 @@ def ui_configuracoes_salvar(
         config=config,
         sucesso="Configurações salvas.",
         aba="whatsapp",
+    )
+
+
+@router.post("/ui/configuracoes/telegram")
+def ui_configuracoes_telegram_salvar(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    bot_token: Annotated[str, Form()] = "",
+    chat_id: Annotated[str, Form()] = "",
+    telegram_mensagem_template: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    atual = telegram.get_config(session)
+    config_telegram = telegram.atualizar_config(
+        session,
+        telegram.TelegramConfigUpdate(
+            # Campo vazio = manter o token atual, para não exigir que o admin
+            # redigite o segredo a cada save (o form nunca o devolve).
+            bot_token=bot_token or atual.bot_token,
+            chat_id=chat_id,
+            mensagem_template=telegram_mensagem_template,
+        ),
+        user.id,
+    )
+    return _pagina_empresa(
+        request,
+        session,
+        user,
+        empresa.get_config(session),
+        config_telegram=config_telegram,
+        sucesso="Configurações salvas.",
+        aba="telegram",
+    )
+
+
+@router.post("/ui/configuracoes/telegram/teste")
+def ui_configuracoes_telegram_teste(
+    request: Request,
+    session: SessionDep,
+    user: UIAdmin,
+    _csrf: Annotated[None, Depends(validar_csrf)],
+    bot_token: Annotated[str, Form()] = "",
+    chat_id: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    """Testa com os valores do formulário (ainda não salvos).
+
+    O campo de token vem vazio quando o admin não o redigitou — nesse caso
+    cai no token já salvo, senão o botão testaria com string vazia logo
+    depois de a página carregar.
+    """
+    atual = telegram.get_config(session)
+    erro = telegram.enviar_teste(
+        bot_token.strip() or atual.bot_token, chat_id.strip() or atual.chat_id
+    )
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request,
+            "_telegram_test_result.html",
+            {"erro": erro},
+            status_code=200 if erro is None else 400,
+        )
+    return _pagina_empresa(
+        request,
+        session,
+        user,
+        empresa.get_config(session),
+        erro=erro,
+        sucesso=None if erro else "Mensagem de teste enviada.",
+        aba="telegram",
+        status_code=200 if erro is None else 400,
     )
 
 
@@ -349,6 +424,7 @@ def _pagina_empresa(
     config_empresa: empresa.EmpresaConfig,
     *,
     config: whatsapp.WhatsappConfig | None = None,
+    config_telegram: telegram.TelegramConfig | None = None,
     config_rsd: rsd.RsdConfig | None = None,
     erro: str | None = None,
     sucesso: str | None = None,
@@ -365,6 +441,7 @@ def _pagina_empresa(
         {
             "user": user,
             "config": config or whatsapp.get_config(session),
+            "config_telegram": config_telegram or telegram.get_config(session),
             "config_rsd": config_rsd or rsd.get_config(session),
             "config_empresa": config_empresa,
             "erro": erro,

@@ -20,6 +20,14 @@
           <input class="input" name="valor_investido" data-testid="simples-form-valor-investido" type="text" inputmode="decimal" placeholder="0,00">
         </label>
         {% endif %}
+        {% if prefixo == '/ui/investidores' %}
+        <label style="display:flex;align-items:center;gap:var(--s-2);margin-top:var(--s-3)">
+          <input type="checkbox" name="notificar_telegram" value="1"
+                 data-testid="simples-form-notificar-telegram"
+                 {% if item and item.notificar_telegram %}checked{% endif %}>
+          Notificar vendas no Telegram
+        </label>
+        {% endif %}
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>

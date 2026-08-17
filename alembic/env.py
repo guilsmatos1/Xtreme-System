@@ -46,6 +46,7 @@ from xtreme_system.imagem_veiculo import core as _imagem_veiculo  # noqa: F401
 from xtreme_system.investidor import core as _investidor  # noqa: F401
 from xtreme_system.perfil import core as _perfil  # noqa: F401
 from xtreme_system.rsd import core as _rsd  # noqa: F401
+from xtreme_system.telegram import core as _telegram  # noqa: F401
 from xtreme_system.usuario import core as _usuario  # noqa: F401
 from xtreme_system.veiculo import core as _veiculo  # noqa: F401
 from xtreme_system.venda import core as _venda  # noqa: F401

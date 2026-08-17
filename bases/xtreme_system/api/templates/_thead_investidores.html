@@ -5,5 +5,6 @@
   <th data-col="total_investido" data-col-label="Total Investido" aria-sort="{{ ui.sortable_aria("total_investido", sort, order) }}">{{ ui.sortable("total_investido", "Total Investido", sort, order, prefixo) }}</th>
   <th data-col="valor_veiculos" data-col-label="Valor em Veículos" aria-sort="{{ ui.sortable_aria("valor_veiculos", sort, order) }}">{{ ui.sortable("valor_veiculos", "Valor em Veículos", sort, order, prefixo) }}</th>
   <th data-col="pendente" data-col-label="Pendente">Pendente</th>
+  <th data-col="notificar_telegram" data-col-label="Telegram">Telegram</th>
   {% if pode_operacao(user, 'investidores', 'editar') or pode_operacao(user, 'investidores', 'excluir') %}<th class="col-actions" data-col="acoes" data-col-fixed><span class="sr-only">Ações</span></th>{% endif %}
 </tr></thead>

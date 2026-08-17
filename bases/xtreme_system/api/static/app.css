@@ -581,6 +581,14 @@ dialog::backdrop { background: rgba(10,11,13,.5); backdrop-filter: blur(2px); }
     .settings-nav__title { color: var(--accent); }
   }
 }
+#tab-telegram:checked ~ .settings-layout {
+  .settings-tabs__panel--telegram { display: flex; }
+  .settings-nav label[for="tab-telegram"] {
+    background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+    .settings-nav__icon { background: var(--accent); color: var(--accent-contrast); }
+    .settings-nav__title { color: var(--accent); }
+  }
+}
 #tab-rsd:checked ~ .settings-layout {
   .settings-tabs__panel--rsd { display: flex; }
   .settings-nav label[for="tab-rsd"] {

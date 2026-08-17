@@ -3,6 +3,7 @@
 {% block titulo %}Configurações{% endblock %}
 {% block content %}
 {% set configurado = config.evolution_api_url and config.evolution_instance %}
+{% set telegram_configurado = config_telegram.bot_token and config_telegram.chat_id %}
 {% set rsd_ok = rsd_ok if rsd_ok is defined else (config_rsd.email and config_rsd.senha and not config_rsd.revogada) %}
 {% set rsd_status = rsd_status if rsd_status is defined else "saved_unverified" %}
 {% set aba_ativa = aba or "banco" %}
@@ -22,6 +23,8 @@
          id="tab-banco" tabindex="-1" aria-hidden="true" {% if aba_ativa == "banco" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
          id="tab-whatsapp" tabindex="-1" aria-hidden="true" {% if aba_ativa == "whatsapp" %}checked{% endif %}>
+  <input class="settings-tabs__input" type="radio" name="settings-tab"
+         id="tab-telegram" tabindex="-1" aria-hidden="true" {% if aba_ativa == "telegram" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
          id="tab-rsd" tabindex="-1" aria-hidden="true" {% if aba_ativa == "rsd" %}checked{% endif %}>
   <input class="settings-tabs__input" type="radio" name="settings-tab"
@@ -69,6 +72,19 @@
                   title="{{ 'Conectado' if configurado else 'Pendente' }}"></span>
           </span>
           <span class="settings-nav__desc">{{ "Conectado" if configurado else "Não configurado" }}</span>
+        </span>
+      </label>
+      <label class="settings-nav__item" id="settings-tab-telegram" for="tab-telegram" role="tab"
+             aria-selected="{{ 'true' if aba_ativa == 'telegram' else 'false' }}" aria-controls="settings-panel-telegram"
+             tabindex="{{ '0' if aba_ativa == 'telegram' else '-1' }}">
+        <span class="settings-nav__icon">{{ ui.icon("send") }}</span>
+        <span class="settings-nav__text">
+          <span class="settings-nav__title">
+            Telegram
+            <span class="settings-nav__dot {{ 'settings-nav__dot--ok' if telegram_configurado }}"
+                  title="{{ 'Conectado' if telegram_configurado else 'Pendente' }}"></span>
+          </span>
+          <span class="settings-nav__desc">{{ "Conectado" if telegram_configurado else "Não configurado" }}</span>
         </span>
       </label>
       <label class="settings-nav__item" id="settings-tab-rsd" for="tab-rsd" role="tab"
@@ -218,6 +234,94 @@
         </div>
 
         <div class="field settings-actions">
+          <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="settings-panel-telegram" class="settings-tabs__panel settings-tabs__panel--telegram" role="tabpanel" aria-labelledby="settings-tab-telegram">
+      <div class="settings-panel-head">
+        <h2>Notificações no Telegram</h2>
+        <p class="page-head__subtitle">
+          Avisa um chat do Telegram quando uma venda for criada — apenas para os
+          investidores marcados em <a href="/ui/investidores">Investidores</a>.
+        </p>
+      </div>
+
+      <div class="connection-status {{ 'connection-status--ok' if telegram_configurado else 'connection-status--pending' }}">
+        <span class="connection-status__icon">{{ ui.icon("send") }}</span>
+        <div class="connection-status__text">
+          <strong>{{ "Integração conectada" if telegram_configurado else "Integração não configurada" }}</strong>
+          <span>
+            {% if telegram_configurado %}
+              Enviando para o chat <code>{{ config_telegram.chat_id }}</code>.
+            {% else %}
+              Informe o token do bot e o ID do chat abaixo para ativar os alertas.
+            {% endif %}
+          </span>
+        </div>
+        {% if telegram_configurado %}
+        <span class="badge badge--success">{{ ui.icon("check") }} Conectado</span>
+        {% else %}
+        <span class="badge badge--neutral">Não configurado</span>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/ui/configuracoes/telegram" class="card card--pad settings-form">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <div class="modal-section">
+          <h4>{{ ui.icon("link") }} Conexão do bot</h4>
+          <p class="muted">
+            Crie um bot com o <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>,
+            adicione-o ao grupo e cole o token aqui. Para grupos, o ID começa com <code>-100</code>.
+          </p>
+          <div class="form-grid">
+            <label class="field">
+              <span class="field__label">Token do bot</span>
+              <span class="field-password" x-data="campoSenha">
+                <input class="input" id="telegram-token-input" name="bot_token" :type="visivel ? 'text' : 'password'"
+                       placeholder="•••••••• (deixe vazio para manter o token atual)"
+                       autocomplete="off">
+                <button type="button" class="field-password__toggle" :class="{ 'is-visible': visivel }"
+                        :aria-label="visivel ? 'Ocultar token' : 'Mostrar token'" x-on:click="alternar()">
+                  <span class="field-password__icon-show">{{ ui.icon("eye") }}</span>
+                  <span class="field-password__icon-hide">{{ ui.icon("eye-off") }}</span>
+                </button>
+              </span>
+            </label>
+            <label class="field">
+              <span class="field__label">ID do chat</span>
+              <input class="input" name="chat_id" placeholder="-1001234567890"
+                     value="{{ config_telegram.chat_id }}" autocomplete="off">
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-section settings-message" x-data="templateComPlaceholders">
+          <h4>{{ ui.icon("megaphone") }} Mensagem</h4>
+          <label class="field field--full">
+            <span class="field__label">Template da mensagem</span>
+            <textarea class="input" id="telegram-mensagem-template" name="telegram_mensagem_template" rows="7" x-ref="textarea">{{ config_telegram.mensagem_template }}</textarea>
+          </label>
+          <div class="placeholder-chips">
+            {% for ph in ["investidor", "cliente", "veiculo", "valor", "forma_pagamento", "parcelas", "vendedor"] %}
+            <button type="button" class="placeholder-chip" x-on:click="inserir('{{ ph }}')">{{'{'}}{{ ph }}{{'}'}}</button>
+            {% endfor %}
+          </div>
+          <p class="muted">Clique em um placeholder para inseri-lo no texto.</p>
+        </div>
+
+        <div id="telegram-test-result"></div>
+        <span id="telegram-test-progress" class="rsd-test-progress htmx-indicator" role="status" aria-live="polite">
+          {{ ui.icon("refresh") }} Enviando mensagem de teste…
+        </span>
+        <div class="field settings-actions settings-actions--split">
+          <button class="btn btn--default" type="submit" formaction="/ui/configuracoes/telegram/teste"
+                  hx-post="/ui/configuracoes/telegram/teste" hx-target="#telegram-test-result"
+                  hx-swap="innerHTML" hx-include="closest form" hx-indicator="#telegram-test-progress"
+                  hx-disabled-elt="this, closest form .btn--primary">
+            {{ ui.icon("send") }} Testar envio
+          </button>
           <button class="btn btn--primary" type="submit">{{ ui.icon("check") }} Salvar alterações</button>
         </div>
       </form>

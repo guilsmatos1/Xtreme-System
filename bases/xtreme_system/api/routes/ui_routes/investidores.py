@@ -250,7 +250,12 @@ async def ui_investidor_criar(
         )
     try:
         obj = investidor.create(
-            session, investidor.InvestidorCreate(nome=nome), user.id
+            session,
+            investidor.InvestidorCreate(
+                nome=nome,
+                notificar_telegram=bool(form.get("notificar_telegram")),
+            ),
+            user.id,
         )
     except IntegrityError:
         return rollback_integrity_error_response(
@@ -299,7 +304,8 @@ async def ui_investidor_atualizar(
     item_id: int, request: Request, session: SessionDep, user: _EditarInvestidorDep
 ) -> HTMLResponse:
     obj = found(investidor.get(session, item_id), "Investidores")
-    nome = str((await request.form()).get("nome") or "").strip()
+    form = await request.form()
+    nome = str(form.get("nome") or "").strip()
     if not nome:
         return templates.TemplateResponse(
             request,
@@ -308,7 +314,15 @@ async def ui_investidor_atualizar(
             status_code=400,
         )
     try:
-        investidor.update(session, obj, investidor.InvestidorUpdate(nome=nome), user.id)
+        investidor.update(
+            session,
+            obj,
+            investidor.InvestidorUpdate(
+                nome=nome,
+                notificar_telegram=bool(form.get("notificar_telegram")),
+            ),
+            user.id,
+        )
     except IntegrityError:
         return rollback_integrity_error_response(
             session,
