@@ -75,9 +75,7 @@ def test_portal_rsd_preserva_rascunho_em_erro_timeout_e_sucesso(
         "O portal RSD não respondeu a tempo",
         "Teste aprovado para este rascunho; ainda não salvo",
     ):
-        page.locator('form:has(button[formaction$="/teste"])').first.get_by_role(
-            "button", name="Testar conexão"
-        ).click()
+        form.get_by_role("button", name="Testar conexão").click()
         if expected == "Teste aprovado para este rascunho; ainda não salvo":
             expect(page.get_by_text(expected)).to_be_visible()
         else:
