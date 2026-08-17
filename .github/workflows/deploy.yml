@@ -17,11 +17,14 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: GH_TOKEN
           script: |
             set -e
             export PATH="$HOME/.local/bin:$PATH"
@@ -30,7 +33,12 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
 
             echo "🔄 Pulling latest code..."
-            git fetch origin
+            git remote set-url origin "https://github.com/${{ github.repository }}.git"
+            if [ -n "${GH_TOKEN:-}" ]; then
+              git -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}" fetch origin
+            else
+              git fetch origin
+            fi
             git checkout main
             git reset --hard origin/main
 
