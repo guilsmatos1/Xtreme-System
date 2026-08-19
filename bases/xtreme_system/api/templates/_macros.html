@@ -275,7 +275,7 @@
     oob=False
 ) -%}
 {%- set sep = '&' if qs_base else '' -%}
-<div id="paginacao"{% if oob %} hx-swap-oob="outerHTML"{% endif %} class="toolbar" style="margin-top:var(--s-4)">
+<div id="paginacao"{% if oob %} hx-swap-oob="outerHTML"{% endif %} class="toolbar paginacao">
   <span class="page-head__subtitle">
     {% if page_count %}
       Mostrando {{ page_start }}–{{ page_end }}
@@ -283,7 +283,7 @@
       Sem registros
     {% endif %}
   </span>
-  <div style="display:flex;gap:var(--s-2)">
+  <div class="paginacao__nav">
     <button class="btn btn--ghost" {{ '' if tem_anterior else 'disabled' }} type="button"
             hx-get="{{ path }}?{{ qs_base }}{{ sep }}offset={{ offset_anterior }}&limit={{ limit }}"
             hx-target="{{ target }}" hx-swap="outerHTML">Anterior</button>

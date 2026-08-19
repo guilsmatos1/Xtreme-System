@@ -1,6 +1,6 @@
 {% import "_macros.html" as ui %}
 <div id="modal-content" class="modal" role="dialog" aria-modal="true">
-  <div class="modal__panel" style="max-width: 900px">
+  <div class="modal__panel modal__panel--lg">
     <div class="modal__head">
       <h3 id="modal-contrato-title">Contrato — venda #{{ venda.id }}</h3>
       <button class="icon-btn" type="button" @click="fechar()" aria-label="Fechar">{{ ui.icon("close") }}</button>

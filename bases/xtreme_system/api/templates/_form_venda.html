@@ -283,8 +283,8 @@
             {% endif %}
             {% if pode_ver_campo(user, 'vendas', 'veiculo_troca') %}
             <input type="hidden" :value="modoNovoEnviado" id="veiculo-troca-novo" name="veiculo_troca_novo" value="{{ '1' if houve_troca_atual else '0' }}">
-            <div class="form-grid" id="novo-veiculo-troca-campos" data-troca data-novo-veiculo-troca
-               x-show="ativo" style="grid-column: 1 / -1; {% if not houve_troca_atual %}display:none{% endif %}">
+            <div class="form-grid form-grid--full" id="novo-veiculo-troca-campos" data-troca data-novo-veiculo-troca
+               x-show="ativo" x-cloak>
             <hr class="form-grid__divider" x-show="ativo">
             {{ campos_veiculo(
               dados,
@@ -347,12 +347,12 @@
       </div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" x-on:click="fecharComConfirmacao()">Cancelar</button>
-        <button type="button" class="btn btn--default" x-show="step > 1" data-testid="venda-wizard-back" style="display:none" @click="voltar()">{{ ui.icon("arrow-left") }} Voltar</button>
+        <button type="button" class="btn btn--default" x-show="step > 1" x-cloak data-testid="venda-wizard-back" @click="voltar()">{{ ui.icon("arrow-left") }} Voltar</button>
         <button type="button" class="btn btn--primary" x-show="step < total" data-testid="venda-wizard-next" @click="proximo()">Próximo {{ ui.icon("arrow-right") }}</button>
         {% if venda %}
-        <button type="submit" class="btn btn--primary" x-show="step === total" data-testid="venda-edit-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" x-cloak data-testid="venda-edit-save">{{ ui.icon("check") }} Salvar</button>
         {% else %}
-        <button type="submit" class="btn btn--primary" x-show="step === total" data-testid="venda-wizard-save" style="display:none">{{ ui.icon("check") }} Salvar</button>
+        <button type="submit" class="btn btn--primary" x-show="step === total" x-cloak data-testid="venda-wizard-save">{{ ui.icon("check") }} Salvar</button>
         {% endif %}
       </div>
     </form>

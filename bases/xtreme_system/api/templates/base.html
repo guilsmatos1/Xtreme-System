@@ -164,7 +164,7 @@
               <span>{{ user.papel.value if user else '' }}</span>
             </div>
           </a>
-          <form method="post" action="/ui/logout" style="margin-left:auto">
+          <form method="post" action="/ui/logout">
             <button class="icon-btn" type="submit" aria-label="Sair" title="Sair">{{ ui.icon("logout") }}</button>
           </form>
         </div>
@@ -174,7 +174,7 @@
     <div class="content">
       <header class="topbar">
         <div class="topbar__brand">
-          <span class="sidebar__logo" style="width:26px;height:26px">{{ ui.icon("vehicles") }}</span>
+          <span class="sidebar__logo sidebar__logo--sm">{{ ui.icon("vehicles") }}</span>
           Xtreme Motors
         </div>
         <button class="icon-btn" type="button" aria-label="Abrir menu"
@@ -194,11 +194,11 @@
        x-trap.inert.noscroll.noreturn="$store.confirmacao.aberto"
        x-on:keydown.escape.window="cancelarConfirmacao()" x-on:click.self="cancelarConfirmacao()"
        role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-q">
-    <div class="modal__panel" style="max-width:400px">
-      <div class="modal__body" style="padding-top:var(--s-5)"><p id="confirm-dialog-q" x-text="$store.confirmacao.pergunta"></p></div>
+    <div class="modal__panel modal__panel--sm">
+      <div class="modal__body modal__body--pad-top"><p id="confirm-dialog-q" x-text="$store.confirmacao.pergunta"></p></div>
       <div class="modal__foot">
         <button type="button" class="btn btn--default" x-on:click="cancelarConfirmacao()">Cancelar</button>
-        <button type="button" class="btn btn--primary" style="--_bg:var(--danger);--_bd:transparent"
+        <button type="button" class="btn btn--primary btn--danger-fill"
                 x-on:click="confirmar()" x-ref="confirmOk">Confirmar</button>
       </div>
     </div>
