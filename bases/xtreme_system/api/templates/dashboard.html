@@ -43,8 +43,8 @@
   </article>
 </section>
 
-<section class="card card--pad" style="margin-top:var(--s-6)">
-  <h2 style="margin-bottom:var(--s-4)">Desempenho de vendas — últimos 6 meses</h2>
+<section class="card card--pad dashboard-section">
+  <h2 class="dashboard-section__title">Desempenho de vendas — últimos 6 meses</h2>
   <div class="bar-chart" data-bar-chart="desempenho-vendas">
     <div class="bar-chart__inner">
       <div class="bar-chart__yaxis">
@@ -61,7 +61,7 @@
             </span>
             <div
               class="bar-chart__bar"
-              style="height:{{ item.pct }}%"
+              data-pct="{{ item.pct }}"
               tabindex="0"
               data-label="{{ item.label }}"
               data-total="{{ ui.moeda_sem_decimais(item.total) }}"
@@ -106,41 +106,10 @@
   </details>
 </section>
 
-<script>
-(function () {
-  var chart = document.querySelector('[data-bar-chart="desempenho-vendas"]');
-  if (!chart) return;
-  var tooltip = chart.querySelector('.bar-chart__tooltip');
-  var ttTotal = tooltip.querySelector('[data-tt-total]');
-  var ttLabel = tooltip.querySelector('[data-tt-label]');
-  var ttCount = tooltip.querySelector('[data-tt-count]');
-  var bars = chart.querySelectorAll('.bar-chart__bar');
+<script src="/static/dashboard.js" defer></script>
 
-  function show(bar, x, y) {
-    ttTotal.textContent = bar.dataset.total;
-    ttLabel.textContent = bar.dataset.label;
-    ttCount.textContent = bar.dataset.count;
-    tooltip.style.left = x + 'px';
-    tooltip.style.top = y + 'px';
-    tooltip.setAttribute('data-visible', 'true');
-  }
-  function hide() { tooltip.removeAttribute('data-visible'); }
-
-  bars.forEach(function (bar) {
-    bar.addEventListener('pointermove', function (e) { show(bar, e.clientX, e.clientY - 12); });
-    bar.addEventListener('pointerenter', function (e) { show(bar, e.clientX, e.clientY - 12); });
-    bar.addEventListener('pointerleave', hide);
-    bar.addEventListener('focus', function () {
-      var rect = bar.getBoundingClientRect();
-      show(bar, rect.left + rect.width / 2, rect.top - 8);
-    });
-    bar.addEventListener('blur', hide);
-  });
-})();
-</script>
-
-<section style="margin-top:var(--s-6)">
-  <h2 style="margin-bottom:var(--s-4)">Atividades Recentes</h2>
+<section class="dashboard-section">
+  <h2 class="dashboard-section__title">Atividades Recentes</h2>
   {% if atividades_recentes %}
   <div class="table-wrap">
     <table class="table--wide">
@@ -167,8 +136,8 @@
   {% endif %}
 </section>
 
-<section style="margin-top:var(--s-6)">
-  <h2 style="margin-bottom:var(--s-4)">Ranking de vendedores</h2>
+<section class="dashboard-section">
+  <h2 class="dashboard-section__title">Ranking de vendedores</h2>
   {% if ranking_vendedores %}
   <div class="table-wrap">
     <table class="table--wide">
