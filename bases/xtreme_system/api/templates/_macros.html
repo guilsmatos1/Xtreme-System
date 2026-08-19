@@ -242,8 +242,8 @@
 {%- endmacro %}
 
 {% macro rsd_actions(prefix="", status_id="rsd-status", inline=False) -%}
-<input type="hidden" name="rsd_prefix" value="{{ prefix }}">
-<input type="hidden" name="rsd_status_id" value="{{ status_id }}">
+<input type="hidden" name="rsd_prefix" value="{{ prefix }}" data-rsd-meta>
+<input type="hidden" name="rsd_status_id" value="{{ status_id }}" data-rsd-meta>
 <div class="field{% if inline %} rsd-actions rsd-actions--inline{% else %} field--full rsd-actions{% endif %}">
   <span class="field__label sr-only">RSD</span>
   <div class="rsd-actions__controls">

@@ -39,6 +39,7 @@ _RSD_STATUS_IDS = {
     "rsd-status-compra",
     "rsd-status-consignacao",
     "rsd-status-veiculo",
+    "rsd-status-troca-2",
 }
 
 # Contador de falhas transitórias consecutivas por dossiê, para o poll do

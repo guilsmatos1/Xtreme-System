@@ -274,7 +274,7 @@
         aplicar: function () {
           var mostrar = this.mostrarNovos;
           var campos = this.raiz.querySelectorAll(
-            "[data-novo-veiculo-troca] input, [data-novo-veiculo-troca] select"
+            "[data-novo-veiculo-troca] input:not([data-rsd-meta]), [data-novo-veiculo-troca] select:not([data-rsd-meta])"
           );
           Array.prototype.forEach.call(campos, function (campo) {
             campo.disabled = !mostrar;

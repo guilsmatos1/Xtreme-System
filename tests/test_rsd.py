@@ -2689,3 +2689,29 @@ def test_falha_de_autenticacao_continua_invalidando_credencial(
     assert resp.status_code == 400
     assert len(testes) == 1
     assert testes[0]["sucesso"] is False
+
+
+def test_ui_puxar_dados_com_prefixo_veic_troca(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regressão: rsd-status-troca-2 (aba Troca do wizard de vendas) precisa
+    sobreviver a _normalize_status_id, senão o id do partial retorna trocado
+    para "rsd-status" e hx-target do botão para de bater no segundo clique."""
+    _login_ui(client)
+    _salvar_config_rsd(client)
+    _patch_client_from_config(monkeypatch)
+
+    resp = client.post(
+        "/ui/rsd/puxar-dados",
+        data={
+            "veic_troca_placa": "TCM9G85",
+            "rsd_prefix": "veic_troca_",
+            "rsd_status_id": "rsd-status-troca-2",
+        },
+    )
+    assert resp.status_code == 200
+    assert 'id="rsd-status-troca-2"' in resp.text
+    assert "data-rsd-campos=" in resp.text
+    assert "veic_troca_modelo" in resp.text
+    assert "ONIX 10MT LT2" in resp.text
+    assert "alert--success" in resp.text
